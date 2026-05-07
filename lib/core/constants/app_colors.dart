@@ -48,3 +48,4 @@ class AppColors {
   static const Color divineWhite = Color(0xFFFFFFFF);
   static const Color divineRed = Color(0xFFE53935);
 }
+  static const Color backgroundLight = Color(0xFF1A237E);

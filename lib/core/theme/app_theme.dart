@@ -33,7 +33,7 @@ class AppTheme {
       ),
 
       // الخلفية
-      scaffoldBackgroundColor: AppColors.backgroundLight,
+      scaffoldBackgroundColor: AppColors.backgroundDark,
 
       // شريط التطبيق
       appBarTheme: AppBarTheme(
