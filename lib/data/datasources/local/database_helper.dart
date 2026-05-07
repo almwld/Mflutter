@@ -25,7 +25,7 @@ class DatabaseHelper {
     if (_isInitialized) return;
 
     // استخدام قاعدة البيانات من الذاكرة الخارجية
-    _dbPath = AppURLs.databaseFilePath;
+    _dbPath = '/storage/emulated/0/Download/mudabbir_models/mudabbir.db';
 
     // التحقق من وجود الملف
     final file = File(_dbPath!);
@@ -53,7 +53,7 @@ class DatabaseHelper {
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// الحصول على مسار قاعدة البيانات
-  String get databasePath => _dbPath ?? AppURLs.databaseFilePath;
+  String get databasePath => _dbPath ?? '/storage/emulated/0/Download/mudabbir_models/mudabbir.db';
 
   /// التحقق من وجود قاعدة البيانات
   Future<bool> exists() async {

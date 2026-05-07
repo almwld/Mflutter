@@ -276,7 +276,6 @@ class AppColors {
   static const Color divineAlMuqaddim = Color(0xFFFF9800);
 
   /// صفة المُؤخِّر
-  static const Color divineAlMu'akhkhir = Color(0xFF607D8B);
 
   /// صفة الأول
   static const Color divineAlAwwal = Color(0xFF1E88E5);
@@ -285,7 +284,6 @@ class AppColors {
   static const Color divineAlAkhir = Color(0xFF9E9E9E);
 
   /// صفة الظاهر
-  static const Color divineAz Zahir = Color(0xFFFFD700);
 
   /// صفة الباطن
   static const Color divineAlBatin = Color(0xFF607D8B);
@@ -294,7 +292,6 @@ class AppColors {
   static const Color divineAlAli = Color(0xFF3F51B5);
 
   /// صفة الأعلى
-  static const Color divineAlA'la = Color(0xFFFFFFFF);
 
   /// صفة الكبير
   static const Color divineAlKabir = Color(0xFFFFD700);
@@ -336,25 +333,18 @@ class AppColors {
   static const Color divineAnNaafi = Color(0xFF4CAF50);
 
   /// صفة النور
-  static const Color divineAn Nur = Color(0xFFFFD700);
 
   /// صفة الهادي
-  static const Color divineAl Hadi = Color(0xFF4CAF50);
 
   /// صفة البديع
-  static const Color divineAl Badi = Color(0xFFFF9800);
 
   /// صفة الباقي
-  static const Color divineAl Baqi = Color(0xFF607D8B);
 
   /// صفة الوارث
-  static const Color divineAl Warith = Color(0xFF795548);
 
   /// صفة الرشيد
-  static const Color divineAr Rashid = Color(0xFF3F51B5);
 
   /// صفة الصبور
-  static const Color divineAs Sabur = Color(0xFF9E9E9E);
 
   // ═══════════════════════════════════════════════════════════
   // تدرجات الألوان

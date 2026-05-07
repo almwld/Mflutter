@@ -166,14 +166,14 @@ class QuranLocalDatasource {
         ayahNumber: i,
         text: _getMockVerseText(surahNumber, i, random),
         textWithDiacritics: _getMockVerseText(surahNumber, i, random),
-        type: surah.isMakki ? VerseType.makki : VerseType.madani,
+        type: surah.isMakki ? 0 : 1,
         juzNumber: surah.juzNumber,
         pageNumber: (surahNumber * 2) + (i ~/ 10),
         transliteration: 'Verse $i of Surah $surahNumber',
       ));
     }
 
-    _versesCache[surahNumber] = verses;
+    _versesCache[surahNumber.toString()] = verses;
     return verses;
   }
 

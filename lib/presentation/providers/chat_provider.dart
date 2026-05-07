@@ -59,7 +59,7 @@ class ChatProvider extends ChangeNotifier {
   /// إنشاء البيانات الوصفية
   ChatMetadata _createMetadata(Map<String, dynamic> response) {
     return const ChatMetadata(
-      abjadResult: AbjadResultData(
+      abjadResult: AbjadResult(
         kabir: 786,
         element: 'نور',
         planet: 'شمس',
@@ -91,16 +91,16 @@ class ChatProvider extends ChangeNotifier {
 }
 
 /// =============================================================================
-/// AbjadResultData - بيانات نتيجة الجمل
+/// AbjadResult - بيانات نتيجة الجمل
 /// =============================================================================
 
-class AbjadResultData {
+class AbjadResult {
   final int kabir;
   final String element;
   final String planet;
   final String divineName;
 
-  const AbjadResultData({
+  const AbjadResult({
     required this.kabir,
     required this.element,
     required this.planet,
