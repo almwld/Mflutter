@@ -10,14 +10,15 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   void sendMessage(String text) {
-    _messages.add(ChatMessage(text: text, isUser: true));
+    _messages.add(ChatMessage(content: text, isUser: true, timestamp: DateTime.now()));
     _isLoading = true;
     notifyListeners();
     
     Future.delayed(Duration(seconds: 1), () {
       _messages.add(ChatMessage(
-        text: 'بسم الله الرحمن الرحيم\n\nتم استلام سؤالك: $text',
+        content: 'بسم الله الرحمن الرحيم\n\nتم استلام سؤالك: $text',
         isUser: false,
+        timestamp: DateTime.now(),
         abjadResult: AbjadResult.fromText(text),
       ));
       _isLoading = false;

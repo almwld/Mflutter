@@ -50,7 +50,7 @@ class QuranProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _currentVerses = await _datasource.getSurahVerses(surahNumber);
+      _currentVerses = await _datasource.getVersesBySurah(surahNumber);
     } catch (e) {
       _error = e.toString();
     }
@@ -71,7 +71,7 @@ class QuranProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _searchResults = await _datasource.search(query);
+      _searchResults = await _datasource.searchVerses(query);
     } catch (e) {
       _error = e.toString();
     }
@@ -81,12 +81,12 @@ class QuranProvider extends ChangeNotifier {
   }
 
   /// جلب آية عشوائية
-  Future<void> getRandomVerse() async {
+  Future<void> getVerse() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _randomVerse = await _datasource.getRandomVerse();
+      _randomVerse = await _datasource.getVerse();
     } catch (e) {
       _error = e.toString();
     }

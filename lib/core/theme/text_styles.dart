@@ -18,7 +18,7 @@ class TextStyles {
   static TextStyle get appBarTitle => GoogleFonts.cairo(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: AppColors.textOnPrimary,
+        color: AppColors.textPrimary,
         letterSpacing: 0.5,
       );
 
