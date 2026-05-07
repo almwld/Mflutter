@@ -1,3 +1,5 @@
+import 'abjad_result.dart';
+
 class ChatMessage {
   final String content;
   final bool isUser;

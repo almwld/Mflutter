@@ -1,31 +1,36 @@
 import 'dart:ui';
 
 class AppColors {
-  // Primary Navy
+  // Navy
   static const Color primaryNavy = Color(0xFF1A237E);
   static const Color primaryNavyLight = Color(0xFF283593);
   static const Color primaryNavyDark = Color(0xFF0D1B2A);
+  static const Color deepBackground = Color(0xFF0A0E27);
+  static const Color backgroundDark = Color(0xFF0A0E27);
   
-  // Primary Gold
+  // Gold
   static const Color primaryGold = Color(0xFFFFD700);
   static const Color primaryGoldLight = Color(0xFFFFF176);
   static const Color primaryGoldDark = Color(0xFFFFA500);
   
   // Text
-  static const Color textPrimaryDark = Color(0xFFFFFFFF);
-  static const Color textSecondaryDark = Color(0xFFB0BEC5);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFFB0BEC5);
   static const Color textGold = Color(0xFFFFD700);
+  static const Color textPrimaryDark = Color(0xFFFFFFFF);
+  static const Color textSecondaryDark = Color(0xFFB0BEC5);
+  static const Color textOnPrimary = Color(0xFFFFFFFF);
   
-  // Aliases for theme
+  // Cards
+  static const Color cardBackground = Color(0xFF1A1A2E);
+  static const Color cardBackgroundDark = Color(0xFF16213E);
+  
+  // Aliases
   static const Color primary = Color(0xFF1A237E);
   static const Color primaryDark = Color(0xFF0D1B2A);
   static const Color primaryLight = Color(0xFF283593);
   static const Color secondary = Color(0xFFFFD700);
   static const Color secondaryLight = Color(0xFFFFF176);
-  
-  // Background
   static const Color background = Color(0xFF0A0E27);
   static const Color surface = Color(0xFF16213E);
   static const Color card = Color(0xFF1A1A2E);
