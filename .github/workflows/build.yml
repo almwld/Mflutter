@@ -28,7 +28,7 @@ jobs:
           -keep class org.tensorflow.lite.gpu.** { *; }
           -dontwarn org.tensorflow.lite.**
           PG
-      - name: Inject ProGuard into build.gradle.kts
+      - name: Inject ProGuard
         run: |
           python3 -c "
           with open('android/app/build.gradle.kts','r') as f: c = f.read()
@@ -43,8 +43,25 @@ jobs:
           }''')
           with open('android/app/build.gradle.kts','w') as f: f.write(c)
           "
-      - run: flutter build apk --release
+      # Split APK + API pre-build
+      - name: Build Split APKs
+        run: flutter build apk --release --split-per-abi
+      - name: Build API documentation
+        run: |
+          mkdir -p api_docs
+          echo "# Mudabbir API v1" > api_docs/index.md
+          echo "## Endpoints" >> api_docs/index.md
+          echo "- GET /quran/search?q=" >> api_docs/index.md
+          echo "- POST /abjad/calculate" >> api_docs/index.md
+          echo "- GET /models/info" >> api_docs/index.md
       - uses: actions/upload-artifact@v4
         with:
-          name: mudabbir-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: mudabbir-apks
+          path: |
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mudabbir-api-docs
+          path: api_docs/
