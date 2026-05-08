@@ -43,34 +43,20 @@ jobs:
           }''')
           with open('android/app/build.gradle.kts','w') as f: f.write(c)
           "
-      # Split APK + API pre-build
       - name: Build Split APKs
         run: flutter build apk --release --split-per-abi
-      - name: Build API documentation
-        run: |
-          mkdir -p api_docs
-          echo "# Mudabbir API v1" > api_docs/index.md
-          echo "## Endpoints" >> api_docs/index.md
-          echo "- GET /quran/search?q=" >> api_docs/index.md
-          echo "- POST /abjad/calculate" >> api_docs/index.md
-          echo "- GET /models/info" >> api_docs/index.md
-      - uses: actions/upload-artifact@v4
+      - name: Upload arm64-v8a
+        uses: actions/upload-artifact@v4
         with:
-          name: mudabbir-apks
-          path: |
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
-      - uses: actions/upload-artifact@v4
+          name: app-arm64-v8a
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      - name: Upload armeabi-v7a
+        uses: actions/upload-artifact@v4
         with:
-          name: mudabbir-api-docs
-          path: api_docs/
-
-      - name: Generate Launcher Icon
-        run: |
-          # استخدام imagemagick لتحويل SVG إلى PNG
-          sudo apt-get install -y imagemagick 2>/dev/null || true
-          convert assets/icon.svg -resize 1024x1024 assets/icon.png 2>/dev/null || echo "Icon will be generated locally"
-          convert assets/icon.svg -resize 1024x1024 assets/icon_foreground.png 2>/dev/null || true
-      - name: Generate App Icons
-        run: flutter pub run flutter_launcher_icons 2>/dev/null || echo "Run locally: flutter pub run flutter_launcher_icons"
+          name: app-armeabi-v7a
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+      - name: Upload x86_64
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-x86_64
+          path: build/app/outputs/flutter-apk/app-x86_64-release.apk
