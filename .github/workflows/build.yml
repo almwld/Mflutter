@@ -13,12 +13,45 @@ jobs:
         with: {flutter-version: '3.29.0', channel: 'stable'}
       - run: flutter create --platforms=android --org com.mudabbir .
       - run: flutter pub get
+      
+      # ضبط minSdk + ndkVersion
       - run: |
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/' android/app/build.gradle.kts
           sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "27.0.12077973"/' android/app/build.gradle.kts
-      # ربط ProGuard + إبقاء tflite
+      
+      # إضافة proguard-rules.pro للمشروع
       - run: |
-          echo "proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> android/app/build.gradle.kts
+          cat > android/app/proguard-rules.pro << 'PROGUARD'
+          -keep class org.tensorflow.lite.** { *; }
+          -keep class org.tensorflow.lite.gpu.** { *; }
+          -dontwarn org.tensorflow.lite.**
+          -dontwarn org.tensorflow.lite.gpu.**
+          -keep class io.flutter.** { *; }
+          PROGUARD
+      
+      # حقن proguard في build.gradle.kts بصيغة Kotlin DSL صحيحة
+      - run: |
+          python3 -c "
+          import re
+          with open('android/app/build.gradle.kts','r') as f:
+              content = f.read()
+          # إضافة proguardFiles داخل release block
+          new_build = '''    buildTypes {
+          release {
+              isMinifyEnabled = true
+              isShrinkResources = true
+              proguardFiles(
+                  getDefaultProguardFile(\"proguard-android-optimize.txt\"),
+                  \"proguard-rules.pro\"
+              )
+          }
+      }'''
+          content = re.sub(r'buildTypes\s*\{[^}]*\}', new_build, content, flags=re.DOTALL)
+          with open('android/app/build.gradle.kts','w') as f:
+              f.write(content)
+          print('ProGuard injected')
+          "
+      
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with: {name: mudabbir-apk, path: build/app/outputs/flutter-apk/app-release.apk}
