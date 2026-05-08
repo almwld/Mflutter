@@ -42,3 +42,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon.png"
+  adaptive_icon_background: "#1A237E"
+  adaptive_icon_foreground: "assets/icon_foreground.png"

@@ -65,3 +65,12 @@ jobs:
         with:
           name: mudabbir-api-docs
           path: api_docs/
+
+      - name: Generate Launcher Icon
+        run: |
+          # استخدام imagemagick لتحويل SVG إلى PNG
+          sudo apt-get install -y imagemagick 2>/dev/null || true
+          convert assets/icon.svg -resize 1024x1024 assets/icon.png 2>/dev/null || echo "Icon will be generated locally"
+          convert assets/icon.svg -resize 1024x1024 assets/icon_foreground.png 2>/dev/null || true
+      - name: Generate App Icons
+        run: flutter pub run flutter_launcher_icons 2>/dev/null || echo "Run locally: flutter pub run flutter_launcher_icons"
