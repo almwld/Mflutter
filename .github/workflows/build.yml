@@ -16,6 +16,9 @@ jobs:
       - run: |
           sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/' android/app/build.gradle.kts
           sed -i 's/ndkVersion = flutter.ndkVersion/ndkVersion = "27.0.12077973"/' android/app/build.gradle.kts
+      # ربط ProGuard + إبقاء tflite
+      - run: |
+          echo "proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'" >> android/app/build.gradle.kts
       - run: flutter build apk --release
       - uses: actions/upload-artifact@v4
         with: {name: mudabbir-apk, path: build/app/outputs/flutter-apk/app-release.apk}
