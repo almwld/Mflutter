@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/models_provider.dart';
+import 'home_screen.dart';
 
 /// =============================================================================
 /// SplashScreen - شاشة البداية
@@ -49,7 +50,9 @@ class _SplashScreenState extends State<SplashScreen>
 
     // الانتقال للشاشة الرئيسية
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/home');
+      Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
     }
   }
 
