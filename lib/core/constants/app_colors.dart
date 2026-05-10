@@ -49,3 +49,9 @@ class AppColors {
   static const Color divineRed = Color(0xFFE53935);
   static const Color backgroundLight = Color(0xFF1A237E);
 }
+
+  static const List<Color> deepGradient = [
+    Color(0xFF0A0E27),
+    Color(0xFF1A237E),
+    Color(0xFF0D1B2A),
+  ];

@@ -15,9 +15,9 @@ import '../widgets/common/loading_indicator.dart';
 class HomeScreen extends StatefulWidget {
   final Function(int) onNavigate;
 
-  const HomeScreen({
+  const HomeScreen({Key? key}) : super(key: key) : super(key: key);
     super.key,
-    required this.onNavigate,
+    
   });
 
   @override
@@ -35,8 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final quranProvider = context.read<QuranProvider>();
     final abjadProvider = context.read<AbjadProvider>();
 
-    await Future.wait([
-      quranProvider.loadSurahs(),
+    /* await Future.wait removed */ //
+      quranProvider.loadSurahs();
       abjadProvider.calculateAbjad('بسم الله الرحمن الرحيم'),
     ]);
   }

@@ -40,3 +40,11 @@ class QuranProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+  Future<void> loadSurahs() async {
+    _isLoading = true;
+    notifyListeners();
+    await Future.delayed(Duration(milliseconds: 500));
+    _isLoading = false;
+    notifyListeners();
+  }
