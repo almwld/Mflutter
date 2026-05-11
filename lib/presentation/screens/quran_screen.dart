@@ -90,7 +90,7 @@ class _QuranScreenState extends State<QuranScreen> {
                 color: AppColors.surface,
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text(v.text, style: TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Amiri')),
+                  child: Text(v["text"], style: TextStyle(color: Colors.white, fontSize: 18, fontFamily: 'Amiri')),
                 ),
               );
             },
