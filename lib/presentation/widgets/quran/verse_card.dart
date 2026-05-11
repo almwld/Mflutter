@@ -149,7 +149,7 @@ class VerseCard extends StatelessWidget {
 /// =============================================================================
 
 class SurahListTile extends StatelessWidget {
-  final Surah surah;
+  final dynamic surah;
   final VoidCallback? onTap;
 
   const SurahListTile({
