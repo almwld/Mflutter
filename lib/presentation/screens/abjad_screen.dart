@@ -414,7 +414,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppColors.goldGradient,
+        gradient: LinearGradient(colors: AppColors.goldGradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
