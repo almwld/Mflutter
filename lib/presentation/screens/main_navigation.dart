@@ -35,7 +35,7 @@ class _MainNavigationState extends State<MainNavigation> {
     switch (_index) {
       case 0: return const ChatScreen();
       case 1: return const QuranScreen();
-      case 2: return const AbjadScreen();
+      case 2: return const AbjadCalculatorScreen();
       default: return const ChatScreen();
     }
   }
