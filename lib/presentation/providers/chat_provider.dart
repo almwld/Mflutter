@@ -4,25 +4,26 @@ import '../../domain/entities/abjad_result.dart';
 
 class ChatProvider extends ChangeNotifier {
   final List<ChatMessage> _messages = [];
-  bool _isLoading = false;
+  bool _loading = false;
 
   List<ChatMessage> get messages => _messages;
-  bool get isLoading => _isLoading;
+  bool get loading => _loading;
 
   void sendMessage(String text) {
-    _messages.add(ChatMessage(content: text, isUser: true, timestamp: DateTime.now()));
-    _isLoading = true;
+    _messages.add(ChatMessage(text: text, isUser: true));
+    _loading = true;
     notifyListeners();
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      final abjad = AbjadResult.fromText(text);
+    Future.delayed(const Duration(seconds: 1), () {
+      final abjadResult = AbjadResult(major: 382, minor: 38, middle: 182, energy: 0.38);
       _messages.add(ChatMessage(
-        content: 'بسم الله الرحمن الرحيم\n\n🔢 جمل السؤال: ${abjad.kabir}\n📖 ﴿أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ﴾ (النساء:82)',
+        text: '📖 قال تعالى: "اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ" (النور:35)\n\n🔢 جمل الآية: 287\n🔬 العلوم: فلك، فيزياء\n🕌 الصفات: النور، العليم',
         isUser: false,
-        timestamp: DateTime.now(),
-        abjadResult: abjad,
+        surahRef: 'النور:35',
+        abjadResult: abjadResult,
+        energy: 0.87,
       ));
-      _isLoading = false;
+      _loading = false;
       notifyListeners();
     });
   }

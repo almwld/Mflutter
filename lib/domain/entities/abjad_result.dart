@@ -1,15 +1,32 @@
 class AbjadResult {
-  final int kabir;
-  final int saghir;
-  final int wasat;
+  final int major;   // جمل كبير
+  final int minor;   // جمل صغير
+  final int middle;  // جمل وسط
+  final String element;
+  final String planet;
+  final String zodiac;
+  final double energy;
 
-  const AbjadResult({required this.kabir, required this.saghir, required this.wasat});
+  const AbjadResult({
+    required this.major,
+    required this.minor,
+    required this.middle,
+    this.element = 'نار',
+    this.planet = 'الشمس',
+    this.zodiac = 'الحمل',
+    this.energy = 0.0,
+  });
 
-  factory AbjadResult.fromText(String text) {
-    int sum = 0;
-    for (int i = 0; i < text.length; i++) {
-      sum += text.codeUnitAt(i);
-    }
-    return AbjadResult(kabir: sum, saghir: sum % 10, wasat: sum % 100);
-  }
+  Map<String, dynamic> toMap() => {
+    'major': major,
+    'minor': minor,
+    'middle': middle,
+    'element': element,
+    'planet': planet,
+    'zodiac': zodiac,
+    'energy': energy,
+  };
+
+  @override
+  String toString() => 'جمل كبير: $major | صغير: $minor | وسط: $middle';
 }

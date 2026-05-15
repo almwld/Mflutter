@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ModelsProvider extends ChangeNotifier {
-  bool _loaded = false;
+  String _selectedModel = 'mudabbir.gguf';
+  final List<String> _availableModels = ['mudabbir.gguf', 'mudabbir_llm.gguf', 'mudabbir.tflite'];
 
-  bool get loaded => _loaded;
+  String get selectedModel => _selectedModel;
+  List<String> get availableModels => _availableModels;
 
-  Future<void> initialize() async {
-    await Future.delayed(const Duration(seconds: 1));
-    _loaded = true;
+  void selectModel(String model) {
+    _selectedModel = model;
     notifyListeners();
   }
 }

@@ -28,8 +28,14 @@ class AIPersonalityService {
   };
 
   static String get activePersonality => _activePersonality;
-  static Map<String, String> get activeConfig => _personalities[_activePersonality]!;
   static List<String> get personalityNames => _personalities.keys.toList();
+
+  // دالة عامة للوصول إلى إعدادات الشخصية
+  static Map<String, String> getPersonalityConfig(String name) {
+    return _personalities[name] ?? _personalities['mudabbir']!;
+  }
+
+  static Map<String, String> get activeConfig => _personalities[_activePersonality]!;
 
   static void switchPersonality(String name) => _activePersonality = name;
 

@@ -22,13 +22,13 @@ class MudabbirApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProvider(create: (_) => QuranProvider()),
-        ChangeNotifierProvider(create: (_) => AbjadProvider()),
-        ChangeNotifierProvider(create: (_) => ModelsProvider()),
-        ChangeNotifierProvider(create: (_) => SovereignChatProvider()),
-        ChangeNotifierProvider(create: (_) => SovereignBackupProvider()),
-        ChangeNotifierProvider(create: (_) => CognitiveShieldProvider()),
+        ChangeNotifierProvider<ChatProvider>(create: (_) => ChatProvider()),
+        ChangeNotifierProvider<QuranProvider>(create: (_) => QuranProvider()),
+        ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider()),
+        ChangeNotifierProvider<ModelsProvider>(create: (_) => ModelsProvider()),
+        ChangeNotifierProvider<SovereignChatProvider>(create: (_) => SovereignChatProvider()),
+        ChangeNotifierProvider<SovereignBackupProvider>(create: (_) => SovereignBackupProvider()),
+        ChangeNotifierProvider<CognitiveShieldProvider>(create: (_) => CognitiveShieldProvider()),
       ],
       child: MaterialApp(
         title: 'مُدَبِّر الْأَسْرَارِ الْعُلْيَا',
