@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/voice_search_widget.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,6 +19,11 @@ class _ChatScreenState extends State<ChatScreen> {
     _controller.clear();
   }
 
+  void _onVoiceResult(String text) {
+    _controller.text = text;
+    _send();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,6 +31,10 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: Text('المحادثة', style: TextStyle(color: AppColors.primaryGold)),
         backgroundColor: AppColors.primaryNavy,
+        actions: [
+          VoiceSearchWidget(onResult: _onVoiceResult),
+          SizedBox(width: 8),
+        ],
       ),
       body: Column(
         children: [
@@ -45,6 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Container(
                         margin: EdgeInsets.all(8),
                         padding: EdgeInsets.all(16),
+                        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
                         decoration: BoxDecoration(
                           color: msg.isUser ? AppColors.primaryNavy : AppColors.surface,
                           borderRadius: BorderRadius.circular(16),
@@ -62,6 +73,8 @@ class _ChatScreenState extends State<ChatScreen> {
             color: AppColors.surface,
             child: Row(
               children: [
+                VoiceSearchWidget(onResult: _onVoiceResult),
+                SizedBox(width: 8),
                 Expanded(
                   child: TextField(
                     controller: _controller,
