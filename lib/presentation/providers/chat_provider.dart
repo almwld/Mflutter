@@ -21,7 +21,6 @@ class ChatProvider extends ChangeNotifier {
     // استخدام OpenRouter - نموذج لغوي حقيقي
     OpenRouterService.chat(
       text,
-      model: 'google/gemma-2-9b-it:free',
     ).then((response) {
       _messages.add(ChatMessage(
         content: response,
