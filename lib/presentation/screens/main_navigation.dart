@@ -5,6 +5,8 @@ import 'abjad_screen.dart';
 import 'miracles_screen.dart';
 import 'stats_screen.dart';
 import 'compare_screen.dart';
+import 'help_screen.dart';
+import 'about_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -32,6 +34,8 @@ class _MainNavigationState extends State<MainNavigation> {
           NavigationDestination(icon: Icon(Icons.auto_awesome), label: 'إعجاز'),
           NavigationDestination(icon: Icon(Icons.bar_chart), label: 'إحصائيات'),
           NavigationDestination(icon: Icon(Icons.compare_arrows), label: 'مقارنة'),
+          NavigationDestination(icon: Icon(Icons.help), label: 'مساعدة'),
+          NavigationDestination(icon: Icon(Icons.info), label: 'حول'),
         ],
       ),
     );
@@ -45,6 +49,8 @@ class _MainNavigationState extends State<MainNavigation> {
       case 3: return const MiraclesScreen();
       case 4: return const StatsScreen();
       case 5: return const CompareScreen();
+      case 6: return const HelpScreen();
+      case 7: return const AboutScreen();
       default: return const ChatScreen();
     }
   }
