@@ -1,49 +1,43 @@
 name: mudabbir_al_asrar
 description: مُدَبِّر الْأَسْرَارِ الْعُلْيَا - تطبيق قرآني متكامل
 version: 1.0.0+1
+publish_to: none
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
 
 dependencies:
-  http: ^1.2.0
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-
-  # State Management
   provider: ^6.1.1
-
-  # Storage & Database
   path_provider: ^2.1.2
   shared_preferences: ^2.2.2
   sqflite: ^2.3.2
-
-  # TFLite for AI Models
   tflite_flutter: ^0.10.4
-
-  # UI Components
   google_fonts: ^6.1.0
   fl_chart: ^0.66.0
   animations: ^2.0.10
   shimmer: ^2.0.0
-
-  # Utilities
   intl: ^0.19.0
   permission_handler: ^11.3.0
-  uuid: ^4.3.3
+  http: ^1.2.0
 
 dev_dependencies:
-  http: ^1.2.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
-  flutter_launcher_icons: ^0.14.1
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/data/
-  assets:
     - assets/icon.png
+    - assets/data/
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+  adaptive_icon_foreground: "assets/icon.png"
