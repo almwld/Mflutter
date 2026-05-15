@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../../domain/entities/abjad_result.dart';
 
 class AbjadProvider extends ChangeNotifier {
-  AbjadResult? _lastResult;
+  AbjadResult? _result;
 
-  AbjadResult? get lastResult => _lastResult;
+  AbjadResult? get result => _result;
 
-  void calculateAbjad(String text) {
-    _lastResult = AbjadResult.fromText(text);
+  void calculate(String text) {
+    _result = AbjadResult.fromText(text);
     notifyListeners();
   }
 }
