@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'quran_screen.dart';
 import 'abjad_screen.dart';
+import 'miracles_screen.dart';
+import 'tafsir_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
@@ -26,6 +28,8 @@ class _MainNavigationState extends State<MainNavigation> {
           NavigationDestination(icon: Icon(Icons.chat), label: 'محادثة'),
           NavigationDestination(icon: Icon(Icons.book), label: 'قرآن'),
           NavigationDestination(icon: Icon(Icons.calculate), label: 'جمل'),
+          NavigationDestination(icon: Icon(Icons.auto_awesome), label: 'إعجاز'),
+          NavigationDestination(icon: Icon(Icons.menu_book), label: 'تفسير'),
         ],
       ),
     );
@@ -36,6 +40,8 @@ class _MainNavigationState extends State<MainNavigation> {
       case 0: return const ChatScreen();
       case 1: return const QuranScreen();
       case 2: return const AbjadCalculatorScreen();
+      case 3: return const MiraclesScreen();
+      case 4: return TafsirScreen(verseText: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', surahName: 'الفاتحة', ayahNumber: 1);
       default: return const ChatScreen();
     }
   }
