@@ -8,7 +8,7 @@ class ChatMessage {
   final AbjadResult? abjadResult;
   final double? energy;
 
-  const ChatMessage({
+  ChatMessage({
     required this.text,
     required this.isUser,
     DateTime? timestamp,
@@ -16,13 +16,4 @@ class ChatMessage {
     this.abjadResult,
     this.energy,
   }) : timestamp = timestamp ?? DateTime.now();
-
-  Map<String, dynamic> toMap() => {
-    'text': text,
-    'isUser': isUser ? 1 : 0,
-    'timestamp': timestamp.toIso8601String(),
-    'surahRef': surahRef,
-    'abjadResult': abjadResult?.toMap(),
-    'energy': energy,
-  };
 }
