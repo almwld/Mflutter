@@ -1,15 +1,11 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/sensor_service.dart';
-import '../painters/ayah_visual_painter.dart';
-import '../painters/gold_fluid_sim.dart';
-import '../painters/nebula_particles.dart';
-import '../painters/kinetic_resonance.dart';
-import '../painters/gravitational_lensing.dart';
-import '../painters/mesh_pulse.dart';
 
+/// شاشة القرآن الكريم — نسخة مبسطة بدون تأثيرات خارجية
 class QuranScreen extends StatefulWidget {
   const QuranScreen({super.key});
   @override
@@ -17,51 +13,37 @@ class QuranScreen extends StatefulWidget {
 }
 
 class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin {
-  List<Ayah> _ayahs = [];
   Map<int, List<Ayah>> _bySurah = {};
-  int _selectedSurah = 1;
-  int _currentPage = 0;
+  int _selectedSurah = 1, _currentPage = 0;
   bool _loading = true;
-
-  final SensorService _sensor = SensorService();
-  late AnimationController _breathController;
-  double _scrollVelocity = 0.0;
-
-  // الأنظمة البصرية
-  final GoldFluidSimulation _fluidSim = GoldFluidSimulation();
-  final NebulaParticleSystem _nebulaSystem = NebulaParticleSystem();
-  final KineticResonanceSystem _resonanceSystem = KineticResonanceSystem();
-  final GravitationalLensingEffect _lensingEffect = GravitationalLensingEffect();
-  final MeshPulseSystem _meshPulseSystem = MeshPulseSystem();
+  final _sensor = SensorService();
+  late final _breathCtrl = AnimationController(duration: const Duration(seconds: 4), vsync: this)..repeat();
 
   @override
   void initState() {
     super.initState();
-    _breathController = AnimationController(duration: const Duration(seconds: 4), vsync: this)..repeat();
     _sensor.startListening();
-    _loadQuran();
+    _load();
   }
 
-  Future<void> _loadQuran() async {
+  Future<void> _load() async {
     _bySurah = await QuranLoaderService.loadBySurah();
-    _ayahs = await QuranLoaderService.loadAllAyahs();
     if (mounted) setState(() => _loading = false);
   }
 
   @override
   void dispose() {
-    _breathController.dispose();
+    _breathCtrl.dispose();
     _sensor.stopListening();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(backgroundColor: AppColors.background, body: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)));
-    }
+    if (_loading) return const Scaffold(backgroundColor: AppColors.background, body: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)));
 
     final surahs = _bySurah.keys.toList()..sort();
+    final ayahs = _bySurah[_selectedSurah] ?? [];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -71,84 +53,52 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.list, color: AppColors.primaryGold),
-            onSelected: (surahNum) => setState(() { _selectedSurah = surahNum; _currentPage = 0; }),
-            itemBuilder: (_) => surahs.map((s) {
-              final verses = _bySurah[s]!;
-              return PopupMenuItem(value: s, child: Text('${verses.first.surahName} (${verses.length} آية)', style: const TextStyle(color: Colors.white)));
-            }).toList(),
+            onSelected: (s) => setState(() { _selectedSurah = s; _currentPage = 0; }),
+            itemBuilder: (_) => surahs.map((s) => PopupMenuItem(value: s, child: Text('${_bySurah[s]!.first.surahName} (${_bySurah[s]!.length})', style: const TextStyle(color: Colors.white)))).toList(),
           ),
         ],
       ),
-      body: AnimatedBuilder(
-        animation: _breathController,
-        builder: (context, _) {
-          final currentAyahs = _bySurah[_selectedSurah] ?? [];
-          if (currentAyahs.isEmpty) return const Center(child: Text('لا توجد آيات', style: TextStyle(color: Colors.white54)));
-
-          return PageView.builder(
-            itemCount: currentAyahs.length,
-            onPageChanged: (page) => setState(() => _currentPage = page),
-            itemBuilder: (context, index) => _buildAyahCard(currentAyahs[index]),
-          );
-        },
-      ),
-      bottomNavigationBar: _bySurah[_selectedSurah] != null
-          ? Container(padding: const EdgeInsets.all(8), color: AppColors.surface,
-              child: Text('${_currentPage + 1} / ${_bySurah[_selectedSurah]!.length}', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primaryGold)))
-          : null,
+      body: ayahs.isEmpty
+          ? const Center(child: Text('لا توجد آيات', style: TextStyle(color: Colors.white54)))
+          : PageView.builder(
+              itemCount: ayahs.length,
+              onPageChanged: (p) => _currentPage = p,
+              itemBuilder: (_, i) {
+                final a = ayahs[i];
+                return _buildVerseCard(a);
+              },
+            ),
+      bottomNavigationBar: Container(padding: const EdgeInsets.all(8), color: AppColors.surface, child: Text('${_currentPage + 1} / ${ayahs.length}', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primaryGold))),
     );
   }
 
-  Widget _buildAyahCard(Ayah ayah) {
-    // تحديث تأثير الجاذبية للآيات الثقيلة
-    _lensingEffect.setMassCenter(Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height / 2), ayah.jummal.toDouble());
-
+  Widget _buildVerseCard(Ayah a) {
     return Card(
       margin: const EdgeInsets.all(12),
-      color: Colors.transparent,
-      elevation: 0,
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: CustomPaint(
-              painter: AyahVisualPainter(
-                ayahText: ayah.text,
-                jummal: ayah.jummal,
-                axisType: ayah.axisType,
-                energyLevel: ayah.energyLevel,
-                pitch: _sensor.pitch,
-                roll: _sensor.roll,
-                breathPhase: _breathController.value * 2 * 3.14159,
-                scrollVelocity: _scrollVelocity,
-                ambientLight: 0.5,
-                longPressPosition: null,
-                relatedWordPositions: null,
-                voiceAmplitude: 0.0,
-                voiceFrequency: 440.0,
-                fluidSim: _fluidSim,
-                nebulaSystem: _nebulaSystem,
-                resonanceSystem: _resonanceSystem,
-                lensingEffect: _lensingEffect,
-                meshPulseSystem: _meshPulseSystem,
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Text(
+                    a.text,
+                    style: const TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'Amiri', fontWeight: FontWeight.bold, height: 1.8),
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                  ),
+                ),
               ),
-              size: Size.infinite,
             ),
-          ),
-          Positioned(
-            bottom: 16, right: 16,
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text('${ayah.surahName} - ${ayah.ayahNumber}', style: const TextStyle(color: AppColors.primaryGold, fontSize: 14)),
-              Text('جمل: ${ayah.jummal} | محور: ${ayah.axisType == 'cosmic' ? '🌌 كوني' : ayah.axisType == 'tranquil' ? '🌙 سكينة' : '📐 حساب'}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-            ]),
-          ),
-          Positioned(
-            top: 12, left: 12,
-            child: Container(width: 4, height: 100, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: Colors.white.withAlpha(20)),
-              child: Align(alignment: Alignment.bottomCenter,
-                child: Container(height: 100 * ayah.energyLevel, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), gradient: const LinearGradient(colors: [AppColors.primaryGold, Colors.orange]))))),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text('${a.surahName} - الآية ${a.ayahNumber}', style: const TextStyle(color: AppColors.primaryGold, fontSize: 14)),
+            Text('جمل: ${a.jummal} | محور: ${a.axisType == 'cosmic' ? '🌌 كوني' : a.axisType == 'tranquil' ? '🌙 سكينة' : '📐 حساب'}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+          ],
+        ),
       ),
     );
   }
