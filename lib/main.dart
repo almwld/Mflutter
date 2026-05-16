@@ -8,6 +8,7 @@ import 'presentation/providers/models_provider.dart';
 import 'presentation/providers/sovereign_chat_provider.dart';
 import 'presentation/providers/sovereign_backup_provider.dart';
 import 'presentation/providers/cognitive_shield_provider.dart';
+import 'presentation/providers/training_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 
 void main() {
@@ -29,6 +30,7 @@ class MudabbirApp extends StatelessWidget {
         ChangeNotifierProvider<SovereignChatProvider>(create: (_) => SovereignChatProvider()),
         ChangeNotifierProvider<SovereignBackupProvider>(create: (_) => SovereignBackupProvider()),
         ChangeNotifierProvider<CognitiveShieldProvider>(create: (_) => CognitiveShieldProvider()),
+        ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()),
       ],
       child: MaterialApp(
         title: 'مُدَبِّر الْأَسْرَارِ الْعُلْيَا',

@@ -1,6 +1,6 @@
 name: mudabbir_al_asrar
-description: مُدَبِّر الْأَسْرَارِ الْعُلْيَا - تطبيق قرآني متكامل
-version: 1.0.0+66
+description: مُدَبِّر الْأَسْرَارِ الْعُلْيَا - نظام قرآني متكامل مع Python AI
+version: 1.0.0+70
 publish_to: none
 
 environment:
@@ -19,6 +19,9 @@ dependencies:
   flutter_launcher_icons: ^0.13.1
   sensors_plus: ^4.0.2
   vibration: ^1.9.0
+  python_ffi: ^0.3.1
+  ffi: ^2.1.0
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +33,9 @@ flutter:
   assets:
     - assets/icon.png
     - assets/quran_full.json
+    - assets/python/
+    - assets/python/numpy/
+    - assets/models/
 
 flutter_launcher_icons:
   android: true

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'chat_screen.dart';
 import 'quran_screen.dart';
 import 'abjad_screen.dart';
+import 'training_screen.dart';
 import 'miracles_screen.dart';
 import 'stats_screen.dart';
 import 'compare_screen.dart';
@@ -66,6 +67,7 @@ class MoreScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF0A0E27),
       appBar: AppBar(title: const Text('المزيد', style: TextStyle(color: Color(0xFFFFD700))), backgroundColor: const Color(0xFF1A237E)),
       body: GridView.count(crossAxisCount: 3, padding: const EdgeInsets.all(12), children: [
+        _buildTile(context, '🧠 تدريب', Icons.model_training, const TrainingScreen()),
         _buildTile(context, 'إعجاز', Icons.auto_awesome, const MiraclesScreen()),
         _buildTile(context, 'إحصائيات', Icons.bar_chart, const StatsScreen()),
         _buildTile(context, 'مقارنة', Icons.compare_arrows, const CompareScreen()),
