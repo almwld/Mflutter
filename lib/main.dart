@@ -10,9 +10,16 @@ import 'presentation/providers/sovereign_backup_provider.dart';
 import 'presentation/providers/cognitive_shield_provider.dart';
 import 'presentation/providers/training_provider.dart';
 import 'presentation/screens/splash_screen.dart';
+import 'services/ollama_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // تشغيل Ollama تلقائياً
+  OllamaService().startServer().then((running) {
+    debugPrint(running ? '✅ Ollama جاهز' : '⚠️ Ollama غير متاح');
+  });
+  
   runApp(const MudabbirApp());
 }
 
