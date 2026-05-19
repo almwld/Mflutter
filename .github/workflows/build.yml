@@ -24,17 +24,11 @@ jobs:
           flutter-version: '3.29.0'
           channel: 'stable'
 
-      - name: Clean Gradle Cache
-        run: |
-          cd android
-          ./gradlew clean
-          cd ..
+      - name: Install dependencies
+        run: flutter pub get
 
       - name: Build APK
-        run: |
-          flutter clean
-          flutter pub get
-          flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi
           
       - name: Upload APKs
         uses: actions/upload-artifact@v4
