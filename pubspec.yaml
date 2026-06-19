@@ -1,0 +1,46 @@
+name: mudabbir_al_asrar
+description: مُدَبِّر الْأَسْرَارِ الْعُلْيَا
+version: 1.0.96
+publish_to: none
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  google_fonts: ^6.2.1
+  http: ^1.2.2
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.2
+  sqflite: ^2.4.0
+  encrypt: ^5.0.3
+  sensors_plus: ^6.0.1
+  share_plus: ^10.0.2
+  audioplayers: ^6.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/unified_quran.json
+    - assets/all_knowledge.json
+  fonts:
+    - family: Musnad
+      fonts:
+        - asset: assets/fonts/MudabbirMusnad.ttf
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+
+  # صور المصحف
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/icon.png"
+  min_sdk_android: 21
