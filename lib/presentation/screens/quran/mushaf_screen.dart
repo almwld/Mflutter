@@ -1,5 +1,7 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import '../../../services/page_builder_service.dart';
+import '../../../presentation/providers/theme_provider.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../domain/models/quran_page.dart';
 import '../../widgets/surah_banner.dart';
@@ -171,8 +173,8 @@ class _MushafScreenState extends State<MushafScreen> {
                         textDirection: TextDirection.rtl,
                         text: TextSpan(
                           style: const TextStyle(
-                            fontFamily: 'Amiri',
-                            fontSize: 19,
+                            fontFamily: Provider.of<ThemeProvider>(context).fontFamily,
+                            fontSize: Provider.of<ThemeProvider>(context).fontSize,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF2C1810),
                             height: 2.0,

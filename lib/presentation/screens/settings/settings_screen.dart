@@ -7,7 +7,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
+    final theme = context.watch<ThemeProvider>();
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -18,30 +18,28 @@ class SettingsScreen extends StatelessWidget {
           SwitchListTile(
             title: const Text('الوضع الليلي', style: TextStyle(color: Colors.white)),
             subtitle: const Text('ذهبي × كحلي', style: TextStyle(color: Colors.white54)),
-            value: themeProvider.themeMode == ThemeMode.dark,
+            value: theme.isDark,
             activeColor: const Color(0xFFFFD700),
-            onChanged: (_) => themeProvider.toggleTheme(),
+            onChanged: (_) => theme.toggleTheme(),
           ),
           const Divider(color: Colors.white12),
 
-          _section('📖 القرآن'),
-          _tile('نمط العرض', 'عثماني ذهبي'),
-          _tile('حجم الخط', '22'),
-          _tile('عدد الصفحات', '604'),
+          _section('🔤 الخط'),
+          _fontOption(context, theme, 'Amiri', 'أميري — الخط الافتراضي'),
+          _fontOption(context, theme, 'Musnad', '𐩱 المسند اليمني'),
+          const Divider(color: Colors.white12),
+
+          _section('📏 حجم الخط'),
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            IconButton(icon: const Icon(Icons.remove, color: Color(0xFFFFD700)), onPressed: () => theme.setFontSize(theme.fontSize - 2)),
+            Text('${theme.fontSize.toInt()}', style: const TextStyle(color: Color(0xFFFFD700), fontSize: 20)),
+            IconButton(icon: const Icon(Icons.add, color: Color(0xFFFFD700)), onPressed: () => theme.setFontSize(theme.fontSize + 2)),
+          ]),
           const Divider(color: Colors.white12),
 
           _section('🤖 النظام'),
-          _tile('عدد الوكلاء', '127'),
-          _tile('المعرفة', '658 مصطلح'),
-          _tile('الآيات', '6236'),
-          _tile('حالة التدريب', 'نشط — 127 وكيل'),
-          const Divider(color: Colors.white12),
-
-          _section('ℹ️ حول'),
-          _tile('مُدَبِّر', 'نظام ذكاء قرآني متكامل'),
-          _tile('الإصدار', '1.0.123'),
-          _tile('المصدر', 'القرآن الكريم'),
-          _tile('GitHub', 'github.com/almwld/Mflutter'),
+          _tile('الوكلاء', '127'),
+          _tile('الإصدار', '1.0.154'),
         ],
       ),
     );
@@ -57,7 +55,16 @@ class SettingsScreen extends StatelessWidget {
   Widget _tile(String title, String subtitle) {
     return ListTile(
       title: Text(title, style: const TextStyle(color: Colors.white)),
-      trailing: Text(subtitle, style: const TextStyle(color: Color(0xFFFFD700), fontSize: 13)),
+      trailing: Text(subtitle, style: const TextStyle(color: Color(0xFFFFD700))),
+    );
+  }
+
+  Widget _fontOption(BuildContext context, ThemeProvider theme, String font, String label) {
+    final isActive = theme.fontFamily == font;
+    return ListTile(
+      leading: Icon(isActive ? Icons.check_circle : Icons.radio_button_unchecked, color: isActive ? const Color(0xFFFFD700) : Colors.white54),
+      title: Text(label, style: TextStyle(color: isActive ? const Color(0xFFFFD700) : Colors.white54, fontFamily: font)),
+      onTap: () => theme.setFont(font),
     );
   }
 }
