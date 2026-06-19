@@ -1,29 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
-
-// الثيمات
 import 'core/themes/app_theme.dart';
-
-// Providers
-import 'presentation/providers/chat_provider.dart';
+import 'presentation/providers/theme_provider.dart';
 import 'presentation/providers/quran_provider.dart';
 import 'presentation/providers/abjad_provider.dart';
+import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/models_provider.dart';
-import 'presentation/providers/theme_provider.dart';
-import 'presentation/providers/training_provider.dart';
 import 'presentation/providers/search_provider.dart';
 import 'presentation/providers/insight_provider.dart';
 import 'presentation/providers/sovereign_chat_provider.dart';
 import 'presentation/providers/sovereign_backup_provider.dart';
 import 'presentation/providers/cognitive_shield_provider.dart';
-
-// الشاشة الرئيسية
 import 'presentation/screens/splash_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MudabbirApp());
 }
 
@@ -34,12 +26,11 @@ class MudabbirApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => QuranProvider()),
         ChangeNotifierProvider(create: (_) => AbjadProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => ModelsProvider()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => TrainingProvider()),
         ChangeNotifierProvider(create: (_) => SearchProvider()),
         ChangeNotifierProvider(create: (_) => InsightProvider()),
         ChangeNotifierProvider(create: (_) => SovereignChatProvider()),
@@ -47,23 +38,23 @@ class MudabbirApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CognitiveShieldProvider()),
       ],
       child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
+        builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'مُدَبِّر',
+            title: 'مُدَبِّر الْأَسْرَارِ الْعُلْيَا',
             debugShowCheckedModeBanner: false,
             locale: const Locale('ar', 'SA'),
-            supportedLocales: const [Locale('ar', 'SA')],
             localizationsDelegates: const [
-              DefaultMaterialLocalizations.delegate,
-              DefaultWidgetsLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
             ],
-            builder: (context, child) => Directionality(
-              textDirection: TextDirection.rtl,
-              child: child!,
-            ),
-            themeMode: themeProvider.themeMode,
+            supportedLocales: const [
+              Locale('ar', 'SA'),
+              Locale('en', 'US'),
+            ],
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
             home: const SplashScreen(),
           );
         },
