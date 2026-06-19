@@ -36,7 +36,9 @@ jobs:
         run: flutter pub get
 
       - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
+        run: |
+          dart pub global activate flutter_launcher_icons
+          dart pub global run flutter_launcher_icons:main
 
       - name: Copy icon to mipmap
         run: |
