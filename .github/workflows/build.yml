@@ -32,13 +32,16 @@ jobs:
           sed -i 's/compileSdk = .*/compileSdk = 35/' android/app/build.gradle.kts
           sed -i '/compileSdk/a\    ndkVersion = "27.0.12077973"' android/app/build.gradle.kts
 
-      - name: Copy icon
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: Copy icon to mipmap
         run: |
           mkdir -p android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}
           for d in hdpi mdpi xhdpi xxhdpi xxxhdpi; do cp assets/icon.png android/app/src/main/res/mipmap-$d/ic_launcher.png; done
-
-      - name: Install dependencies
-        run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release --split-per-abi
