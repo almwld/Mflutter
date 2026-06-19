@@ -173,8 +173,8 @@ class _MushafScreenState extends State<MushafScreen> {
                         textDirection: TextDirection.rtl,
                         text: TextSpan(
                           style: const TextStyle(
-                            fontFamily: Provider.of<ThemeProvider>(context).fontFamily,
-                            fontSize: Provider.of<ThemeProvider>(context).fontSize,
+                            fontFamily: 'Amiri',
+                            fontSize: 19,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF2C1810),
                             height: 2.0,
