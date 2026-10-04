@@ -26,7 +26,7 @@ class SensorService {
       _yaw = event.z.clamp(-1.0, 1.0);
     });
 
-    _accelSub = accelerometerEventStream().listen((event) {
+    _accelSub = accelerometerEventStream().listen((_) {
       // The stream is intentionally consumed only for real sensor activity.
       // No synthetic breathing phase is derived from wall-clock time.
     });
