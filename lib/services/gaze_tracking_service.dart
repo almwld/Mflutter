@@ -80,7 +80,7 @@ class GazeTrackingService {
       _last = GazeEstimate(
         horizontal: (angles.yaw / 180.0).clamp(-1.0, 1.0),
         vertical: (angles.pitch / 180.0).clamp(-1.0, 1.0),
-        confidence: 1.0,
+        confidence: angles.confidence,
         faceDetected: true,
         yawDegrees: angles.yaw,
         pitchDegrees: angles.pitch,
@@ -127,12 +127,14 @@ class GazeTrackingService {
 
   List<int> _cameraImageToRgb(CameraImage image) {
     if (image.format.group == ImageFormatGroup.bgra8888) {
-      final bytes = image.planes.first.bytes;
+      final plane = image.planes.first;
+      final bytes = plane.bytes;
       final out = List<int>.filled(image.width * image.height * 3, 0);
       for (var y = 0; y < image.height; y++) {
         for (var x = 0; x < image.width; x++) {
-          final s = y * image.planes.first.bytesPerRow + x * 4;
+          final s = y * plane.bytesPerRow + x * 4;
           final d = (y * image.width + x) * 3;
+          if (s + 3 >= bytes.length) continue;
           out[d] = bytes[s + 2];
           out[d + 1] = bytes[s + 1];
           out[d + 2] = bytes[s];
@@ -141,31 +143,51 @@ class GazeTrackingService {
       return out;
     }
     if (image.planes.isEmpty) throw StateError('YUV frame planes غير صالحة.');
-    final yPlane = image.planes[0];
-    final yBytes = yPlane.bytes;
-    final uvPlane = image.planes.length >= 2 ? image.planes[1] : image.planes[0];
-    final uvBytes = uvPlane.bytes;
-    final isNv21 = image.planes.length == 1;
     final out = List<int>.filled(image.width * image.height * 3, 0);
+    final isNv21 = image.format.group == ImageFormatGroup.nv21 ||
+        (image.planes.length == 1 && image.planes.first.bytes.length >= image.width * image.height * 3 ~/ 2);
+    if (isNv21) {
+      final bytes = image.planes.first.bytes;
+      final ySize = image.width * image.height;
+      final uvStart = ySize;
+      for (var y = 0; y < image.height; y++) {
+        for (var x = 0; x < image.width; x++) {
+          final yp = y * image.width + x;
+          final uv = uvStart + (y >> 1) * image.width + (x & ~1);
+          if (yp >= bytes.length || uv + 1 >= bytes.length) continue;
+          final yy = bytes[yp] - 16;
+          final v = bytes[uv] - 128;
+          final u = bytes[uv + 1] - 128;
+          _writeRgb(out, (y * image.width + x) * 3, yy, u, v);
+        }
+      }
+      return out;
+    }
+    if (image.planes.length < 3) {
+      throw StateError('YUV420 يتطلب ثلاث planes أو NV21.');
+    }
+    final yPlane = image.planes[0];
+    final uPlane = image.planes[1];
+    final vPlane = image.planes[2];
     for (var y = 0; y < image.height; y++) {
       for (var x = 0; x < image.width; x++) {
-        final yp = y * yPlane.bytesPerRow + x;
-        final uvRow = (y >> 1) * uvPlane.bytesPerRow;
-        final uvCol = (x >> 1) * 2;
-        final up = isNv21 ? uvRow + uvCol : uvRow + uvCol;
-        final first = uvBytes[up] - 128;
-        final second = uvBytes[up + 1] - 128;
-        final u = (isNv21 ? second : first);
-        final v = (isNv21 ? first : second);
-        final yy = yBytes[yp] - 16;
-        final r = (1.164 * yy + 1.596 * v).round().clamp(0, 255);
-        final g = (1.164 * yy - 0.392 * u - 0.813 * v).round().clamp(0, 255);
-        final b = (1.164 * yy + 2.017 * u).round().clamp(0, 255);
-        final d = (y * image.width + x) * 3;
-        out[d] = r; out[d + 1] = g; out[d + 2] = b;
+        final yp = y * yPlane.bytesPerRow + x * yPlane.bytesPerPixel;
+        final up = (y >> 1) * uPlane.bytesPerRow + (x >> 1) * uPlane.bytesPerPixel;
+        final vp = (y >> 1) * vPlane.bytesPerRow + (x >> 1) * vPlane.bytesPerPixel;
+        if (yp >= yPlane.bytes.length || up >= uPlane.bytes.length || vp >= vPlane.bytes.length) continue;
+        final yy = yPlane.bytes[yp] - 16;
+        final u = uPlane.bytes[up] - 128;
+        final v = vPlane.bytes[vp] - 128;
+        _writeRgb(out, (y * image.width + x) * 3, yy, u, v);
       }
     }
     return out;
+  }
+
+  void _writeRgb(List<int> out, int d, int yy, int u, int v) {
+    out[d] = (1.164 * yy + 1.596 * v).round().clamp(0, 255);
+    out[d + 1] = (1.164 * yy - 0.392 * u - 0.813 * v).round().clamp(0, 255);
+    out[d + 2] = (1.164 * yy + 2.017 * u).round().clamp(0, 255);
   }
 
   Future<void> dispose() => _detector.close();
