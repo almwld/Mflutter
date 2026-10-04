@@ -89,9 +89,9 @@ class ChatBubble extends StatelessWidget {
                 ],
               ],
             ),
-            if (showMetadata && message.metadata != null) ...[
+            if (showMetadata && message.metadata.isNotEmpty) ...[
               const SizedBox(height: 8),
-              _buildMetadata(message.metadata!),
+              _buildMetadata(message.metadata),
             ],
           ],
         ),
