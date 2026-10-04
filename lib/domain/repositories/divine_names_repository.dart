@@ -1,5 +1,7 @@
 import '../entities/divine_name.dart';
 
+enum AttributeType { self, action, names }
+
 abstract class DivineNamesRepository {
   Future<List<DivineName>> getAllNames();
   Future<DivineName> getName(int number);
