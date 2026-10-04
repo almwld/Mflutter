@@ -20,15 +20,12 @@ class _VoiceSearchWidgetState extends State<VoiceSearchWidget> with SingleTicker
   }
 
   void _toggleListening() {
-    setState(() => _isListening = !_isListening);
-    if (_isListening) {
-      Future.delayed(Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() => _isListening = false);
-          widget.onResult('بحث صوتي: القرآن الكريم');
-        }
-      });
-    }
+    if (_isListening) return;
+    setState(() => _isListening = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('البحث الصوتي يحتاج محرك تعرف صوتي مهيأ على الجهاز.')),
+    );
+    setState(() => _isListening = false);
   }
 
   @override
