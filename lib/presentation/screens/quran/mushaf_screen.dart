@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
+import '../../../services/reading_progress_service.dart';
 import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
 
@@ -42,6 +43,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
     _pageController = PageController(initialPage: page - 1);
     _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _restoreLastPage();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
@@ -52,6 +54,14 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
     _pageController.dispose();
     _currentPage.dispose();
     super.dispose();
+  }
+
+  Future<void> _restoreLastPage() async {
+    final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
+    if (!mounted || last == _currentPage.value) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _goToPage(last);
+    });
   }
 
   void _goToPage(int page) {
@@ -205,6 +215,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                   onPageChanged: (pageNumber) {
                     final page = MushafSource.normalizePage(pageNumber);
                     _currentPage.value = page;
+                    ReadingProgressService.saveLastPage(page);
                     if (_highlights.isNotEmpty) {
                       setState(() => _highlights = const []);
                     }
