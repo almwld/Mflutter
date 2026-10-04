@@ -29,5 +29,5 @@ class AppColors {
   static const Color elementEarth = Color(0xFF8D6E63);
   static const LinearGradient navyGoldGradient = LinearGradient(colors: [primaryNavy, primaryGold]);
   static const LinearGradient goldGradient = LinearGradient(colors: [primaryGoldLight, primaryGoldDark]);
-  static const List<Color> deepGradient = [deepBackground, background, surface];
+  static const LinearGradient deepGradient = LinearGradient(colors: [deepBackground, background, surface]);
 }
