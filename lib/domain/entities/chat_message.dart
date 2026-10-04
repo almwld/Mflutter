@@ -8,6 +8,13 @@ class ChatMessage {
   final AbjadResult? abjadResult;
   final double? energy;
 
+  bool get isFromUser => isUser;
+  Map<String, dynamic> get metadata => {
+    if (surahRef != null) 'surahRef': surahRef,
+    if (abjadResult != null) 'abjadResult': abjadResult!.toMap(),
+    if (energy != null) 'energy': energy,
+  };
+
   ChatMessage({
     required this.text,
     required this.isUser,
