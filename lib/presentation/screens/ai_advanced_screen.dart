@@ -70,19 +70,11 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('🧠 ضبط النموذج', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: ModelFineTuningService.isTraining ? null : () async {
-              await ModelFineTuningService.startFineTuning(['آية 1', 'آية 2']);
-              setState(() {});
-            },
-            child: Text(ModelFineTuningService.isTraining ? 'جاري التدريب...' : 'بدء الضبط الدقيق'),
+          const Text(
+            'الضبط الدقيق متوقف حتى توفير dataset حقيقي موسوم ومتوافق مع النموذج. لا يتم عرض تدريب أو loss وهمي.',
+            style: TextStyle(color: Colors.white54),
+            textAlign: TextAlign.right,
           ),
-          if (ModelFineTuningService.epochs > 0) ...[
-            SizedBox(height: 8),
-            LinearProgressIndicator(value: ModelFineTuningService.epochs / 10, backgroundColor: AppColors.surface, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold)),
-            SizedBox(height: 4),
-            Text('Epoch ${ModelFineTuningService.epochs}/10 - Loss: ${ModelFineTuningService.loss.toStringAsFixed(4)}', style: TextStyle(color: Colors.white54)),
-          ],
         ]))),
       ]),
     );
