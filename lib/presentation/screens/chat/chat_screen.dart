@@ -25,7 +25,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkModel());
+    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!mounted) return;\n      final provider = context.read<ChatProvider>();\n      provider.checkLocalModel().then((available) {\n        if (!mounted) return;\n        setState(() {\n          _modelAvailable = available;\n          _checkingModel = false;\n        });\n      });\n    });
   }
 
   Future<void> _checkModel() async {
@@ -101,7 +101,7 @@ class _ChatScreenState extends State<ChatScreen> {
               _modelBanner(),
               Expanded(
                 child: chat.messages.isEmpty
-                    ? _emptyState()
+                    ? _emptyState(chat.loading)
                     : ListView.builder(
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
