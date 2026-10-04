@@ -7,6 +7,7 @@ import '../../../services/reading_progress_service.dart';
 import '../../../services/ayah_coordinate_service.dart';
 import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
+import '../../widgets/quran/mushaf_nebula.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -178,6 +179,9 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
       body: SafeArea(
         child: Stack(
           children: [
+            const Positioned.fill(
+              child: MushafNebula(),
+            ),
             Positioned.fill(
               child: AnimatedBuilder(
                 animation: Listenable.merge([_livingPulse, _livingGlow]),
