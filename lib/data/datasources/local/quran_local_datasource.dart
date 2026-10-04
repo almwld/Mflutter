@@ -1,10 +1,44 @@
 import 'dart:convert';
+import '../../../domain/models/quran_models.dart';
 import 'package:sqflite/sqflite.dart';
 import 'database_helper.dart';
 
 class QuranLocalDatasource {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   final Map<String, List<Map<String, dynamic>>> _versesCache = {};
+
+  Future<Surah> getSurah(int number) async {
+    final values = await getAllSurahs();
+    final row = values.cast<Map<String, dynamic>>().firstWhere((item) => (item['surah'] as num?)?.toInt() == number, orElse: () => throw StateError('السورة غير موجودة: $number'));
+    final verses = await getVersesBySurah(number);
+    return Surah(number: number, nameArabic: (row['surah_name'] ?? '').toString(), nameEnglish: '', verseCount: verses.length, revelationType: '', pageNumber: 0);
+  }
+
+  Future<List<Surah>> getSurahs() async {
+    final rows = await getAllSurahs();
+    final result = <Surah>[];
+    for (final row in rows) {
+      final number = (row['surah'] as num?)?.toInt() ?? 0;
+      if (number <= 0) continue;
+      final verses = await getVersesBySurah(number);
+      result.add(Surah(number: number, nameArabic: (row['surah_name'] ?? '').toString(), nameEnglish: '', verseCount: verses.length, revelationType: '', pageNumber: 0));
+    }
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> getVerses(int surahNumber) => getVersesBySurah(surahNumber);
+
+  Future<List<Map<String, dynamic>>> getVersesByJuz(int juzNumber) async {
+    final db = await _dbHelper.database;
+    try {
+      return await db.query('verses', where: 'juz = ?', whereArgs: [juzNumber], orderBy: 'surah ASC, ayah ASC');
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<List<Juz>> getAllJuzs() async => const [];
+  Future<Juz> getJuz(int number) async => Juz(number: number);
 
   Future<List<Map<String, dynamic>>> getVersesBySurah(int surahNumber) async {
     final key = surahNumber.toString();
