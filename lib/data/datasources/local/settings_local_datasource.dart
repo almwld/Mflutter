@@ -1,6 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../domain/entities/insight.dart';
 import '../../../domain/entities/user_profile_model.dart';
+import '../../../domain/entities/chat_message.dart';
+import 'dart:convert';
 
 /// =============================================================================
 /// SettingsLocalDatasource - مصدر بيانات الإعدادات المحلي
@@ -269,6 +271,26 @@ class SettingsLocalDatasource {
     'lastUsed': (await getLastUsed())?.toIso8601String(),
     'usageCount': await getUsageCount(),
   };
+
+  Future<List<ChatMessage>> getChatHistory() async {
+    final raw = await getSetting<List<String>>('chat_history') ?? const [];
+    return raw.map((value) {
+      final map = Map<String, dynamic>.from(jsonDecode(value) as Map);
+      return ChatMessage(
+        text: (map['text'] ?? '').toString(),
+        isUser: map['isUser'] == true,
+        timestamp: DateTime.tryParse((map['timestamp'] ?? '').toString()),
+        surahRef: map['surahRef']?.toString(),
+        energy: (map['energy'] as num?)?.toDouble(),
+      );
+    }).toList();
+  }
+  Future<void> saveChatMessage(ChatMessage message) async {
+    final values = List<String>.from(await getSetting<List<String>>('chat_history') ?? const []);
+    values.add(jsonEncode({'text': message.text, 'isUser': message.isUser, 'timestamp': message.timestamp.toIso8601String(), if (message.surahRef != null) 'surahRef': message.surahRef, if (message.energy != null) 'energy': message.energy}));
+    await setSetting('chat_history', values.take(500).toList());
+  }
+  Future<void> clearChatHistory() async => removeSetting('chat_history');
 }
 
   
