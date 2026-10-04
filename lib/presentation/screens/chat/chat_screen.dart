@@ -153,7 +153,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(bool loading) {
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -191,7 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   .map(
                     (item) => ActionChip(
                       label: Text(item, textDirection: TextDirection.rtl),
-                      onPressed: chatLoading ? null : () {
+                      onPressed: loading ? null : () {
                         _controller.text = item;
                         _sendMessage();
                       },
@@ -204,8 +204,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
-
-  bool get chatLoading => context.read<ChatProvider>().loading;
 
   Widget _inputBar(bool loading) {
     return SafeArea(
