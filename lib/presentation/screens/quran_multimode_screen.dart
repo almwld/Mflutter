@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../services/text_transformer.dart';
 
 /// 📖 شاشة المصحف — ٤ خطوط × ٣ خلفيات
 enum QuranMode { musnad, oldArabic, uthmaniGold, hieroglyphic }
@@ -125,26 +126,8 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
         return _removeDots(text);
       case QuranMode.hieroglyphic:
         return _toHiero(text);
-      case QuranMode.uthmaniGold:
-        return text;
-    }
-  }
-
-  String _toMusnad(String text) {
-    const map = {
-      'ا': '𐩱', 'ب': '𐩨', 'ت': '𐩩', 'ث': '𐩶', 'ج': '𐩳',
-      'ح': '𐩢', 'خ': '𐩮', 'د': '𐩴', 'ذ': '𐩹', 'ر': '𐩧',
-      'ز': '𐩷', 'س': '𐩪', 'ش': '𐩦', 'ص': '𐩯', 'ض': '𐩲',
-      'ط': '𐩷', 'ظ': '𐩷', 'ع': '𐩰', 'غ': '𐩵', 'ف': '𐩸',
-      'ق': '𐩤', 'ك': '𐩬', 'ل': '𐩡', 'م': '𐩣', 'נ': '𐩭',
-      'ه': '𐩠', 'و': '𐩥', 'ي': '𐩺', 'ى': '𐩺', 'ة': '𐩠',
-      ' ': ' ', 'أ': '𐩱', 'إ': '𐩱',
-    };
-    String r = '';
-    for (int i = 0; i < text.length; i++) {
-      String c = text[i];
-      if ('\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652'.contains(c)) continue;
-      r += map[c] ?? c;
+      case QuranMod  String _toMusnad(String text) => TextTransformer.toMusnad(text);
+     r += map[c] ?? c;
     }
     return r;
   }
