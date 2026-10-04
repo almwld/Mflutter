@@ -30,6 +30,8 @@ class GazeTrackingService {
 
   bool _busy = false;
   bool _modelAvailable = false;
+  DateTime? _lastInferenceAt;
+  static const _inferenceInterval = Duration(milliseconds: 80);
 
   bool get modelAvailable => _modelAvailable;
   GazeEstimate _last = const GazeEstimate(horizontal: 0, vertical: 0, confidence: 0, faceDetected: false);
@@ -41,7 +43,10 @@ class GazeTrackingService {
     CameraDescription camera,
   ) async {
     if (_busy) return null;
+    final now = DateTime.now();
+    if (_lastInferenceAt != null && now.difference(_lastInferenceAt!) < _inferenceInterval) return null;
     _busy = true;
+    _lastInferenceAt = now;
     try {
       if (!GazeModelService.instance.isLoaded) {
         await GazeModelService.instance.load();
