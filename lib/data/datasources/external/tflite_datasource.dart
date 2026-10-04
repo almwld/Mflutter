@@ -164,8 +164,23 @@ class TFLiteDatasource {
 
 extension ListExtension on List<dynamic> {
   List<dynamic> reshape(List<int> shape) {
-    if (shape.length == 1) return this;
-    // محاكاة إعادة التشكيل
-    return this;
+    if (shape.isEmpty) return this;
+    final total = shape.fold<int>(1, (a, b) => a * b);
+    if (length != total) {
+      throw ArgumentError('عدد عناصر المصفوفة لا يطابق shape: $length != $total');
+    }
+
+    List<dynamic> build(int dimension, int offset) {
+      if (dimension == shape.length - 1) {
+        return List<dynamic>.from(sublist(offset, offset + shape[dimension]));
+      }
+      final stride = shape.sublist(dimension + 1).fold<int>(1, (a, b) => a * b);
+      return List.generate(
+        shape[dimension],
+        (i) => build(dimension + 1, offset + i * stride),
+      );
+    }
+
+    return build(0, 0);
   }
 }
