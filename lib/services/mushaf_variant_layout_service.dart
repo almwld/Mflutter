@@ -29,10 +29,12 @@ class MushafVariantLayoutService {
     for (final raw in rawLines) {
       final map = (raw as Map).cast<String, dynamic>();
       final words = <String>[];
+      final markers = <String>[];
       final rawWords = (map['words'] as List?) ?? const [];
 
       for (final rawWord in rawWords) {
         final word = (rawWord as Map).cast<String, dynamic>();
+        final kind = word['kind'] as String? ?? 'word';
         final location = word['location'] as String?;
         if (location == null) continue;
         final parts = location.split(':');
@@ -50,7 +52,9 @@ class MushafVariantLayoutService {
             .where((part) => part.isNotEmpty)
             .toList();
 
-        if (wordIndex <= verseWords.length) {
+        if (kind == 'marker') {
+          markers.add('﴿$ayah﴾');
+        } else if (wordIndex <= verseWords.length) {
           words.add(verseWords[wordIndex - 1]);
         }
       }
@@ -61,6 +65,7 @@ class MushafVariantLayoutService {
           centered: map['centered'] as bool? ?? false,
           surah: map['surah'] as int?,
           words: List.unmodifiable(words),
+          markers: List.unmodifiable(markers),
         ),
       );
     }
@@ -78,15 +83,17 @@ class MushafVariantLine {
     required this.centered,
     required this.surah,
     required this.words,
+    required this.markers,
   });
 
   final String type;
   final bool centered;
   final int? surah;
   final List<String> words;
+  final List<String> markers;
 
   bool get isBlank => type == 'blank';
   bool get isSurahHeader => type == 'surah_name';
 
-  String get text => words.join(' ');
+  String get text => [...words, ...markers].join(' ');
 }
