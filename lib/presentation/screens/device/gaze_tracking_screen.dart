@@ -56,7 +56,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
       try {
         final input = _inputImage(image, camera, controller);
         if (input != null) {
-          final result = await _gaze.process(input);
+          final result = await _gaze.process(input, image, camera);
           if (result != null && mounted) setState(() => _estimate = result);
         }
       } finally {
