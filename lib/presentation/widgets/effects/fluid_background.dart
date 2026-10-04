@@ -48,7 +48,7 @@ class _FluidBackgroundState extends State<FluidBackground>
         // الخلفية العميقة
         Container(
           decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: AppColors.deepGradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+            gradient: AppColors.deepGradient,
           ),
         ),
         // الطبقة السيالة
