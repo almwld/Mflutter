@@ -6,6 +6,7 @@ void main() {
   testWidgets('Mudabbir app boots with the canonical Mushaf screen', (tester) async {
     await tester.pumpWidget(const MudabbirApp());
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(MushafScreen), findsOneWidget);
   });
 }
