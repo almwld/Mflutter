@@ -7,7 +7,7 @@ class OllamaService {
   OllamaService._();
 
   static const String defaultBaseUrl = 'http://127.0.0.1:11434';
-  static const String defaultModel = 'mudabbir';
+  static const String defaultModel = 'qwen2.5:0.5b';
   String _baseUrl = defaultBaseUrl;
   String _modelName = defaultModel;
   bool _available = false;
