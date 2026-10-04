@@ -184,8 +184,8 @@ class _MushafScreenState extends State<MushafScreen> {
                       ];
                     });
                   },
-                  onLongPress: (surah, ayah, details) {
-                    _showAyahMenu(surah, ayah, details.globalPosition);
+                  onLongPress: (surah, ayah) {
+                    _showAyahMenu(surah, ayah, const Offset(0, 0));
                   },
               ),
             ),
