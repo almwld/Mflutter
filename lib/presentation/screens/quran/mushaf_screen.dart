@@ -28,6 +28,8 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
   List<HighlightVerse> _highlights = const [];
   late final AnimationController _livingPulse;
   late final AnimationController _livingGlow;
+  late final TransformationController _mushafZoomController;
+  bool _zoomMode = false;
 
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
@@ -45,6 +47,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
     _pageController = PageController(initialPage: page - 1);
     _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _mushafZoomController = TransformationController();
     _restoreLastPage();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
@@ -53,6 +56,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
   void dispose() {
     _livingPulse.dispose();
     _livingGlow.dispose();
+    _mushafZoomController.dispose();
     _pageController.dispose();
     _currentPage.dispose();
     super.dispose();
@@ -205,7 +209,15 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                     ],
                   );
                 },
-                child: QuranPageView(
+                child: InteractiveViewer(
+                  transformationController: _mushafZoomController,
+                  panEnabled: _zoomMode,
+                  scaleEnabled: _zoomMode,
+                  minScale: 1.0,
+                  maxScale: 3.0,
+                  boundaryMargin: const EdgeInsets.all(120),
+                  constrained: true,
+                  child: QuranPageView(
                   pageController: _pageController,
                   highlights: _highlights,
                   scrollDirection: Axis.horizontal,
@@ -278,6 +290,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                     _showAyahMenu(surah, ayah, details.globalPosition);
                   },
                 ),
+                ),
               ),
             ),
             _topOverlay(),
@@ -329,6 +342,17 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
           _roundButton(
             icon: Icons.chevron_right_rounded,
             onPressed: () => _goToPage(_currentPage.value - 1),
+          ),
+          _roundButton(
+            icon: _zoomMode ? Icons.zoom_out_map_rounded : Icons.zoom_in_rounded,
+            onPressed: () {
+              setState(() => _zoomMode = !_zoomMode);
+              if (_zoomMode) {
+                _mushafZoomController.value = Matrix4.identity();
+              } else {
+                _mushafZoomController.value = Matrix4.identity();
+              }
+            },
           ),
           _roundButton(
             icon: Icons.tune_rounded,
