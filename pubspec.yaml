@@ -26,7 +26,6 @@ dependencies:
   geolocator: ^14.0.2
   local_auth: ^2.3.0
   nearby_connections: ^4.3.0
-  arcore_flutter_plus: ^1.0.2
   google_mlkit_face_detection: ^0.13.1
   tflite_flutter: ^0.12.1
   qcf_quran_lite: ^0.0.5
