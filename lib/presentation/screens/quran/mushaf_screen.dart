@@ -21,7 +21,7 @@ class MushafScreen extends StatefulWidget {
   State<MushafScreen> createState() => _MushafScreenState();
 }
 
-class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderStateMixin {
+class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMixin {
   late final PageController _pageController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final GlobalKey _mushafViewportKey = GlobalKey();
