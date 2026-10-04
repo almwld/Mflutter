@@ -131,3 +131,12 @@ class Bookmark {
       'المرجع: $referenceId\n'
       'الملاحظة: ${note ?? 'لا توجد'}';
 }
+
+class AppSettings {
+  final bool isDarkMode;
+  final String language;
+  final bool notificationsEnabled;
+  final String fontSize;
+  final bool autoPlayAudio;
+  const AppSettings({this.isDarkMode=false,this.language='ar',this.notificationsEnabled=true,this.fontSize='medium',this.autoPlayAudio=false});
+}
