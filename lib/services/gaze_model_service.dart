@@ -11,9 +11,10 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 /// The runtime inspects tensors at startup instead of assuming a fixed
 /// graph, which lets us fail clearly when a different model is supplied.
 class GazeAngles {
-  const GazeAngles({required this.yaw, required this.pitch});
+  const GazeAngles({required this.yaw, required this.pitch, required this.confidence});
   final double yaw;
   final double pitch;
+  final double confidence;
 }
 
 class GazeModelService {
@@ -87,17 +88,22 @@ class GazeModelService {
         }),
       ),
     );
-    final outputs = run(input);
-    if (!hasExpectedL2csContract) throw StateError('بنية نموذج L2CS غير متوافقة مع العقد 1x3x448x448 → 90/90.');
+    if (!hasExpectedL2csContract) {
+      throw StateError('بنية نموذج L2CS غير متوافقة مع العقد 1x3x448x448 → 90/90.');
+    }
+    final outputs = run([input]);
     if (outputs.length < 2) throw StateError('L2CS يجب أن يعيد رأسي yaw و pitch.');
     final yaw = _flatten(outputs[0]).map((e) => e.toDouble()).toList();
     final pitch = _flatten(outputs[1]).map((e) => e.toDouble()).toList();
     if (yaw.length != 90 || pitch.length != 90) {
       throw StateError('مخرجات L2CS غير متوافقة: yaw=${yaw.length} pitch=${pitch.length}.');
     }
+    final yd = decodeAngleWithConfidence(yaw, bins: 90);
+    final pd = decodeAngleWithConfidence(pitch, bins: 90);
     return GazeAngles(
-      yaw: decodeAngle(yaw, bins: 90),
-      pitch: decodeAngle(pitch, bins: 90),
+      yaw: yd.$1,
+      pitch: pd.$1,
+      confidence: ((yd.$2 + pd.$2) / 2).clamp(0.0, 1.0),
     );
   }
 
@@ -157,6 +163,23 @@ class GazeModelService {
   /// It is only used when both heads have the same number of bins and at
   /// least two bins. The caller can provide the expected bin count explicitly
   /// after validating the supplied model.
+  static (double, double) decodeAngleWithConfidence(
+    List<double> logits, {
+    required int bins,
+    double minAngle = -180.0,
+    double maxAngle = 180.0,
+  }) {
+    final probabilities = _probabilities(logits, bins);
+    final angle = _expectedAngle(probabilities, minAngle, maxAngle);
+    final maxProbability = probabilities.reduce(math.max);
+    final entropy = -probabilities.fold<double>(
+      0,
+      (sum, p) => sum + (p <= 0 ? 0 : p * math.log(p)),
+    ) / math.log(bins);
+    final confidence = (0.65 * maxProbability + 0.35 * (1.0 - entropy)).clamp(0.0, 1.0);
+    return (angle, confidence);
+  }
+
   static double decodeAngle(
     List<double> logits, {
     required int bins,
@@ -167,12 +190,21 @@ class GazeModelService {
       throw ArgumentError('عدد bins لا يطابق مخرجات نموذج L2CS.');
     }
 
+    final probabilities = _probabilities(logits, bins);
+    return _expectedAngle(probabilities, minAngle, maxAngle);
+  }
+
+  static List<double> _probabilities(List<double> logits, int bins) {
+    if (logits.length != bins || bins < 2) {
+      throw ArgumentError('عدد bins لا يطابق مخرجات نموذج L2CS.');
+    }
     final looksLikeProbabilities = logits.every((v) => v >= 0 && v <= 1) &&
         (logits.fold<double>(0, (sum, v) => sum + v) - 1.0).abs() < 0.05;
-    final probabilities = looksLikeProbabilities
-        ? logits
-        : _softmax(logits);
-    final step = (maxAngle - minAngle) / bins;
+    return looksLikeProbabilities ? logits : _softmax(logits);
+  }
+
+  static double _expectedAngle(List<double> probabilities, double minAngle, double maxAngle) {
+    final step = (maxAngle - minAngle) / probabilities.length;
     var weighted = 0.0;
     for (var i = 0; i < probabilities.length; i++) {
       weighted += probabilities[i] * (minAngle + i * step);
