@@ -188,4 +188,8 @@ class RTLProvider extends InheritedWidget {
     final provider = context.dependOnInheritedWidgetOfExactType<RTLProvider>();
     return provider?.isRTL ?? true;
   }
+
+  @override
+  bool updateShouldNotify(covariant RTLProvider oldWidget) => oldWidget.isRTL != isRTL;
+
 }
