@@ -30,7 +30,7 @@ class TFLiteDatasource {
 
   /// إلغاء تحميل نموذج
   Future<void> unloadModel(String modelPath) async {
-    _interpreters.remove(modelPath);
+    _interpreters.remove(modelPath)?.close();
     _isLoaded[modelPath] = false;
   }
 
@@ -133,20 +133,27 @@ class TFLiteDatasource {
   // النماذج المدمجة
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// تشغيل نموذج مدمج
+  /// تشغيل نموذج مدمج فعليًا من أصول التطبيق.
+  /// لا توجد نتائج اصطناعية: يجب أن يكون النموذج موجودًا وقابلًا للتحميل.
   Future<Map<String, dynamic>> runBundledModel(
     String modelName,
     List<double> features,
   ) async {
-    // محاكاة تشغيل نموذج مدمج
-    await Future.delayed(const Duration(milliseconds: 50));
-
+    final result = await runInference(modelName, features);
+    if (result.containsKey('error')) {
+      return {
+        'modelName': modelName,
+        'loaded': false,
+        'error': result['error'],
+      };
+    }
     return {
       'modelName': modelName,
-      'output': features.take(10).toList(),
-      'confidence': 0.85,
+      'loaded': true,
+      ...result,
     };
   }
+
 }
 
 /// =============================================================================
