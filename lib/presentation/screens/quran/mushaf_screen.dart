@@ -4,6 +4,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
 import 'mushaf_variant_screen.dart';
+import '../../widgets/quran/living_ayah_painter.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -17,11 +18,13 @@ class MushafScreen extends StatefulWidget {
   State<MushafScreen> createState() => _MushafScreenState();
 }
 
-class _MushafScreenState extends State<MushafScreen> {
+class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(1);
   List<HighlightVerse> _highlights = const [];
+  late final AnimationController _livingPulse;
+  late final AnimationController _livingGlow;
 
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
@@ -37,11 +40,15 @@ class _MushafScreenState extends State<MushafScreen> {
     final page = MushafSource.normalizePage(widget.initialPage);
     _currentPage.value = page;
     _pageController = PageController(initialPage: page - 1);
+    _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
+    _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   @override
   void dispose() {
+    _livingPulse.dispose();
+    _livingGlow.dispose();
     _pageController.dispose();
     _currentPage.dispose();
     super.dispose();
@@ -146,7 +153,29 @@ class _MushafScreenState extends State<MushafScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: QuranPageView(
+              child: AnimatedBuilder(
+                animation: Listenable.merge([_livingPulse, _livingGlow]),
+                builder: (context, child) {
+                  final selected = _highlights.isNotEmpty;
+                  final great = selected && _isGreatVerse(_highlights.first);
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      child!,
+                      IgnorePointer(
+                        child: CustomPaint(
+                          painter: LivingAyahPainter(
+                            pulse: _livingPulse.value,
+                            glow: selected ? .72 + _livingGlow.value * .28 : .18,
+                            isGreatVerse: great,
+                            isActive: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+                child: QuranPageView(
                   pageController: _pageController,
                   highlights: _highlights,
                   scrollDirection: Axis.horizontal,
@@ -196,6 +225,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   onLongPress: (surah, ayah) {
                     _showAyahMenu(surah, ayah, const Offset(0, 0));
                   },
+                ),
               ),
             ),
             _topOverlay(),
@@ -204,6 +234,14 @@ class _MushafScreenState extends State<MushafScreen> {
         ),
       ),
     );
+  }
+
+  bool _isGreatVerse(HighlightVerse verse) {
+    const great = {
+      '1:1', '2:255', '3:190', '24:35',
+      '36:1', '55:13', '67:1', '112:1',
+    };
+    return great.contains('${verse.surah}:${verse.verseNumber}');
   }
 
   Widget _topOverlay() {
