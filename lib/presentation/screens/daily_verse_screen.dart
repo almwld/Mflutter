@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 class DailyVerseScreen extends StatefulWidget {
