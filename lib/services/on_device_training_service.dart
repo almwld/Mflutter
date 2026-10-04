@@ -27,6 +27,7 @@ class OnDeviceTrainingService {
   Future<void> startTraining({
     required List<Map<String, dynamic>> verses,
     int epochs = 50,
+    String? qwenAdapterPath,
   }) async {
     if (_isTraining) return;
 
@@ -78,7 +79,10 @@ class OnDeviceTrainingService {
     _history = _engine.trainingHistory;
     _status = 'اكتمل تدريب الطبقة المحلية؛ جارٍ فحص أوزان Qwen...';
     final docs = await getApplicationDocumentsDirectory();
-    final adapter = qwenAdapterPath ?? (docs.path + '/qwen_adapter');
+    final candidate = qwenAdapterPath?.trim();
+    final adapter = candidate != null && candidate.isNotEmpty
+        ? candidate
+        : '${docs.path}/qwen_adapter';
     final adapterDir = Directory(adapter);
     QwenMergeResult? mergeResult;
     if (await adapterDir.exists()) {
