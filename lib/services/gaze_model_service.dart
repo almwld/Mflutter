@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 
 /// Loads and validates the on-device gaze model supplied in assets.
@@ -55,7 +54,7 @@ class GazeModelService {
       }
 
       _interpreter = interpreter;
-    } on FlutterError {
+    } catch (_) {
       rethrow;
     } finally {
       _loading = false;
@@ -108,11 +107,11 @@ class GazeModelService {
   }
 
   List<int> _squareCrop(List<int> rgb, int width, int height, int left, int top, int right, int bottom) {
-    final l = left.clamp(0, width - 1);
-    final t = top.clamp(0, height - 1);
-    final r = right.clamp(l + 1, width);
-    final b = bottom.clamp(t + 1, height);
-    final size = math.max(r - l, b - t).clamp(1, math.min(width, height));
+    final l = left.clamp(0, width - 1).toInt();
+    final t = top.clamp(0, height - 1).toInt();
+    final r = right.clamp(l + 1, width).toInt();
+    final b = bottom.clamp(t + 1, height).toInt();
+    final size = math.max(r - l, b - t).clamp(1, math.min(width, height)).toInt();
     final cx = (l + r) ~/ 2;
     final cy = (t + b) ~/ 2;
     final x0 = (cx - size ~/ 2).clamp(0, width - size);
