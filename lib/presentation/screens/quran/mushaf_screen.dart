@@ -116,6 +116,75 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
     ).whenComplete(controller.dispose);
   }
 
+
+  void _showVersePicker() {
+    final surahController = TextEditingController();
+    final ayahController = TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('الانتقال إلى سورة وآية'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: surahController,
+              keyboardType: TextInputType.number,
+              textDirection: TextDirection.rtl,
+              decoration: const InputDecoration(
+                labelText: 'رقم السورة',
+                hintText: '1 - 114',
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: ayahController,
+              keyboardType: TextInputType.number,
+              textDirection: TextDirection.rtl,
+              decoration: const InputDecoration(
+                labelText: 'رقم الآية',
+                hintText: 'مثال: 255',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final surah = int.tryParse(surahController.text);
+              final ayah = int.tryParse(ayahController.text);
+              if (surah == null ||
+                  ayah == null ||
+                  surah < 1 ||
+                  surah > MushafSource.totalSurahs ||
+                  ayah < 1) {
+                return;
+              }
+              try {
+                final page = MushafSource.pageForVerse(surah, ayah);
+                Navigator.pop(dialogContext);
+                _goToPage(page);
+              } catch (_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تعذر العثور على الآية المطلوبة')),
+                );
+              }
+            },
+            child: const Text('انتقال'),
+          ),
+        ],
+      ),
+    ).whenComplete(() {
+      surahController.dispose();
+      ayahController.dispose();
+    });
+  }
+
   Future<void> _saveAyahCoordinate(int surah, int ayah, Offset position) async {
     final box = context.findRenderObject() as RenderBox?;
     if (box == null) return;
@@ -347,12 +416,17 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
             icon: _zoomMode ? Icons.zoom_out_map_rounded : Icons.zoom_in_rounded,
             onPressed: () {
               setState(() => _zoomMode = !_zoomMode);
-              if (_zoomMode) {
-                _mushafZoomController.value = Matrix4.identity();
-              } else {
-                _mushafZoomController.value = Matrix4.identity();
-              }
             },
+          ),
+          _roundButton(
+            icon: Icons.center_focus_strong_rounded,
+            onPressed: () {
+              _mushafZoomController.value = Matrix4.identity();
+            },
+          ),
+          _roundButton(
+            icon: Icons.menu_book_rounded,
+            onPressed: _showVersePicker,
           ),
           _roundButton(
             icon: Icons.tune_rounded,
