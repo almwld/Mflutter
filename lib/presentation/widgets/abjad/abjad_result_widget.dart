@@ -188,7 +188,7 @@ class AbjadResultWidget extends StatelessWidget {
   }
 
   Widget _buildLetterValues() {
-    final letters = result.letterValues.entries.toList();
+    final letters = result.letterValues.take(20);
 
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingSmall),
@@ -212,7 +212,7 @@ class AbjadResultWidget extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 4,
-            children: letters.take(20).map((entry) {
+            children: letters.map((entry) {
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -223,7 +223,7 @@ class AbjadResultWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      entry.key,
+                      entry.letter,
                       style: const TextStyle(
                         fontFamily: 'Amiri',
                         fontSize: 18,
