@@ -39,7 +39,7 @@ class QuranIndexScreen extends StatelessWidget {
                 backgroundColor: const Color(0xFFFFD700),
                 child: Text('${s['n']}', style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold)),
               ),
-              title: Text(s['name']!, style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+              title: Text(s['name'].toString(), style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
               subtitle: Text('${s['verses']} آية • ${s['type']} • صفحة ${s['page']}', style: const TextStyle(color: Colors.white54)),
               trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
             ),
