@@ -1,13 +1,27 @@
-class DreamJournalService {
-  static final List<Map<String, dynamic>> _dreams = [];
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
-  static void addDream(String dream, String emotions) {
-    _dreams.add({
+class DreamJournalService {
+  static const _key = 'mudabbir.dreams';
+
+  static Future<void> addDream(String dream, String emotions) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dreams = await getDreams();
+    dreams.add({
       'dream': dream,
       'emotions': emotions,
-      'date': DateTime.now(),
+      'date': DateTime.now().toIso8601String(),
       'verse': _matchVerse(dream),
     });
+    await prefs.setString(_key, jsonEncode(dreams));
+  }
+
+  static Future<List<Map<String,dynamic>>> getDreams() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key);
+    if (raw == null) return [];
+    final value = jsonDecode(raw);
+    return (value as List).map((e) => Map<String,dynamic>.from(e as Map)).toList();
   }
 
   static String _matchVerse(String dream) {
@@ -16,6 +30,4 @@ class DreamJournalService {
     if (dream.contains('سماء') || dream.contains('نجم')) return 'وَالسَّمَاءَ بَنَيْنَاهَا بِأَيْدٍ (الذاريات:47)';
     return 'اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ (النور:35)';
   }
-
-  static List<Map<String, dynamic>> get dreams => _dreams;
 }
