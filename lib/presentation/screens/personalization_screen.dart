@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../services/ai_personality_service.dart';
 import '../../services/context_memory_service.dart';
 import '../../services/smart_notifications_service.dart';
-import '../../services/widget_system_service.dart';
 
 class PersonalizationScreen extends StatefulWidget {
   const PersonalizationScreen({super.key});
