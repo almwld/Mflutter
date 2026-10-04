@@ -76,15 +76,15 @@ class AgentChatProvider extends ChangeNotifier {
 
   Future<String> _executeAgent(AgentDefinition agent,String query) async {
     switch(agent.id){
-      case 'muwajjih': return 'تم بناء مسار التنفيذ من \${_route(query).length} وكلاء وفق نية الطلب.';
+      case 'muwajjih': return 'تم بناء مسار التنفيذ من ${_route(query).length} وكلاء وفق نية الطلب.';
       case 'ayaat':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(8).toList();
         if(hits.isEmpty)return 'لم تُوجد مطابقة مباشرة في الفهرس المحلي.';
         return hits.map((v)=>'\${v['surah']} \${v['ayah']}: \${v['text']}').join('\n');
-      case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: \${_abjad(query)}';
+      case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: ${_abjad(query)}';
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
-        return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على \${hits.length} مواضع سياقية.';
+        return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على ${hits.length} مواضع سياقية.';
       case 'tadrib':
         final ayahs = await QuranLoaderService.loadAllAyahs();
         final verses = ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList();
@@ -103,11 +103,11 @@ class AgentChatProvider extends ChangeNotifier {
 
   List<StepDetail> _detailsFor(AgentDefinition agent,String result)=>[
     StepDetail('الوكيل',agent.name),StepDetail('الطبقة',agent.layer),StepDetail('الحالة','تنفيذ حقيقي'),
-    StepDetail('النتيجة',result.length>220?'\${result.substring(0,220)}…':result),
+    StepDetail('النتيجة',result.length>220?'${result.substring(0,220)}…':result),
   ];
 
   Future<String> _composeAnswer(AgentTask task) async {
-    final context=task.steps.map((s)=>'\${s.agentName}: \${s.result??''}').join('\n');
+    final context=task.steps.map((s)=>'${s.agentName}: ${s.result??''}').join('\n');
     if(!await _ollama.checkAvailability())return 'اكتمل التنفيذ المحلي.\n\n$context';
     try{return await _ollama.generate('صغ جواباً عربياً واضحاً اعتماداً على نتائج الوكلاء التالية فقط:\n$context\n\nالسؤال: \${task.userQuery}',maxTokens:700);}
     catch(_){return 'اكتمل التنفيذ المحلي دون صياغة Qwen لأن النموذج المحلي غير متاح.\n\n$context';}
