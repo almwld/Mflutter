@@ -1,18 +1,75 @@
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+
+class GazeEstimate {
+  const GazeEstimate({
+    required this.horizontal,
+    required this.vertical,
+    required this.confidence,
+    required this.faceDetected,
+  });
+  final double horizontal;
+  final double vertical;
+  final double confidence;
+  final bool faceDetected;
+}
+
 class GazeTrackingService {
-  static bool _isWatching = false;
-  static String _focusedWord = '';
-  static int _focusSeconds = 0;
+  GazeTrackingService._();
+  static final instance = GazeTrackingService._();
 
-  static bool get isWatching => _isWatching;
-  static String get focusedWord => _focusedWord;
+  final FaceDetector _detector = FaceDetector(
+    options: FaceDetectorOptions(
+      performanceMode: FaceDetectorMode.fast,
+      enableLandmarks: true,
+      enableTracking: true,
+    ),
+  );
 
-  static void startWatching() => _isWatching = true;
-  static void stopWatching() => _isWatching = false;
+  bool _busy = false;
+  GazeEstimate _last = const GazeEstimate(horizontal: 0, vertical: 0, confidence: 0, faceDetected: false);
+  GazeEstimate get last => _last;
 
-  static void reportFocus(String word, int seconds) {
-    _focusedWord = word;
-    _focusSeconds = seconds;
+  Future<GazeEstimate?> process(InputImage image) async {
+    if (_busy) return null;
+    _busy = true;
+    try {
+      final faces = await _detector.processImage(image);
+      if (faces.isEmpty) {
+        _last = const GazeEstimate(horizontal: 0, vertical: 0, confidence: 0, faceDetected: false);
+        return _last;
+      }
+      final face = faces.first;
+      final box = face.boundingBox;
+      final left = face.landmarks[FaceLandmarkType.leftEye]?.position;
+      final right = face.landmarks[FaceLandmarkType.rightEye]?.position;
+      if (left == null || right == null) {
+        _last = GazeEstimate(
+          horizontal: (face.headEulerAngleY ?? 0) / 45.0,
+          vertical: (face.headEulerAngleX ?? 0) / 30.0,
+          confidence: 0.35,
+          faceDetected: true,
+        );
+        return _last;
+      }
+      final eyeX = (left.x + right.x) / 2.0;
+      final eyeY = (left.y + right.y) / 2.0;
+      final cx = box.center.dx;
+      final cy = box.center.dy;
+      final horizontal = ((eyeX - cx) / (box.width * 0.25)).clamp(-1.0, 1.0);
+      final vertical = ((eyeY - cy) / (box.height * 0.25)).clamp(-1.0, 1.0);
+      final headX = ((face.headEulerAngleY ?? 0) / 45.0).clamp(-1.0, 1.0);
+      final headY = ((face.headEulerAngleX ?? 0) / 30.0).clamp(-1.0, 1.0);
+      _last = GazeEstimate(
+        horizontal: (horizontal * 0.7 + headX * 0.3).clamp(-1.0, 1.0),
+        vertical: (vertical * 0.7 + headY * 0.3).clamp(-1.0, 1.0),
+        confidence: 0.75,
+        faceDetected: true,
+      );
+      return _last;
+    } finally {
+      _busy = false;
+    }
   }
 
-  static bool get shouldShowInsight => _focusSeconds >= 3;
+  Future<void> dispose() => _detector.close();
 }
