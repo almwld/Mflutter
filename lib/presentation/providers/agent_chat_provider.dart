@@ -5,9 +5,11 @@ import '../../services/agent_registry.dart';
 import '../../services/ollama_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
+import '../../services/on_device_training_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
   final OllamaService _ollama = OllamaService();
+  final OnDeviceTrainingService _training = OnDeviceTrainingService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
   bool _paused = false, _cancelled = false, _quranReady = false;
@@ -83,6 +85,15 @@ class AgentChatProvider extends ChangeNotifier {
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
         return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على \${hits.length} مواضع سياقية.';
+      case 'tadrib':
+        final ayahs = await QuranLoaderService.loadAllAyahs();
+        final verses = ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList();
+        await _training.startTraining(verses: verses, epochs: 1);
+        return 'اكتملت دورة تدريب فعلية على ${verses.length} آية محلياً.';
+      case 'ikhtibar':
+        await initialize();
+        final hits = QuranicSearchEngine.search(query).take(5).toList();
+        return 'تم الاختبار على الفهرس المحلي؛ النتائج المطابقة: ${hits.length}.';
       case 'damj': return 'تم جمع نتائج الخطوات السابقة وتجهيزها للصياغة.';
       default:
         if(!await _ollama.checkAvailability())throw StateError('الخادم المحلي Ollama غير متاح؛ لم يتم توليد نتيجة وهمية.');
