@@ -1,4 +1,6 @@
 import '../../../core/utils/abjad_calculator.dart';
+import '../../../domain/entities/divine_name.dart';
+import '../../../domain/repositories/divine_names_repository.dart';
 
 /// =============================================================================
 /// AbjadLocalDatasource - مصدر بيانات الجُمَّل المحلي
@@ -8,6 +10,42 @@ class AbjadLocalDatasource {
   // ═══════════════════════════════════════════════════════════════════════════
   // العمليات
   // ═══════════════════════════════════════════════════════════════════════════
+
+  DivineName _divineName(int number) {
+    final names = DivineNames.arabicNames;
+    final index = number <= 0 ? 0 : (number - 1) % names.length;
+    return DivineName(
+      id: index + 1,
+      arabicName: names[index],
+      transliteration: '',
+      meaning: '',
+      description: '',
+      type: DivineNameType.names,
+      abjadValue: number,
+      color: '#FFD700',
+    );
+  }
+
+  Future<List<DivineName>> getAllDivineNames() async =>
+      List.generate(DivineNames.arabicNames.length, (i) => _divineName(i + 1));
+
+  Future<DivineName> getDivineName(int number) async => _divineName(number);
+
+  Future<List<DivineName>> searchDivineNames(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return getAllDivineNames();
+    return (await getAllDivineNames()).where((n) => n.arabicName.contains(q) || n.meaning.contains(q)).toList();
+  }
+
+  Future<DivineName> getRandomDivineName() async {
+    final values = await getAllDivineNames();
+    return values[DateTime.now().millisecondsSinceEpoch % values.length];
+  }
+
+  Future<List<DivineName>> getDivineNamesByAttribute(AttributeType attribute) async {
+    final type = DivineNameType.values[attribute.index];
+    return (await getAllDivineNames()).where((n) => n.type == type).toList();
+  }
 
   /// حساب الجمل
   Map<String, dynamic> calculate(String text) {
