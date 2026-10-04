@@ -12,7 +12,7 @@ class SovereignHubScreen extends StatefulWidget {
 }
 
 class _SovereignHubScreenState extends State<SovereignHubScreen> {
-  List<Map<String, String>> _peers = [];
+  Map<String, String> _peers = {};
   bool _scanning = false;
   String _status = '';
 
@@ -28,16 +28,24 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
         }),
         _buildCard('🌐 شبكة P2P', _scanning ? 'جاري المسح...' : '${_peers.length} أجهزة قريبة', Icons.hub, () async {
           setState(() => _scanning = true);
-          _peers = await P2PMeshService.scanNearbyPeers();
+          await P2PMeshService.instance.discover();
+          _peers = Map<String, String>.from(P2PMeshService.instance.peers);
           setState(() => _scanning = false);
         }),
-        _buildCard('🔐 التشفير الصوتي', VocalCryptoService.isUnlocked ? '✅ مفتوح' : '🔒 مغلق', Icons.fingerprint, () {
-          VocalCryptoService.registerSignature([0.1, 0.2, 0.3]);
-          setState(() => _status = 'تم تسجيل البصمة الصوتية');
+        _buildCard('🔐 التشفير الصوتي', VocalCryptoService.isUnlocked ? 'بصمة مسجلة' : 'غير مهيأ', Icons.fingerprint, () {
+          setState(() => _status = 'يلزم تسجيل عينة صوتية حقيقية قبل إنشاء البصمة.');
         }),
-        _buildCard('🏠 إنترنت الأشياء', IoTSanctuaryService.enabled ? '✅ مفعّل' : '⏸ معطل', Icons.home, () {
-          IoTSanctuaryService.toggle(!IoTSanctuaryService.enabled);
-          setState(() {});
+        _buildCard('🏠 إنترنت الأشياء', IoTSanctuaryService.instance.isConfigured ? 'مهيأ' : 'غير مهيأ', Icons.home, () async {
+          if (!IoTSanctuaryService.instance.isConfigured) {
+            setState(() => _status = 'لم يتم إعداد نقطة اتصال إنترنت الأشياء بعد.');
+            return;
+          }
+          try {
+            final result = await IoTSanctuaryService.instance.discover();
+            setState(() => _status = 'تم اكتشاف أجهزة إنترنت الأشياء: ${result['devices'] ?? result.length}');
+          } catch (e) {
+            setState(() => _status = 'تعذر اكتشاف أجهزة إنترنت الأشياء: $e');
+          }
         }),
         if (_status.isNotEmpty) Container(margin: EdgeInsets.only(top: 16), padding: EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)), child: Text(_status, style: TextStyle(color: Colors.white70))),
       ]),
