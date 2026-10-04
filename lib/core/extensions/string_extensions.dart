@@ -137,10 +137,10 @@ extension StringExtensions on String {
   String get numbersOnly => replaceAll(RegExp(r'[^0-9]'), '');
 
   /// تحويل إلى رقم
-  int? toIntOrNull => int.tryParse(this);
+  int? get toIntOrNull => int.tryParse(this);
 
   /// تحويل إلى double
-  double? toDoubleOrNull => double.tryParse(this);
+  double? get toDoubleOrNull => double.tryParse(this);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // الترميز
