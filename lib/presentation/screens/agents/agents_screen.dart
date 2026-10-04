@@ -30,10 +30,10 @@ class _AgentsViewState extends State<_AgentsView>{
 }
 class _TaskBar extends StatelessWidget{
   final AgentTask task;final AgentChatProvider provider;const _TaskBar({required this.task,required this.provider});
-  @override Widget build(BuildContext context){final done=task.steps.where((s)=>s.status==StepStatus.done).length;return Container(margin:const EdgeInsets.fromLTRB(12,0,12,8),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:AppColors.primaryNavy,borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.primaryGold.withOpacity(.45))),child:Column(children:[
-    Row(children:[const Icon(Icons.auto_awesome,color:AppColors.primaryGold),const SizedBox(width:8),Expanded(child:Text(task.userQuery,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.bold))),Text('\${(task.progress*100).round()}%',style:const TextStyle(color:AppColors.primaryGold))]),
+  @override Widget build(BuildContext context){return Container(margin:const EdgeInsets.fromLTRB(12,0,12,8),padding:const EdgeInsets.all(14),decoration:BoxDecoration(color:AppColors.primaryNavy,borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.primaryGold.withOpacity(.45))),child:Column(children:[
+    Row(children:[const Icon(Icons.auto_awesome,color:AppColors.primaryGold),const SizedBox(width:8),Expanded(child:Text(task.userQuery,maxLines:1,overflow:TextOverflow.ellipsis,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.bold))),Text('${(task.progress*100).round()}%',style:const TextStyle(color:AppColors.primaryGold))]),
     const SizedBox(height:8),LinearProgressIndicator(value:task.progress,minHeight:5),const SizedBox(height:4),
-    Row(children:[Text('\$done/\${task.steps.length} خطوات',style:const TextStyle(color:Colors.white54,fontSize:12)),const Spacer(),IconButton(onPressed:provider.pauseOrResume,icon:Icon(provider.paused?Icons.play_arrow:Icons.pause,color:AppColors.primaryGold)),IconButton(onPressed:provider.cancel,icon:const Icon(Icons.stop_circle_outlined,color:Colors.redAccent))])
+    Row(children:[Text('${task.steps.where((s)=>s.status==StepStatus.done).length}/${task.steps.length} خطوات',style:const TextStyle(color:Colors.white54,fontSize:12)),const Spacer(),IconButton(onPressed:provider.pauseOrResume,icon:Icon(provider.paused?Icons.play_arrow:Icons.pause,color:AppColors.primaryGold)),IconButton(onPressed:provider.cancel,icon:const Icon(Icons.stop_circle_outlined,color:Colors.redAccent))])
   ]));}
 }
 class _TaskView extends StatelessWidget{
