@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
+import 'mushaf_variant_screen.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -238,6 +239,18 @@ class _MushafScreenState extends State<MushafScreen> {
           _roundButton(
             icon: Icons.chevron_right_rounded,
             onPressed: () => _goToPage(_currentPage.value - 1),
+          ),
+          _roundButton(
+            icon: Icons.tune_rounded,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => MushafVariantScreen(
+                    initialPage: _currentPage.value,
+                  ),
+                ),
+              );
+            },
           ),
           GestureDetector(
             onTap: _showPagePicker,
