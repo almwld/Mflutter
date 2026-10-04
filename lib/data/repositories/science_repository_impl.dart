@@ -10,12 +10,12 @@ class ScienceRepositoryImpl implements ScienceRepository {
   @override
   Future<List<Science>> getAllSciences() async {
     return [
-      Science(type: ScienceType.letters, name: 'علم الحروف', description: 'علم الحروف وأثره في الكشف', count: 28),
-      Science(type: ScienceType.numbers, name: 'علم الأعداد', description: 'علم الأرقام ومعانيها', count: 10),
-      Science(type: ScienceType.elements, name: 'علم العناصر', description: 'علم العناصر الأربعة وأثرها', count: 5),
-      Science(type: ScienceType.planets, name: 'علم الكواكب', description: 'علم تأثير الكواكب', count: 7),
-      Science(type: ScienceType.zodiac, name: 'علم الأبراج', description: 'علم الأبراج الإثني عشر', count: 12),
-      Science(type: ScienceType.names, name: 'علم الأسماء', description: 'علم الأسماء الإلهية', count: 99),
+      Science(type: ScienceType.letters, name: 'علم الحروف', description: 'علم الحروف وأثره في الكشف', relatedSciencesCount: 28),
+      Science(type: ScienceType.numbers, name: 'علم الأعداد', description: 'علم الأرقام ومعانيها', relatedSciencesCount: 10),
+      Science(type: ScienceType.elements, name: 'علم العناصر', description: 'علم العناصر الأربعة وأثرها', relatedSciencesCount: 5),
+      Science(type: ScienceType.planets, name: 'علم الكواكب', description: 'علم تأثير الكواكب', relatedSciencesCount: 7),
+      Science(type: ScienceType.zodiac, name: 'علم الأبراج', description: 'علم الأبراج الإثني عشر', relatedSciencesCount: 12),
+      Science(type: ScienceType.names, name: 'علم الأسماء', description: 'علم الأسماء الإلهية', relatedSciencesCount: 99),
     ];
   }
 
