@@ -44,6 +44,8 @@ flutter:
     - assets/mushaf_layout.json
     - assets/fonts/
     - assets/images/
+    - assets/models/
+    - assets/face_landmarker.task
   fonts:
     - family: Amiri
       fonts:
