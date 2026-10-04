@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../domain/entities/insight.dart';
+import '../../../domain/entities/user_profile_model.dart';
 
 /// =============================================================================
 /// SettingsLocalDatasource - مصدر بيانات الإعدادات المحلي
@@ -205,6 +206,69 @@ class SettingsLocalDatasource {
     final read = prefs.getStringList('read_insights') ?? <String>[];
     return insights.where((item) => !read.contains(item.id.toString())).length;
   }
+
+  Future<UserProfile> getUserProfile() async {
+    final prefs = await _preferences;
+    final now = DateTime.now();
+    return UserProfile(
+      id: prefs.getString('profile_id') ?? '',
+      name: prefs.getString('profile_name') ?? 'مستخدم',
+      email: prefs.getString('profile_email'),
+      createdAt: DateTime.tryParse(prefs.getString('profile_created_at') ?? '') ?? now,
+      preferences: UserPreferences(
+        isDarkMode: await getSetting<bool>('dark_mode') ?? false,
+        language: await getLanguage(),
+        notificationsEnabled: await getNotificationsEnabled(),
+        fontSize: await getFontSize(),
+        autoPlayAudio: await getAutoPlayAudio(),
+      ),
+      stats: UserStats(lastActive: now),
+    );
+  }
+
+  Future<void> saveUserProfile(UserProfile profile) async {
+    final prefs = await _preferences;
+    await prefs.setString('profile_id', profile.id);
+    await prefs.setString('profile_name', profile.name);
+    if (profile.email != null) await prefs.setString('profile_email', profile.email!);
+    await prefs.setString('profile_created_at', profile.createdAt.toIso8601String());
+  }
+
+  Future<AppSettings> getSettings() async => AppSettings(
+    isDarkMode: await getSetting<bool>('dark_mode') ?? false,
+    language: await getLanguage(),
+    notificationsEnabled: await getNotificationsEnabled(),
+    fontSize: await getFontSize(),
+    autoPlayAudio: await getAutoPlayAudio(),
+  );
+
+  Future<void> saveSettings(AppSettings settings) async {
+    await setSetting('dark_mode', settings.isDarkMode);
+    await setLanguage(settings.language);
+    await setNotificationsEnabled(settings.notificationsEnabled);
+    await setFontSize(settings.fontSize);
+    await setAutoPlayAudio(settings.autoPlayAudio);
+  }
+
+  Future<List<String>> getRecentSearches() async =>
+      await getSetting<List<String>>('recent_searches') ?? const [];
+
+  Future<void> addRecentSearch(String query) async {
+    final values = List<String>.from(await getRecentSearches());
+    values.remove(query);
+    values.insert(0, query);
+    await setSetting('recent_searches', values.take(50).toList());
+  }
+
+  Future<void> clearRecentSearches() async {
+    await removeSetting('recent_searches');
+  }
+
+  Future<Map<String, dynamic>> getStatistics() async => {
+    'recentSearches': (await getRecentSearches()).length,
+    'lastUsed': (await getLastUsed())?.toIso8601String(),
+    'usageCount': await getUsageCount(),
+  };
 }
 
   
