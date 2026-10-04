@@ -51,8 +51,8 @@ class GazeFusionService {
     required double height,
     double confidence = 1.0,
   }) {
-    final xRaw = 0.5 + ((_yawScale * yawDegrees + _yawBias) / 360.0);
-    final yRaw = 0.5 - ((_pitchScale * pitchDegrees + _pitchBias) / 360.0);
+    final xRaw = isCalibrated ? (_yawScale * yawDegrees + _yawBias) : 0.5 + yawDegrees / 360.0;
+    final yRaw = isCalibrated ? (_pitchScale * pitchDegrees + _pitchBias) : 0.5 - pitchDegrees / 360.0;
     final x = _emaX + _alpha * (xRaw.clamp(0.0, 1.0) - _emaX);
     final y = _emaY + _alpha * (yRaw.clamp(0.0, 1.0) - _emaY);
     _emaX = x; _emaY = y;
@@ -66,8 +66,8 @@ class GazeFusionService {
   Future<void> fit({
     required List<GazeCalibrationSample> samples,
   }) async {
-    if (samples.length < 4) {
-      throw StateError('تحتاج المعايرة إلى أربع نقاط على الأقل.');
+    if (samples.length < 9) {
+      throw StateError('تحتاج المعايرة إلى تسع نقاط على الأقل.');
     }
     final yaw = _fitAxis(samples.map((s) => s.yawDegrees).toList(), samples.map((s) => s.targetX).toList());
     final pitch = _fitAxis(samples.map((s) => s.pitchDegrees).toList(), samples.map((s) => s.targetY).toList());
