@@ -139,6 +139,10 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
       _calibrationSamples.clear();
       _targetStartedAt = DateTime.now();
     });
+    _calibrationTimer?.cancel();
+    _calibrationTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      if (mounted && _calibrating) setState(() {});
+    });
   }
 
   Future<void> _advanceCalibration() async {
@@ -148,6 +152,8 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
       try {
         await _fusion.fit(samples: samples);
         if (mounted) {
+          _calibrationTimer?.cancel();
+          _calibrationTimer?.cancel();
           setState(() => _calibrating = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('تم حفظ معايرة النظر بنجاح')),
