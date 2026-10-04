@@ -72,5 +72,5 @@ class LocalEmbeddingsService {
 
   static List<String> _tokens(String text) =>
       text.toLowerCase().replaceAll(RegExp(r'[^\u0600-\u06FFa-z0-9 ]'), ' ')
-        .split(RegExp(r'\\s+')).where((e)=>e.isNotEmpty).toList();
+        .split(RegExp(r'\s+')).where((e)=>e.isNotEmpty).toList();
 }
