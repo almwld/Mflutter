@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_dimensions.dart';
@@ -26,7 +27,7 @@ class _ParticleEffectState extends State<ParticleEffect>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late List<Particle> _particles;
-  final _random = DateTime.now();
+  final _random = Random();
 
   @override
   void initState() {
