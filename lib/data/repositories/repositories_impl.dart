@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/verse.dart';
 import '../../domain/models/quran_models.dart';
 import '../datasources/local/quran_local_datasource.dart';
@@ -42,16 +44,86 @@ class ModelsRepositoryImpl {
 }
 
 class ChatRepositoryImpl {
-  final List<Map<String,dynamic>> _conversations=[];
-  final List<Map<String,dynamic>> _messages=[];
+  static const _conversationsKey = 'mudabbir.chat.conversations';
+  static const _messagesKey = 'mudabbir.chat.messages';
+  static const _searchHistoryKey = 'mudabbir.chat.search_history';
+  Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
+
+  Future<List<Map<String, dynamic>>> _read(String key) async {
+    final raw = (await _prefs).getString(key);
+    if (raw == null || raw.isEmpty) return [];
+    final value = jsonDecode(raw);
+    if (value is! List) return [];
+    return value.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+  Future<void> _write(String key, List<Map<String, dynamic>> value) async =>
+      (await _prefs).setString(key, jsonEncode(value));
   String _id() => DateTime.now().microsecondsSinceEpoch.toString();
-  Future<Map<String,dynamic>?> getConversation(String id) async { try{return _conversations.firstWhere((c)=>c['id']==id);}catch(_){return null;} }
-  Future<List<Map<String,dynamic>>> getAllConversations() async => List.unmodifiable(_conversations);
-  Future<Map<String,dynamic>> createConversation(String title) async { final now=DateTime.now().toIso8601String(); final c={'id':_id(),'title':title,'createdAt':now,'lastMessageAt':now};_conversations.add(c);return c; }
-  Future<Map<String,dynamic>> addMessage(String conversationId,String content,int type) async { final m={'id':_id(),'conversationId':conversationId,'content':content,'type':type,'timestamp':DateTime.now().toIso8601String()};_messages.add(m);return m; }
-  Future<void> deleteConversation(String id) async {_conversations.removeWhere((c)=>c['id']==id);_messages.removeWhere((m)=>m['conversationId']==id);}
-  Future<void> saveConversation(Map<String,dynamic> c) async {final i=_conversations.indexWhere((x)=>x['id']==c['id']);if(i>=0)_conversations[i]=c;else _conversations.add(c);}
-  Future<List<Map<String,dynamic>>> getSearchHistory() async => const [];
+
+  Future<Map<String, dynamic>?> getConversation(String id) async {
+    for (final item in await _read(_conversationsKey)) {
+      if (item['id']?.toString() == id) return item;
+    }
+    return null;
+  }
+  Future<List<Map<String, dynamic>>> getAllConversations() async =>
+      List.unmodifiable(await _read(_conversationsKey));
+
+  Future<Map<String, dynamic>> createConversation(String title) async {
+    final items = await _read(_conversationsKey);
+    final now = DateTime.now().toIso8601String();
+    final item = {'id': _id(), 'title': title.trim(), 'createdAt': now, 'lastMessageAt': now};
+    items.add(item);
+    await _write(_conversationsKey, items);
+    return item;
+  }
+
+  Future<Map<String, dynamic>> addMessage(String conversationId, String content, int type) async {
+    final messages = await _read(_messagesKey);
+    final message = {'id': _id(), 'conversationId': conversationId, 'content': content, 'type': type, 'timestamp': DateTime.now().toIso8601String()};
+    messages.add(message);
+    await _write(_messagesKey, messages);
+    final conversations = await _read(_conversationsKey);
+    final i = conversations.indexWhere((x) => x['id']?.toString() == conversationId);
+    if (i >= 0) {
+      conversations[i]['lastMessageAt'] = message['timestamp'];
+      await _write(_conversationsKey, conversations);
+    }
+    return message;
+  }
+
+  Future<List<Map<String, dynamic>>> getMessages(String conversationId) async =>
+      List.unmodifiable((await _read(_messagesKey)).where((m) => m['conversationId']?.toString() == conversationId));
+
+  Future<void> deleteConversation(String id) async {
+    final conversations = await _read(_conversationsKey);
+    final messages = await _read(_messagesKey);
+    conversations.removeWhere((c) => c['id']?.toString() == id);
+    messages.removeWhere((m) => m['conversationId']?.toString() == id);
+    await _write(_conversationsKey, conversations);
+    await _write(_messagesKey, messages);
+  }
+
+  Future<void> saveConversation(Map<String, dynamic> conversation) async {
+    final conversations = await _read(_conversationsKey);
+    final i = conversations.indexWhere((c) => c['id']?.toString() == conversation['id']?.toString());
+    final copy = Map<String, dynamic>.from(conversation);
+    if (i >= 0) conversations[i] = copy; else conversations.add(copy);
+    await _write(_conversationsKey, conversations);
+  }
+
+  Future<List<Map<String, dynamic>>> getSearchHistory() async =>
+      List.unmodifiable(await _read(_searchHistoryKey));
+
+  Future<void> addSearchHistory(String query) async {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    final items = await _read(_searchHistoryKey);
+    items.removeWhere((x) => x['query']?.toString() == q);
+    items.insert(0, {'query': q, 'timestamp': DateTime.now().toIso8601String()});
+    if (items.length > 50) items.removeRange(50, items.length);
+    await _write(_searchHistoryKey, items);
+  }
 }
 
 class SettingsRepositoryImpl {
@@ -64,6 +136,13 @@ class SettingsRepositoryImpl {
   Future<T?> getSetting<T>(String k)=>_datasource.getSetting<T>(k);
   Future<bool> setSetting<T>(String k,T v)=>_datasource.setSetting(k,v);
   Future<void> clearCache()=>_datasource.clearCache();
-  Future<Map<String,dynamic>?> getUserProfile() async => null;
-  Future<void> saveUserProfile(Map<String,dynamic> profile) async {}
+  static const _profileKey = 'mudabbir.user.profile';
+  Future<Map<String,dynamic>?> getUserProfile() async {
+    final raw = (await SharedPreferences.getInstance()).getString(_profileKey);
+    if (raw == null || raw.isEmpty) return null;
+    final value = jsonDecode(raw);
+    return value is Map ? Map<String,dynamic>.from(value) : null;
+  }
+  Future<void> saveUserProfile(Map<String,dynamic> profile) async =>
+      (await SharedPreferences.getInstance()).setString(_profileKey, jsonEncode(profile));
 }
