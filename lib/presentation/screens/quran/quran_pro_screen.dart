@@ -31,7 +31,6 @@ class _QuranProScreenState extends State<QuranProScreen>
   // متحكمات
   final ScrollController _scroll = ScrollController();
   late AnimationController _pulseCtrl;
-  late Animation<double> _pulse;
 
   // الثوابت
   static const _bgColor = Color(0xFF0A0E27);
@@ -51,7 +50,6 @@ class _QuranProScreenState extends State<QuranProScreen>
     super.initState();
     _pulseCtrl = AnimationController(
       vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-    _pulse = Tween(begin: 0.8, end: 1.0).animate(_pulseCtrl);
     _loadQuran();
   }
 
