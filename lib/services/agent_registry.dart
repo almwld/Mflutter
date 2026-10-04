@@ -122,6 +122,20 @@ class AgentRegistry {
     AgentDefinition('ultra_deep_7','عمق 7','فائقة العمق','مسار تحليل عميق'),
     AgentDefinition('ultra_deep_8','عمق 8','فائقة العمق','مسار تحليل عميق'),
     AgentDefinition('ultra_deep_9','عمق 9','فائقة العمق','مسار تحليل عميق'),
+    AgentDefinition('planner','مخطط','التشغيل','تحويل الطلب إلى خطة قابلة للتنفيذ'),
+    AgentDefinition('critic','ناقد','التشغيل','مراجعة نتائج الوكلاء قبل الدمج'),
+    AgentDefinition('researcher','باحث','التشغيل','تنظيم البحث في المصادر المحلية'),
+    AgentDefinition('verifier','متحقق','التشغيل','التحقق من اكتمال النتائج'),
+    AgentDefinition('formatter','منسق','المخرجات','تهيئة النتائج بصيغ العرض'),
+    AgentDefinition('artifact','مُخرج','المخرجات','إدارة المخرجات والملفات'),
+    AgentDefinition('exporter','مصدّر','المخرجات','تنفيذ صيغ التصدير المدعومة'),
+    AgentDefinition('memory','ذاكرة','التشغيل','إدارة سياق الجلسة المحلي'),
+    AgentDefinition('safety','أمان','التشغيل','فرض حدود التنفيذ المحلي'),
+    AgentDefinition('scheduler','مجدول','التشغيل','إدارة المهام المؤجلة المحلية'),
+    AgentDefinition('evaluator','مقيّم','التدريب','قياس الأداء من بيانات حقيقية'),
+    AgentDefinition('retriever','مسترجع','التشغيل','استرجاع المعرفة المفهرسة'),
+    AgentDefinition('context','سياق جامع','التشغيل','تجميع السياق للوكيل'),
+    AgentDefinition('narrator','صائغ','المخرجات','صياغة النتيجة النهائية'),
   ];
 
   static List<AgentDefinition> get all => List.unmodifiable(_core);
