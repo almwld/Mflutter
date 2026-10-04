@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
@@ -18,6 +19,7 @@ class _MushafNebulaState extends State<MushafNebula>
   final List<Offset> _particles = [];
   double _tiltX = 0;
   double _tiltY = 0;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
 
   @override
   void initState() {
@@ -32,7 +34,7 @@ class _MushafNebulaState extends State<MushafNebula>
       _particles.add(Offset(random.nextDouble(), random.nextDouble()));
     }
 
-    accelerometerEventStream(
+    _accelerometerSubscription = accelerometerEventStream(
       samplingPeriod: SensorInterval.normalInterval,
     ).listen((event) {
       if (!mounted) return;
@@ -45,6 +47,7 @@ class _MushafNebulaState extends State<MushafNebula>
 
   @override
   void dispose() {
+    _accelerometerSubscription?.cancel();
     _controller.dispose();
     super.dispose();
   }
