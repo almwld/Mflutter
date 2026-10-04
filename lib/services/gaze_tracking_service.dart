@@ -129,20 +129,23 @@ class GazeTrackingService {
       }
       return out;
     }
-    if (image.planes.length < 2) throw StateError('YUV frame planes غير صالحة.');
+    if (image.planes.isEmpty) throw StateError('YUV frame planes غير صالحة.');
     final yPlane = image.planes[0];
-    final uvPlane = image.planes[1];
     final yBytes = yPlane.bytes;
+    final uvPlane = image.planes.length >= 2 ? image.planes[1] : image.planes[0];
     final uvBytes = uvPlane.bytes;
+    final isNv21 = image.planes.length == 1;
     final out = List<int>.filled(image.width * image.height * 3, 0);
     for (var y = 0; y < image.height; y++) {
       for (var x = 0; x < image.width; x++) {
         final yp = y * yPlane.bytesPerRow + x;
         final uvRow = (y >> 1) * uvPlane.bytesPerRow;
         final uvCol = (x >> 1) * 2;
-        final up = uvRow + uvCol;
-        final u = uvBytes[up] - 128;
-        final v = uvBytes[up + 1] - 128;
+        final up = isNv21 ? uvRow + uvCol : uvRow + uvCol;
+        final first = uvBytes[up] - 128;
+        final second = uvBytes[up + 1] - 128;
+        final u = (isNv21 ? second : first);
+        final v = (isNv21 ? first : second);
         final yy = yBytes[yp] - 16;
         final r = (1.164 * yy + 1.596 * v).round().clamp(0, 255);
         final g = (1.164 * yy - 0.392 * u - 0.813 * v).round().clamp(0, 255);
