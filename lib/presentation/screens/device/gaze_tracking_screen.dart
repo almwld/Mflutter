@@ -5,6 +5,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../../services/gaze_tracking_service.dart';
 import '../../../services/gaze_model_service.dart';
 import '../../../services/vision_asset_service.dart';
+import '../../../services/gaze_fusion_service.dart';
 
 class GazeTrackingScreen extends StatefulWidget {
   const GazeTrackingScreen({super.key});
@@ -15,6 +16,7 @@ class GazeTrackingScreen extends StatefulWidget {
 class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   CameraController? _controller;
   final _gaze = GazeTrackingService.instance;
+  final _fusion = GazeFusionService.instance;
   GazeEstimate? _estimate;
   bool _busy = false;
   bool _modelReady = false;
@@ -24,6 +26,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   void initState() {
     super.initState();
     _prepareModels();
+    _fusion.load();
     _init();
   }
 
@@ -96,6 +99,20 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
     );
   }
 
+  String _gazeText(GazeEstimate e, BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final point = _fusion.map(
+      yawDegrees: e.yawDegrees,
+      pitchDegrees: e.pitchDegrees,
+      width: size.width,
+      height: size.height,
+      confidence: e.confidence,
+    );
+    return 'Yaw: ${e.yawDegrees.toStringAsFixed(1)}°  Pitch: ${e.pitchDegrees.toStringAsFixed(1)}°\n'
+        'النقطة: (${point.x.toStringAsFixed(0)}, ${point.y.toStringAsFixed(0)})\n'
+        'الثقة: ${(point.confidence * 100).round()}%';
+  }
+
   @override
   void dispose() {
     _controller?.dispose();
@@ -121,7 +138,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
                     child: Text(
                       e == null ? (_modelError != null ? 'تعذر تحميل نموذج النظر: $_modelError' : (_modelReady ? 'جارٍ تحليل الوجه…' : 'جارٍ تجهيز نماذج الرؤية…')) :
                       e.faceDetected
-                          ? 'الاتجاه الأفقي: ${e.horizontal.toStringAsFixed(2)}\nالاتجاه العمودي: ${e.vertical.toStringAsFixed(2)}\nالثقة: ${(e.confidence*100).round()}%'
+                          ? _gazeText(e, context)
                           : 'لم يتم اكتشاف وجه',
                       textDirection: TextDirection.rtl,
                     ),
