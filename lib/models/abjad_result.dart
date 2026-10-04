@@ -1,0 +1,1 @@
+export '../domain/entities/abjad_result.dart';

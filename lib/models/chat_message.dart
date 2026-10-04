@@ -1,0 +1,1 @@
+export '../domain/entities/chat_message.dart';

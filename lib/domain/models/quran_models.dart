@@ -1,0 +1,1 @@
+class Surah { final int number; final String nameArabic; final String nameEnglish; final int verseCount; final String revelationType; final int pageNumber; const Surah({required this.number,required this.nameArabic,required this.nameEnglish,required this.verseCount,required this.revelationType,required this.pageNumber});}
