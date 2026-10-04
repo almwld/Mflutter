@@ -28,6 +28,35 @@ jobs:
       - name: Generate Android host project
         run: flutter create --platforms=android --project-name mudabbir_al_asrar --org com.mudabbir .
 
+      - name: Configure native device capabilities
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path("android/app/build.gradle")
+          text = gradle.read_text()
+          text = text.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 24")
+          text = text.replace("targetSdkVersion flutter.targetSdkVersion", "targetSdkVersion 35")
+          gradle.write_text(text)
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          marker = "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">"
+          permissions = """
+          <uses-permission android:name="android.permission.CAMERA" />
+          <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+          <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+          <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+          <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+          <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
+          <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+          <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+          <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
+          """
+          if "android.permission.CAMERA" not in text:
+              text = text.replace(marker, marker + permissions)
+          manifest.write_text(text)
+          PY
+
       - name: Generate fixed QCF Mushaf layout
         run: python3 tool/generate_mushaf_layout.py
 
