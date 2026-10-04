@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../services/ar_lens_service.dart';
 import '../../services/p2p_mesh_service.dart';
 import '../../services/iot_sanctuary_service.dart';
 
@@ -21,10 +20,6 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(title: Text('مركز السيادة', style: TextStyle(color: AppColors.primaryGold)), backgroundColor: AppColors.primaryNavy),
       body: ListView(padding: EdgeInsets.all(16), children: [
-        _buildCard('🔮 الواقع المعزز', 'تعرف على الآيات من الطبيعة', Icons.camera, () {
-          final result = ARLensService.detectObject('mountain');
-          setState(() => _status = result != null ? '${result['verse']}\n${result['science']} - ${result['attribute']}' : 'لم يتم التعرف');
-        }),
         _buildCard('🌐 شبكة P2P', _scanning ? 'جاري المسح...' : '${_peers.length} أجهزة قريبة', Icons.hub, () async {
           setState(() => _scanning = true);
           await P2PMeshService.instance.discover();
