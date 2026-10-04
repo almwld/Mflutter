@@ -14,6 +14,11 @@ class Insight {
   final int difficulty;
   final String? relatedVerse;
   final String? relatedScience;
+  bool get isRead => false;
+  String get answer => reflections.isNotEmpty ? reflections.first : '';
+  String get hint => keywords.isNotEmpty ? keywords.first : 'تأمل في السؤال';
+  DateTime get timestamp => DateTime.fromMillisecondsSinceEpoch(id > 0 ? id * 1000 : 0);
+  InsightCategory get insightCategory => InsightCategory.fromCategory(category);
 
   const Insight({
     required this.id,
@@ -183,4 +188,7 @@ class InsightProgress {
       '$totalAnswered سؤال\n'
       '$deepAnswers إجابة عميقة\n'
       '$streakDays يوم متتالي';
+}
+enum InsightCategory { contemplation, quran, science, wisdom, general;
+  static InsightCategory fromCategory(String value) { switch(value.toLowerCase()) {case 'contemplation':case 'تأمل': return contemplation; case 'quran':case 'القرآن': return quran; case 'science':case 'العلوم': return science; case 'wisdom':case 'حكمة': return wisdom; default:return general;} }
 }
