@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -21,6 +23,16 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   bool _busy = false;
   bool _modelReady = false;
   String? _modelError;
+  bool _calibrating = false;
+  int _calibrationIndex = 0;
+  final List<GazeCalibrationSample> _calibrationSamples = [];
+  final List<Offset> _targets = const [
+    Offset(0.10, 0.10), Offset(0.50, 0.10), Offset(0.90, 0.10),
+    Offset(0.10, 0.50), Offset(0.50, 0.50), Offset(0.90, 0.50),
+    Offset(0.10, 0.90), Offset(0.50, 0.90), Offset(0.90, 0.90),
+  ];
+  Timer? _calibrationTimer;
+  DateTime? _targetStartedAt;
 
   @override
   void initState() {
@@ -60,7 +72,10 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
         final input = _inputImage(image, camera, controller);
         if (input != null) {
           final result = await _gaze.process(input, image, camera);
-          if (result != null && mounted) setState(() => _estimate = result);
+          if (result != null && mounted) {
+            setState(() => _estimate = result);
+            _collectCalibrationSample(result);
+          }
         }
       } finally {
         _busy = false;
@@ -99,6 +114,63 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
     );
   }
 
+  void _collectCalibrationSample(GazeEstimate e) {
+    if (!_calibrating || !e.faceDetected || e.confidence <= 0) return;
+    final started = _targetStartedAt;
+    if (started == null || DateTime.now().difference(started) < const Duration(milliseconds: 700)) return;
+    final target = _targets[_calibrationIndex];
+    _calibrationSamples.add(GazeCalibrationSample(
+      yawDegrees: e.yawDegrees,
+      pitchDegrees: e.pitchDegrees,
+      targetX: target.dx,
+      targetY: target.dy,
+    ));
+    if (_calibrationSamples.length % 12 == 0) {
+      final samplesForTarget = _calibrationSamples.where((s) => s.targetX == target.dx && s.targetY == target.dy).length;
+      if (samplesForTarget >= 12) _advanceCalibration();
+    }
+  }
+
+  void _startCalibration() {
+    if (_calibrating) return;
+    setState(() {
+      _calibrating = true;
+      _calibrationIndex = 0;
+      _calibrationSamples.clear();
+      _targetStartedAt = DateTime.now();
+    });
+  }
+
+  Future<void> _advanceCalibration() async {
+    if (!_calibrating) return;
+    if (_calibrationIndex >= _targets.length - 1) {
+      final samples = List<GazeCalibrationSample>.from(_calibrationSamples);
+      try {
+        await _fusion.fit(samples: samples);
+        if (mounted) {
+          setState(() => _calibrating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم حفظ معايرة النظر بنجاح')),
+          );
+        }
+      } catch (error) {
+        if (mounted) {
+          setState(() => _calibrating = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('تعذر إكمال المعايرة: $error')),
+          );
+        }
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        _calibrationIndex++;
+        _targetStartedAt = DateTime.now();
+      });
+    }
+  }
+
   String _gazeText(GazeEstimate e, BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final point = _fusion.map(
@@ -113,8 +185,15 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
         'الثقة: ${(point.confidence * 100).round()}%';
   }
 
+  double get _calibrationProgress {
+    final started = _targetStartedAt;
+    if (!_calibrating || started == null) return 0;
+    return (DateTime.now().difference(started).inMilliseconds / 700.0).clamp(0.0, 1.0);
+  }
+
   @override
   void dispose() {
+    _calibrationTimer?.cancel();
     _controller?.dispose();
     _gaze.dispose();
     super.dispose();
@@ -130,6 +209,30 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Stack(children: [
               Positioned.fill(child: CameraPreview(c)),
+              if (_calibrating)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _CalibrationTargetPainter(
+                        target: _targets[_calibrationIndex],
+                        progress: _calibrationProgress,
+                      ),
+                    ),
+                  ),
+                ),
+              if (!_calibrating)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 92,
+                  child: Center(
+                    child: FilledButton.icon(
+                      onPressed: _modelReady ? _startCalibration : null,
+                      icon: const Icon(Icons.center_focus_strong),
+                      label: const Text('معايرة تتبع النظر'),
+                    ),
+                  ),
+                ),
               Positioned(
                 left: 16, right: 16, bottom: 24,
                 child: Card(
@@ -148,4 +251,32 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
             ]),
     );
   }
+}
+
+
+class _CalibrationTargetPainter extends CustomPainter {
+  const _CalibrationTargetPainter({required this.target, required this.progress});
+  final Offset target;
+  final double progress;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(target.dx * size.width, target.dy * size.height);
+    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = 3;
+    canvas.drawCircle(center, 24, paint);
+    canvas.drawCircle(center, 8, Paint()..style = PaintingStyle.fill);
+    if (progress < 1) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: 32),
+        -math.pi / 2,
+        math.pi * 2 * progress,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CalibrationTargetPainter oldDelegate) =>
+      oldDelegate.target != target || oldDelegate.progress != progress;
 }
