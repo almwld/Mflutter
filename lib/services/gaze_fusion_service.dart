@@ -107,3 +107,62 @@ class GazeCalibrationSample {
   final double targetX;
   final double targetY;
 }
+
+
+enum GazeIntent { none, dwellActivated }
+
+class GazeIntentEvent {
+  const GazeIntentEvent({required this.intent, required this.x, required this.y});
+  final GazeIntent intent;
+  final double x;
+  final double y;
+}
+
+class GazeDwellController {
+  GazeDwellController({
+    this.dwellDuration = const Duration(milliseconds: 850),
+    this.activationRadius = 32,
+    this.cooldown = const Duration(milliseconds: 900),
+  });
+
+  final Duration dwellDuration;
+  final double activationRadius;
+  final Duration cooldown;
+  double? _x;
+  double? _y;
+  DateTime? _started;
+  DateTime? _lastActivated;
+
+  GazeIntentEvent update({
+    required double x,
+    required double y,
+    required double confidence,
+    DateTime? now,
+  }) {
+    final t = now ?? DateTime.now();
+    if (confidence < 0.45) {
+      reset();
+      return GazeIntentEvent(intent: GazeIntent.none, x: x, y: y);
+    }
+    if (_x == null || _y == null ||
+        math.sqrt(math.pow(x - _x!, 2) + math.pow(y - _y!, 2)) > activationRadius) {
+      _x = x;
+      _y = y;
+      _started = t;
+      return GazeIntentEvent(intent: GazeIntent.none, x: x, y: y);
+    }
+    final cooling = _lastActivated != null && t.difference(_lastActivated!) < cooldown;
+    if (!cooling && t.difference(_started ?? t) >= dwellDuration) {
+      _lastActivated = t;
+      _started = t;
+      return GazeIntentEvent(intent: GazeIntent.dwellActivated, x: x, y: y);
+    }
+    return GazeIntentEvent(intent: GazeIntent.none, x: x, y: y);
+  }
+
+  void reset() {
+    _x = null;
+    _y = null;
+    _started = null;
+  }
+}
