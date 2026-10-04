@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import '../../../core/constants/app_urls.dart';
 import '../../../core/error/exceptions.dart';
 
@@ -39,12 +40,9 @@ class StorageDatasource {
       final file = File(AppURLs.nucleusFilePath);
       if (await file.exists()) {
         final content = await file.readAsString();
-        // محاكاة تحليل JSON
-        return {
-          'version': '1.0.0',
-          'data': content,
-          'loadedAt': DateTime.now().toIso8601String(),
-        };
+        final decoded = jsonDecode(content);
+        if (decoded is Map<String, dynamic>) return decoded;
+        throw const FormatException('محتوى ملف النواة ليس JSON object صالحًا');
       }
       throw const StorageException(message: 'ملف النواة غير موجود');
     } catch (e) {
@@ -86,6 +84,7 @@ class StorageDatasource {
   Future<File> writeFile(String path, String content) async {
     try {
       final file = File(path);
+      await file.parent.create(recursive: true);
       return await file.writeAsString(content);
     } catch (e) {
       throw StorageException(message: e.toString());
@@ -96,6 +95,7 @@ class StorageDatasource {
   Future<File> writeFileBytes(String path, List<int> bytes) async {
     try {
       final file = File(path);
+      await file.parent.create(recursive: true);
       return await file.writeAsBytes(bytes);
     } catch (e) {
       throw StorageException(message: e.toString());
