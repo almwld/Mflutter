@@ -1,264 +1,69 @@
-import '../datasources/local/quran_local_datasource.dart';
 import '../../domain/entities/verse.dart';
-
-/// =============================================================================
-/// QuranRepositoryImpl - تنفيذ مستودع القرآن
-/// =============================================================================
+import '../../domain/models/quran_models.dart';
+import '../datasources/local/quran_local_datasource.dart';
+import '../datasources/local/abjad_local_datasource.dart';
+import '../datasources/local/models_local_datasource.dart';
+import '../datasources/local/settings_local_datasource.dart';
+import '../../core/utils/abjad_calculator.dart';
 
 class QuranRepositoryImpl {
   final QuranLocalDatasource _datasource;
+  QuranRepositoryImpl({QuranLocalDatasource? datasource}) : _datasource = datasource ?? QuranLocalDatasource();
 
-  QuranRepositoryImpl({QuranLocalDatasource? datasource})
-      : _datasource = datasource ?? QuranLocalDatasource();
-
-  /// جلب جميع السور
-  Future<List<Surah>> getAllSurahs() => _datasource.getAllSurahs();
-
-  /// جلب آيات سورة
-  Future<List<Verse>> getSurahVerses(int surahNumber) =>
-      _datasource.getSurahVerses(surahNumber);
-
-  /// جلب آية محددة
-  Future<Verse?> getVerse(int surahNumber, int ayahNumber) =>
-      _datasource.getVerse(surahNumber, ayahNumber);
-
-  /// بحث في القرآن
-  Future<List<Verse>> search(String query) => _datasource.search(query);
-
-  /// جلب آية عشوائية
-  Future<Verse> getRandomVerse() => _datasource.getRandomVerse();
-
-  /// جلب آية يومية
-  Future<Verse> getDailyVerse() => _datasource.getDailyVerse();
-
-  /// جلب الأجزاء
-  Future<List<Juz>> getAllJuz() => _datasource.getAllJuz();
+  Future<List<Surah>> getAllSurahs() => _datasource.getSurahs();
+  Future<List<Verse>> getSurahVerses(int n) async => (await _datasource.getVersesBySurah(n)).map(Ayah.fromJson).toList();
+  Future<Verse?> getVerse(int s,int a) async { final row=await _datasource.getVerse(s,a); return row==null?null:Ayah.fromJson(row); }
+  Future<List<Verse>> search(String q) async => (await _datasource.searchVerses(q)).map(Ayah.fromJson).toList();
+  Future<Verse> getRandomVerse() async { final rows=await _datasource.searchVerses(''); if(rows.isEmpty) throw StateError('لا توجد آيات محلية.'); return Ayah.fromJson(rows.first); }
+  Future<Verse> getDailyVerse() => getRandomVerse();
+  Future<List<Juz>> getAllJuz() => _datasource.getAllJuzs();
 }
-
-/// =============================================================================
-/// AbjadRepositoryImpl - تنفيذ مستودع الجُمَّل
-/// =============================================================================
-
-import '../datasources/local/abjad_local_datasource.dart';
-import '../../core/utils/abjad_calculator.dart';
 
 class AbjadRepositoryImpl {
   final AbjadLocalDatasource _datasource;
-
-  AbjadRepositoryImpl({AbjadLocalDatasource? datasource})
-      : _datasource = datasource ?? AbjadLocalDatasource();
-
-  /// حساب الجمل
-  dynamic calculateAbjad(String text) {
-    final result = AbjadCalculator.calculateAll(text);
-    return _toEntity(result);
-  }
-
-  /// تحليل الحروف
-  dynamic analyzeLetters(String text) {
-    final analysis = _datasource.analyze(text);
-    return analysis;
-  }
-
-  /// الحصول على توازن العناصر
-  dynamic getElementalBalance(String text) {
-    final result = AbjadCalculator.calculateAll(text);
-    return {
-      'element': result.element.name,
-      'color': result.color,
-    };
-  }
-
-  /// الحصول على تأثير الكواكب
-  dynamic getPlanetaryInfluence(String text) {
-    final result = AbjadCalculator.calculateAll(text);
-    return {
-      'planet': result.planet.name,
-      'zodiac': result.zodiac.name,
-    };
-  }
-
-  /// الحصول على رنين الاسم الإلهي
-  dynamic getDivineResonance(String text) {
-    final result = AbjadCalculator.calculateAll(text);
-    return {
-      'name': result.divineName,
-      'value': result.kabir,
-    };
-  }
-
-  dynamic _toEntity(AbjadResult result) {
-    return {
-      'text': result.text,
-      'kabir': result.kabir,
-      'saghir': result.saghir,
-      'wasat': result.wasat,
-      'element': result.element.name,
-      'planet': result.planet.name,
-      'zodiac': result.zodiac.name,
-      'divineName': result.divineName,
-      'frequency': result.frequency,
-      'color': result.color,
-    };
-  }
+  AbjadRepositoryImpl({AbjadLocalDatasource? datasource}) : _datasource = datasource ?? AbjadLocalDatasource();
+  dynamic calculateAbjad(String text) => _toEntity(AbjadCalculator.calculateAll(text));
+  dynamic analyzeLetters(String text) => _datasource.analyze(text);
+  dynamic getElementalBalance(String text) { final r=AbjadCalculator.calculateAll(text); return {'element':r.element.name,'color':r.color}; }
+  dynamic getPlanetaryInfluence(String text) { final r=AbjadCalculator.calculateAll(text); return {'planet':r.planet.name,'zodiac':r.zodiac.name}; }
+  dynamic getDivineResonance(String text) { final r=AbjadCalculator.calculateAll(text); return {'name':r.divineName,'value':r.kabir}; }
+  dynamic _toEntity(AbjadResult r) => {'text':r.text,'kabir':r.kabir,'saghir':r.saghir,'wasat':r.wasat,'element':r.element.name,'planet':r.planet.name,'zodiac':r.zodiac.name,'divineName':r.divineName,'frequency':r.frequency,'color':r.color};
 }
-
-/// =============================================================================
-/// ModelsRepositoryImpl - تنفيذ مستودع النماذج
-/// =============================================================================
-
-import '../datasources/local/models_local_datasource.dart';
 
 class ModelsRepositoryImpl {
   final ModelsLocalDatasource _datasource;
-
-  ModelsRepositoryImpl({ModelsLocalDatasource? datasource})
-      : _datasource = datasource ?? ModelsLocalDatasource();
-
-  /// جلب معلومات النموذج
-  Future<Map<String, dynamic>?> getModelInfo(String modelName) async {
-    return _datasource.getModelInfo(modelName);
-  }
-
-  /// تحميل النموذج
-  Future<bool> loadModel(String modelName) =>
-      _datasource.loadModel(modelName);
-
-  /// تشغيل الاستدلال
-  Future<Map<String, dynamic>> runInference(
-    String modelName,
-    List<double> features,
-  ) =>
-      _datasource.runInference(modelName, features);
-
-  /// استخراج الميزات
-  List<double> extractFeatures(String text) =>
-      _datasource.extractFeatures(text);
-
-  /// جلب جميع النماذج
-  Future<List<Map<String, dynamic>>> getAllModels() =>
-      _datasource.getModelsInfo();
-
-  /// إلغاء تحميل النموذج
-  Future<void> unloadModel(String modelName) =>
-      _datasource.unloadModel(modelName);
+  ModelsRepositoryImpl({ModelsLocalDatasource? datasource}) : _datasource = datasource ?? ModelsLocalDatasource();
+  Future<Map<String,dynamic>?> getModelInfo(String n) async => _datasource.getModelInfo(n);
+  Future<bool> loadModel(String n) => _datasource.loadModel(n);
+  Future<Map<String,dynamic>> runInference(String n,List<double> f) => _datasource.runInference(n,f);
+  List<double> extractFeatures(String t) => _datasource.extractFeatures(t);
+  Future<List<Map<String,dynamic>>> getAllModels() => _datasource.getModelsInfo();
+  Future<void> unloadModel(String n) => _datasource.unloadModel(n);
 }
-
-/// =============================================================================
-/// ChatRepositoryImpl - تنفيذ مستودع المحادثة
-/// =============================================================================
-
-import 'package:uuid/uuid.dart';
 
 class ChatRepositoryImpl {
-  final _uuid = const Uuid();
-  final List<Map<String, dynamic>> _conversations = [];
-  final List<Map<String, dynamic>> _messages = [];
-
-  /// جلب المحادثة
-  Future<Map<String, dynamic>?> getConversation(String conversationId) async {
-    try {
-      return _conversations.firstWhere((c) => c['id'] == conversationId);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// جلب جميع المحادثات
-  Future<List<Map<String, dynamic>>> getAllConversations() async {
-    return _conversations;
-  }
-
-  /// إنشاء محادثة جديدة
-  Future<Map<String, dynamic>> createConversation(String title) async {
-    final conversation = {
-      'id': _uuid.v4(),
-      'title': title,
-      'createdAt': DateTime.now().toIso8601String(),
-      'lastMessageAt': DateTime.now().toIso8601String(),
-    };
-    _conversations.add(conversation);
-    return conversation;
-  }
-
-  /// إضافة رسالة
-  Future<Map<String, dynamic>> addMessage(
-    String conversationId,
-    String content,
-    int type,
-  ) async {
-    final message = {
-      'id': _uuid.v4(),
-      'conversationId': conversationId,
-      'content': content,
-      'type': type,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-    _messages.add(message);
-    return message;
-  }
-
-  /// حذف محادثة
-  Future<void> deleteConversation(String conversationId) async {
-    _conversations.removeWhere((c) => c['id'] == conversationId);
-    _messages.removeWhere((m) => m['conversationId'] == conversationId);
-  }
-
-  /// حفظ المحادثة
-  Future<void> saveConversation(Map<String, dynamic> conversation) async {
-    final index = _conversations.indexWhere((c) => c['id'] == conversation['id']);
-    if (index >= 0) {
-      _conversations[index] = conversation;
-    } else {
-      _conversations.add(conversation);
-    }
-  }
-
-  /// جلب سجل البحث
-  Future<List<Map<String, dynamic>>> getSearchHistory() async {
-    return [];
-  }
+  final List<Map<String,dynamic>> _conversations=[];
+  final List<Map<String,dynamic>> _messages=[];
+  String _id() => DateTime.now().microsecondsSinceEpoch.toString();
+  Future<Map<String,dynamic>?> getConversation(String id) async { try{return _conversations.firstWhere((c)=>c['id']==id);}catch(_){return null;} }
+  Future<List<Map<String,dynamic>>> getAllConversations() async => List.unmodifiable(_conversations);
+  Future<Map<String,dynamic>> createConversation(String title) async { final now=DateTime.now().toIso8601String(); final c={'id':_id(),'title':title,'createdAt':now,'lastMessageAt':now};_conversations.add(c);return c; }
+  Future<Map<String,dynamic>> addMessage(String conversationId,String content,int type) async { final m={'id':_id(),'conversationId':conversationId,'content':content,'type':type,'timestamp':DateTime.now().toIso8601String()};_messages.add(m);return m; }
+  Future<void> deleteConversation(String id) async {_conversations.removeWhere((c)=>c['id']==id);_messages.removeWhere((m)=>m['conversationId']==id);}
+  Future<void> saveConversation(Map<String,dynamic> c) async {final i=_conversations.indexWhere((x)=>x['id']==c['id']);if(i>=0)_conversations[i]=c;else _conversations.add(c);}
+  Future<List<Map<String,dynamic>>> getSearchHistory() async => const [];
 }
-
-/// =============================================================================
-/// SettingsRepositoryImpl - تنفيذ مستودع الإعدادات
-/// =============================================================================
-
-import '../datasources/local/settings_local_datasource.dart';
 
 class SettingsRepositoryImpl {
   final SettingsLocalDatasource _datasource;
-
-  SettingsRepositoryImpl({SettingsLocalDatasource? datasource})
-      : _datasource = datasource ?? SettingsLocalDatasource();
-
-  /// جلب الثيم
-  Future<String> getTheme() => _datasource.getTheme();
-
-  /// تعيين الثيم
-  Future<bool> setTheme(String theme) => _datasource.setTheme(theme);
-
-  /// جلب اللغة
-  Future<String> getLanguage() => _datasource.getLanguage();
-
-  /// تعيين اللغة
-  Future<bool> setLanguage(String language) => _datasource.setLanguage(language);
-
-  /// جلب إعداد
-  Future<T?> getSetting<T>(String key) => _datasource.getSetting<T>(key);
-
-  /// تعيين إعداد
-  Future<bool> setSetting<T>(String key, T value) =>
-      _datasource.setSetting(key, value);
-
-  /// مسح ذاكرة التخزين المؤقت
-  Future<void> clearCache() => _datasource.clearCache();
-
-  /// جلب ملف المستخدم
-  Future<Map<String, dynamic>?> getUserProfile() async {
-    return null;
-  }
-
-  /// حفظ ملف المستخدم
-  Future<void> saveUserProfile(Map<String, dynamic> profile) async {}
+  SettingsRepositoryImpl({SettingsLocalDatasource? datasource}) : _datasource = datasource ?? SettingsLocalDatasource();
+  Future<String> getTheme()=>_datasource.getTheme();
+  Future<bool> setTheme(String v)=>_datasource.setTheme(v);
+  Future<String> getLanguage()=>_datasource.getLanguage();
+  Future<bool> setLanguage(String v)=>_datasource.setLanguage(v);
+  Future<T?> getSetting<T>(String k)=>_datasource.getSetting<T>(k);
+  Future<bool> setSetting<T>(String k,T v)=>_datasource.setSetting(k,v);
+  Future<void> clearCache()=>_datasource.clearCache();
+  Future<Map<String,dynamic>?> getUserProfile() async => null;
+  Future<void> saveUserProfile(Map<String,dynamic> profile) async {}
 }
