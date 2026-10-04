@@ -19,8 +19,10 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   CameraController? _controller;
   final _gaze = GazeTrackingService.instance;
   final _fusion = GazeFusionService.instance;
+  final _dwell = GazeDwellController();
   GazeEstimate? _estimate;
   GazeScreenPoint? _screenPoint;
+  DateTime? _lastIntentAt;
   bool _busy = false;
   bool _modelReady = false;
   String? _modelError;
@@ -87,6 +89,16 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
               _screenPoint = point;
             });
             _collectCalibrationSample(result);
+            final dwellEvent = _dwell.update(
+              x: point.x,
+              y: point.y,
+              confidence: point.confidence,
+            );
+            if (dwellEvent.intent == GazeIntent.dwellActivated &&
+                (_lastIntentAt == null ||
+                    DateTime.now().difference(_lastIntentAt!) > const Duration(milliseconds: 900))) {
+              _lastIntentAt = DateTime.now();
+            }
           }
         }
       } finally {
