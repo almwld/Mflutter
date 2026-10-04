@@ -201,9 +201,29 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                     height: 1.0,
                   ),
                   customHighlightDecoration: (highlightColor) {
+                    final pulse = 0.5 + 0.5 * _livingGlow.value;
+                    final isGreat = _highlights.isNotEmpty &&
+                        _isGreatVerse(_highlights.first);
+                    final opacity = isGreat
+                        ? 0.12 + pulse * 0.22
+                        : 0.10 + pulse * 0.12;
                     return BoxDecoration(
-                      color: highlightColor.withOpacity(0.18),
-                      borderRadius: BorderRadius.circular(4),
+                      color: highlightColor.withOpacity(opacity),
+                      borderRadius: BorderRadius.circular(isGreat ? 7 : 4),
+                      border: Border.all(
+                        color: highlightColor.withOpacity(
+                          isGreat ? 0.28 + pulse * 0.34 : 0.12 + pulse * 0.18,
+                        ),
+                        width: isGreat ? 1.2 : 0.8,
+                      ),
+                      boxShadow: isGreat
+                          ? [
+                              BoxShadow(
+                                color: highlightColor.withOpacity(0.12 + pulse * 0.12),
+                                blurRadius: 8 + pulse * 8,
+                              ),
+                            ]
+                          : null,
                     );
                   },
                   pageBackgroundBuilder: (context, pageContent) {
