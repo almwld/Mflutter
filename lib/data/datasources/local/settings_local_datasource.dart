@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../domain/entities/insight.dart';
 
 /// =============================================================================
 /// SettingsLocalDatasource - مصدر بيانات الإعدادات المحلي
@@ -179,4 +180,31 @@ class SettingsLocalDatasource {
     await setSetting('usage_count', count + 1);
     return count + 1;
   }
+
+  Future<List<Insight>> getDailyInsights() async => const [];
+
+  Future<List<Insight>> getInsightsByCategory(InsightCategory category) async => const [];
+
+  Future<Insight> getRandomInsight() async {
+    throw StateError('لا توجد بصائر محلية مهيأة.');
+  }
+
+  Future<List<Insight>> searchInsights(String query) async => const [];
+
+  Future<void> markInsightAsRead(String insightId) async {
+    final prefs = await _preferences;
+    final ids = prefs.getStringList('read_insights') ?? <String>[];
+    if (!ids.contains(insightId)) {
+      await prefs.setStringList('read_insights', [...ids, insightId]);
+    }
+  }
+
+  Future<int> getUnreadInsightCount() async {
+    final insights = await getDailyInsights();
+    final prefs = await _preferences;
+    final read = prefs.getStringList('read_insights') ?? <String>[];
+    return insights.where((item) => !read.contains(item.id.toString())).length;
+  }
 }
+
+  
