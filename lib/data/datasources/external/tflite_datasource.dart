@@ -28,7 +28,7 @@ class TFLiteDatasource {
       return info;
     } catch (e) {
       _isLoaded[modelPath] = false;
-    _modelInfos.remove(modelPath);
+      _modelInfos.remove(modelPath);
       throw StateError('فشل تحميل نموذج TFLite: $modelPath');
     }
   }
@@ -96,7 +96,7 @@ class TFLiteDatasource {
   Map<String, dynamic> _processOutput(List<dynamic> output) {
     return {
       'output': output,
-      'shape': output.shape,
+      'shape': _inferShape(output),
     };
   }
 
