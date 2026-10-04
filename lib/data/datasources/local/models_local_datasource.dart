@@ -56,16 +56,20 @@ class ModelsLocalDatasource {
   /// تحميل نموذج
   Future<bool> loadModel(String modelName) async {
     try {
-      // محاكاة تحميل النموذج
-      await Future.delayed(const Duration(milliseconds: 500));
+      final path = _modelPath(modelName);
+      final file = File(path);
+      if (!await file.exists() || await file.length() == 0) {
+        _loadedModels[modelName] = false;
+        return false;
+      }
       _loadedModels[modelName] = true;
       return true;
-    } catch (e) {
+    } catch (_) {
+      _loadedModels[modelName] = false;
       return false;
     }
   }
 
-  /// تحميل جميع النماذج
   Future<void> loadAllModels() async {
     final modelFiles = [
       AppURLs.juzModelFile,
@@ -75,57 +79,39 @@ class ModelsLocalDatasource {
       AppURLs.energyModelFile,
       AppURLs.versePredictModelFile,
     ];
-
     for (final file in modelFiles) {
       await loadModel(file);
     }
   }
 
-  /// إلغاء تحميل نموذج
   Future<void> unloadModel(String modelName) async {
     _loadedModels[modelName] = false;
     _modelOutputs.remove(modelName);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // الاستدلال
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  /// تشغيل استدلال
   Future<Map<String, dynamic>> runInference(
     String modelName,
     List<double> features,
   ) async {
-    if (!(_loadedModels[modelName] ?? false)) {
-      await loadModel(modelName);
+    if (features.isEmpty) return {'error': 'لا توجد ميزات للاستدلال'};
+    if (!(_loadedModels[modelName] ?? false) && !await loadModel(modelName)) {
+      return {
+        'error': 'النموذج المحلي غير متوفر',
+        'model': modelName,
+        'path': _modelPath(modelName),
+      };
     }
 
-    // محاكاة الاستدلال
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    // إرجاع نتيجة محاكاة
-    final result = _simulateInference(modelName, features);
-    _modelOutputs[modelName] = result;
-
     return {
-      'output': result,
-      'confidence': 0.85,
-      'processingTime': 100,
+      'error': 'يجب تشغيل الاستدلال عبر TFLiteDatasource',
+      'model': modelName,
     };
   }
 
-  /// محاكاة الاستدلال
-  List<double> _simulateInference(String modelName, List<double> features) {
-    // إرجاع متجه اصطناعي
-    final output = List<double>.filled(128, 0.0);
-
-    for (int i = 0; i < output.length; i++) {
-      output[i] = (features[i % features.length] + i / output.length) / 2;
-    }
-
-    return output;
+  String _modelPath(String modelName) {
+    if (modelName.startsWith(AppURLs.modelsPath)) return modelName;
+    return AppURLs.modelsPath + modelName;
   }
-
   // ═══════════════════════════════════════════════════════════════════════════
   // الميزات
   // ═══════════════════════════════════════════════════════════════════════════
