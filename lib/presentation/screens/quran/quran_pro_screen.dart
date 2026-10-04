@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import '../../../domain/models/quran_models.dart';
 import '../../../services/text_transformer.dart';
 
+enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
+
 /// 📖 شاشة القرآن الاحترافية — 5 أنماط عرض
 class QuranProScreen extends StatefulWidget {
   const QuranProScreen({super.key});
@@ -38,7 +40,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   static const _goldColor = Color(0xFFFFD700);
 
   // قائمة السور
-  final _surahs = [
+  final List<Map<String, dynamic>> _surahs = [
     {'n': 1, 'name': 'الفاتحة'}, {'n': 2, 'name': 'البقرة'},
     {'n': 3, 'name': 'آل عمران'}, {'n': 4, 'name': 'النساء'},
     {'n': 36, 'name': 'يس'}, {'n': 55, 'name': 'الرحمن'},
@@ -74,7 +76,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     });
   }
 
-  String _transform(String text) => TextTransformer.transform(text, _mode);
+  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
 
   TextStyle _textStyle() {
     return TextStyle(
@@ -140,7 +142,7 @@ class _QuranProScreenState extends State<QuranProScreen>
           onSelected: _loadSurah,
           itemBuilder: (_) => _surahs
               .map((s) => PopupMenuItem(
-                  value: s['n'],
+                  value: s['n'] as int,
                   child: Text('${s['name']} (${s['n']})',
                       style: const TextStyle(color: Colors.white))))
               .toList(),
