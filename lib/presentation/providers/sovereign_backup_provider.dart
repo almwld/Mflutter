@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/backup_service.dart';
 
 class SovereignBackupProvider extends ChangeNotifier {
   bool _isBackingUp = false;
@@ -11,9 +12,13 @@ class SovereignBackupProvider extends ChangeNotifier {
     _isBackingUp = true;
     notifyListeners();
     
-    await Future.delayed(const Duration(seconds: 2));
-    _lastBackupPath = '/backup/mudabbir_${DateTime.now().millisecondsSinceEpoch}.enc';
-    _isBackingUp = false;
-    notifyListeners();
+    try {
+      _lastBackupPath = await BackupService.createBackup({
+        'provider': 'sovereign_backup',
+      });
+    } finally {
+      _isBackingUp = false;
+      notifyListeners();
+    }
   }
 }
