@@ -1,8 +1,6 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../domain/models/quran_models.dart';
 import '../../../services/text_transformer.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
