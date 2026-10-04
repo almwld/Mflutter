@@ -1,71 +1,53 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../../domain/entities/chat_message.dart';
+import '../../services/ollama_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   final List<ChatMessage> _messages = [];
+  final OllamaService _localAi = OllamaService();
+
   bool _loading = false;
-  
-  // Ollama API — يعمل محلياً
-  static const String _ollamaUrl = 'http://localhost:11434/api/generate';
-  static const String _modelName = 'mudabbir';
-  
-  List<ChatMessage> get messages => _messages;
+  String? _error;
+
+  List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get loading => _loading;
+  String? get error => _error;
+
+  Future<bool> checkLocalModel() => _localAi.checkAvailability();
 
   Future<void> sendMessage(String text) async {
-    _messages.add(ChatMessage(text: text, isUser: true));
+    final cleanText = text.trim();
+    if (cleanText.isEmpty || _loading) return;
+
+    _messages.add(ChatMessage(text: cleanText, isUser: true));
     _loading = true;
+    _error = null;
     notifyListeners();
 
     try {
-      final response = await http.post(
-        Uri.parse(_ollamaUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'model': _modelName,
-          'prompt': 'المستخدم: $text\n\nمُدَبِّر:',
-          'stream': false,
-          'options': {
-            'temperature': 0.7,
-            'top_k': 40,
-            'top_p': 0.9,
-            'num_predict': 300,
-          }
-        }),
-      ).timeout(const Duration(seconds: 60));
+      final reply = await _localAi.generate(
+        'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
+        'أجب بالعربية الفصحى بدقة ووضوح، ولا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
+        'المستخدم: $cleanText\n\nمُدَبِّر:',
+      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final reply = data['response'] ?? 'عذراً، لم أستطع توليد رد.';
-        
-        _messages.add(ChatMessage(
-          text: reply.trim(),
-          isUser: false,
-        ));
-      } else {
-        _messages.add(ChatMessage(
-          text: '⚠️ خطأ في الاتصال بـ Ollama: ${response.statusCode}',
-          isUser: false,
-        ));
-      }
+      _messages.add(ChatMessage(text: reply, isUser: false));
     } catch (e) {
+      _error = e.toString();
       _messages.add(ChatMessage(
-        text: '❌ تأكد من تشغيل Ollama في Termux:\n'
-              '1. افتح Termux\n'
-              '2. شغّل: ollama serve\n'
-              '3. عد للتطبيق وحاول مجدداً',
+        text: 'تعذر الوصول إلى النموذج المحلي. '
+            'تحقق من تشغيل خادم النموذج المحلي ومن اسم النموذج ثم أعد المحاولة.',
         isUser: false,
       ));
+    } finally {
+      _loading = false;
+      notifyListeners();
     }
-
-    _loading = false;
-    notifyListeners();
   }
-  
+
   void clearChat() {
     _messages.clear();
+    _error = null;
     notifyListeners();
   }
 }
