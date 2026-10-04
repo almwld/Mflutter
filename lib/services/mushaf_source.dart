@@ -12,7 +12,7 @@ class MushafSource {
   static const int totalJuz = 30;
   static const int totalSurahs = 114;
 
-  static int normalizePage(int page) => page.clamp(1, totalPages);
+  static int normalizePage(int page) => page.clamp(1, totalPages).toInt();
 
   static int juzForPage(int page) {
     return getCurrentJuzNumberForPage(normalizePage(page));
@@ -23,6 +23,6 @@ class MushafSource {
   }
 
   static int pageForVerse(int surah, int ayah) {
-    return getPageNumber(surah, ayah).clamp(1, totalPages);
+    return getPageNumber(surah, ayah).clamp(1, totalPages).toInt();
   }
 }
