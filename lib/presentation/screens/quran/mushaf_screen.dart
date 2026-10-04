@@ -166,7 +166,7 @@ class _MushafScreenState extends State<MushafScreen> {
                     );
                   },
                   onPageChanged: (pageNumber) {
-                    final page = pageNumber.clamp(1, 604);
+                    final page = MushafSource.normalizePage(pageNumber);
                     _currentPage.value = page;
                     if (_highlights.isNotEmpty) {
                       setState(() => _highlights = const []);
