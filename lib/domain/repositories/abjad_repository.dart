@@ -1,5 +1,7 @@
 import '../entities/abjad_result.dart';
 
+enum AbjadMethod { kabir, saghir, wasat }
+
 abstract class AbjadRepository {
   Future<AbjadResult> calculate(String text, AbjadMethod method);
   Future<String> getElement(int value);
