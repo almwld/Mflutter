@@ -24,6 +24,9 @@ class _MushafScreenState extends State<MushafScreen> {
 
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
+  // لون نص المصحف: ذهبي فاخر، مع درجة أعمق للنهار لرفع التباين على ورق المصحف.
+  static const _quranGoldLight = Color(0xFF9A6B00);
+  static const _quranGoldDark = Color(0xFFE2B84A);
   static const _frame = Color(0xFF8C6A2D);
   static const _frameLight = Color(0xFFC8A85B);
 
@@ -132,6 +135,9 @@ class _MushafScreenState extends State<MushafScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final quranGold = isDark ? _quranGoldDark : _quranGoldLight;
+
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: const Color(0xFF17130F),
@@ -148,8 +154,10 @@ class _MushafScreenState extends State<MushafScreen> {
                     horizontal: 12,
                     vertical: 8,
                   ),
-                  ayahStyle: const TextStyle(
-                    color: _ink,
+                  // QCF يحتفظ بخطوط الصفحة الخاصة بكل صفحة؛ هنا نغيّر اللون فقط.
+                  // بذلك يبقى تخطيط حفص ثابتًا ولا يتأثر بتحويل النص إلى Text عادي.
+                  ayahStyle: TextStyle(
+                    color: quranGold,
                     height: 1.0,
                   ),
                   customHighlightDecoration: (highlightColor) {
@@ -179,7 +187,7 @@ class _MushafScreenState extends State<MushafScreen> {
                           surah: surah,
                           verseNumber: ayah,
                           page: page,
-                          color: _frameLight,
+                          color: quranGold,
                         ),
                       ];
                     });
