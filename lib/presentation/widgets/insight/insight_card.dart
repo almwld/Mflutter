@@ -194,7 +194,7 @@ class InsightCard extends StatelessWidget {
   }
 
   String _getCategoryName() {
-    switch (insight.category) {
+    switch (insight.insightCategory) {
       case InsightCategory.contemplation:
         return 'تأمل';
       case InsightCategory.quran:
