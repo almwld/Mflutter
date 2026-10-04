@@ -24,6 +24,7 @@ class MushafScreen extends StatefulWidget {
 class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey _mushafViewportKey = GlobalKey();
   final ValueNotifier<int> _currentPage = ValueNotifier<int>(1);
   List<HighlightVerse> _highlights = const [];
   late final AnimationController _livingPulse;
@@ -186,15 +187,19 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
   }
 
   Future<void> _saveAyahCoordinate(int surah, int ayah, Offset position) async {
-    final box = context.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final local = box.globalToLocal(position);
+    final renderObject = _mushafViewportKey.currentContext?.findRenderObject();
+    final box = renderObject is RenderBox ? renderObject : null;
+    if (box == null || box.size.isEmpty) return;
+
+    final viewportPoint = box.globalToLocal(position);
+    final scenePoint = _mushafZoomController.toScene(viewportPoint);
+
     await AyahCoordinateService.save(
       page: _currentPage.value,
       surah: surah,
       ayah: ayah,
-      x: local.dx,
-      y: local.dy,
+      x: scenePoint.dx,
+      y: scenePoint.dy,
       width: box.size.width,
       height: box.size.height,
     );
@@ -279,6 +284,7 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                   );
                 },
                 child: InteractiveViewer(
+                  key: _mushafViewportKey,
                   transformationController: _mushafZoomController,
                   panEnabled: _zoomMode,
                   scaleEnabled: _zoomMode,
@@ -336,6 +342,9 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                   onPageChanged: (pageNumber) {
                     final page = MushafSource.normalizePage(pageNumber);
                     _currentPage.value = page;
+                    if (_zoomMode) {
+                      _mushafZoomController.value = Matrix4.identity();
+                    }
                     ReadingProgressService.saveLastPage(page);
                     if (_highlights.isNotEmpty) {
                       setState(() => _highlights = const []);
