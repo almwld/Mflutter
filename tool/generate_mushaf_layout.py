@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the fixed 15-line Madinah/QCF page layout used by experimental modes.
+"""Generate the fixed 15-line Madinah/QCF page layout used by experimental modes."""
 
-The source repository contains the per-page QCF layout metadata.  We keep only
-the stable word locations/types in the app asset; the Quran text itself stays
-in qcf_quran_lite.
-"""
 from __future__ import annotations
 
 import json
@@ -20,29 +16,31 @@ ARCHIVE = "https://github.com/manaf/KFGQPC-Madinah-Mushaf/archive/refs/heads/mai
 
 def main() -> None:
     pages = {}
+
     with tempfile.TemporaryDirectory() as tmp:
         archive = pathlib.Path(tmp) / "mushaf.zip"
         urllib.request.urlretrieve(ARCHIVE, archive)
+
         with zipfile.ZipFile(archive) as zf:
             prefix = "KFGQPC-Madinah-Mushaf-main/data/pages"
             for page in range(1, 605):
                 member = f"{prefix}/page-{page:03d}.json"
                 with zf.open(member) as stream:
                     data = json.load(stream)
-    for page in range(1, 605):
+
                 compact_lines = []
                 for line in data.get("lines", []):
                     compact_lines.append({
-                "type": line.get("type", "text"),
-                "centered": bool(line.get("centered", False)),
-                "words": [
-                    {
-                        "location": word["location"],
-                        "kind": word.get("kind", "word"),
-                    }
-                    for word in line.get("words", [])
-                    if "location" in word
-                ],
+                        "type": line.get("type", "text"),
+                        "centered": bool(line.get("centered", False)),
+                        "words": [
+                            {
+                                "location": word["location"],
+                                "kind": word.get("kind", "word"),
+                            }
+                            for word in line.get("words", [])
+                            if "location" in word
+                        ],
                         "surah": (line.get("decor") or {}).get("surah"),
                     })
                 pages[str(page)] = compact_lines
