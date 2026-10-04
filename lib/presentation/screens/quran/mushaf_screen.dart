@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
+import '../../../services/mushaf_source.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -29,7 +30,7 @@ class _MushafScreenState extends State<MushafScreen> {
   @override
   void initState() {
     super.initState();
-    final page = widget.initialPage.clamp(1, 604);
+    final page = MushafSource.normalizePage(widget.initialPage);
     _currentPage.value = page;
     _pageController = PageController(initialPage: page - 1);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -43,7 +44,7 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 
   void _goToPage(int page) {
-    final target = page.clamp(1, 604);
+    final target = MushafSource.normalizePage(page);
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 260),
@@ -117,7 +118,7 @@ class _MushafScreenState extends State<MushafScreen> {
     ).then((action) async {
       if (!mounted) return;
       if (action == 'bookmark') {
-        final text = getVerse(surah, ayah, verseEndSymbol: true);
+        final text = MushafSource.verse(surah, ayah);
         await BookmarkService.addBookmark(surah, ayah, text);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -211,7 +212,7 @@ class _MushafScreenState extends State<MushafScreen> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _badge('الجزء ${getCurrentJuzNumberForPage(page)}'),
+                _badge('الجزء ${MushafSource.juzForPage(page)}'),
                 _badge('المصحف المدني'),
               ],
             );
@@ -248,7 +249,7 @@ class _MushafScreenState extends State<MushafScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'صفحة $page / 604',
+                  'صفحة $page / ${MushafSource.totalPages}',
                   style: const TextStyle(
                     color: _ink,
                     fontWeight: FontWeight.w700,
