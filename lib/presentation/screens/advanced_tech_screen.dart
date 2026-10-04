@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/time_capsule_service.dart';
 import '../../services/binaural_engine_service.dart';
-import '../../services/gaze_tracking_service.dart';
 import '../../services/geospatial_insight_service.dart';
 
 class AdvancedTechScreen extends StatefulWidget {
@@ -28,7 +27,20 @@ class _AdvancedTechScreenState extends State<AdvancedTechScreen> {
           SizedBox(height: 12),
           ElevatedButton(onPressed: () { TimeCapsuleService.sealCapsule(_capsuleController.text, DateTime.now().add(Duration(days: 30))); _capsuleController.clear(); setState(() {}); }, child: Text('ختم الكبسولة لمدة ٣٠ يوماً')),
           SizedBox(height: 8),
-          ...TimeCapsuleService.capsules.map((c) => ListTile(title: Text('📦 ${c['content']}'.substring(0, 40), style: TextStyle(color: Colors.white54)), subtitle: Text('تفتح: ${c['unlockDate']}'.substring(0, 16), style: TextStyle(color: Colors.white24)))),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: TimeCapsuleService.getCapsules(),
+            builder: (context, snapshot) {
+              final capsules = snapshot.data ?? const <Map<String, dynamic>>[];
+              return Column(children: capsules.map((c) {
+                final content = (c['content'] ?? '').toString();
+                final unlock = (c['unlockDate'] ?? '').toString();
+                return ListTile(
+                  title: Text(content.length > 40 ? content.substring(0, 40) : content, style: const TextStyle(color: Colors.white54)),
+                  subtitle: Text(unlock.length > 16 ? unlock.substring(0, 16) : unlock, style: const TextStyle(color: Colors.white24)),
+                );
+              }).toList());
+            },
+          ),
         ]))),
         // الترددات الصوتية
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -43,21 +55,14 @@ class _AdvancedTechScreenState extends State<AdvancedTechScreen> {
           SizedBox(height: 8),
           Text(BinauralEngineService.playing ? 'النمط الحالي: ${BinauralEngineService.currentMode}' : 'متوقف', style: TextStyle(color: Colors.white54)),
         ]))),
-        // تتبع العين
-        Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('👁️ تتبع العين', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          SwitchListTile(value: GazeTrackingService.isWatching, activeColor: AppColors.primaryGold, title: Text('تفعيل', style: TextStyle(color: Colors.white)), onChanged: (v) { v ? GazeTrackingService.startWatching() : GazeTrackingService.stopWatching(); setState(() {}); }),
-          if (GazeTrackingService.focusedWord.isNotEmpty) Text('التركيز على: ${GazeTrackingService.focusedWord}', style: TextStyle(color: Colors.white54)),
-        ]))),
         // الاستنباط الجغرافي
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           Text('🌍 استنباط جغرافي', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
-          Text('التضاريس: ${GeospatialInsightService.topography}', style: TextStyle(color: Colors.white70)),
-          Text('الارتفاع: ${GeospatialInsightService.altitude}m', style: TextStyle(color: Colors.white54)),
+          Text('التضاريس: ${GeospatialInsightService.instance.getTopography()}', style: TextStyle(color: Colors.white70)),
+          Text('الارتفاع: ${GeospatialInsightService.instance.altitude}m', style: TextStyle(color: Colors.white54)),
           SizedBox(height: 8),
-          Text('📖 ${GeospatialInsightService.getVerseForTopography()}', style: TextStyle(color: AppColors.primaryGold, fontFamily: 'Amiri')),
+
         ]))),
       ]),
     );
