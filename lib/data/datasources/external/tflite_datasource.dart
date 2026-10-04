@@ -128,6 +128,39 @@ class TFLiteDatasource {
     };
   }
 
+  Future<InferenceResult> predict(String input, Map<String, dynamic> params) async {
+    final modelPath = (params['modelPath'] ?? params['model'] ?? '').toString();
+    if (modelPath.isEmpty) throw ArgumentError('modelPath مطلوب.');
+    final started = DateTime.now();
+    final values = params['input'] is List
+        ? List<double>.from((params['input'] as List).map((e) => (e as num).toDouble()))
+        : input.codeUnits.map((e) => e.toDouble()).toList();
+    final result = await runInference(modelPath, values);
+    return InferenceResult(
+      modelName: modelPath,
+      output: result,
+      confidence: 0.0,
+      processingTime: DateTime.now().difference(started),
+      error: result['error']?.toString(),
+    );
+  }
+
+  Future<List<ModelInfo>> getAvailableModels() async => List.unmodifiable(_modelInfos.values);
+
+  List<dynamic> _reshape(List<double> values, List<int> shape) {
+    if (shape.isEmpty) return values;
+    final total = shape.fold<int>(1, (a, b) => a * b);
+    if (values.length != total) throw ArgumentError('عدد عناصر المصفوفة لا يطابق shape.');
+    List<dynamic> build(int dimension, int offset) {
+      if (dimension == shape.length - 1) {
+        return List<double>.from(values.sublist(offset, offset + shape[dimension]));
+      }
+      final stride = shape.sublist(dimension + 1).fold<int>(1, (a, b) => a * b);
+      return List.generate(shape[dimension], (i) => build(dimension + 1, offset + i * stride));
+    }
+    return build(0, 0);
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // النماذج المدمجة
   // ═══════════════════════════════════════════════════════════════════════════
