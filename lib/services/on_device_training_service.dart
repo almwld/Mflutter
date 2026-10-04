@@ -1,5 +1,8 @@
 import 'dart:async';
 import '../python/mudabbir_python_engine.dart';
+import 'qwen_merge_service.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class OnDeviceTrainingService {
   static final OnDeviceTrainingService _instance = OnDeviceTrainingService._();
@@ -73,9 +76,21 @@ class OnDeviceTrainingService {
     );
 
     _history = _engine.trainingHistory;
-    _status = '✅ اكتمل التدريب - Loss: ${result['final_loss']?.toStringAsFixed(4)}';
+    _status = 'اكتمل تدريب الطبقة المحلية؛ جارٍ فحص أوزان Qwen...';
+    final docs = await getApplicationDocumentsDirectory();
+    final adapter = qwenAdapterPath ?? (docs.path + '/qwen_adapter');
+    final adapterDir = Directory(adapter);
+    QwenMergeResult? mergeResult;
+    if (await adapterDir.exists()) {
+      mergeResult = await QwenMergeService().mergeAdapter(adapterPath: adapter);
+      _status = mergeResult.merged
+          ? 'تم دمج أوزان Qwen وتحديث النموذج المحلي.'
+          : 'اكتمل التدريب لكن تعذر دمج Qwen: ${mergeResult.error ?? mergeResult.status}';
+    } else {
+      _status = 'اكتمل التدريب؛ لا يوجد LoRA adapter لـQwen بعد. تم الاحتفاظ بالأوزان المحلية دون ادعاء دمج.';
+    }
     _isTraining = false;
-    _progressController?.add({'done': true, 'result': result});
+    _progressController?.add({'done': true, 'result': result, 'qwenMerge': mergeResult?.status});
   }
 
   /// إيقاف التدريب
