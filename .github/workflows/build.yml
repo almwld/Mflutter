@@ -28,6 +28,9 @@ jobs:
       - name: Generate Android host project
         run: flutter create --platforms=android --project-name mudabbir_al_asrar --org com.mudabbir .
 
+      - name: Generate fixed QCF Mushaf layout
+        run: python3 tool/generate_mushaf_layout.py
+
       - name: Install dependencies
         run: flutter pub get
 
