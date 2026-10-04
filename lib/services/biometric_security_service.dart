@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
 class BiometricSecurityService {
@@ -10,7 +11,7 @@ class BiometricSecurityService {
   }
 
   Future<List<BiometricType>> availableTypes() async {
-    try { return await _auth.getAvailableBiometrics(); } catch (_) { return const []; }
+    try { return await _auth.getAvailableBiometrics(); } on PlatformException { return const []; }
   }
 
   Future<bool> authenticate({
@@ -21,9 +22,14 @@ class BiometricSecurityService {
       if (!await isSupported()) return false;
       return await _auth.authenticate(
         localizedReason: reason,
-        biometricOnly: biometricOnly,
-        persistAcrossBackgrounding: true,
+        options: AuthenticationOptions(
+          biometricOnly: biometricOnly,
+          stickyAuth: true,
+          sensitiveTransaction: true,
+        ),
       );
-    } on LocalAuthException { return false; }
+    } on PlatformException {
+      return false;
+    }
   }
 }
