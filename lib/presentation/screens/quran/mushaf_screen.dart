@@ -184,7 +184,6 @@ class _MushafScreenState extends State<MushafScreen> {
                       ];
                     });
                   },
-                  scaffoldKey: _scaffoldKey,
                   onLongPress: (surah, ayah, details) {
                     _showAyahMenu(surah, ayah, details.globalPosition);
                   },
