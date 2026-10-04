@@ -1,54 +1,16 @@
-import '../../core/utils/abjad_calculator.dart';
+import '../../core/utils/abjad_calculator.dart' as core;
 import '../../domain/entities/abjad_result.dart';
 import '../../domain/repositories/abjad_repository.dart';
-import '../datasources/local/abjad_local_datasource.dart';
 
 class AbjadRepositoryImpl implements AbjadRepository {
-  final AbjadLocalDatasource localDatasource;
-  final AbjadCalculator calculator;
-
-  AbjadRepositoryImpl({
-    required this.localDatasource,
-    required this.calculator,
-  });
-
   @override
   Future<AbjadResult> calculate(String text, AbjadMethod method) async {
-    final result = calculator.calculate(text, method);
-    return AbjadResult(
-      text: text,
-      method: method,
-      value: result['value']!,
-      letterValues: result['letters'] as Map<String, int>,
-      element: calculator.getElement(result['value']!),
-      planet: calculator.getPlanet(result['value']!),
-      zodiac: calculator.getZodiac(result['value']!),
-      divineName: calculator.getDivineName(result['value']!),
-    );
+    final all = core.AbjadCalculator.calculateAll(text);
+    return AbjadResult(major: all.kabir, minor: all.saghir, middle: all.wasat, element: all.element.name, planet: all.planet.name, zodiac: all.zodiac.name, divineName: all.divineName, frequency: all.frequency.toDouble(), color: int.tryParse(all.color.replaceFirst('#', ''), radix: 16) ?? 0xFF1A237E);
   }
-
-  @override
-  Future<String> getElement(int value) async {
-    return calculator.getElement(value);
-  }
-
-  @override
-  Future<String> getPlanet(int value) async {
-    return calculator.getPlanet(value);
-  }
-
-  @override
-  Future<String> getZodiac(int value) async {
-    return calculator.getZodiac(value);
-  }
-
-  @override
-  Future<String> getDivineName(int value) async {
-    return calculator.getDivineName(value);
-  }
-
-  @override
-  Future<List<String>> getLetterValues(String text) async {
-    return calculator.getLetterValues(text);
-  }
+  @override Future<String> getElement(int value) async => const ['spirit','fire','water','earth','air'][value % 5];
+  @override Future<String> getPlanet(int value) async => const ['saturn','sun','moon','mars','mercury','venus','jupiter'][value % 7];
+  @override Future<String> getZodiac(int value) async => core.ZodiacType.values[value % core.ZodiacType.values.length].name;
+  @override Future<String> getDivineName(int value) async => core.DivineNames.arabicNames[value % core.DivineNames.arabicNames.length];
+  @override Future<List<String>> getLetterValues(String text) async => core.AbjadCalculator.calculateLetterByLetter(text).map((x) => '${x.letter}: ${x.kabir}').toList();
 }
