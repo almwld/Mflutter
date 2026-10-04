@@ -179,7 +179,7 @@ class InsightCard extends StatelessWidget {
   }
 
   IconData _getCategoryIcon() {
-    switch (insight.category) {
+    switch (insight.insightCategory) {
       case InsightCategory.contemplation:
         return Icons.self_improvement;
       case InsightCategory.quran:
