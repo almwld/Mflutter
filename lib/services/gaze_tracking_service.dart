@@ -9,11 +9,15 @@ class GazeEstimate {
     required this.vertical,
     required this.confidence,
     required this.faceDetected,
+    this.yawDegrees = 0,
+    this.pitchDegrees = 0,
   });
   final double horizontal;
   final double vertical;
   final double confidence;
   final bool faceDetected;
+  final double yawDegrees;
+  final double pitchDegrees;
 }
 
 class GazeTrackingService {
@@ -78,6 +82,8 @@ class GazeTrackingService {
         vertical: (angles.pitch / 180.0).clamp(-1.0, 1.0),
         confidence: 1.0,
         faceDetected: true,
+        yawDegrees: angles.yaw,
+        pitchDegrees: angles.pitch,
       );
       return _last;
     } finally {
