@@ -1,5 +1,6 @@
 import '../../../core/utils/abjad_calculator.dart';
 import '../../../domain/entities/divine_name.dart';
+import '../../../core/constants/app_enums.dart';
 import '../../../domain/repositories/divine_names_repository.dart';
 
 /// =============================================================================
@@ -103,8 +104,8 @@ class AbjadLocalDatasource {
   }
 
   /// الحصول على الاسم الإلهي
-  String getDivineName(int value) {
-    final index = value % 99;
+  String getDivineNameValue(int value) {
+    final index = value % DivineNames.arabicNames.length;
     return DivineNames.arabicNames[index];
   }
 
