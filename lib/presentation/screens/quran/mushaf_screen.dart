@@ -139,8 +139,7 @@ class _MushafScreenState extends State<MushafScreen> {
         child: Stack(
           children: [
             Positioned.fill(
-              child: _MushafFrame(
-                child: QuranPageView(
+              child: QuranPageView(
                   pageController: _pageController,
                   highlights: _highlights,
                   scrollDirection: Axis.horizontal,
@@ -189,7 +188,6 @@ class _MushafScreenState extends State<MushafScreen> {
                   onLongPress: (surah, ayah, details) {
                     _showAyahMenu(surah, ayah, details.globalPosition);
                   },
-                ),
               ),
             ),
             _topOverlay(),
@@ -305,74 +303,3 @@ class _MushafScreenState extends State<MushafScreen> {
   }
 }
 
-class _MushafFrame extends StatelessWidget {
-  const _MushafFrame({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(
-        color: _MushafScreenState._paper,
-        border: Border.all(
-          color: _MushafScreenState._frame,
-          width: 2,
-        ),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x55000000),
-            blurRadius: 10,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        foregroundPainter: _MushafOrnamentPainter(),
-        child: ClipRect(child: child),
-      ),
-    );
-  }
-}
-
-class _MushafOrnamentPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final outer = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = _MushafScreenState._frameLight;
-    final inner = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.7
-      ..color = _MushafScreenState._frame;
-
-    const d = 7.0;
-    canvas.drawRect(
-      Rect.fromLTWH(d, d, size.width - d * 2, size.height - d * 2),
-      outer,
-    );
-    const d2 = 11.0;
-    canvas.drawRect(
-      Rect.fromLTWH(d2, d2, size.width - d2 * 2, size.height - d2 * 2),
-      inner,
-    );
-
-    final ornamentPaint = Paint()
-      ..color = _MushafScreenState._frame
-      ..style = PaintingStyle.fill;
-
-    for (final corner in <Offset>[
-      const Offset(d + 2, d + 2),
-      Offset(size.width - d - 2, d + 2),
-      Offset(d + 2, size.height - d - 2),
-      Offset(size.width - d - 2, size.height - d - 2),
-    ]) {
-      canvas.drawCircle(corner, 2.2, ornamentPaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
