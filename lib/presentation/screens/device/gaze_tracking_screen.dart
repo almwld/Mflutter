@@ -3,6 +3,8 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import '../../../services/gaze_tracking_service.dart';
+import '../../../services/gaze_model_service.dart';
+import '../../../services/vision_asset_service.dart';
 
 class GazeTrackingScreen extends StatefulWidget {
   const GazeTrackingScreen({super.key});
@@ -15,11 +17,24 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   final _gaze = GazeTrackingService.instance;
   GazeEstimate? _estimate;
   bool _busy = false;
+  bool _modelReady = false;
+  String? _modelError;
 
   @override
   void initState() {
     super.initState();
+    _prepareModels();
     _init();
+  }
+
+  Future<void> _prepareModels() async {
+    try {
+      await VisionAssetService.validate();
+      await GazeModelService.instance.load();
+      if (mounted) setState(() => _modelReady = true);
+    } catch (error) {
+      if (mounted) setState(() => _modelError = error.toString());
+    }
   }
 
   Future<void> _init() async {
@@ -104,7 +119,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
-                      e == null ? 'جارٍ تحليل الوجه…' :
+                      e == null ? (_modelError != null ? 'تعذر تحميل نموذج النظر: $_modelError' : (_modelReady ? 'جارٍ تحليل الوجه…' : 'جارٍ تجهيز نماذج الرؤية…')) :
                       e.faceDetected
                           ? 'الاتجاه الأفقي: ${e.horizontal.toStringAsFixed(2)}\nالاتجاه العمودي: ${e.vertical.toStringAsFixed(2)}\nالثقة: ${(e.confidence*100).round()}%'
                           : 'لم يتم اكتشاف وجه',
