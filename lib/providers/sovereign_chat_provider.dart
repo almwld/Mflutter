@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../services/ollama_service.dart';
 
 class SovereignChatProvider extends ChangeNotifier {
+  final OllamaService _localAi = OllamaService();
   bool _isLoading = false;
-  String _insight = "";
+  String _insight = '';
 
   bool get isLoading => _isLoading;
   String get insight => _insight;
@@ -15,32 +15,25 @@ class SovereignChatProvider extends ChangeNotifier {
     required String topography,
     required int abjad,
   }) async {
+    if (_isLoading) return;
     _isLoading = true;
+    _insight = '';
     notifyListeners();
-    const url = "https://openrouter.ai/api/v1/chat/completions";
-    const key = "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";
+
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {"Authorization": "Bearer $key", "Content-Type": "application/json"},
-        body: jsonEncode({
-          "model": "qwen/qwen-2.5-7b-instruct:free",
-          "messages": [
-            {"role": "system", "content": "أنت مُدَبِّر. أجب بالعربية. تركيز المستخدم: $focus. البيئة: $topography. الرنين: $abjad."},
-            {"role": "user", "content": query}
-          ],
-          "temperature": 0.618,
-        }),
+      _insight = await _localAi.generate(
+        'أنت مُدَبِّر، مساعد معرفي محلي. أجب بالعربية الفصحى بدقة. '
+        'لا تدّعِ امتلاك مصادر أو قدرات غير متاحة محلياً.\n'
+        'التركيز: ' + focus.toString() + '\n'
+        'البيئة: ' + topography + '\n'
+        'الرنين: ' + abjad.toString() + '\n\n'
+        'السؤال: ' + query.trim(),
       );
-      if (response.statusCode == 200) {
-        _insight = jsonDecode(response.body)['choices'][0]['message']['content'];
-      } else {
-        _insight = "تعذر الاتصال بالنواة.";
-      }
     } catch (_) {
-      _insight = "انقطع التدفق المعرفي.";
+      _insight = 'تعذر الوصول إلى النموذج المحلي. تحقق من تشغيله ثم أعد المحاولة.';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-    _isLoading = false;
-    notifyListeners();
   }
 }
