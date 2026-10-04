@@ -10,6 +10,12 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 ///
 /// The runtime inspects tensors at startup instead of assuming a fixed
 /// graph, which lets us fail clearly when a different model is supplied.
+class GazeAngles {
+  const GazeAngles({required this.yaw, required this.pitch});
+  final double yaw;
+  final double pitch;
+}
+
 class GazeModelService {
   GazeModelService._();
   static final instance = GazeModelService._();
@@ -47,6 +53,76 @@ class GazeModelService {
     } finally {
       _loading = false;
     }
+  }
+
+  GazeAngles inferRgb({
+    required List<int> rgb,
+    required int width,
+    required int height,
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+  }) {
+    if (rgb.length != width * height * 3) {
+      throw ArgumentError('RGB frame size does not match dimensions.');
+    }
+    final crop = _squareCrop(rgb, width, height, left, top, right, bottom);
+    final input = List.generate(
+      3,
+      (channel) => List.generate(
+        448,
+        (y) => List.generate(448, (x) {
+          final offset = (y * 448 + x) * 3 + channel;
+          final value = crop[offset] / 255.0;
+          const mean = [0.485, 0.456, 0.406];
+          const std = [0.229, 0.224, 0.225];
+          return (value - mean[channel]) / std[channel];
+        }),
+      ),
+    );
+    final outputs = run(input);
+    if (outputs.length < 2) throw StateError('L2CS يجب أن يعيد رأسي yaw و pitch.');
+    final yaw = _flatten(outputs[0]).map((e) => e.toDouble()).toList();
+    final pitch = _flatten(outputs[1]).map((e) => e.toDouble()).toList();
+    if (yaw.length != 90 || pitch.length != 90) {
+      throw StateError('مخرجات L2CS غير متوافقة: yaw=${yaw.length} pitch=${pitch.length}.');
+    }
+    return GazeAngles(
+      yaw: decodeAngle(yaw, bins: 90),
+      pitch: decodeAngle(pitch, bins: 90),
+    );
+  }
+
+  List<int> _squareCrop(List<int> rgb, int width, int height, int left, int top, int right, int bottom) {
+    final l = left.clamp(0, width - 1);
+    final t = top.clamp(0, height - 1);
+    final r = right.clamp(l + 1, width);
+    final b = bottom.clamp(t + 1, height);
+    final size = math.max(r - l, b - t).clamp(1, math.min(width, height));
+    final cx = (l + r) ~/ 2;
+    final cy = (t + b) ~/ 2;
+    final x0 = (cx - size ~/ 2).clamp(0, width - size);
+    final y0 = (cy - size ~/ 2).clamp(0, height - size);
+    final out = List<int>.filled(448 * 448 * 3, 0);
+    for (var y = 0; y < 448; y++) {
+      final sy = y0 + ((y * size) ~/ 448).clamp(0, size - 1);
+      for (var x = 0; x < 448; x++) {
+        final sx = x0 + ((x * size) ~/ 448).clamp(0, size - 1);
+        final src = (sy * width + sx) * 3;
+        final dst = (y * 448 + x) * 3;
+        out[dst] = rgb[src];
+        out[dst + 1] = rgb[src + 1];
+        out[dst + 2] = rgb[src + 2];
+      }
+    }
+    return out;
+  }
+
+  List<num> _flatten(Object value) {
+    if (value is num) return [value];
+    if (value is List) return value.expand<num>((e) => _flatten(e)).toList();
+    throw StateError('مخرج Tensor غير قابل للفك.');
   }
 
   /// Runs a single-input floating-point model.
