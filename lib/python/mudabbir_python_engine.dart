@@ -13,7 +13,6 @@ class MudabbirPythonEngine {
 
   bool _initialized = false;
   Map<String, dynamic> _modelWeights = {};
-  Map<String, dynamic> _tokenizerVocab = {};
   List<Map<String, dynamic>> _trainingHistory = [];
 
   bool get isInitialized => _initialized;
@@ -26,9 +25,6 @@ class MudabbirPythonEngine {
 
     try {
       // 1. تحميل المفردات (Tokenizer)
-      final vocabJson = await rootBundle.loadString('assets/models/tokenizer.json');
-      _tokenizerVocab = jsonDecode(vocabJson);
-
       // 2. تحميل أوزان النموذج المُدرّب مسبقاً
       final weightsJson = await rootBundle.loadString('assets/models/mudabbir_weights.json');
       _modelWeights = jsonDecode(weightsJson);
