@@ -13,7 +13,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _checkingModel = true;
-  bool _modelAvailable = false;
+  bool _modelAvailable = false;\n  late final ChatProvider _chat;
 
   static const _quickReplies = [
     'ما هو موضوع هذه الآية؟',
@@ -24,8 +24,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!mounted) return;\n      final provider = context.read<ChatProvider>();\n      provider.checkLocalModel().then((available) {\n        if (!mounted) return;\n        setState(() {\n          _modelAvailable = available;\n          _checkingModel = false;\n        });\n      });\n    });
+    super.initState();\n    _chat = ChatProvider();
+    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!mounted) return;\n      _chat.checkLocalModel().then((available) {\n        if (!mounted) return;\n        setState(() {\n          _modelAvailable = available;\n          _checkingModel = false;\n        });\n      });\n    });
   }
 
   Future<void> _checkModel() async {
@@ -61,7 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _controller.dispose();
-    _scrollController.dispose();
+    _scrollController.dispose();\n    _chat.dispose();
     super.dispose();
   }
 
@@ -92,7 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
               IconButton(
                 tooltip: 'مسح المحادثة',
                 icon: const Icon(Icons.delete_outline),
-                onPressed: chat.loading ? null : chat.clearChat,
+                onPressed: _chat.loading ? null : _chat.clearChat,
               ),
             ],
           ),
@@ -100,7 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               _modelBanner(),
               Expanded(
-                child: chat.messages.isEmpty
+                child: _chat.messages.isEmpty
                     ? _emptyState(chat.loading)
                     : ListView.builder(
                         controller: _scrollController,
