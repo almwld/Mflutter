@@ -55,8 +55,8 @@ class RTLUtils {
   }
 
   /// الحصول على اتجاه RTL
-  static Directionality getDirectionality({bool isRTL = true}) {
-    return isRTL ? Directionality.rtl : Directionality.ltr;
+  static TextDirection getDirectionality({bool isRTL = true}) {
+    return isRTL ? TextDirection.rtl : TextDirection.ltr;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
