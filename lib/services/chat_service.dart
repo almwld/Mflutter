@@ -85,7 +85,8 @@ class ChatService {
     // تحليل الطاقة
     if (energy['prediction'] != null) {
       buffer.writeln('⚡ تحليل الطاقة:');
-      buffer.writeln('• المستوى: ${(energy['prediction'] as double * 100).toStringAsFixed(0)}%');
+      final prediction = (energy['prediction'] as num?)?.toDouble();
+      if (prediction != null) buffer.writeln('• المستوى: ${(prediction * 100).toStringAsFixed(0)}%');
       buffer.writeln('');
     }
 
