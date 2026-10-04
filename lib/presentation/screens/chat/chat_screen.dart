@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../providers/chat_provider.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -13,7 +12,8 @@ class _ChatScreenState extends State<ChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _checkingModel = true;
-  bool _modelAvailable = false;\n  late final ChatProvider _chat;
+  bool _modelAvailable = false;
+  late final ChatProvider _chat;
 
   static const _quickReplies = [
     'ما هو موضوع هذه الآية؟',
@@ -24,14 +24,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    super.initState();\n    _chat = ChatProvider();
-    WidgetsBinding.instance.addPostFrameCallback((_) {\n      if (!mounted) return;\n      _chat.checkLocalModel().then((available) {\n        if (!mounted) return;\n        setState(() {\n          _modelAvailable = available;\n          _checkingModel = false;\n        });\n      });\n    });
+    super.initState();
+    _chat = ChatProvider();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _chat.checkLocalModel().then((available) {
+        if (!mounted) return;
+        setState(() {
+          _modelAvailable = available;
+          _checkingModel = false;
+        });
+      });
+    });
   }
 
   Future<void> _checkModel() async {
     if (!mounted) return;
-    final provider = context.read<ChatProvider>();
-    final available = await provider.checkLocalModel();
+    final available = await _chat.checkLocalModel();
     if (!mounted) return;
     setState(() {
       _modelAvailable = available;
@@ -42,7 +51,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
-    context.read<ChatProvider>().sendMessage(text);
+    _chat.sendMessage(text);
     _controller.clear();
     _scrollToBottom();
   }
@@ -61,67 +70,62 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     _controller.dispose();
-    _scrollController.dispose();\n    _chat.dispose();
+    _scrollController.dispose();
+    _chat.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => ChatProvider(),
-      child: Consumer<ChatProvider>(
-        builder: (context, chat, _) => Scaffold(
-          backgroundColor: const Color(0xFF0B1117),
-          appBar: AppBar(
-            title: const Text('مُدَبِّر'),
-            backgroundColor: const Color(0xFF10201E),
-            actions: [
-              IconButton(
-                tooltip: 'فحص النموذج المحلي',
-                icon: _checkingModel
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Icon(
-                        _modelAvailable ? Icons.cloud_done : Icons.cloud_off,
-                      ),
-                onPressed: _checkingModel ? null : _checkModel,
-              ),
-              IconButton(
-                tooltip: 'مسح المحادثة',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _chat.loading ? null : _chat.clearChat,
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              _modelBanner(),
-              Expanded(
-                child: _chat.messages.isEmpty
-                    ? _emptyState(chat.loading)
-                    : ListView.builder(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
-                        itemCount: chat.messages.length,
-                        itemBuilder: (_, i) {
-                          final msg = chat.messages[i];
-                          return _buildBubble(msg.text, msg.isUser);
-                        },
-                      ),
-              ),
-              if (chat.loading)
-                const LinearProgressIndicator(minHeight: 2),
-              _inputBar(chat.loading),
-            ],
-          ),
+    return AnimatedBuilder(
+      animation: _chat,
+      builder: (context, _) => Scaffold(
+        backgroundColor: const Color(0xFF0B1117),
+        appBar: AppBar(
+          title: const Text('مُدَبِّر'),
+          backgroundColor: const Color(0xFF10201E),
+          actions: [
+            IconButton(
+              tooltip: 'فحص النموذج المحلي',
+              icon: _checkingModel
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(_modelAvailable ? Icons.cloud_done : Icons.cloud_off),
+              onPressed: _checkingModel ? null : _checkModel,
+            ),
+            IconButton(
+              tooltip: 'مسح المحادثة',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: _chat.loading ? null : _chat.clearChat,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _modelBanner(),
+            Expanded(
+              child: _chat.messages.isEmpty
+                  ? _emptyState(_chat.loading)
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+                      itemCount: _chat.messages.length,
+                      itemBuilder: (_, i) {
+                        final msg = _chat.messages[i];
+                        return _buildBubble(msg.text, msg.isUser);
+                      },
+                    ),
+            ),
+            if (_chat.loading) const LinearProgressIndicator(minHeight: 2),
+            _inputBar(_chat.loading),
+          ],
         ),
       ),
     );
   }
-
   Widget _modelBanner() {
     final text = _checkingModel
         ? 'جارٍ فحص النموذج المحلي…'
