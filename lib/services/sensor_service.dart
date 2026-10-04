@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:sensors_plus/sensors_plus.dart';
 
 class SensorService {
@@ -10,14 +9,12 @@ class SensorService {
   double _pitch = 0.0;
   double _roll = 0.0;
   double _yaw = 0.0;
-  double _breathPhase = 0.0; // 0→2π دورة التنفس
   StreamSubscription? _gyroSub;
   StreamSubscription? _accelSub;
 
   double get pitch => _pitch;
   double get roll => _roll;
   double get yaw => _yaw;
-  double get breathPhase => _breathPhase;
 
   void startListening() {
     _gyroSub?.cancel();
@@ -30,8 +27,8 @@ class SensorService {
     });
 
     _accelSub = accelerometerEventStream().listen((event) {
-      final magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
-      _breathPhase = (DateTime.now().millisecondsSinceEpoch / 3000 * 2 * pi) % (2 * pi);
+      // The stream is intentionally consumed only for real sensor activity.
+      // No synthetic breathing phase is derived from wall-clock time.
     });
   }
 
