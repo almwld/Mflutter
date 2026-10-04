@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../providers/abjad_provider.dart';
-import 'package:provider/provider.dart';
 
 /// =============================================================================
 /// LettersScreen - شاشة علم الحروف
