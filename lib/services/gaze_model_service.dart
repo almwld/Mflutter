@@ -77,8 +77,8 @@ class GazeModelService {
   static double decodeAngle(
     List<double> logits, {
     required int bins,
-    double minAngle = -99.0,
-    double maxAngle = 99.0,
+    double minAngle = -180.0,
+    double maxAngle = 180.0,
   }) {
     if (logits.length != bins || bins < 2) {
       throw ArgumentError('عدد bins لا يطابق مخرجات نموذج L2CS.');
@@ -92,7 +92,7 @@ class GazeModelService {
     for (var i = 0; i < logits.length; i++) {
       final probability = math.exp(logits[i] - maxLogit);
       denominator += probability;
-      weighted += probability * (minAngle + (i + 0.5) * step);
+      weighted += probability * (minAngle + i * step);
     }
     return denominator == 0 ? 0 : weighted / denominator;
   }
