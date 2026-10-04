@@ -20,6 +20,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   final _gaze = GazeTrackingService.instance;
   final _fusion = GazeFusionService.instance;
   GazeEstimate? _estimate;
+  GazeScreenPoint? _screenPoint;
   bool _busy = false;
   bool _modelReady = false;
   String? _modelError;
@@ -73,7 +74,18 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
         if (input != null) {
           final result = await _gaze.process(input, image, camera);
           if (result != null && mounted) {
-            setState(() => _estimate = result);
+            final size = MediaQuery.sizeOf(context);
+            final point = _fusion.map(
+              yawDegrees: result.yawDegrees,
+              pitchDegrees: result.pitchDegrees,
+              width: size.width,
+              height: size.height,
+              confidence: result.confidence,
+            );
+            setState(() {
+              _estimate = result;
+              _screenPoint = point;
+            });
             _collectCalibrationSample(result);
           }
         }
@@ -178,14 +190,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
   }
 
   String _gazeText(GazeEstimate e, BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final point = _fusion.map(
-      yawDegrees: e.yawDegrees,
-      pitchDegrees: e.pitchDegrees,
-      width: size.width,
-      height: size.height,
-      confidence: e.confidence,
-    );
+    final point = _screenPoint;
     return 'Yaw: ${e.yawDegrees.toStringAsFixed(1)}°  Pitch: ${e.pitchDegrees.toStringAsFixed(1)}°\n'
         'النقطة: (${point.x.toStringAsFixed(0)}, ${point.y.toStringAsFixed(0)})\n'
         'الثقة: ${(point.confidence * 100).round()}%';
@@ -222,6 +227,31 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
                       painter: _CalibrationTargetPainter(
                         target: _targets[_calibrationIndex],
                         progress: _calibrationProgress,
+                      ),
+                    ),
+                  ),
+                ),
+              if (!_calibrating && _screenPoint != null)
+                Positioned(
+                  left: (_screenPoint!.x - 14).clamp(0.0, MediaQuery.sizeOf(context).width - 28),
+                  top: (_screenPoint!.y - 14).clamp(0.0, MediaQuery.sizeOf(context).height - 28),
+                  child: IgnorePointer(
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.cyanAccent, width: 2),
+                        boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 8)],
+                      ),
+                      child: const Center(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.cyanAccent,
+                          ),
+                          child: SizedBox(width: 7, height: 7),
+                        ),
                       ),
                     ),
                   ),
