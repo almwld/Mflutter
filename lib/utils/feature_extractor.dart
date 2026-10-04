@@ -37,18 +37,33 @@ class FeatureExtractor {
 
   /// ملء التضمين من النص
   void _fillEmbeddingFromText(List<double> embedding, String text) {
-    final random = Random(text.hashCode);
+    if (text.isEmpty) return;
 
-    // ملء عشوائي مع بذور محددة
-    for (int i = 0; i < embedding.length; i++) {
-      final char = i < text.length ? text[i] : text[0];
-      embedding[i] = (char.codeUnitAt(0) + random.nextDouble()) / 256.0;
+    // Feature hashing حتمي: لا يولّد بيانات عشوائية ولا يدّعي أنه نموذج لغوي.
+    // نوزّع أحرف النص وثنائياتها على مساحة ثابتة ثم نطبع المتجه.
+    for (var i = 0; i < text.length; i++) {
+      final code = text.codeUnitAt(i);
+      final index = _hash(code, i, embeddingSize);
+      embedding[index] += 1.0;
+
+      if (i + 1 < text.length) {
+        final next = text.codeUnitAt(i + 1);
+        final pairIndex = _hash(code * 31 + next, i, embeddingSize);
+        embedding[pairIndex] += 0.5;
+      }
     }
 
     // إضافة معلومات إضافية
     embedding[0] = text.length / 100.0; // الطول
     embedding[1] = _countUniqueChars(text) / 30.0; // التنوع
     embedding[2] = text.split(' ').length / 20.0; // عدد الكلمات
+  }
+
+  int _hash(int value, int position, int size) {
+    var hash = 2166136261;
+    hash = (hash ^ value) * 16777619;
+    hash = (hash ^ position) * 16777619;
+    return (hash & 0x7fffffff) % size;
   }
 
   /// حساب عدد الأحرف الفريدة
