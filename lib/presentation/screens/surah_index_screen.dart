@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'quran_page_screen.dart';
 
 /// 📖 فهرس سور القرآن — تصميم ذهبي فاخر
 class SurahIndexScreen extends StatelessWidget {
