@@ -1,6 +1,7 @@
 import '../../../core/utils/abjad_calculator.dart';
 import '../../../domain/entities/divine_name.dart';
 import '../../../core/constants/app_enums.dart';
+import '../../../domain/entities/science.dart';
 import '../../../domain/repositories/divine_names_repository.dart';
 
 /// =============================================================================
@@ -47,6 +48,12 @@ class AbjadLocalDatasource {
     final type = DivineNameType.values[attribute.index];
     return (await getAllDivineNames()).where((n) => n.type == type).toList();
   }
+
+  Future<List<Letter>> getLetters() async => AbjadCalculator.kabirValues.entries.map((e) => Letter(value: e.key, abjadValue: e.value)).toList();
+  Future<List<Number>> getNumbers() async => List.generate(100, (i) => Number(value: i + 1));
+  Future<List<Element>> getElements() async => const [Element(name: 'النار'), Element(name: 'الماء'), Element(name: 'التراب'), Element(name: 'الهواء'), Element(name: 'الروح')];
+  Future<List<Planet>> getPlanets() async => const [Planet(name: 'الشمس'), Planet(name: 'القمر'), Planet(name: 'المريخ'), Planet(name: 'عطارد'), Planet(name: 'المشتري'), Planet(name: 'الزهرة'), Planet(name: 'زحل')];
+  Future<List<ZodiacSign>> getZodiacSigns() async => const [ZodiacSign(name: 'الحمل'), ZodiacSign(name: 'الثور'), ZodiacSign(name: 'الجوزاء'), ZodiacSign(name: 'السرطان'), ZodiacSign(name: 'الأسد'), ZodiacSign(name: 'العذراء'), ZodiacSign(name: 'الميزان'), ZodiacSign(name: 'العقرب'), ZodiacSign(name: 'القوس'), ZodiacSign(name: 'الجدي'), ZodiacSign(name: 'الدلو'), ZodiacSign(name: 'الحوت')];
 
   /// حساب الجمل
   Map<String, dynamic> calculate(String text) {
