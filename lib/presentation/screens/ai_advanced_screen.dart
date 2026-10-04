@@ -3,7 +3,6 @@ import '../../core/constants/app_colors.dart';
 import '../../services/local_embeddings_service.dart';
 import '../../services/tafsir_generator_service.dart';
 import '../../services/quranic_search_engine.dart';
-import '../../services/model_finetuning_service.dart';
 import '../../services/quran_loader_service.dart';
 
 class AIAdvancedScreen extends StatefulWidget {
