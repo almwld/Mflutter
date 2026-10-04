@@ -29,6 +29,12 @@ class GazeModelService {
   List<int> get inputShape => _interpreter?.getInputTensor(0).shape ?? const [];
   String get inputType => _interpreter?.getInputTensor(0).type.toString() ?? 'unknown';
 
+  bool get hasExpectedL2csContract =>
+      inputShape.length == 4 && inputShape[0] == 1 && inputShape[1] == 3 &&
+      inputShape[2] == 448 && inputShape[3] == 448 &&
+      outputShapes.length >= 2 && outputShapes[0].reduce((a, b) => a * b) == 90 &&
+      outputShapes[1].reduce((a, b) => a * b) == 90;
+
   List<List<int>> get outputShapes =>
       _interpreter?.getOutputTensors().map((t) => List<int>.from(t.shape)).toList() ??
       const [];
@@ -82,6 +88,7 @@ class GazeModelService {
       ),
     );
     final outputs = run(input);
+    if (!hasExpectedL2csContract) throw StateError('بنية نموذج L2CS غير متوافقة مع العقد 1x3x448x448 → 90/90.');
     if (outputs.length < 2) throw StateError('L2CS يجب أن يعيد رأسي yaw و pitch.');
     final yaw = _flatten(outputs[0]).map((e) => e.toDouble()).toList();
     final pitch = _flatten(outputs[1]).map((e) => e.toDouble()).toList();
@@ -160,17 +167,24 @@ class GazeModelService {
       throw ArgumentError('عدد bins لا يطابق مخرجات نموذج L2CS.');
     }
 
-    final maxLogit = logits.reduce(math.max);
-    var denominator = 0.0;
-    var weighted = 0.0;
+    final looksLikeProbabilities = logits.every((v) => v >= 0 && v <= 1) &&
+        (logits.fold<double>(0, (sum, v) => sum + v) - 1.0).abs() < 0.05;
+    final probabilities = looksLikeProbabilities
+        ? logits
+        : _softmax(logits);
     final step = (maxAngle - minAngle) / bins;
-
-    for (var i = 0; i < logits.length; i++) {
-      final probability = math.exp(logits[i] - maxLogit);
-      denominator += probability;
-      weighted += probability * (minAngle + i * step);
+    var weighted = 0.0;
+    for (var i = 0; i < probabilities.length; i++) {
+      weighted += probabilities[i] * (minAngle + i * step);
     }
-    return denominator == 0 ? 0 : weighted / denominator;
+    return weighted;
+  }
+
+  static List<double> _softmax(List<double> values) {
+    final maxValue = values.reduce(math.max);
+    final exps = values.map((v) => math.exp(v - maxValue)).toList();
+    final sum = exps.fold<double>(0, (a, b) => a + b);
+    return sum == 0 ? List<double>.filled(values.length, 1 / values.length) : exps.map((v) => v / sum).toList();
   }
 
   Object _zeroBuffer(List<int> shape, String type) {
