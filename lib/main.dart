@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/themes/app_theme.dart';
@@ -25,8 +26,9 @@ class MudabbirApp extends StatelessWidget {
           locale: const Locale('ar', 'SA'),
           supportedLocales: const [Locale('ar', 'SA')],
           localizationsDelegates: const [
-            DefaultMaterialLocalizations.delegate,
-            DefaultWidgetsLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
           ],
           builder: (context, child) => Directionality(textDirection: TextDirection.rtl, child: child!),
           themeMode: theme.themeMode,
