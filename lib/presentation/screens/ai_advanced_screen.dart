@@ -4,6 +4,7 @@ import '../../services/local_embeddings_service.dart';
 import '../../services/tafsir_generator_service.dart';
 import '../../services/quranic_search_engine.dart';
 import '../../services/model_finetuning_service.dart';
+import '../../services/quran_loader_service.dart';
 
 class AIAdvancedScreen extends StatefulWidget {
   const AIAdvancedScreen({super.key});
@@ -18,15 +19,21 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
   @override
   void initState() {
     super.initState();
-    // فهرسة آيات تجريبية
-    QuranicSearchEngine.indexVerses([
-      {'text': 'اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ', 'surah': 'النور', 'ayah': '35'},
-      {'text': 'وَالسَّمَاءَ بَنَيْنَاهَا بِأَيْدٍ وَإِنَّا لَمُوسِعُونَ', 'surah': 'الذاريات', 'ayah': '47'},
-      {'text': 'وَالْجِبَالَ أَوْتَادًا', 'surah': 'النبأ', 'ayah': '7'},
-      {'text': 'قُلْ هُوَ اللَّهُ أَحَدٌ', 'surah': 'الإخلاص', 'ayah': '1'},
-    ]);
-    LocalEmbeddingsService.indexVerse('1', 'اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ');
-    LocalEmbeddingsService.indexVerse('2', 'وَالسَّمَاءَ بَنَيْنَاهَا بِأَيْدٍ');
+    _loadQuranIndex();
+  }
+
+  Future<void> _loadQuranIndex() async {
+    final ayahs = await QuranLoaderService.loadAllAyahs();
+    if (!mounted) return;
+    final searchDocs = ayahs.map((ayah) => <String, String>{
+      'text': ayah.text,
+      'surah': ayah.surahName,
+      'ayah': ayah.ayahNumber.toString(),
+    }).toList();
+    QuranicSearchEngine.indexVerses(searchDocs);
+    LocalEmbeddingsService.indexAll({
+      for (final ayah in ayahs) '${ayah.surahNumber}:${ayah.ayahNumber}': ayah.text,
+    });
   }
 
   @override
