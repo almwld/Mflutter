@@ -11,6 +11,8 @@ import 'divine_names_screen.dart';
 import 'daily_verse_screen.dart';
 import 'settings/settings_screen.dart';
 import 'about_screen.dart';
+import 'device/ar_lens_screen.dart';
+import 'device/gaze_tracking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,6 +72,8 @@ class MoreScreen extends StatelessWidget {
           _tile(context, '⭐ المفضلة', const FavoritesScreen(), Icons.star),
           _tile(context, '🌟 عظيمة', const GreatVersesScreen(), Icons.auto_awesome),
           _tile(context, '📊 إحصائيات', const StatsScreen(), Icons.bar_chart),
+          _tile(context, '🔭 عدسة AR', const ARLensScreen(), Icons.view_in_ar),
+          _tile(context, '👁️ تتبع النظر', const GazeTrackingScreen(), Icons.visibility),
           _tile(context, '⚙️ إعدادات', const SettingsScreen(), Icons.settings),
           _tile(context, 'ℹ️ حول', const AboutScreen(), Icons.info),
         ],
