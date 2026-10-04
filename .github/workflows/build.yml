@@ -42,7 +42,7 @@ jobs:
           text = manifest.read_text()
           marker = "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">"
           permissions = """
-          <uses-permission android:name="android.permission.CAMERA" />
+          <uses-permission android:name="android.permission.CAMERA" />\n          <uses-permission android:name="android.permission.USE_BIOMETRIC" />
           <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
           <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
           <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
@@ -55,6 +55,18 @@ jobs:
           if "android.permission.CAMERA" not in text:
               text = text.replace(marker, marker + permissions)
           manifest.write_text(text)
+
+          activity = Path("android/app/src/main/kotlin/com/mudabbir/mudabbir_al_asrar/MainActivity.kt")
+          if activity.exists():
+              text = activity.read_text().replace("FlutterActivity", "FlutterFragmentActivity")
+              if "FlutterFragmentActivity" not in text:
+                  text = "import io.flutter.embedding.android.FlutterFragmentActivity\\n\\n" + text
+              activity.write_text(text)
+          else:
+              for candidate in Path("android/app/src/main/kotlin").rglob("MainActivity.kt"):
+                  text = candidate.read_text().replace("FlutterActivity", "FlutterFragmentActivity")
+                  candidate.write_text(text)
+
           PY
 
       - name: Generate fixed QCF Mushaf layout
