@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class BackupService {
   static Future<String> createBackup(Map<String, dynamic> data) async {
@@ -9,9 +10,12 @@ class BackupService {
       'data': data,
     });
     
-    final path = '/storage/emulated/0/Download/mudabbir_backup_${DateTime.now().millisecondsSinceEpoch}.json';
-    await File(path).writeAsString(json);
-    return path;
+    final directory = await getApplicationDocumentsDirectory();
+    final backupDirectory = Directory('${directory.path}/backups');
+    await backupDirectory.create(recursive: true);
+    final file = File('${backupDirectory.path}/mudabbir_backup_${DateTime.now().millisecondsSinceEpoch}.json');
+    await file.writeAsString(json, flush: true);
+    return file.path;
   }
 
   static Future<Map<String, dynamic>?> restoreBackup(String path) async {
