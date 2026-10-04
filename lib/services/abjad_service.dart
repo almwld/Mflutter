@@ -56,9 +56,9 @@ class AbjadService {
     final color = _getColor(totalKabir);
 
     return AbjadResult(
-      kabir: totalKabir,
-      saghir: totalSaghir,
-      wasat: totalWasat,
+      major: totalKabir,
+      minor: totalSaghir,
+      middle: totalWasat,
       element: element,
       planet: planet,
       zodiac: zodiac,
