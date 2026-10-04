@@ -132,13 +132,3 @@ class AbjadService {
   }
 }
 
-/// =============================================================================
-/// LetterResult - نتيجة الحرف
-/// =============================================================================
-
-class LetterResult {
-  final String letter;
-  final int value;
-
-  LetterResult({required this.letter, required this.value});
-}
