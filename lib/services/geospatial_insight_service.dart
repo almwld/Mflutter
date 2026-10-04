@@ -1,22 +1,29 @@
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
+
 class GeospatialInsightService {
-  static double _altitude = 0;
-  static String _topography = 'plains';
+  GeospatialInsightService._();
+  static final instance = GeospatialInsightService._();
+  Position? _position;
+  StreamSubscription<Position>? _subscription;
+  Position? get position => _position;
+  double get altitude => _position?.altitude ?? 0;
+  double get latitude => _position?.latitude ?? 0;
+  double get longitude => _position?.longitude ?? 0;
 
-  static double get altitude => _altitude;
-  static String get topography => _topography;
-
-  static void updateLocation(double alt) {
-    _altitude = alt;
-    if (alt > 1000) _topography = 'mountains';
-    else if (alt < 50) _topography = 'coastal';
-    else _topography = 'plains';
+  Future<bool> start() async {
+    if (!await Geolocator.isLocationServiceEnabled()) return false;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return false;
+    _position = await Geolocator.getCurrentPosition();
+    await _subscription?.cancel();
+    _subscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
+    ).listen((value) => _position = value);
+    return true;
   }
-
-  static String getVerseForTopography() {
-    switch (_topography) {
-      case 'mountains': return 'وَالْجِبَالَ أَوْتَادًا (النبأ:7)';
-      case 'coastal': return 'مَرَجَ الْبَحْرَيْنِ يَلْتَقِيَانِ (الرحمن:19)';
-      default: return 'وَالْأَرْضَ مَدَدْنَاهَا (الحجر:19)';
-    }
-  }
+  Future<void> stop() async { await _subscription?.cancel(); _subscription = null; }
+  String getTopography() => altitude > 1000 ? 'mountains' : altitude < 50 ? 'coastal' : 'plains';
+  double distanceTo(double lat, double lon) => Geolocator.distanceBetween(latitude, longitude, lat, lon);
 }
