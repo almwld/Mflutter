@@ -16,7 +16,7 @@ void main() {
     expect(find.byType(MushafScreen), findsNothing);
 
     await tester.tap(find.text('مصحف'));
-    await tester.pumpAndSettle(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(MushafScreen), findsOneWidget);
   });
