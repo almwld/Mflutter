@@ -29,6 +29,10 @@ class DivineName {
     this.attributes = const [],
   });
 
+  int get number => id;
+  String get name => arabicName;
+  String get attribute => attributes.isNotEmpty ? attributes.first : type.name;
+
   /// الاسم المعروض
   String get displayName => arabicName;
 
