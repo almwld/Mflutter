@@ -43,8 +43,8 @@ class MudabbirPythonEngine {
 
       _initialized = true;
     } catch (e) {
-      // إذا لم توجد نماذج، سيتم بناؤها من الصفر
-      _initialized = true;
+      _initialized = false;
+      rethrow;
     }
   }
 
@@ -118,7 +118,9 @@ class MudabbirPythonEngine {
 
   /// تمرير أمامي كامل: Input → Hidden → Output
   List<double> forward(List<double> input) {
-    if (!_initialized) return List.filled(10, 0.0);
+    if (!_initialized) {
+      throw StateError('محرك مُدَبِّر غير مهيأ: أوزان النموذج المطلوبة غير متاحة.');
+    }
 
     // تحويل المدخل إلى مصفوفة عمودية
     final x = [input];
@@ -126,9 +128,8 @@ class MudabbirPythonEngine {
     // الطبقة المخفية ١: 4096 → 512
     var w1 = (_modelWeights['w1'] as List?)?.cast<double>() ?? [];
     var b1 = (_modelWeights['b1'] as List?)?.cast<double>() ?? [];
-    if (w1.isEmpty) {
-      w1 = List.generate(4096 * 512, (_) => (Random().nextDouble() * 2 - 1) * 0.01);
-      b1 = List.filled(512, 0.0);
+    if (w1.length != 4096 * 512 || b1.length != 512) {
+      throw StateError('أوزان w1/b1 غير متوافقة مع بنية النموذج.');
     }
 
     final w1Matrix = List.generate(4096, (i) => w1.sublist(i * 512, (i + 1) * 512));
@@ -140,9 +141,8 @@ class MudabbirPythonEngine {
     // الطبقة المخفية ٢: 512 → 256
     var w2 = (_modelWeights['w2'] as List?)?.cast<double>() ?? [];
     var b2 = (_modelWeights['b2'] as List?)?.cast<double>() ?? [];
-    if (w2.isEmpty) {
-      w2 = List.generate(512 * 256, (_) => (Random().nextDouble() * 2 - 1) * 0.01);
-      b2 = List.filled(256, 0.0);
+    if (w2.length != 512 * 256 || b2.length != 256) {
+      throw StateError('أوزان w2/b2 غير متوافقة مع بنية النموذج.');
     }
 
     final w2Matrix = List.generate(512, (i) => w2.sublist(i * 256, (i + 1) * 256));
@@ -154,9 +154,8 @@ class MudabbirPythonEngine {
     // طبقة المخرجات: 256 → 10 (طاقات)
     var w3 = (_modelWeights['w3'] as List?)?.cast<double>() ?? [];
     var b3 = (_modelWeights['b3'] as List?)?.cast<double>() ?? [];
-    if (w3.isEmpty) {
-      w3 = List.generate(256 * 10, (_) => (Random().nextDouble() * 2 - 1) * 0.01);
-      b3 = List.filled(10, 0.0);
+    if (w3.length != 256 * 10 || b3.length != 10) {
+      throw StateError('أوزان w3/b3 غير متوافقة مع بنية النموذج.');
     }
 
     final w3Matrix = List.generate(256, (i) => w3.sublist(i * 10, (i + 1) * 10));
