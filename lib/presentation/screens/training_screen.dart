@@ -70,9 +70,7 @@ class TrainingScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: provider.isTraining
-                          ? () {} // إيقاف
-                          : null,
+                      onPressed: provider.isTraining ? provider.stopTraining : null,
                       icon: const Icon(Icons.stop),
                       label: const Text('إيقاف'),
                       style: ElevatedButton.styleFrom(
