@@ -1,57 +1,22 @@
-import 'package:arcore_flutter_plus/arcore_flutter_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart' as vector;
+import '../../../core/constants/app_colors.dart';
 
-class ARLensScreen extends StatefulWidget {
+class ARLensScreen extends StatelessWidget {
   const ARLensScreen({super.key});
-  @override
-  State<ARLensScreen> createState() => _ARLensScreenState();
-}
-
-class _ARLensScreenState extends State<ARLensScreen> {
-  ArCoreController? _controller;
-  int _markers = 0;
-
-  void _created(ArCoreController controller) {
-    _controller = controller;
-    controller.onPlaneTap = (hits) {
-      if (hits.isEmpty) return;
-      final hit = hits.first;
-      final node = ArCoreNode(
-        name: 'mudabbir_marker_$_markers',
-        shape: ArCoreSphere(
-          radius: 0.06,
-          material: ArCoreMaterial(color: Colors.amber, metallic: 0.5, roughness: 0.25),
-        ),
-        position: hit.pose.translation,
-      );
-      controller.addArCoreNodeWithAnchor(node);
-      setState(() => _markers++);
-    };
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    backgroundColor: AppColors.background,
     appBar: AppBar(title: const Text('عدسة التدبر AR')),
-    body: Stack(children: [
-      ArCoreView(
-        onArCoreViewCreated: _created,
-        enableTapRecognizer: true,
-        enableUpdateListener: true,
+    body: const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'العدسة المعززة غير مهيأة في الإصدار الحالي. لم يتم عرض نتائج أو علامات وهمية.',
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.rtl,
+        ),
       ),
-      Positioned(
-        left: 16, right: 16, bottom: 24,
-        child: Card(child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text('اضغط على سطح مكتشف لوضع علامة التدبر • العلامات: $_markers', textDirection: TextDirection.rtl),
-        )),
-      ),
-    ]),
+    ),
   );
 }
