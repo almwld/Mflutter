@@ -71,7 +71,7 @@ class MushafVariantLayoutService {
     }
 
     while (result.length < 15) {
-      result.add(const MushafVariantLine(type: 'blank', centered: false, words: []));
+      result.add(const MushafVariantLine(type: 'blank', centered: false, surah: null, words: [], markers: []));
     }
     return result.take(15).toList(growable: false);
   }
