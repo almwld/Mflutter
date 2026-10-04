@@ -38,7 +38,6 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
   static const _quranGoldLight = Color(0xFF9A6B00);
   static const _quranGoldDark = Color(0xFFE2B84A);
   static const _frame = Color(0xFF8C6A2D);
-  static const _frameLight = Color(0xFFC8A85B);
 
   @override
   void initState() {
