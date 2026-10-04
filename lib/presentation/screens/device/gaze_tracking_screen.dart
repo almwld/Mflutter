@@ -153,7 +153,6 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
         await _fusion.fit(samples: samples);
         if (mounted) {
           _calibrationTimer?.cancel();
-          _calibrationTimer?.cancel();
           setState(() => _calibrating = false);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('تم حفظ معايرة النظر بنجاح')),
@@ -161,6 +160,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen> {
         }
       } catch (error) {
         if (mounted) {
+          _calibrationTimer?.cancel();
           setState(() => _calibrating = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('تعذر إكمال المعايرة: $error')),
