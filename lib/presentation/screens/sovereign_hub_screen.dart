@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/ar_lens_service.dart';
 import '../../services/p2p_mesh_service.dart';
-import '../../services/vocal_crypto_service.dart';
 import '../../services/iot_sanctuary_service.dart';
 
 class SovereignHubScreen extends StatefulWidget {
@@ -32,8 +31,8 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
           _peers = Map<String, String>.from(P2PMeshService.instance.peers);
           setState(() => _scanning = false);
         }),
-        _buildCard('🔐 التشفير الصوتي', VocalCryptoService.isUnlocked ? 'بصمة مسجلة' : 'غير مهيأ', Icons.fingerprint, () {
-          setState(() => _status = 'يلزم تسجيل عينة صوتية حقيقية قبل إنشاء البصمة.');
+        _buildCard('🔐 التحقق الصوتي', 'غير مهيأ', Icons.fingerprint, () {
+          setState(() => _status = 'التحقق الصوتي يحتاج محرك بصمة صوتية حقيقي مهيأ.');
         }),
         _buildCard('🏠 إنترنت الأشياء', IoTSanctuaryService.instance.isConfigured ? 'مهيأ' : 'غير مهيأ', Icons.home, () async {
           if (!IoTSanctuaryService.instance.isConfigured) {
