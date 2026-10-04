@@ -121,15 +121,14 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
   String _transformText(String text) {
     switch (_currentMode) {
       case QuranMode.musnad:
-        return _toMusnad(text);
+        return TextTransformer.toMusnad(text);
       case QuranMode.oldArabic:
         return _removeDots(text);
       case QuranMode.hieroglyphic:
         return _toHiero(text);
-      case QuranMod  String _toMusnad(String text) => TextTransformer.toMusnad(text);
-     r += map[c] ?? c;
+      case QuranMode.uthmaniGold:
+        return text;
     }
-    return r;
   }
 
   String _removeDots(String text) {
@@ -138,32 +137,30 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
       'ذ': 'د', 'ز': 'د', 'ش': 'س', 'ض': 'ص', 'ظ': 'ط',
       'غ': 'ع', 'ف': 'ڡ', 'ق': 'ڡ', 'ن': 'ٮ', 'ي': 'ى',
     };
-    String r = '';
-    for (int i = 0; i < text.length; i++) {
-      String c = text[i];
-      if ('\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652'.contains(c)) continue;
-      r += map[c] ?? c;
+    final r = StringBuffer();
+    for (final rune in text.runes) {
+      final c = String.fromCharCode(rune);
+      if ('\\u064B\\u064C\\u064D\\u064E\\u064F\\u0650\\u0651\\u0652'.contains(c)) continue;
+      r.write(map[c] ?? c);
     }
-    return r;
+    return r.toString();
   }
 
   String _toHiero(String text) {
     const map = {
-      'ا': '𓂝', 'ب': '𓃀', 'ت': '𓏏', 'ث': '𓍿', 'ج': '𓆓',
-      'ح': '𓎛', 'خ': '𓐍', 'د': '𓂧', 'ذ': '𓆑', 'ر': '𓂋',
-      'ز': '𓊃', 'س': '𓋴', 'ش': '𓈙', 'ص': '𓊮', 'ض': '𓍑',
-      'ط': '𓍔', 'ظ': '𓊪', 'ع': '𓂝', 'غ': '𓎼', 'ف': '𓆑',
-      'ق': '𓏘', 'ك': '𓎡', 'ل': '𓃭', 'م': '𓅓', 'ن': '𓈖',
-      'ه': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ة': '𓉔',
-      ' ': ' ', 'أ': '𓂝', 'إ': '𓂝',
+      'ا': '𓂝', 'أ': '𓂝', 'إ': '𓂝', 'آ': '𓂝', 'ب': '𓃀', 'ت': '𓏏', 'ث': '𓍿',
+      'ج': '𓆓', 'ح': '𓎛', 'خ': '𓐍', 'د': '𓂧', 'ذ': '𓆑', 'ر': '𓂋', 'ز': '𓊃',
+      'س': '𓋴', 'ش': '𓈙', 'ص': '𓊮', 'ض': '𓍑', 'ط': '𓍔', 'ظ': '𓊪', 'ع': '𓂝',
+      'غ': '𓎼', 'ف': '𓆑', 'ق': '𓏘', 'ك': '𓎡', 'ل': '𓃭', 'م': '𓅓', 'ن': '𓈖',
+      'ه': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ة': '𓉔', 'ؤ': '𓅱', 'ئ': '𓇌',
     };
-    String r = '';
-    for (int i = 0; i < text.length; i++) {
-      String c = text[i];
-      if ('\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652'.contains(c)) continue;
-      r += map[c] ?? c;
+    final r = StringBuffer();
+    for (final rune in text.runes) {
+      final c = String.fromCharCode(rune);
+      if ('\\u064B\\u064C\\u064D\\u064E\\u064F\\u0650\\u0651\\u0652\\u0670'.contains(c)) continue;
+      r.write(map[c] ?? c);
     }
-    return r;
+    return r.toString();
   }
 
   TextStyle _getTextStyle() {
