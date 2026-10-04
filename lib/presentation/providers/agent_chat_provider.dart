@@ -80,7 +80,7 @@ class AgentChatProvider extends ChangeNotifier {
       case 'ayaat':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(8).toList();
         if(hits.isEmpty)return 'لم تُوجد مطابقة مباشرة في الفهرس المحلي.';
-        return hits.map((v)=>'\${v['surah']} \${v['ayah']}: \${v['text']}').join('\n');
+        return hits.map((v) => "${v['surah']} ${v['ayah']}: ${v['text']}").join('\\n');
       case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: ${_abjad(query)}';
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
