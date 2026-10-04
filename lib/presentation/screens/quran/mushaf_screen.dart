@@ -4,6 +4,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../services/reading_progress_service.dart';
+import '../../../services/ayah_coordinate_service.dart';
 import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
 
@@ -108,6 +109,21 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
         ],
       ),
     ).whenComplete(controller.dispose);
+  }
+
+  Future<void> _saveAyahCoordinate(int surah, int ayah, Offset position) async {
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null) return;
+    final local = box.globalToLocal(position);
+    await AyahCoordinateService.save(
+      page: _currentPage.value,
+      surah: surah,
+      ayah: ayah,
+      x: local.dx,
+      y: local.dy,
+      width: box.size.width,
+      height: box.size.height,
+    );
   }
 
   void _showAyahMenu(int surah, int ayah, Offset position) {
@@ -253,8 +269,9 @@ class _MushafScreenState extends State<MushafScreen> with SingleTickerProviderSt
                       ];
                     });
                   },
-                  onLongPress: (surah, ayah) {
-                    _showAyahMenu(surah, ayah, const Offset(0, 0));
+                  onLongPressStart: (surah, ayah, details) {
+                    _saveAyahCoordinate(surah, ayah, details.globalPosition);
+                    _showAyahMenu(surah, ayah, details.globalPosition);
                   },
                 ),
               ),
