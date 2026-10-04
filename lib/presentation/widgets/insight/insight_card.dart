@@ -164,7 +164,7 @@ class InsightCard extends StatelessWidget {
   }
 
   Color _getCategoryColor() {
-    switch (insight.category) {
+    switch (insight.insightCategory) {
       case InsightCategory.contemplation:
         return Colors.purple;
       case InsightCategory.quran:
