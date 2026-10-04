@@ -131,7 +131,7 @@ class AppStrings {
   static const String divineNameAlMalik = 'الْمَلِكُ';
   static const String divineNameAlQuddus = 'الْقُدُّوسُ';
   static const String divineNameAlSalam = 'السَّلَامُ';
-  static const String divineNameAlMumin = 'الْمُؤْمِنُ';
+  static const String divineNameAlMu'min = 'الْمُؤْمِنُ';
   static const String divineNameAlMuhaymin = 'الْمُهَيْمِنُ';
   static const String divineNameAlAziz = 'الْعَزِيزُ';
   static const String divineNameAlJabbar = 'الْجَبَّارُ';

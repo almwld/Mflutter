@@ -152,7 +152,6 @@ class ProcessingFailure extends Failure {
 /// فئة الفشل الأساسية
 /// =============================================================================
 abstract class Failure {
-  const Failure();
   String get errorMessage;
 
   @override

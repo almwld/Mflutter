@@ -1,4 +1,5 @@
 import 'package:tflite_flutter/tflite_flutter.dart';
+import '../../../domain/entities/models.dart';
 
 /// =============================================================================
 /// TFLiteDatasource - مصدر بيانات TFLite
@@ -7,13 +8,14 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 class TFLiteDatasource {
   final Map<String, Interpreter> _interpreters = {};
   final Map<String, bool> _isLoaded = {};
+  final Map<String, ModelInfo> _modelInfos = {};
 
   // ═══════════════════════════════════════════════════════════════════════════
   // تحميل النموذج
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// تحميل نموذج
-  Future<bool> loadModel(String modelPath, {String? key}) async {
+  Future<ModelInfo> loadModel(String modelPath, {String? key}) async {
     try {
       final interpreter = await Interpreter.fromAsset(
         modelPath,
@@ -21,10 +23,13 @@ class TFLiteDatasource {
       );
       _interpreters[modelPath] = interpreter;
       _isLoaded[modelPath] = true;
-      return true;
+      final info = ModelInfo(name: modelPath.split('/').last, path: modelPath, type: 'tflite', size: 0, isLoaded: true, lastUsed: DateTime.now());
+      _modelInfos[modelPath] = info;
+      return info;
     } catch (e) {
       _isLoaded[modelPath] = false;
-      return false;
+    _modelInfos.remove(modelPath);
+      throw StateError('فشل تحميل نموذج TFLite: $modelPath');
     }
   }
 
@@ -51,10 +56,7 @@ class TFLiteDatasource {
     List<int>? outputShape,
   }) async {
     if (!isModelLoaded(modelPath)) {
-      final loaded = await loadModel(modelPath);
-      if (!loaded) {
-        return {'error': 'فشل تحميل النموذج'};
-      }
+      try { await loadModel(modelPath); } catch (e) { return {'error': e.toString()}; }
     }
 
     final interpreter = _interpreters[modelPath];
@@ -72,10 +74,7 @@ class TFLiteDatasource {
 
       // إنشاء مصفوفات المدخلات والمخرجات
       final inputArray = _createInputArray(input, inputShapeList);
-      final outputArray = List.filled(
-        outputShapeList.reduce((a, b) => a * b),
-        0.0,
-      ).reshape(outputShapeList);
+      final outputArray = _reshape(List<double>.filled(outputShapeList.reduce((a, b) => a * b), 0.0), outputShapeList);
 
       // تشغيل الاستدلال
       interpreter.run(inputArray, outputArray);
@@ -124,8 +123,8 @@ class TFLiteDatasource {
       'outputCount': outputTensors.length,
       'inputShape': inputTensors.first.shape,
       'outputShape': outputTensors.first.shape,
-      'inputType': inputTensors.first.dataType.toString(),
-      'outputType': outputTensors.first.dataType.toString(),
+      'inputType': inputTensors.first.type.toString(),
+      'outputType': outputTensors.first.type.toString(),
     };
   }
 
@@ -156,31 +155,3 @@ class TFLiteDatasource {
 
 }
 
-/// =============================================================================
-/// Extensiones para List<dynamic>
-///
-/// إضافة طريقة reshape لـ List<dynamic>
-/// =============================================================================
-
-extension ListExtension on List<dynamic> {
-  List<dynamic> reshape(List<int> shape) {
-    if (shape.isEmpty) return this;
-    final total = shape.fold<int>(1, (a, b) => a * b);
-    if (length != total) {
-      throw ArgumentError('عدد عناصر المصفوفة لا يطابق shape: $length != $total');
-    }
-
-    List<dynamic> build(int dimension, int offset) {
-      if (dimension == shape.length - 1) {
-        return List<dynamic>.from(sublist(offset, offset + shape[dimension]));
-      }
-      final stride = shape.sublist(dimension + 1).fold<int>(1, (a, b) => a * b);
-      return List.generate(
-        shape[dimension],
-        (i) => build(dimension + 1, offset + i * stride),
-      );
-    }
-
-    return build(0, 0);
-  }
-}

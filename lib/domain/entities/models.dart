@@ -19,6 +19,9 @@ class ModelInfo {
     this.lastUsed,
   });
 
+  String get id => path;
+  double get accuracy => 0.0;
+
   /// اسم النموذج المعروض
   String get displayName => name.replaceAll('.tflite', '').replaceAll('_', ' ');
 
@@ -90,3 +93,5 @@ class ModelLoadProgress {
   String get description =>
       '$modelName: $currentProgress / $totalProgress ($percent%)';
 }
+
+typedef PredictionResult = InferenceResult;
