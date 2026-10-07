@@ -371,6 +371,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
               ),
             ),
             _topOverlay(),
+            _pageProgress(),
             _bottomOverlay(),
           ],
         ),
@@ -404,6 +405,29 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _pageProgress() {
+    return Positioned(
+      left: 24,
+      right: 24,
+      bottom: 68,
+      child: ValueListenableBuilder<int>(
+        valueListenable: _currentPage,
+        builder: (_, page, __) {
+          final progress = page / MushafSource.totalPages;
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 3,
+              backgroundColor: _paper.withOpacity(0.45),
+              valueColor: const AlwaysStoppedAnimation<Color>(_quranGoldDark),
+            ),
+          );
+        },
       ),
     );
   }
