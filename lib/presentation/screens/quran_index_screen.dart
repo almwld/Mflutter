@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
-import '../services/mushaf_source.dart';
+import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
 
 /// الفهرس الحقيقي للمصحف المدني: 114 سورة مرتبطة بصفحات QCF/Hafs.
@@ -13,6 +13,7 @@ class QuranIndexScreen extends StatefulWidget {
 class _QuranIndexScreenState extends State<QuranIndexScreen> {
   final TextEditingController _search = TextEditingController();
   String _query = '';
+  int _tab = 0;
 
   static const _background = Color(0xFF0B0D12);
   static const _surface = Color(0xFF15181F);
@@ -41,6 +42,19 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
       ),
       body: Column(children: [
         Padding(
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
+          child: SegmentedButton<int>(
+            segments: const [
+              ButtonSegment(value: 0, label: Text('السور', style: TextStyle(fontFamily: 'Amiri'))),
+              ButtonSegment(value: 1, label: Text('الأجزاء', style: TextStyle(fontFamily: 'Amiri'))),
+              ButtonSegment(value: 2, label: Text('الأحزاب', style: TextStyle(fontFamily: 'Amiri'))),
+            ],
+            selected: {_tab},
+            onSelectionChanged: (value) => setState(() => _tab = value.first),
+          ),
+        ),
+        if (_tab == 0)
+          Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
           child: TextField(
             controller: _search,
@@ -69,14 +83,14 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
           child: Row(textDirection: TextDirection.rtl, children: [
-            Text(query.isEmpty ? '114 سورة' : '${items.length} نتيجة',
+            Text(query.isEmpty ? '114 سورة' : items.length.toString() + ' نتيجة',
               style: const TextStyle(fontFamily: 'Amiri', color: _muted, fontSize: 12)),
             const Spacer(),
             const Text('حفص • 604 صفحة',
               style: TextStyle(fontFamily: 'Amiri', color: _gold, fontSize: 12)),
           ]),
         ),
-        Expanded(child: ListView.separated(
+        Expanded(child: _tab == 0 ? ListView.separated(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
           itemCount: items.length,
@@ -120,7 +134,45 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               ),
             );
           },
-        )),
+        ))
+            : ListView.separated(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
+                itemCount: _tab == 1 ? MushafSource.totalJuz : MushafSource.totalHizb,
+                separatorBuilder: (_, __) => const SizedBox(height: 7),
+                itemBuilder: (context, index) {
+                  final number = index + 1;
+                  final page = _tab == 1
+                      ? MushafSource.firstPageForJuz(number)
+                      : MushafSource.firstPageForHizb(number);
+                  final title = _tab == 1 ? 'الجزء ' + number.toString() : 'الحزب ' + number.toString();
+                  final extra = _tab == 1
+                      ? 'يبدأ من صفحة ' + page.toString()
+                      : 'يبدأ من صفحة ' + page.toString() + ' • ' + MushafSource.hizbTextForPage(page);
+                  return Material(
+                    color: _surface,
+                    borderRadius: BorderRadius.circular(18),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () => Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => MushafScreen(initialPage: page),
+                      )),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: const Color(0xFF1D1A13),
+                          child: Icon(
+                            _tab == 1 ? Icons.auto_stories_rounded : Icons.bookmark_outline_rounded,
+                            color: _gold,
+                          ),
+                        ),
+                        title: Text(title, style: const TextStyle(fontFamily: 'Amiri', color: Colors.white, fontWeight: FontWeight.bold)),
+                        subtitle: Text(extra, style: const TextStyle(fontFamily: 'Amiri', color: _muted, fontSize: 10)),
+                        trailing: const Icon(Icons.chevron_left_rounded, color: _gold),
+                      ),
+                    ),
+                  );
+                },
+              ),
       ]),
     );
   }
