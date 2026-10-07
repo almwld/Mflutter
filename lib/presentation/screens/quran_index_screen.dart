@@ -83,8 +83,12 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
           child: Row(textDirection: TextDirection.rtl, children: [
-            Text(query.isEmpty ? '114 سورة' : items.length.toString() + ' نتيجة',
-              style: const TextStyle(fontFamily: 'Amiri', color: _muted, fontSize: 12)),
+            Text(
+              _tab == 0
+                  ? (query.isEmpty ? '114 سورة' : items.length.toString() + ' نتيجة')
+                  : _tab == 1 ? '30 جزءًا' : '60 حزبًا',
+              style: const TextStyle(fontFamily: 'Amiri', color: _muted, fontSize: 12),
+            ),
             const Spacer(),
             const Text('حفص • 604 صفحة',
               style: TextStyle(fontFamily: 'Amiri', color: _gold, fontSize: 12)),
