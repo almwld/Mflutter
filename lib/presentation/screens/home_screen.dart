@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'quran/mushaf_screen.dart';
+import 'quran_index_screen.dart';
 import 'chat/chat_screen.dart';
 import 'advanced_search_screen.dart';
 import 'favorites_screen.dart';
@@ -217,7 +218,7 @@ class _MushafHome extends StatelessWidget {
 
   Widget _buildQuickActions(BuildContext context) {
     final items = [
-      ('الفهرس', Icons.list_alt_rounded, const MushafScreen()),
+      ('الفهرس', Icons.list_alt_rounded, const QuranIndexScreen()),
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const DailyVerseScreen()),
