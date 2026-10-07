@@ -512,7 +512,13 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _badge('الجزء ${MushafSource.juzForPage(page)}'),
+                Row(
+                  children: [
+                    _badge('الجزء ${MushafSource.juzForPage(page)}'),
+                    const SizedBox(width: 6),
+                    _badge(MushafSource.hizbTextForPage(page)),
+                  ],
+                ),
                 _badge('المصحف المدني'),
               ],
             );
