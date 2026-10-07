@@ -138,7 +138,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               ),
             );
           },
-        ))
+        )
             : ListView.separated(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
@@ -177,6 +177,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
                   );
                 },
               ),
+        ),
       ]),
     );
   }
