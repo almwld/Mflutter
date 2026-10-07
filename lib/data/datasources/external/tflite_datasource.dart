@@ -100,6 +100,14 @@ class TFLiteDatasource {
     };
   }
 
+  /// استنتاج أبعاد بنية خرج TFLite الفعلية دون الاعتماد على واجهة غير موجودة.
+  /// TFLite يعيد مصفوفات Dart متداخلة بعد تشغيل interpreter.run.
+  List<int> _inferShape(dynamic value) {
+    if (value is! List) return const <int>[];
+    if (value.isEmpty) return <int>[0];
+    return <int>[value.length, ..._inferShape(value.first)];
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // معلومات النموذج
   // ═══════════════════════════════════════════════════════════════════════════
