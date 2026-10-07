@@ -126,17 +126,70 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 ),
               ),
             ),
-            PopupMenuButton<MushafVariantMode>(
+            IconButton(
+              tooltip: 'اختيار نمط العرض',
               icon: Icon(Icons.tune_rounded, color: gold),
-              onSelected: (mode) => setState(() => _mode = mode),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: MushafVariantMode.musnad, child: Text('المسند')),
-                PopupMenuItem(value: MushafVariantMode.dotless, child: Text('بدون نقاط')),
-                PopupMenuItem(value: MushafVariantMode.kufi, child: Text('كوفي')),
-                PopupMenuItem(value: MushafVariantMode.hieroglyphic, child: Text('هيروغليفي')),
-              ],
+              onPressed: () => _showModeSheet(context, gold),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showModeSheet(BuildContext context, Color gold) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFB8A98D),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'نمط عرض المصحف',
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF241A12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              for (final entry in [
+                (MushafVariantMode.musnad, 'المسند', 'النص العربي بحروف المسند'),
+                (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
+                (MushafVariantMode.kufi, 'كوفي', 'العرض العربي بالخط الكوفي'),
+                (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'تحويل العرض إلى الرموز الهيروغليفية'),
+              ])
+                ListTile(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  leading: Icon(
+                    _mode == entry.$1 ? Icons.radio_button_checked : Icons.radio_button_off,
+                    color: _mode == entry.$1 ? gold : const Color(0xFF8A7B61),
+                  ),
+                  title: Text(entry.$2, style: const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700)),
+                  subtitle: Text(entry.$3, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11)),
+                  onTap: () {
+                    setState(() => _mode = entry.$1);
+                    Navigator.pop(sheetContext);
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
