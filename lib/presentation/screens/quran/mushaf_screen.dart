@@ -117,6 +117,119 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   }
 
 
+  void _showSurahIndex() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: _paper,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .78,
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 42,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Color(0xFFB8A98D),
+                  borderRadius: BorderRadius.all(Radius.circular(4)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'فهرس السور',
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: _ink,
+                ),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'اختر سورة للانتقال إلى أول آياتها',
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 11,
+                  color: Color(0xFF766A57),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
+                  itemCount: MushafSource.totalSurahs,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (_, index) {
+                    final surah = index + 1;
+                    final page = MushafSource.pageForVerse(surah, 1);
+                    final name = getSurahNameArabic(surah);
+                    return Material(
+                      color: const Color(0xFFF2E9D8),
+                      borderRadius: BorderRadius.circular(15),
+                      child: ListTile(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _frame),
+                          ),
+                          child: Text(
+                            '$surah',
+                            style: const TextStyle(
+                              color: _ink,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          name,
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(
+                            fontFamily: 'Amiri',
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: _ink,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'صفحة $page',
+                          style: const TextStyle(
+                            fontFamily: 'Amiri',
+                            fontSize: 11,
+                            color: Color(0xFF766A57),
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: _frame,
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetContext);
+                          _goToPage(page);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showVersePicker() {
     final surahController = TextEditingController();
     final ayahController = TextEditingController();
@@ -458,7 +571,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           ),
           _roundButton(
             icon: Icons.menu_book_rounded,
-            onPressed: _showVersePicker,
+            onPressed: _showSurahIndex,
           ),
           _roundButton(
             icon: Icons.tune_rounded,
