@@ -82,6 +82,7 @@ class QuranWordIndexService {
       .replaceAll(RegExp(r'[أإآ]'), 'ا')
       .replaceAll('ى', 'ي')
       .replaceAll('العلمين', 'العالمين')
+      .replaceAll('الطلق', 'الطلاق')
       .trim();
 
   static List<String> _lettersIn(String value) => value
