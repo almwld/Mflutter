@@ -58,25 +58,43 @@ class _QuranProScreenState extends State<QuranProScreen>
   }
 
   Future<void> _loadQuran() async {
-    final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
-    final musnadQuran = await MusnadQuranService.load();
-    final hieroglyphicQuran = await HieroglyphicQuranService.load();
-    setState(() {
-      _quran = jsonDecode(jsonStr);
-      _musnadQuran = musnadQuran;
-      _hieroglyphicQuran = hieroglyphicQuran;
+    try {
+      final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
+      final musnadQuran = await MusnadQuranService.load();
+      final hieroglyphicQuran = await HieroglyphicQuranService.load();
+      final decoded = jsonDecode(jsonStr);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('صيغة بيانات المصحف غير صحيحة');
+      }
+      if (!mounted) return;
+      setState(() {
+        _quran = decoded;
+        _musnadQuran = musnadQuran;
+        _hieroglyphicQuran = hieroglyphicQuran;
+        _loading = false;
+      });
       _loadSurah(1);
-      _loading = false;
-    });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تحميل بيانات المصحف: $error')),
+      );
+    }
   }
 
   void _loadSurah(int n) {
-    if (_quran == null) return;
+    final quran = _quran;
+    if (quran == null || n < 1 || n > 114) return;
+    final surah = _surahs.where((s) => s['n'] == n);
+    final verses = quran[n.toString()];
     setState(() {
       _currentSurah = n;
-      _currentVerses = List<dynamic>.from(_quran![n.toString()] ?? []);
-      _surahName = _surahs.firstWhere((s) => s['n'] == n)['name'] ?? 'سورة $n';
-      _scroll.jumpTo(0);
+      _currentVerses = verses is List ? List<dynamic>.from(verses) : <dynamic>[];
+      _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scroll.hasClients) _scroll.jumpTo(0);
     });
   }
 
