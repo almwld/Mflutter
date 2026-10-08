@@ -53,7 +53,7 @@ class MushafSource {
 
   static int firstPageForHizb(int hizb) {
     final pages = firstPagesForHizb();
-    final index = hizb.clamp(1, totalHizb) - 1;
+    final index = hizb.clamp(1, totalHizb).toInt() - 1;
     return index < pages.length ? pages[index] : 1;
   }
 }
