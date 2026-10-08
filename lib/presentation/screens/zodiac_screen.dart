@@ -26,10 +26,13 @@ class ZodiacScreen extends StatelessWidget {
       {'name': 'الحوت', 'symbol': '♓', 'element': 'الماء', 'quality': 'المتحرك', 'range': '19 فبراير - 20 مارس'},
     ];
 
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryNavy,
+        backgroundColor: colors.surface,
         title: const Text(
           'علم الأبراج',
           style: TextStyle(fontFamily: 'Amiri', fontSize: 24),
@@ -38,37 +41,38 @@ class ZodiacScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
-          _buildElementsLegend(),
+          _buildElementsLegend(context),
           const SizedBox(height: AppDimensions.paddingLarge),
-          _buildZodiacCircle(signs),
+          _buildZodiacCircle(signs, context),
           const SizedBox(height: AppDimensions.paddingLarge),
-          _buildSignsGrid(signs),
+          _buildSignsGrid(signs, context),
         ],
       ),
     );
   }
 
-  Widget _buildElementsLegend() {
+  Widget _buildElementsLegend(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingMedium),
       decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.3),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-        border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+        border: Border.all(color: colors.primary.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildLegendItem('النار', Colors.red),
-          _buildLegendItem('التراب', Colors.brown),
-          _buildLegendItem('الهواء', Colors.grey),
-          _buildLegendItem('الماء', Colors.blue),
+          _buildLegendItem(context, 'النار', Colors.red),
+          _buildLegendItem(context, 'التراب', Colors.brown),
+          _buildLegendItem(context, 'الهواء', Colors.grey),
+          _buildLegendItem(context, 'الماء', Colors.blue),
         ],
       ),
     );
   }
 
-  Widget _buildLegendItem(String element, Color color) {
+  Widget _buildLegendItem(BuildContext context, String element, Color color) {
     return Column(
       children: [
         Container(
@@ -85,25 +89,26 @@ class ZodiacScreen extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'Cairo',
             fontSize: 12,
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildZodiacCircle(List<Map<String, dynamic>> signs) {
+  Widget _buildZodiacCircle(List<Map<String, dynamic>> signs, BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       height: 200,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            AppColors.primaryNavy.withOpacity(0.5),
-            AppColors.backgroundDark,
+            colors.primary.withOpacity(0.18),
+            colors.surface,
           ],
         ),
-        border: Border.all(color: AppColors.gold.withOpacity(0.5), width: 2),
+        border: Border.all(color: colors.primary.withOpacity(0.5), width: 2),
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -128,7 +133,7 @@ class ZodiacScreen extends StatelessWidget {
                 fontFamily: 'Amiri',
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.gold,
+                color: colors.primary,
               ),
             ),
           ),
@@ -162,7 +167,7 @@ class ZodiacScreen extends StatelessWidget {
     return result;
   }
 
-  Widget _buildSignsGrid(List<Map<String, dynamic>> signs) {
+  Widget _buildSignsGrid(List<Map<String, dynamic>> signs, BuildContext context) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -174,19 +179,20 @@ class ZodiacScreen extends StatelessWidget {
       ),
       itemCount: signs.length,
       itemBuilder: (context, index) {
-        return _buildSignCard(signs[index]);
+        return _buildSignCard(signs[index], context);
       },
     );
   }
 
-  Widget _buildSignCard(Map<String, dynamic> sign) {
+  Widget _buildSignCard(Map<String, dynamic> sign, BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final elementColors = {
       'النار': Colors.red,
       'التراب': Colors.brown,
       'الهواء': Colors.grey,
       'الماء': Colors.blue,
     };
-    final color = elementColors[sign['element']] ?? Colors.white;
+    final color = elementColors[sign['element']] ?? colors.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -218,7 +224,7 @@ class ZodiacScreen extends StatelessWidget {
                     fontFamily: 'Amiri',
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: colors.onSurface,
                   ),
                 ),
               ],
@@ -229,7 +235,7 @@ class ZodiacScreen extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: 10,
-                color: Colors.white70,
+                color: colors.onSurface.withOpacity(.7),
               ),
             ),
             const SizedBox(height: 2),
@@ -244,7 +250,7 @@ class ZodiacScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 10,
-                  color: Colors.white,
+                  color: colors.onSurface,
                 ),
               ),
             ),
