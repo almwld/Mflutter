@@ -18,6 +18,8 @@ class ExternalModelService {
 
   final Map<String, Interpreter> _loadedModels = {};
   final FeatureExtractor _featureExtractor = FeatureExtractor();
+  String? _selectedModel;
+  String? get selectedModel => _selectedModel;
 
   Future<bool> checkModelsExist() async {
     try {
@@ -68,6 +70,7 @@ class ExternalModelService {
     await source.copy(target.path);
     final modelName = name.substring(0, name.length - '.tflite'.length);
     await loadModelFromPath(modelName, target.path);
+    _selectedModel = modelName;
     return modelName;
   }
 
@@ -158,11 +161,15 @@ class ExternalModelService {
   }
 
   Future<Map<String, dynamic>> runEnergyAnalysis(String text) async {
-    return runInference('energy_analysis', extractFeatures(text));
+    final model = _selectedModel;
+    if (model == null) return {'error': 'لم يتم اختيار نموذج محلي TFLite.'};
+    return runInference(model, extractFeatures(text));
   }
 
   Future<Map<String, dynamic>> runPatternDiscovery(String text) async {
-    return runInference('pattern_discovery', extractFeatures(text));
+    final model = _selectedModel;
+    if (model == null) return {'error': 'لم يتم اختيار نموذج محلي TFLite.'};
+    return runInference(model, extractFeatures(text));
   }
 
   Future<Map<String, dynamic>> runTopicClassification(String text) async {
