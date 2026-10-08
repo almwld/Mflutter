@@ -2,13 +2,11 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/agent_task.dart';
 import '../../services/agent_registry.dart';
-import '../../services/ollama_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 import '../../services/on_device_training_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
-  final OllamaService _ollama = OllamaService();
   final OnDeviceTrainingService _training = OnDeviceTrainingService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
