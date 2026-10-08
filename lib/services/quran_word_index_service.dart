@@ -81,7 +81,9 @@ class QuranWordIndexService {
       .replaceAll('ى', 'ي')
       .trim();
 
-  static List<String> _lettersIn(String value) => normalize(value)
+  static List<String> _lettersIn(String value) => value
+      .replaceAll(_marks, '')
+      .replaceAll('ـ', '')
       .split('')
       .where((character) => _arabicLetters.hasMatch(character))
       .toList(growable: false);
