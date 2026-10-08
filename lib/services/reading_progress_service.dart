@@ -13,7 +13,7 @@ class ReadingProgressService {
 
   static Future<void> saveLastPage(int page) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_pageKey, page.clamp(1, 604));
+    await prefs.setInt(_pageKey, page.clamp(1, 604).toInt());
 
     final pages = prefs.getStringList(_pagesReadKey) ?? <String>[];
     final value = page.toString();
