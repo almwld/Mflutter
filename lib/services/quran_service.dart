@@ -62,6 +62,7 @@ class QuranService {
         .replaceAll('ئ', 'ي')
         // quran_full.json omits the dagger alif in this canonical token.
         .replaceAll('العلمين', 'العالمين')
+        .replaceAll('الطلق', 'الطلاق')
         .toLowerCase()
         .trim();
   }
