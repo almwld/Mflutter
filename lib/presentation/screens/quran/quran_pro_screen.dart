@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   double _fontSize = 22;
   bool _showFrame = true;
   bool _autoScroll = false;
+  Timer? _autoScrollTimer;
 
   // متحكمات
   final ScrollController _scroll = ScrollController();
@@ -127,6 +129,7 @@ class _QuranProScreenState extends State<QuranProScreen>
 
   @override
   void dispose() {
+    _autoScrollTimer?.cancel();
     _scroll.dispose();
     _pulseCtrl.dispose();
     super.dispose();
@@ -154,6 +157,32 @@ class _QuranProScreenState extends State<QuranProScreen>
     );
   }
 
+  void _toggleAutoScroll() {
+    if (_autoScroll) {
+      _autoScrollTimer?.cancel();
+      _autoScrollTimer = null;
+      setState(() => _autoScroll = false);
+      return;
+    }
+    if (!_scroll.hasClients) return;
+    setState(() => _autoScroll = true);
+    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 1800), (_) {
+      if (!mounted || !_scroll.hasClients) return;
+      final position = _scroll.position;
+      if (position.pixels >= position.maxScrollExtent) {
+        _autoScrollTimer?.cancel();
+        _autoScrollTimer = null;
+        setState(() => _autoScroll = false);
+        return;
+      }
+      _scroll.animateTo(
+        (position.pixels + 110).clamp(0.0, position.maxScrollExtent),
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
   AppBar _buildAppBar() {
     return AppBar(
       title: Text(_surahName,
@@ -161,12 +190,11 @@ class _QuranProScreenState extends State<QuranProScreen>
       backgroundColor: const Color(0xFF1A237E),
       elevation: 0,
       actions: [
-        IconButton(icon: const Icon(Icons.search, color: _goldColor),
-            onPressed: () {}),
         IconButton(
+            tooltip: _autoScroll ? 'إيقاف التمرير التلقائي' : 'تشغيل التمرير التلقائي',
             icon: Icon(_autoScroll ? Icons.pause : Icons.play_arrow,
                 color: _goldColor),
-            onPressed: () => setState(() => _autoScroll = !_autoScroll)),
+            onPressed: _toggleAutoScroll),
         PopupMenuButton<int>(
           icon: const Icon(Icons.list, color: _goldColor),
           onSelected: _loadSurah,
