@@ -370,11 +370,29 @@ class _ToolCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(17),
         onTap: onTap,
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, size: 24, color: const Color(0xFFB7A36D)),
-          const SizedBox(height: 8),
-          Text(title, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11, color: Color(0xFFB9BDC5))),
-        ]),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: const Color(0xFFB7A36D)),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 10,
+                  height: 1.0,
+                  color: Color(0xFFB9BDC5),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
