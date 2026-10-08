@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../presentation/providers/theme_provider.dart';
-import '../../../services/quran_page_theme_service.dart';
-import '../../../services/local_model_selection_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,37 +8,30 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
-    return _SettingsBody(theme: theme);
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('⚙️ الإعدادات')),
+      appBar: AppBar(title: const Text('الإعدادات')),
       body: ListView(
         children: [
-          _section('🎨 المظهر'),
+          _section('المظهر'),
           SwitchListTile(
-            title: const Text('الوضع الليلي', style: TextStyle(color: Colors.white)),
-            subtitle: const Text('ذهبي × كحلي', style: TextStyle(color: Colors.white54)),
+            title: const Text('الوضع الليلي'),
             value: theme.isDark,
-            activeColor: const Color(0xFFFFD700),
             onChanged: (_) => theme.toggleTheme(),
           ),
-          const Divider(color: Colors.white12),
-
-          _section('🔤 الخط'),
+          const Divider(),
+          _section('الخط'),
           _fontOption(context, theme, 'Amiri', 'أميري — الخط الافتراضي'),
           _fontOption(context, theme, 'Musnad', '𐩱 المسند اليمني'),
-          const Divider(color: Colors.white12),
-
-          _section('📏 حجم الخط'),
+          const Divider(),
+          _section('حجم الخط'),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            IconButton(icon: const Icon(Icons.remove, color: Color(0xFFFFD700)), onPressed: () => theme.setFontSize(theme.fontSize - 2)),
-            Text('${theme.fontSize.toInt()}', style: const TextStyle(color: Color(0xFFFFD700), fontSize: 20)),
-            IconButton(icon: const Icon(Icons.add, color: Color(0xFFFFD700)), onPressed: () => theme.setFontSize(theme.fontSize + 2)),
+            IconButton(icon: const Icon(Icons.remove), onPressed: () => theme.setFontSize(theme.fontSize - 2)),
+            Text(theme.fontSize.toInt().toString()),
+            IconButton(icon: const Icon(Icons.add), onPressed: () => theme.setFontSize(theme.fontSize + 2)),
           ]),
-          const Divider(color: Colors.white12),
-
-          _section('🤖 النظام'),
+          const Divider(),
+          _section('النظام'),
           _tile('الوكلاء', '127'),
           _tile('الإصدار', '1.0.154'),
         ],
