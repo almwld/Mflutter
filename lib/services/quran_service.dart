@@ -92,7 +92,28 @@ class QuranService {
     // Keep phrase search flexible; single-word searches use token boundaries
     // so a substring such as حلم does not match أحلام or حليم.
     if (rawQuery.contains(RegExp(r'\s'))) {
-      return normalizeSearchText(text).contains(normalizeSearchText(rawQuery));
+      final queryTokens = normalizeSearchText(rawQuery)
+          .split(RegExp(r'[^ء-يٱ]+'))
+          .where((token) => token.isNotEmpty)
+          .toList(growable: false);
+      final textTokens = normalizeSearchText(text)
+          .split(RegExp(r'[^ء-يٱ]+'))
+          .where((token) => token.isNotEmpty)
+          .toList(growable: false);
+      if (queryTokens.isEmpty || queryTokens.length > textTokens.length) {
+        return false;
+      }
+      for (var start = 0; start <= textTokens.length - queryTokens.length; start++) {
+        var matches = true;
+        for (var offset = 0; offset < queryTokens.length; offset++) {
+          if (textTokens[start + offset] != queryTokens[offset]) {
+            matches = false;
+            break;
+          }
+        }
+        if (matches) return true;
+      }
+      return false;
     }
 
     final needle = _normalizeSearchToken(rawQuery);
