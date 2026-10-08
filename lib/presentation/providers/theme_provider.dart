@@ -32,7 +32,7 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   void setFont(String font) { _fontFamily = font; _persist(); notifyListeners(); }
-  void setFontSize(double size) { _fontSize = size.clamp(14, 36); _persist(); notifyListeners(); }
+  void setFontSize(double size) { _fontSize = size.clamp(14, 36).toDouble(); _persist(); notifyListeners(); }
 
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
