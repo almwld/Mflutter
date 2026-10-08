@@ -21,7 +21,6 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   List<dynamic> _verses = [];
   bool _loading = true;
   String? _loadError;
-  bool _showTranslation = false;
   int _fontSize = 22;
   final ScrollController _scrollController = ScrollController();
 
@@ -35,8 +34,10 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
     try {
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
+      final rawVerses = data[widget.surahNumber.toString()];
+      if (!mounted) return;
       setState(() {
-        _verses = List<dynamic>.from(data[widget.surahNumber.toString()] ?? []);
+        _verses = rawVerses is List ? List<dynamic>.from(rawVerses) : <dynamic>[];
         _loading = false;
       });
     } catch (e) {
@@ -66,10 +67,6 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         ),
         backgroundColor: const Color(0xFF1A237E),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.translate, color: Color(0xFFFFD700)),
-            onPressed: () => setState(() => _showTranslation = !_showTranslation),
-          ),
           IconButton(
             icon: const Icon(Icons.text_increase, color: Color(0xFFFFD700)),
             onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(16, 32)),
