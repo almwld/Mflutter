@@ -14,12 +14,41 @@ class QuranService {
     return decoded;
   }
 
-  Future<List<Verse>> search(String query,{int limit=20}) async {
-    final needle=query.trim();
-    if(needle.isEmpty) return const <Verse>[];
-    final ayahs=await QuranLoaderService.loadAllAyahs();
-    final normalized=needle.toLowerCase();
-    return ayahs.where((a)=>a.text.toLowerCase().contains(normalized)||a.surahName.toLowerCase().contains(normalized)).take(limit).toList();
+  static String normalizeSearchText(String value) {
+    return value
+        .normalize(NormalizationForm.nfkc)
+        .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]'), '')
+        .replaceAll('ـ', '')
+        .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
+        .replaceAll('ى', 'ي')
+        .toLowerCase()
+        .trim();
+  }
+
+  static bool _matchesSearch(String text, String query) {
+    final haystack = normalizeSearchText(text);
+    final needle = normalizeSearchText(query);
+    if (needle.isEmpty) return false;
+    if (haystack.contains(needle)) return true;
+
+    // Arabic search should tolerate an optional definite article.
+    if (needle.startsWith('ال') && needle.length > 2) {
+      return haystack.contains(needle.substring(2));
+    }
+    return haystack.contains('ال$needle');
+  }
+
+  Future<List<Verse>> search(String query, {int limit = 20}) async {
+    final needle = query.trim();
+    if (needle.isEmpty) return const <Verse>[];
+
+    final ayahs = await QuranLoaderService.loadAllAyahs();
+    return ayahs
+        .where((a) =>
+            _matchesSearch(a.text, needle) ||
+            _matchesSearch(a.surahName, needle))
+        .take(limit)
+        .toList();
   }
 
   static List<Surah> getSurahs()=>const [
