@@ -21,10 +21,13 @@ class PlanetsScreen extends StatelessWidget {
       {'name': 'زحل', 'symbol': '♄', 'element': 'الرصاص', 'day': 'السبت', 'color': 0xFF696969},
     ];
 
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryNavy,
+        backgroundColor: colors.surface,
         title: const Text(
           'علم الكواكب',
           style: TextStyle(fontFamily: 'Amiri', fontSize: 24),
@@ -33,17 +36,18 @@ class PlanetsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
-          _buildPlanetsGrid(planets),
+          _buildPlanetsGrid(planets, context),
           const SizedBox(height: AppDimensions.paddingLarge),
-          _buildInfluenceSection(),
+          _buildInfluenceSection(context),
           const SizedBox(height: AppDimensions.paddingLarge),
-          _buildDaysSection(planets),
+          _buildDaysSection(planets, context),
         ],
       ),
     );
   }
 
-  Widget _buildPlanetsGrid(List<Map<String, dynamic>> planets) {
+  Widget _buildPlanetsGrid(List<Map<String, dynamic>> planets, BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -86,7 +90,7 @@ class PlanetsScreen extends StatelessWidget {
                   fontFamily: 'Amiri',
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: colors.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
@@ -95,7 +99,7 @@ class PlanetsScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 12,
-                  color: Colors.white70,
+                  color: colors.onSurface.withOpacity(.7),
                 ),
               ),
             ],
@@ -105,13 +109,14 @@ class PlanetsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfluenceSection() {
+  Widget _buildInfluenceSection(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingMedium),
       decoration: BoxDecoration(
-        color: AppColors.primaryNavy.withOpacity(0.3),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-        border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+        border: Border.all(color: colors.primary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,23 +127,24 @@ class PlanetsScreen extends StatelessWidget {
               fontFamily: 'Amiri',
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.gold,
+              color: colors.primary,
             ),
           ),
           const SizedBox(height: AppDimensions.paddingSmall),
-          _buildInfluenceItem('الشمس', 'الطاقة والقيادة والكرامة'),
-          _buildInfluenceItem('القمر', 'العواطف والخيال والخصوبة'),
-          _buildInfluenceItem('المريخ', 'الشجاعة والطاقة والعدوانية'),
-          _buildInfluenceItem('عطارد', 'الذكاء والتواصل والتجارة'),
-          _buildInfluenceItem('المشتري', 'الحكمة والعدل والسخاء'),
-          _buildInfluenceItem('الزهرة', 'الجمال والحب والفن'),
-          _buildInfluenceItem('زحل', 'الصبر والانضباط والحكمة'),
+          _buildInfluenceItem(context, 'الشمس', 'الطاقة والقيادة والكرامة'),
+          _buildInfluenceItem(context, 'القمر', 'العواطف والخيال والخصوبة'),
+          _buildInfluenceItem(context, 'المريخ', 'الشجاعة والطاقة والعدوانية'),
+          _buildInfluenceItem(context, 'عطارد', 'الذكاء والتواصل والتجارة'),
+          _buildInfluenceItem(context, 'المشتري', 'الحكمة والعدل والسخاء'),
+          _buildInfluenceItem(context, 'الزهرة', 'الجمال والحب والفن'),
+          _buildInfluenceItem(context, 'زحل', 'الصبر والانضباط والحكمة'),
         ],
       ),
     );
   }
 
-  Widget _buildInfluenceItem(String planet, String influence) {
+  Widget _buildInfluenceItem(BuildContext context, String planet, String influence) {
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -158,7 +164,7 @@ class PlanetsScreen extends StatelessWidget {
               fontFamily: 'Amiri',
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: colors.onSurface,
             ),
           ),
           const SizedBox(width: 8),
@@ -167,7 +173,7 @@ class PlanetsScreen extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'Cairo',
               fontSize: 14,
-              color: Colors.white70,
+              color: colors.onSurface.withOpacity(.7),
             ),
           ),
         ],
@@ -175,11 +181,12 @@ class PlanetsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDaysSection(List<Map<String, dynamic>> planets) {
+  Widget _buildDaysSection(List<Map<String, dynamic>> planets, BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(AppDimensions.paddingMedium),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
         border: Border.all(color: AppColors.gold.withOpacity(0.3)),
       ),
@@ -214,7 +221,7 @@ class PlanetsScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 12,
-                    color: Colors.white,
+                    color: colors.onSurface,
                   ),
                 ),
               );
