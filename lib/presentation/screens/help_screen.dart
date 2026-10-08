@@ -1,46 +1,66 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('المساعدة', style: TextStyle(color: AppColors.primaryGold)),
-        backgroundColor: AppColors.primaryNavy,
-      ),
-      body: ListView(
-        padding: EdgeInsets.all(20),
-        children: [
-          _buildSection('📖 المحادثة', '• اكتب أي سؤال عن القرآن\n• استخدم الميكروفون للبحث الصوتي\n• احصل على آيات + علوم + صفات'),
-          _buildSection('🔢 الجمل', '• أدخل نصاً عربياً\n• احصل على الجمل الكبير والصغير والوسط\n• اكتشف العنصر والكوكب والبرج'),
-          _buildSection('📚 القرآن', '• تصفح 114 سورة\n• اقرأ الآيات كاملة\n• ابحث عن كلمات'),
-          _buildSection('🔮 الإعجاز', '• اكتشف الإعجاز العددي\n• توازن الكلمات\n• النسبة الذهبية'),
-          _buildSection('💡 البصيرة', '• أسئلة تأملية يومية\n• 3 مستويات تتطور معك\n• تتبع تقدمك'),
-        ],
-      ),
-    );
-  }
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-  Widget _buildSection(String title, String body) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryNavy.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(title, style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
-          SizedBox(height: 8),
-          Text(body, style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.8)),
-        ],
+    final sections = <(IconData, String, String)>[
+      (Icons.menu_book_outlined, 'المحادثة', 'اكتب سؤالًا أو استفسارًا داخل المحادثة.'),
+      (Icons.calculate_outlined, 'الجُمّل', 'أدخل نصًا عربيًا لعرض نتائج الحاسبة المتاحة.'),
+      (Icons.auto_stories_outlined, 'القرآن', 'تصفح السور والآيات وانتقل إلى موضع الآية.'),
+      (Icons.search_outlined, 'البحث', 'استخدم البحث للعثور على الكلمات والآيات.'),
+      (Icons.lightbulb_outline, 'التدبر', 'اقرأ الآيات وتأمل معانيها وسياقها.'),
+    ];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('المساعدة')),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: sections.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final section = sections[index];
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(section.$1, color: colors.primary, size: 26),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          section.$2,
+                          textDirection: TextDirection.rtl,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          section.$3,
+                          textDirection: TextDirection.rtl,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurface.withOpacity(.75),
+                            height: 1.6,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
