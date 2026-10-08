@@ -62,17 +62,53 @@ class QuranService {
         .trim();
   }
 
-  static bool _matchesSearch(String text, String query) {
-    final haystack = normalizeSearchText(text);
-    final needle = normalizeSearchText(query);
-    if (needle.isEmpty) return false;
-    if (haystack.contains(needle)) return true;
+  static String _normalizeSearchToken(String value) => value
+      .replaceAll(
+        RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+        '',
+      )
+      .replaceAll('ـ', '')
+      // Keep أ and إ distinct: collapsing them makes الأذن match بإذن.
+      .replaceAll('ٱ', 'ا')
+      .replaceAll('ى', 'ي')
+      .trim();
 
-    // Arabic search should tolerate an optional definite article.
-    if (needle.startsWith('ال') && needle.length > 2) {
-      return haystack.contains(needle.substring(2));
+  static String _stripAttachedArticlePrefix(String token) {
+    if (token.startsWith('لل') && token.length > 2) {
+      return 'ال${token.substring(2)}';
     }
-    return haystack.contains('ال$needle');
+    if (token.length > 3 &&
+        const ['و', 'ف', 'ب', 'ك', 'ل'].any((prefix) =>
+            token.startsWith(prefix) && token.substring(1).startsWith('ال'))) {
+      return token.substring(1);
+    }
+    return token;
+  }
+
+  static bool _matchesSearch(String text, String query) {
+    final rawQuery = query.trim();
+    if (rawQuery.isEmpty) return false;
+
+    // Keep phrase search flexible; single-word searches use token boundaries
+    // so a substring such as حلم does not match أحلام or حليم.
+    if (rawQuery.contains(RegExp(r'\\s'))) {
+      return normalizeSearchText(text).contains(normalizeSearchText(rawQuery));
+    }
+
+    final needle = _normalizeSearchToken(rawQuery);
+    if (needle.isEmpty) return false;
+    final withoutArticle =
+        needle.startsWith('ال') && needle.length > 2 ? needle.substring(2) : needle;
+    final tokens = _normalizeSearchToken(text)
+        .split(RegExp(r'[^ء-يٱ]+'))
+        .where((token) => token.isNotEmpty);
+
+    for (final token in tokens) {
+      final lexical = _stripAttachedArticlePrefix(token);
+      if (lexical == needle || lexical == withoutArticle) return true;
+      if (lexical.startsWith('ال') && lexical.substring(2) == needle) return true;
+    }
+    return false;
   }
 
   Future<List<Verse>> search(String query, {int limit = 20}) async {
