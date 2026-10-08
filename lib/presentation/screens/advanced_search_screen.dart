@@ -95,28 +95,4 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       ]),
     );
   }
-}  Future<void> _search(String query) async {
-    if (query.trim().isEmpty) return;
-
-    setState(() {
-      _searching = true;
-      _results = [];
-    });
-
-    final verses = await QuranService().search(query, limit: 50);
-    final results = verses
-        .map((verse) => <String, dynamic>{
-              'surah': verse.surahNumber,
-              'surahName': verse.surahName,
-              'ayah': verse.ayahNumber,
-              'text': verse.text,
-            })
-        .toList();
-
-    if (!mounted) return;
-    setState(() {
-      _results = results;
-      _searching = false;
-    });
-  }
-
+}
