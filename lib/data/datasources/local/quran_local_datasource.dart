@@ -24,7 +24,7 @@ class QuranLocalDatasource {
         'text_simple': _normalize(ayah.text),
         'juz': ayah.juzNumber,
         'page': ayah.pageNumber,
-        'is_makki': ayah.isMakki ? 1 : 0,
+        'is_makki': ayah.isMakki,
       };
 
   String _normalize(String value) => value
@@ -43,7 +43,15 @@ class QuranLocalDatasource {
       firstBySurah.putIfAbsent(ayah.surahNumber, () => ayah);
       counts.update(ayah.surahNumber, (count) => count + 1, ifAbsent: () => 1);
     }
-    return firstBySurah.keys.toList()..sort();
+    final numbers = firstBySurah.keys.toList()..sort();
+    return numbers.map((number) {
+      final first = firstBySurah[number]!;
+      return <String, dynamic>{
+        'surah': number,
+        'surah_name': first.surahName,
+        'verses_count': counts[number] ?? 0,
+      };
+    }).toList(growable: false);
   }
 
   Future<Surah> getSurah(int number) async {
