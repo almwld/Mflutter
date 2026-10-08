@@ -21,7 +21,7 @@ void main() {
 
       final bySurah = await QuranLoaderService.loadBySurah();
       expect(bySurah.keys.toSet(), Set<int>.from(List<int>.generate(114, (i) => i + 1)));
-      expect(bySurah.values.fold<int>(0, (sum, verses) => sum + verses.length), 6236);
+      expect(bySurah.values.fold<int>(0, (sum, verses) => (sum + verses.length).toInt()), 6236);
     });
 
     test('repository data source works without an external database file', () async {
@@ -63,7 +63,7 @@ void main() {
       final quran = await QuranService.loadQuran();
       expect(quran.keys, containsAll(List<String>.generate(114, (i) => '${i + 1}')));
       expect(
-        quran.values.whereType<List<dynamic>>().fold<int>(0, (int sum, List<dynamic> verses) => sum + verses.length),
+        quran.values.whereType<List<dynamic>>().fold<int>(0, (sum, verses) => (sum + verses.length).toInt()),
         6236,
       );
 
@@ -71,7 +71,7 @@ void main() {
       expect(surahs, hasLength(114));
       expect(surahs.first.nameArabic, isNotEmpty);
       expect(surahs.last.nameArabic, isNotEmpty);
-      expect(surahs.fold<int>(0, (sum, surah) => sum + surah.verseCount), 6236);
+      expect(surahs.fold<int>(0, (sum, surah) => (sum + surah.verseCount).toInt()), 6236);
       expect(surahs.every((surah) => surah.pageNumber >= 1 && surah.pageNumber <= 604), isTrue);
     });
   });
