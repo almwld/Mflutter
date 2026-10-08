@@ -28,3 +28,5 @@ void main() {
     expect(find.byType(MushafScreen), findsOneWidget);
   });
 }
+
+// CI trigger: keep smoke-test navigation fix on the pushed main commit.
