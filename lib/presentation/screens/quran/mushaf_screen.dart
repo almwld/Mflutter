@@ -482,22 +482,65 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     );
   }
 
+  /// شريط تنقّل سريع بين جميع صفحات المصحف.
+  /// التنقير على الخط أو سحب النقطة يقفز مباشرة إلى الصفحة المقابلة.
   Widget _pageProgress() {
     return Positioned(
-      left: 24,
-      right: 24,
-      bottom: 68,
+      left: 22,
+      right: 22,
+      bottom: 56,
       child: ValueListenableBuilder<int>(
         valueListenable: _currentPage,
         builder: (_, page, __) {
-          final progress = page / MushafSource.totalPages;
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 3,
-              backgroundColor: _paper.withOpacity(0.45),
-              valueColor: const AlwaysStoppedAnimation<Color>(_quranGoldDark),
+          final maxPage = MushafSource.totalPages;
+          return Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: _paper.withOpacity(0.94),
+                border: Border.all(color: _frame.withOpacity(0.72), width: 0.8),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    '$maxPage',
+                    style: const TextStyle(color: _ink, fontSize: 10, fontWeight: FontWeight.w700),
+                  ),
+                  Expanded(
+                    child: SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 3,
+                        activeTrackColor: _quranGoldDark,
+                        inactiveTrackColor: _frame.withOpacity(0.28),
+                        thumbColor: _quranGoldDark,
+                        overlayColor: _quranGoldDark.withOpacity(0.16),
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 15),
+                        tickMarkShape: SliderTickMarkShape.noTickMark,
+                      ),
+                      child: Slider(
+                        min: 1,
+                        max: maxPage.toDouble(),
+                        divisions: maxPage - 1,
+                        value: page.clamp(1, maxPage).toDouble(),
+                        semanticFormatterCallback: (value) => 'صفحة ${value.round()} من $maxPage',
+                        onChanged: (value) {
+                          _currentPage.value = value.round();
+                        },
+                        onChangeEnd: (value) {
+                          _goToPage(value.round());
+                        },
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '$page',
+                    style: const TextStyle(color: _ink, fontSize: 10, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
             ),
           );
         },
