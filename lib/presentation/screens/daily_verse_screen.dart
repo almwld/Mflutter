@@ -32,26 +32,28 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
   @override
   Widget build(BuildContext context) {
     final verse = _verses[_index];
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
-      appBar: AppBar(title: const Text('📅 آية اليوم', style: TextStyle(color: Color(0xFFFFD700)))),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(title: const Text('آية اليوم')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            const Icon(Icons.auto_awesome, color: Color(0xFFFFD700), size: 40),
+            Icon(Icons.auto_awesome, color: colors.primary, size: 40),
             const SizedBox(height: 30),
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A237E).withOpacity(0.6),
+                color: colors.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+                border: Border.all(color: colors.primary.withOpacity(0.3)),
               ),
               child: Column(children: [
-                Text('﴿ ${verse['text']} ﴾', style: const TextStyle(color: Color(0xFFFFECB3), fontSize: 24, fontFamily: 'Amiri', height: 2), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
+                Text('﴿ ${verse['text']} ﴾', style: theme.textTheme.headlineSmall?.copyWith(fontSize: 24, fontFamily: 'Amiri', height: 2), textAlign: TextAlign.center, textDirection: TextDirection.rtl),
                 const SizedBox(height: 12),
-                Text(verse['ref']!, style: const TextStyle(color: Color(0xFFFFD700), fontSize: 14)),
+                Text(verse['ref']!, style: theme.textTheme.bodyMedium?.copyWith(color: colors.primary, fontSize: 14)),
               ]),
             ),
             const SizedBox(height: 30),
@@ -59,7 +61,7 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
               onPressed: () => setState(() => _index = (_index + 1) % _verses.length),
               icon: const Icon(Icons.refresh),
               label: const Text('آية أخرى'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFD700), foregroundColor: const Color(0xFF1A237E), padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
+              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12)),
             ),
           ]),
         ),
