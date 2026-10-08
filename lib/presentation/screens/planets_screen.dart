@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 
 /// =============================================================================
@@ -86,7 +85,7 @@ class PlanetsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 planet['name'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -96,7 +95,7 @@ class PlanetsScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 planet['element'] as String,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 12,
                   color: colors.onSurface.withOpacity(.7),
@@ -152,15 +151,15 @@ class PlanetsScreen extends StatelessWidget {
           Container(
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(
-              color: AppColors.gold,
+            decoration: BoxDecoration(
+              color: colors.primary,
               shape: BoxShape.circle,
             ),
           ),
           const SizedBox(width: 8),
           Text(
             planet,
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Amiri',
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -170,7 +169,7 @@ class PlanetsScreen extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             ': $influence',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Cairo',
               fontSize: 14,
               color: colors.onSurface.withOpacity(.7),
@@ -188,7 +187,7 @@ class PlanetsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-        border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+        border: Border.all(color: colors.primary.withOpacity(0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,7 +217,7 @@ class PlanetsScreen extends StatelessWidget {
                 ),
                 child: Text(
                   '${planet['day']} - ${planet['name']}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 12,
                     color: colors.onSurface,
