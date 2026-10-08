@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/sensor_service.dart';
