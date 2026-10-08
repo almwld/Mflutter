@@ -91,7 +91,7 @@ class QuranService {
 
     // Keep phrase search flexible; single-word searches use token boundaries
     // so a substring such as حلم does not match أحلام or حليم.
-    if (rawQuery.contains(RegExp(r'\\s'))) {
+    if (rawQuery.contains(RegExp(r'\s'))) {
       return normalizeSearchText(text).contains(normalizeSearchText(rawQuery));
     }
 
