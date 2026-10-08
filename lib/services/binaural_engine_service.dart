@@ -70,7 +70,7 @@ class BinauralEngineService {
     ascii(36, 'data');
     bytes.setUint32(40, dataSize, Endian.little);
 
-    const fadeFrames = (sampleRate * 0.08).round();
+    final fadeFrames = (sampleRate * 0.08).round();
     var offset = 44;
     for (var i = 0; i < frames; i++) {
       final t = i / sampleRate;
