@@ -67,6 +67,64 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   Future<void> _restorePageTheme() async { final value = await QuranPageThemeService.load(); if (mounted) setState(() => _pageTheme = value); }
 
+  Future<void> _showPageThemePicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFFF8F1E4),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'مظهر صفحات المصحف',
+                style: TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF241A12),
+                ),
+              ),
+              const SizedBox(height: 10),
+              for (final theme in QuranPageTheme.values)
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: QuranPageThemeService.background(theme),
+                    child: Icon(
+                      _pageTheme == theme
+                          ? Icons.check_rounded
+                          : Icons.menu_book_rounded,
+                      color: QuranPageThemeService.text(theme),
+                    ),
+                  ),
+                  title: Text(
+                    QuranPageThemeService.label(theme),
+                    style: const TextStyle(
+                      fontFamily: 'Amiri',
+                      color: Color(0xFF241A12),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  trailing: _pageTheme == theme
+                      ? const Icon(Icons.check_circle, color: Color(0xFF8C6A2D))
+                      : null,
+                  onTap: () async {
+                    setState(() => _pageTheme = theme);
+                    await QuranPageThemeService.save(theme);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _restoreLastPage() async {
     final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
     if (!mounted || last == _currentPage.value) return;
@@ -438,6 +496,14 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
               ),
             ),
             _topOverlay(),
+            Positioned(
+              top: 48,
+              right: 18,
+              child: _roundButton(
+                icon: Icons.palette_outlined,
+                onPressed: _showPageThemePicker,
+              ),
+            ),
             _pageProgress(),
             _bottomOverlay(),
           ],
