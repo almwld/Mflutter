@@ -294,13 +294,31 @@ class _ActionCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           width: 94,
-          padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 7),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFF292D35))),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, size: 25, color: const Color(0xFFD8B65A)),
-            const SizedBox(height: 8),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Amiri', fontSize: 12, color: Color(0xFFD4D7DC))),
-          ]),
+          padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF292D35)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: const Color(0xFFD8B65A)),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Amiri',
+                  fontSize: 11,
+                  height: 1.05,
+                  color: Color(0xFFD4D7DC),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
