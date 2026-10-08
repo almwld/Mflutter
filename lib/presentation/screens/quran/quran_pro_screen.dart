@@ -174,7 +174,7 @@ class _QuranProScreenState extends State<QuranProScreen>
         return;
       }
       _scroll.animateTo(
-        (position.pixels + 110).clamp(0.0, position.maxScrollExtent),
+        (position.pixels + 110).clamp(0.0, position.maxScrollExtent).toDouble(),
         duration: const Duration(milliseconds: 700),
         curve: Curves.easeInOut,
       );
@@ -224,12 +224,12 @@ class _QuranProScreenState extends State<QuranProScreen>
             // أزرار التحكم
             IconButton(
                 icon: const Icon(Icons.remove, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(14, 40))),
+                onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(14, 40).toDouble())),
             Text('${_fontSize.toInt()}',
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
             IconButton(
                 icon: const Icon(Icons.add, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(14, 40))),
+                onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(14, 40).toDouble())),
           ],
         ),
       ),
