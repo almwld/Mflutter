@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../providers/chat_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
+
   @override
   State<ChatScreen> createState() => _ChatScreenState();
 }
@@ -20,35 +20,58 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('محادثة', style: TextStyle(color: AppColors.primaryGold)),
-        backgroundColor: AppColors.primaryNavy,
-      ),
+      appBar: AppBar(title: const Text('محادثة')),
       body: Column(
         children: [
           Expanded(
             child: Consumer<ChatProvider>(
               builder: (context, provider, _) {
+                if (provider.messages.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'ابدأ محادثتك بكتابة سؤال',
+                      textDirection: TextDirection.rtl,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: colors.onSurface.withOpacity(.65),
+                      ),
+                    ),
+                  );
+                }
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: provider.messages.length,
                   itemBuilder: (context, index) {
                     final msg = provider.messages[index];
+                    final isUser = msg.isUser;
                     return Align(
-                      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: MediaQuery.sizeOf(context).width * .82,
+                        ),
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: msg.isUser ? AppColors.primaryNavy : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
+                          color: isUser ? colors.primaryContainer : colors.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           msg.text,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          textDirection: TextDirection.rtl,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: isUser ? colors.onPrimaryContainer : colors.onSurface,
+                          ),
                         ),
                       ),
                     );
@@ -57,34 +80,36 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: AppColors.surface,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'اكتب سؤالك هنا...',
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
+          SafeArea(
+            top: false,
+            child: Material(
+              color: colors.surface,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        textDirection: TextDirection.rtl,
+                        textInputAction: TextInputAction.send,
+                        style: theme.textTheme.bodyLarge,
+                        decoration: const InputDecoration(
+                          hintText: 'اكتب سؤالك هنا...',
+                          prefixIcon: Icon(Icons.chat_bubble_outline),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      tooltip: 'إرسال',
+                      onPressed: _sendMessage,
+                      icon: const Icon(Icons.send),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send, color: AppColors.primaryGold),
-                  onPressed: _sendMessage,
-                ),
-              ],
+              ),
             ),
           ),
         ],
