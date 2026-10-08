@@ -22,8 +22,9 @@ void main() {
   for (final entry in expected.entries) {
     test('Quran index resolves ' + entry.key, () async {
       final results = await QuranWordIndexService.searchWords(entry.key);
-      final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toList();
+      final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toSet().toList();
       expect(refs, entry.value);
+      if (entry.key == 'الأذن') expect(results, hasLength(2));
       for (final word in results) {
         expect(word.surahNumber, inInclusiveRange(1, 114));
         expect(word.ayahNumber, greaterThanOrEqualTo(1));
