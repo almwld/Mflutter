@@ -48,7 +48,7 @@ class MushafVariantLayoutService {
         final verse = getVerse(surah, ayah, verseEndSymbol: false);
         final verseWords = verse
             .trim()
-            .split(RegExp(r'\\s+'))
+            .split(RegExp(r'\s+'))
             .where((part) => part.isNotEmpty)
             .toList();
 
