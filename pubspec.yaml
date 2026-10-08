@@ -43,6 +43,7 @@ flutter:
   assets:
     - assets/unified_quran.json
     - assets/musnad_quran.json
+    - assets/hieroglyphic_quran.json
     - assets/all_knowledge.json
     - assets/mushaf_layout.json
     - assets/fonts/
@@ -57,6 +58,9 @@ flutter:
     - family: Musnad
       fonts:
         - asset: assets/fonts/MudabbirMusnad.ttf
+    - family: NotoSansEgyptianHieroglyphs
+      fonts:
+        - asset: assets/fonts/NotoSansEgyptianHieroglyphs-Regular.ttf
 
 flutter_launcher_icons:
   android: true

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../services/text_transformer.dart';
 import '../../../services/musnad_quran_service.dart';
+import '../../../services/hieroglyphic_quran_service.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
 
@@ -19,6 +20,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   // البيانات
   Map<String, dynamic>? _quran;
   Map<String, List<Map<String, dynamic>>>? _musnadQuran;
+  Map<String, List<Map<String, dynamic>>>? _hieroglyphicQuran;
   List<dynamic> _currentVerses = [];
   int _currentSurah = 1;
   String _surahName = 'الفاتحة';
@@ -58,9 +60,11 @@ class _QuranProScreenState extends State<QuranProScreen>
   Future<void> _loadQuran() async {
     final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
     final musnadQuran = await MusnadQuranService.load();
+    final hieroglyphicQuran = await HieroglyphicQuranService.load();
     setState(() {
       _quran = jsonDecode(jsonStr);
       _musnadQuran = musnadQuran;
+      _hieroglyphicQuran = hieroglyphicQuran;
       _loadSurah(1);
       _loading = false;
     });
@@ -81,7 +85,11 @@ class _QuranProScreenState extends State<QuranProScreen>
   TextStyle _textStyle() {
     return TextStyle(
       fontSize: _fontSize,
-      fontFamily: _mode == QuranDisplayMode.musnadAncient ? 'Musnad' : 'Amiri',
+      fontFamily: _mode == QuranDisplayMode.musnadAncient
+          ? 'Musnad'
+          : _mode == QuranDisplayMode.hieroglyphic
+              ? 'NotoSansEgyptianHieroglyphs'
+              : 'Amiri',
       fontWeight: FontWeight.bold,
       color: _mode == QuranDisplayMode.uthmaniGold
           ? const Color(0xFFFFD700)
@@ -91,7 +99,11 @@ class _QuranProScreenState extends State<QuranProScreen>
                   ? const Color(0xFFCD853F)
                   : const Color(0xFFDAA520),
       height: 2.2,
-      letterSpacing: _mode == QuranDisplayMode.musnadAncient ? 4 : 1.5,
+      letterSpacing: _mode == QuranDisplayMode.musnadAncient
+          ? 4
+          : _mode == QuranDisplayMode.hieroglyphic
+              ? 2.5
+              : 1.5,
     );
   }
 
@@ -215,9 +227,15 @@ class _QuranProScreenState extends State<QuranProScreen>
         final musnad = musnadRows != null && i < musnadRows.length
             ? musnadRows[i]['musnad'] as String?
             : null;
+        final hieroglyphicRows = _hieroglyphicQuran?[_currentSurah.toString()];
+        final hieroglyphic = hieroglyphicRows != null && i < hieroglyphicRows.length
+            ? hieroglyphicRows[i]['hieroglyphic'] as String?
+            : null;
         final transformed = _mode == QuranDisplayMode.musnadAncient
             ? (musnad ?? '')
-            : _transform(text);
+            : _mode == QuranDisplayMode.hieroglyphic
+                ? (hieroglyphic ?? '')
+                : _transform(text);
         final num = i + 1;
 
         return AnimatedBuilder(
