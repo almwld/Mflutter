@@ -76,10 +76,12 @@ class AgentChatProvider extends ChangeNotifier {
 
   Future<String> _executeAgent(AgentDefinition agent,String query) async {
     switch(agent.id){
-      case 'muwajjih': return 'تم بناء مسار التنفيذ من ${_route(query).length} وكلاء وفق نية الطلب.';
+      case 'muwajjih':
+        final route = _route(query).where((a) => a.id != 'muwajjih').map((a) => a.name).toList();
+        return route.isEmpty ? 'لم تُحدد حاجة لوكيل إضافي لهذا الطلب.' : 'تحليل الطلب: تم توجيهه فعلياً إلى: ${route.join(' ← ')}';
       case 'ayaat':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(8).toList();
-        if(hits.isEmpty)return 'لم تُوجد مطابقة مباشرة في الفهرس المحلي.';
+        if(hits.isEmpty) return 'لم تُوجد آية مطابقة بعد تطبيع النص في كامل الفهرس المحلي (6236 آية).';
         return hits.map((v) => "${v['surah']} ${v['ayah']}: ${v['text']}").join('\\n');
       case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: ${_abjad(query)}';
       case 'siyaq':
@@ -94,7 +96,9 @@ class AgentChatProvider extends ChangeNotifier {
         await initialize();
         final hits = QuranicSearchEngine.search(query).take(5).toList();
         return 'تم الاختبار على الفهرس المحلي؛ النتائج المطابقة: ${hits.length}.';
-      case 'damj': return 'تم جمع نتائج الخطوات السابقة وتجهيزها للصياغة.';
+      case 'damj':
+        final previous = _activeTask?.steps.where((s) => s.result != null).map((s) => s.result!).where((r) => r.isNotEmpty).toList() ?? const <String>[];
+        return previous.isEmpty ? 'لا توجد نتائج سابقة لدمجها.' : previous.join('\\n\\n');
       default:
         if(!await _ollama.checkAvailability())throw StateError('الخادم المحلي Ollama غير متاح؛ لم يتم توليد نتيجة وهمية.');
         return _ollama.generate('نفّذ دور الوكيل \${agent.name}.\nالمهمة: $query');
