@@ -73,6 +73,8 @@ class QuranWordIndexService {
   };
 
   static String normalize(String value) => value
+      // Dagger alif is a Quranic orthographic sign for an alif, not a vowel to discard.
+      .replaceAll('ٰ', 'ا')
       .replaceAll(_marks, '')
       .replaceAll('ـ', '')
       .replaceAll(RegExp(r'[۞۩﴿﴾]'), '')
