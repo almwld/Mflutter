@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
+import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -75,6 +76,24 @@ void main() {
           .toSet(),
       <int>{227, 229},
     );
+  });
+
+  test('search results use canonical Mushaf page and juz coordinates', () async {
+    final results = await QuranService().search('الطلاق', limit: 20);
+    final target = results.where(
+      (verse) => verse.surahNumber == 2 &&
+          (verse.ayahNumber == 227 || verse.ayahNumber == 229),
+    );
+    expect(target.length, 2);
+    for (final verse in target) {
+      final expectedPage = MushafSource.pageForVerse(
+        verse.surahNumber,
+        verse.ayahNumber,
+      );
+      expect(verse.pageNumber, expectedPage);
+      expect(verse.juzNumber, MushafSource.juzForPage(expectedPage));
+      expect(verse.pageNumber, greaterThan(1));
+    }
   });
 
 }
