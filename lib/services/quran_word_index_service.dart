@@ -123,13 +123,40 @@ class QuranWordIndexService {
     return _cachedWords!;
   }
 
+  static String _stripAttachedArticlePrefixes(String token) {
+    if (token.startsWith('لل') && token.length > 2) {
+      return 'ال' + token.substring(2);
+    }
+    if (token.length > 3 &&
+        const ['و', 'ف', 'ب', 'ك', 'ل'].any((prefix) =>
+            token.startsWith(prefix) && token.substring(1).startsWith('ال'))) {
+      return token.substring(1);
+    }
+    return token;
+  }
+
   static Future<List<QuranWordEntry>> searchWords(String query) async {
-    final needle = normalize(query);
+    final raw = query.replaceAll(_marks, '').replaceAll('ـ', '').trim();
+    final needle = normalize(raw);
     if (needle.isEmpty) return const <QuranWordEntry>[];
+
+    // Allow the definite article to be omitted in a lookup such as "النفقة"
+    // while preserving hamza-bearing stems such as "الأذن" to avoid matching
+    // the unrelated verb "أذن".
+    final hamzaStem = RegExp(r'^ال[أإآ]').hasMatch(raw);
+    final candidates = <String>{needle};
+    if (!hamzaStem && needle.startsWith('ال') && needle.length > 2) {
+      candidates.add(needle.substring(2));
+    }
+
     final words = await loadWords();
-    return words.where((word) => word.normalized == needle).toList(
-          growable: false,
-        );
+    return words.where((word) {
+      final token = _stripAttachedArticlePrefixes(word.normalized);
+      if (candidates.contains(token)) return true;
+      return !hamzaStem &&
+          token.startsWith('ال') &&
+          candidates.contains(token.substring(2));
+    }).toList(growable: false);
   }
 
   static Future<List<QuranWordEntry>> wordsForVerse(
