@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../services/text_transformer.dart';
+import '../../../services/musnad_quran_service.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
 
@@ -17,6 +18,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     with SingleTickerProviderStateMixin {
   // البيانات
   Map<String, dynamic>? _quran;
+  Map<String, List<Map<String, dynamic>>>? _musnadQuran;
   List<dynamic> _currentVerses = [];
   int _currentSurah = 1;
   String _surahName = 'الفاتحة';
@@ -55,8 +57,10 @@ class _QuranProScreenState extends State<QuranProScreen>
 
   Future<void> _loadQuran() async {
     final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
+    final musnadQuran = await MusnadQuranService.load();
     setState(() {
       _quran = jsonDecode(jsonStr);
+      _musnadQuran = musnadQuran;
       _loadSurah(1);
       _loading = false;
     });
@@ -207,7 +211,13 @@ class _QuranProScreenState extends State<QuranProScreen>
       itemBuilder: (context, i) {
         final v = _currentVerses[i];
         final text = v['text'] ?? '';
-        final transformed = _transform(text);
+        final musnadRows = _musnadQuran?[_currentSurah.toString()];
+        final musnad = musnadRows != null && i < musnadRows.length
+            ? musnadRows[i]['musnad'] as String?
+            : null;
+        final transformed = _mode == QuranDisplayMode.musnadAncient
+            ? (musnad ?? '')
+            : _transform(text);
         final num = i + 1;
 
         return AnimatedBuilder(
