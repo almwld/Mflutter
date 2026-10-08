@@ -30,12 +30,12 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: _getScreen(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        backgroundColor: const Color(0xFF16213E),
-        indicatorColor: const Color(0xFFFFD700).withOpacity(0.2),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.chat), label: 'محادثة'),
@@ -65,7 +65,7 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0E27),
-      appBar: AppBar(title: const Text('المزيد', style: TextStyle(color: Color(0xFFFFD700))), backgroundColor: const Color(0xFF1A237E)),
+      appBar: AppBar(title: const Text('المزيد')),
       body: GridView.count(crossAxisCount: 3, padding: const EdgeInsets.all(12), children: [
         _buildTile(context, '🧠 تدريب', Icons.model_training, const TrainingScreen()),
         _buildTile(context, 'إعجاز', Icons.auto_awesome, const MiraclesScreen()),
@@ -88,13 +88,13 @@ class MoreScreen extends StatelessWidget {
 
   Widget _buildTile(BuildContext context, String label, IconData icon, Widget screen) {
     return Card(
-      color: const Color(0xFF16213E),
+      color: Theme.of(context).colorScheme.surface,
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(icon, color: const Color(0xFFFFD700), size: 32),
+          Icon(icon, color: Theme.of(context).colorScheme.primary, size: 32),
           const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface, fontSize: 12)),
         ]),
       ),
     );
