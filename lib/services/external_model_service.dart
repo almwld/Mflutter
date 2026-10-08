@@ -2,13 +2,15 @@ import 'dart:io';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import '../utils/feature_extractor.dart';
 
-/// =============================================================================
-/// ExternalModelService - خدمة النماذج الخارجية
-/// =============================================================================
-
+/// Loads user-supplied TFLite models from the device filesystem.
+///
+/// The model directory is intentionally external to the Flutter asset bundle:
+/// models discovered there must be opened with [Interpreter.fromFile].
 class ExternalModelService {
-  static const String _modelsPath = '/storage/emulated/0/Download/mudabbir_models/';
-  static final ExternalModelService _instance = ExternalModelService._internal();
+  static const String _modelsPath =
+      '/storage/emulated/0/Download/mudabbir_models/';
+  static final ExternalModelService _instance =
+      ExternalModelService._internal();
 
   factory ExternalModelService() => _instance;
   ExternalModelService._internal();
@@ -16,29 +18,31 @@ class ExternalModelService {
   final Map<String, Interpreter> _loadedModels = {};
   final FeatureExtractor _featureExtractor = FeatureExtractor();
 
-  /// فحص وجود النماذج
   Future<bool> checkModelsExist() async {
     try {
       final directory = Directory(_modelsPath);
       if (!await directory.exists()) return false;
-
-      final files = await directory.list().toList();
-      return files.any((f) => f.path.endsWith('.tflite'));
-    } catch (e) {
+      await for (final entity in directory.list()) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.tflite')) {
+          return true;
+        }
+      }
+      return false;
+    } catch (_) {
       return false;
     }
   }
 
-  /// تحميل جميع النماذج
   Future<void> loadAllModels() async {
     try {
       final directory = Directory(_modelsPath);
       if (!await directory.exists()) return;
 
-      final files = await directory.list().toList();
-      for (final file in files) {
-        if (file.path.endsWith('.tflite')) {
-          final modelName = file.path.split('/').last.replaceAll('.tflite', '');
+      await for (final entity in directory.list()) {
+        if (entity is File && entity.path.toLowerCase().endsWith('.tflite')) {
+          final fileName = entity.uri.pathSegments.last;
+          final modelName =
+              fileName.substring(0, fileName.length - '.tflite'.length);
           await loadModel(modelName);
         }
       }
@@ -47,51 +51,82 @@ class ExternalModelService {
     }
   }
 
-  /// تحميل نموذج واحد
+  /// Loads a model from the same filesystem directory checked above.
+  ///
+  /// [Interpreter.fromAsset] is deliberately not used here because these are
+  /// external files, not Flutter bundle assets.
   Future<void> loadModel(String modelName) async {
+    final cleanName = modelName.trim();
+    if (cleanName.isEmpty) {
+      throw ArgumentError('Model name cannot be empty.');
+    }
+
+    final modelPath = '$_modelsPath$cleanName.tflite';
+    final file = File(modelPath);
+    if (!await file.exists()) {
+      throw StateError('Model file not found: $modelPath');
+    }
+
+    final old = _loadedModels.remove(cleanName);
+    old?.close();
+
     try {
-      final modelPath = '$_modelsPath$modelName.tflite';
-      final interpreter = await Interpreter.fromAsset(modelPath);
-      _loadedModels[modelName] = interpreter;
+      final interpreter = await Interpreter.fromFile(file);
+      _loadedModels[cleanName] = interpreter;
     } catch (e) {
-      print('Error loading model $modelName: $e');
+      throw StateError('Failed to load model $cleanName: $e');
     }
   }
 
-  /// استخراج الميزات من النص
   List<double> extractFeatures(String text) {
     return _featureExtractor.extract(text);
   }
 
-  /// تشغيل الاستدلال
-  Map<String, dynamic> runInference(String modelName, List<double> features) {
+  Map<String, dynamic> runInference(
+    String modelName,
+    List<double> features,
+  ) {
     final interpreter = _loadedModels[modelName];
     if (interpreter == null) {
       return {'error': 'Model not loaded'};
     }
 
     try {
-      final input = [features];
-      final output = List.filled(1, List.filled(1, 0.0));
+      final inputShape = interpreter.getInputTensor(0).shape;
+      final outputShape = interpreter.getOutputTensor(0).shape;
+      if (inputShape.length != 2 || inputShape[0] != 1) {
+        return {
+          'error':
+              'Unsupported model input shape: ${inputShape.join('x')}',
+        };
+      }
+      if (inputShape[1] != features.length) {
+        return {
+          'error':
+              'Feature count ${features.length} does not match model input ${inputShape[1]}',
+        };
+      }
 
+      final input = [features];
+      final output = _allocateOutput(outputShape);
       interpreter.run(input, output);
 
+      final flat = _flattenNumbers(output);
       return {
-        'prediction': output[0][0],
-        'confidence': _calculateConfidence(output[0]),
+        'prediction': flat.isNotEmpty ? flat.first : null,
+        'confidence': _calculateConfidence(flat),
         'model': modelName,
+        'inputShape': inputShape,
+        'outputShape': outputShape,
       };
     } catch (e) {
       return {'error': e.toString()};
     }
   }
 
-  /// الحصول على معلومات النموذج
   Map<String, dynamic> getModelInfo(String modelName) {
     final interpreter = _loadedModels[modelName];
-    if (interpreter == null) {
-      return {'loaded': false};
-    }
+    if (interpreter == null) return {'loaded': false};
 
     return {
       'loaded': true,
@@ -107,34 +142,49 @@ class ExternalModelService {
     return maxVal.clamp(0.0, 1.0);
   }
 
-  /// تشغيل تحليل الطاقة
   Future<Map<String, dynamic>> runEnergyAnalysis(String text) async {
-    final features = extractFeatures(text);
-    return runInference('energy_analysis', features);
+    return runInference('energy_analysis', extractFeatures(text));
   }
 
-  /// تشغيل اكتشاف الأنماط
   Future<Map<String, dynamic>> runPatternDiscovery(String text) async {
-    final features = extractFeatures(text);
-    return runInference('pattern_discovery', features);
+    return runInference('pattern_discovery', extractFeatures(text));
   }
 
-  /// تشغيل تصنيف المواضيع
   Future<Map<String, dynamic>> runTopicClassification(String text) async {
-    final features = extractFeatures(text);
-    return runInference('topic_classification', features);
+    return runInference('topic_classification', extractFeatures(text));
   }
 
-  /// إيقاف تحميل نموذج
   Future<void> unloadModel(String modelName) async {
-    _loadedModels.remove(modelName);
+    final interpreter = _loadedModels.remove(modelName);
+    interpreter?.close();
   }
 
-  /// إيقاف تحميل جميع النماذج
   Future<void> unloadAllModels() async {
+    for (final interpreter in _loadedModels.values) {
+      interpreter.close();
+    }
     _loadedModels.clear();
   }
 
-  /// الحصول على قائمة النماذج المحملة
   List<String> get loadedModels => _loadedModels.keys.toList();
+
+  dynamic _allocateOutput(List<int> shape) {
+    if (shape.isEmpty) return <double>[];
+    dynamic build(int depth) {
+      final size = shape[depth];
+      if (depth == shape.length - 1) {
+        return List<double>.filled(size, 0.0);
+      }
+      return List<dynamic>.generate(size, (_) => build(depth + 1));
+    }
+    return build(0);
+  }
+
+  List<double> _flattenNumbers(dynamic value) {
+    if (value is num) return [value.toDouble()];
+    if (value is Iterable) {
+      return value.expand<double>(_flattenNumbers).toList();
+    }
+    return const [];
+  }
 }
