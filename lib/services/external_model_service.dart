@@ -74,6 +74,12 @@ class ExternalModelService {
     return modelName;
   }
 
+  Future<void> loadModel(String modelName) async {
+    final file = File('$_modelsPath${modelName.trim()}.tflite');
+    if (!await file.exists()) throw StateError('Model file not found: ${file.path}');
+    await loadModelFromPath(modelName, file.path);
+  }
+
   Future<void> loadModelFromPath(String modelName, String modelPath) async {
     final cleanName = modelName.trim();
     if (cleanName.isEmpty) {
