@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   const expected = <String, List<String>>{
     'القردة': ['5:60'],
     'الذباب': ['22:73'],
