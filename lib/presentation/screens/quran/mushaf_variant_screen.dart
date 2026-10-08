@@ -172,7 +172,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               for (final entry in [
                 (MushafVariantMode.musnad, 'المسند', 'النص العربي بحروف المسند'),
                 (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
-                (MushafVariantMode.kufi, 'الكوفي القديم', 'الخط العربي القديم مع بنية بلا نقاط'),
+                (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'تحويل العرض إلى الرموز الهيروغليفية'),
               ])
                 ListTile(
@@ -246,7 +246,7 @@ class _VariantPage extends StatelessWidget {
       case MushafVariantMode.dotless:
         return 'Amiri';
       case MushafVariantMode.kufi:
-        return 'MudabbirOld';
+        return 'Amiri';
       case MushafVariantMode.hieroglyphic:
         return 'NotoSansEgyptianHieroglyphs';
     }
