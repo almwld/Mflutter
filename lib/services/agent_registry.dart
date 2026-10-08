@@ -66,7 +66,6 @@ class AgentRegistry {
     AgentDefinition('mikrofon','ميكروفون','المستشعرات','إدارة إدخال الصوت عند التصريح'),
     AgentDefinition('idaa','إضاءة','المستشعرات','قراءة الإضاءة عند التصريح'),
     AgentDefinition('nabd','نبض','المستشعرات','قراءة الحساس المدعوم عند التصريح'),
-    AgentDefinition('openrouter','نماذج خارجية','المستشعرات','بوابة خارجية اختيارية وليست محلية'),
     AgentDefinition('asrar_maknuna','أسرار مكنونة','الأسرار','بحث نصي منضبط في المعرفة المحلية'),
     AgentDefinition('khabir','خبير','الأسرار','تحليل النتائج المحلية'),
     AgentDefinition('adham','أدهم','الأسرار','فهرسة المصطلحات المعرفة'),
