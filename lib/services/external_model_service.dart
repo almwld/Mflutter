@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import '../utils/feature_extractor.dart';
 
 /// Loads user-supplied TFLite models from the device filesystem.
@@ -55,13 +56,27 @@ class ExternalModelService {
   ///
   /// [Interpreter.fromAsset] is deliberately not used here because these are
   /// external files, not Flutter bundle assets.
-  Future<void> loadModel(String modelName) async {
+  Future<String> importAndLoadModel(String sourcePath) async {
+    final source = File(sourcePath);
+    if (!await source.exists()) throw StateError('ملف النموذج غير موجود.');
+    if (!source.path.toLowerCase().endsWith('.tflite')) throw StateError('هذا التطبيق يقبل حالياً نماذج TFLite (.tflite) للتحليل المحلي.');
+    final dir = await getApplicationSupportDirectory();
+    final models = Directory('${dir.path}/mudabbir_models');
+    await models.create(recursive: true);
+    final name = source.uri.pathSegments.last;
+    final target = File('${models.path}/$name');
+    await source.copy(target.path);
+    final modelName = name.substring(0, name.length - '.tflite'.length);
+    await loadModelFromPath(modelName, target.path);
+    return modelName;
+  }
+
+  Future<void> loadModelFromPath(String modelName, String modelPath) async {
     final cleanName = modelName.trim();
     if (cleanName.isEmpty) {
       throw ArgumentError('Model name cannot be empty.');
     }
 
-    final modelPath = '$_modelsPath$cleanName.tflite';
     final file = File(modelPath);
     if (!await file.exists()) {
       throw StateError('Model file not found: $modelPath');
