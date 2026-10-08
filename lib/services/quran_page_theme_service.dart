@@ -9,7 +9,7 @@ class QuranPageThemeService {
   static Future<QuranPageTheme> load() async {
     final prefs = await SharedPreferences.getInstance();
     final index = prefs.getInt(_key) ?? 0;
-    return QuranPageTheme.values[index.clamp(0, QuranPageTheme.values.length - 1)];
+    return QuranPageTheme.values[index.clamp(0, QuranPageTheme.values.length - 1).toInt()];
   }
 
   static Future<void> save(QuranPageTheme theme) async {
