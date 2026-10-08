@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mudabbir_al_asrar/services/bookmark_service.dart';
 import 'package:mudabbir_al_asrar/data/datasources/local/quran_local_datasource.dart';
+import 'package:mudabbir_al_asrar/data/repositories/repositories_impl.dart';
 import 'package:mudabbir_al_asrar/services/quran_loader_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 
@@ -42,6 +43,20 @@ void main() {
       expect(await source.getVerse(1, 1), isNotNull);
       expect(await source.getVerse(1, 999), isNull);
       expect(await source.searchVerses('بسم الله'), isNotEmpty);
+    });
+
+    test('random and daily verse use the complete bundled index', () async {
+      final repository = QuranRepositoryImpl();
+      final dailyOne = await repository.getDailyVerse();
+      final dailyTwo = await repository.getDailyVerse();
+      expect('${dailyOne.surahNumber}:${dailyOne.ayahNumber}',
+          '${dailyTwo.surahNumber}:${dailyTwo.ayahNumber}');
+      expect(dailyOne.text, isNotEmpty);
+
+      final randomVerse = await repository.getRandomVerse();
+      expect(randomVerse.surahNumber, inInclusiveRange(1, 114));
+      expect(randomVerse.ayahNumber, greaterThan(0));
+      expect(randomVerse.text, isNotEmpty);
     });
 
     test('unified Quran dataset and surah index are complete', () async {
