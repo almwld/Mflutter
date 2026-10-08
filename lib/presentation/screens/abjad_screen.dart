@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants/app_colors.dart';
 import '../providers/abjad_provider.dart';
 
 class AbjadCalculatorScreen extends StatefulWidget {
@@ -17,56 +16,78 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final secondaryText = colors.onSurface.withOpacity(.68);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('حاسبة الجمل', style: TextStyle(color: AppColors.primaryGold)),
-        backgroundColor: AppColors.primaryNavy,
-      ),
-      body: Padding(
+      appBar: AppBar(title: const Text('حاسبة الجمل')),
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'أدخل النص لحساب الجمل...',
-                hintStyle: const TextStyle(color: Colors.white38),
-                filled: true,
-                fillColor: AppColors.surface,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              ),
-              onSubmitted: (_) => _calculate(),
+        children: [
+          TextField(
+            controller: _controller,
+            textDirection: TextDirection.rtl,
+            style: theme.textTheme.bodyLarge,
+            decoration: const InputDecoration(
+              hintText: 'أدخل النص لحساب الجمل...',
+              prefixIcon: Icon(Icons.calculate_outlined),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _calculate,
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGold),
-              child: const Text('احسب', style: TextStyle(color: AppColors.primaryNavy)),
-            ),
-            const SizedBox(height: 24),
-            Consumer<AbjadProvider>(
-              builder: (context, provider, _) {
-                final r = provider.lastResult;
-                if (r == null) return const SizedBox();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('الجمل الكبير: ${r.kabir}', style: const TextStyle(color: AppColors.primaryGold, fontSize: 24)),
-                    Text('الجمل الصغير: ${r.saghir}', style: const TextStyle(color: Colors.white, fontSize: 18)),
-                    Text('الجمل الوسط: ${r.wasat}', style: const TextStyle(color: Colors.white70, fontSize: 18)),
-                    const SizedBox(height: 8),
-                    Text('العنصر: ${r.element} | الكوكب: ${r.planet} | البرج: ${r.zodiac}', style: const TextStyle(color: Colors.white54)),
-                    Text('الطاقة: ${r.energy.toStringAsFixed(3)}', style: const TextStyle(color: Colors.white54)),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
+            onSubmitted: (_) => _calculate(),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: _calculate,
+            icon: const Icon(Icons.functions),
+            label: const Text('احسب'),
+          ),
+          const SizedBox(height: 24),
+          Consumer<AbjadProvider>(
+            builder: (context, provider, _) {
+              final r = provider.lastResult;
+              if (r == null) return const SizedBox.shrink();
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _ResultRow(label: 'الجمل الكبير', value: r.kabir.toString(), color: colors.primary),
+                      _ResultRow(label: 'الجمل الصغير', value: r.saghir.toString(), color: colors.onSurface),
+                      _ResultRow(label: 'الجمل الوسط', value: r.wasat.toString(), color: colors.onSurface),
+                      const SizedBox(height: 8),
+                      Text('العنصر: ${r.element} | الكوكب: ${r.planet} | البرج: ${r.zodiac}', textAlign: TextAlign.right, style: TextStyle(color: secondaryText)),
+                      Text('الطاقة: ${r.energy.toStringAsFixed(3)}', style: TextStyle(color: secondaryText)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
+}
+
+class _ResultRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _ResultRow({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Text('$label: $value', textDirection: TextDirection.rtl,
+      style: Theme.of(context).textTheme.titleMedium?.copyWith(color: color)),
+  );
 }
