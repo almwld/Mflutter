@@ -39,8 +39,8 @@ class _MushafNebulaState extends State<MushafNebula>
     ).listen((event) {
       if (!mounted) return;
       setState(() {
-        _tiltX = (_tiltX * .88 + (event.y / 9.81) * .12).clamp(-1.0, 1.0);
-        _tiltY = (_tiltY * .88 + (event.x / 9.81) * .12).clamp(-1.0, 1.0);
+        _tiltX = (_tiltX * .88 + (event.y / 9.81) * .12).clamp(-1.0, 1.0).toDouble();
+        _tiltY = (_tiltY * .88 + (event.x / 9.81) * .12).clamp(-1.0, 1.0).toDouble();
       });
     });
   }
