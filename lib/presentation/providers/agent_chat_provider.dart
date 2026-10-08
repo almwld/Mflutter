@@ -100,8 +100,15 @@ class AgentChatProvider extends ChangeNotifier {
         final previous = _activeTask?.steps.where((s) => s.result != null).map((s) => s.result!).where((r) => r.isNotEmpty).toList() ?? const <String>[];
         return previous.isEmpty ? 'لا توجد نتائج سابقة لدمجها.' : previous.join('\\n\\n');
       default:
-        if(!await _ollama.checkAvailability())throw StateError('الخادم المحلي Ollama غير متاح؛ لم يتم توليد نتيجة وهمية.');
-        return _ollama.generate('نفّذ دور الوكيل \${agent.name}.\nالمهمة: $query');
+        // الوكلاء التحليليون يبدأون من دليل قرآني حقيقي، لا من توليد حر.
+        // عند غياب المطابقة نصرّح بذلك ولا نختلق آية.
+        await initialize();
+        final hits = QuranicSearchEngine.search(query).take(3).toList();
+        if (hits.isEmpty) {
+          return 'لا توجد مطابقة قرآنية مباشرة للاستعلام «$query» في الفهرس المحلي؛ لم يتم توليد آية بديلة.';
+        }
+        final evidence = hits.map((v) => '${v['surah']} ${v['ayah']}: ${v['text']}').join('\\n');
+        return 'دليل قرآني محلي للوكيل ${agent.name}:\\n$evidence';
     }
   }
 
@@ -111,12 +118,15 @@ class AgentChatProvider extends ChangeNotifier {
   ];
 
   Future<String> _composeAnswer(AgentTask task) async {
-    final context=task.steps.map((s)=>'${s.agentName}: ${s.result??''}').join('\n');
-    if(!await _ollama.checkAvailability())return 'اكتمل التنفيذ المحلي.\n\n$context';
-    try{return await _ollama.generate('صغ جواباً عربياً واضحاً اعتماداً على نتائج الوكلاء التالية فقط:\n$context\n\nالسؤال: \${task.userQuery}',maxTokens:700);}
-    catch(_){return 'اكتمل التنفيذ المحلي دون صياغة Qwen لأن النموذج المحلي غير متاح.\n\n$context';}
+    // لا نسمح للنموذج اللغوي بإعادة صياغة النص القرآني أو اختلاق شواهد.
+    final context = task.steps
+        .where((s) => s.result != null && s.result!.trim().isNotEmpty)
+        .map((s) => '${s.agentName}: ${s.result}')
+        .join('\\n\\n');
+    return context.isEmpty
+        ? 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.'
+        : 'النتائج الموثقة محلياً:\\n\\n$context';
   }
-
   int _abjad(String text){
     const v={'ا':1,'أ':1,'إ':1,'آ':1,'ب':2,'ج':3,'د':4,'ه':5,'ة':5,'و':6,'ز':7,'ح':8,'ط':9,'ي':10,'ى':10,'ك':20,'ل':30,'م':40,'ن':50,'س':60,'ع':70,'ف':80,'ص':90,'ق':100,'ر':200,'ش':300,'ت':400,'ث':500,'خ':600,'ذ':700,'ض':800,'ظ':900,'غ':1000};
     var total=0;for(final r in text.runes)total+=v[String.fromCharCode(r)]??0;return total;
