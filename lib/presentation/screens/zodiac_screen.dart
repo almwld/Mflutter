@@ -125,7 +125,7 @@ class ZodiacScreen extends StatelessWidget {
               ),
             );
           }),
-          const Center(
+          Center(
             child: Text(
               'بروج',
               style: TextStyle(
