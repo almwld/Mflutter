@@ -34,9 +34,12 @@ void main() {
     });
   }
 
-  test('phrase search recognizes whitespace-separated Arabic words', () async {
+  test('phrase search resolves the exact Al-Fatiha verse across dagger alif', () async {
     final results = await QuranService().search('الحمد لله رب العالمين', limit: 20);
-    expect(results, isNotEmpty);
+    expect(
+      results.any((verse) => verse.surahNumber == 1 && verse.ayahNumber == 2),
+      isTrue,
+    );
   });
 
 }
