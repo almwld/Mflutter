@@ -69,11 +69,11 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.text_increase, color: Color(0xFFFFD700)),
-            onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(16, 32)),
+            onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(16, 32).toInt()),
           ),
           IconButton(
             icon: const Icon(Icons.text_decrease, color: Color(0xFFFFD700)),
-            onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(16, 32)),
+            onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(16, 32).toInt()),
           ),
         ],
       ),
