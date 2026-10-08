@@ -25,11 +25,12 @@ void main() {
       final results = await QuranWordIndexService.searchWords(entry.key);
       final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toList();
       expect(refs, entry.value);
-      for (final verse in results) {
-        expect(verse.surahNumber, inInclusiveRange(1, 114));
-        expect(verse.ayahNumber, greaterThanOrEqualTo(1));
-        expect(verse.surahName, isNotEmpty);
-        expect(verse.text, isNotEmpty);
+      for (final word in results) {
+        expect(word.surahNumber, inInclusiveRange(1, 114));
+        expect(word.ayahNumber, greaterThanOrEqualTo(1));
+        expect(word.wordNumber, greaterThanOrEqualTo(1));
+        expect(word.text, isNotEmpty);
+        expect(word.pageNumber, inInclusiveRange(1, 604));
       }
     });
   }
