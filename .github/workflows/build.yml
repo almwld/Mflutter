@@ -98,7 +98,7 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Test
-        run: flutter test test/mushaf_smoke_test.dart
+        run: flutter test
 
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
