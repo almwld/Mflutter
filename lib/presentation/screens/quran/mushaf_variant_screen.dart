@@ -44,7 +44,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.dotless:
         return TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
-        return text;
+        return TextTransformer.toDotless(text);
       case MushafVariantMode.hieroglyphic:
         return TextTransformer.toHieroglyphic(text);
     }
@@ -172,7 +172,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               for (final entry in [
                 (MushafVariantMode.musnad, 'المسند', 'النص العربي بحروف المسند'),
                 (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
-                (MushafVariantMode.kufi, 'كوفي', 'العرض العربي بالخط الكوفي'),
+                (MushafVariantMode.kufi, 'الكوفي القديم', 'الخط العربي القديم مع بنية بلا نقاط'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'تحويل العرض إلى الرموز الهيروغليفية'),
               ])
                 ListTile(
@@ -244,9 +244,11 @@ class _VariantPage extends StatelessWidget {
       case MushafVariantMode.musnad:
         return 'Musnad';
       case MushafVariantMode.dotless:
-      case MushafVariantMode.kufi:
-      case MushafVariantMode.hieroglyphic:
         return 'Amiri';
+      case MushafVariantMode.kufi:
+        return 'MudabbirOld';
+      case MushafVariantMode.hieroglyphic:
+        return 'NotoSansEgyptianHieroglyphs';
     }
   }
 

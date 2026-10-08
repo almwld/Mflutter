@@ -23,8 +23,10 @@ class TextTransformer {
     'ه': '𓉔', 'ة': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ؤ': '𓅱', 'ئ': '𓇌',
   };
 
-  static const String _arabicMarks =
-      '\\u064B\\u064C\\u064D\\u064E\\u064F\\u0650\\u0651\\u0652\\u0670';
+  static const Set<int> _arabicMarkRunes = {
+    0x064B, 0x064C, 0x064D, 0x064E, 0x064F,
+    0x0650, 0x0651, 0x0652, 0x0670,
+  };
 
   static String toMusnad(String text) => _map(text, musnadMap);
   static String toHieroglyphic(String text) => _map(text, hieroglyphMap);
@@ -36,7 +38,7 @@ class TextTransformer {
       'خ': 'ح', 'ذ': 'د', 'ز': 'ر', 'ش': 'س', 'ض': 'ص', 'ظ': 'ط',
       'غ': 'ع', 'ف': 'ڡ', 'ق': 'ٯ',
     };
-    return _map(text, replacements, removeMarks: false);
+    return _map(text, replacements, removeMarks: true);
   }
 
   static String transform(String text, String mode) {
@@ -60,7 +62,7 @@ class TextTransformer {
     final buffer = StringBuffer();
     for (final rune in text.runes) {
       final c = String.fromCharCode(rune);
-      if (removeMarks && _arabicMarks.contains(c)) continue;
+      if (removeMarks && _arabicMarkRunes.contains(rune)) continue;
       buffer.write(map[c] ?? c);
     }
     return buffer.toString();

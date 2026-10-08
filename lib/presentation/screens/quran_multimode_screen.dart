@@ -32,7 +32,7 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
   // ═══════════════════════════════════════
   static const Map<QuranMode, String> modeNames = {
     QuranMode.musnad: 'المسند 𐩱',
-    QuranMode.oldArabic: 'بدون نقاط',
+    QuranMode.oldArabic: 'الكوفي القديم — بدون نقاط',
     QuranMode.uthmaniGold: 'عثماني',
     QuranMode.hieroglyphic: 'هيلوغريفي 𓀀',
   };
@@ -123,7 +123,7 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
       case QuranMode.musnad:
         return TextTransformer.toMusnad(text);
       case QuranMode.oldArabic:
-        return _removeDots(text);
+        return TextTransformer.toDotless(text);
       case QuranMode.hieroglyphic:
         return _toHiero(text);
       case QuranMode.uthmaniGold:
