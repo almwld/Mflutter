@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 
 /// =============================================================================
@@ -86,7 +85,7 @@ class ZodiacScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           element,
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Cairo',
             fontSize: 12,
             color: Theme.of(context).colorScheme.onSurface,
@@ -122,7 +121,7 @@ class ZodiacScreen extends StatelessWidget {
               top: 100 + y - 15,
               child: Text(
                 signs[index]['symbol'] as String,
-                style: const TextStyle(fontSize: 24),
+                style: TextStyle(fontSize: 24),
               ),
             );
           }),
@@ -220,7 +219,7 @@ class ZodiacScreen extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   sign['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Amiri',
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -232,7 +231,7 @@ class ZodiacScreen extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               sign['range'] as String,
-              style: const TextStyle(
+              style: TextStyle(
                 fontFamily: 'Cairo',
                 fontSize: 10,
                 color: colors.onSurface.withOpacity(.7),
@@ -247,7 +246,7 @@ class ZodiacScreen extends StatelessWidget {
               ),
               child: Text(
                 '${sign['element']} - ${sign['quality']}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: 'Cairo',
                   fontSize: 10,
                   color: colors.onSurface,
