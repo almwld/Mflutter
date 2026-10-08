@@ -23,7 +23,16 @@ void main() {
     test('Quran index resolves ' + entry.key, () async {
       final results = await QuranWordIndexService.searchWords(entry.key);
       final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toSet().toList();
-      expect(refs, entry.value);
+      final diagnosticVerse = entry.key == 'الطلاق'
+          ? await QuranWordIndexService.wordsForVerse(2, 227)
+          : const <QuranWordEntry>[];
+      expect(
+        refs,
+        entry.value,
+        reason: entry.key == 'الطلاق'
+            ? diagnosticVerse.map((word) => word.text + '=>' + word.normalized).join('|')
+            : '',
+      );
       if (entry.key == 'الأذن') expect(results, hasLength(2));
       for (final word in results) {
         expect(word.surahNumber, inInclusiveRange(1, 114));
@@ -37,9 +46,13 @@ void main() {
 
   test('phrase search resolves the exact Al-Fatiha verse across dagger alif', () async {
     final results = await QuranService().search('الحمد لله رب العالمين', limit: 20);
+    final fatihaWords = await QuranWordIndexService.wordsForVerse(1, 2);
     expect(
       results.any((verse) => verse.surahNumber == 1 && verse.ayahNumber == 2),
       isTrue,
+      reason: fatihaWords
+          .map((word) => word.text + '=>' + word.normalized)
+          .join('|'),
     );
   });
 
