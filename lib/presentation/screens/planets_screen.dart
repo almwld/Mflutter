@@ -198,7 +198,7 @@ class PlanetsScreen extends StatelessWidget {
               fontFamily: 'Amiri',
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.gold,
+              color: colors.primary,
             ),
           ),
           const SizedBox(height: AppDimensions.paddingSmall),
