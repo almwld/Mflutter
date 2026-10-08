@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../services/theme_service.dart';
+import '../providers/theme_provider.dart';
 
-class CustomizeScreen extends StatefulWidget {
+class CustomizeScreen extends StatelessWidget {
   const CustomizeScreen({super.key});
 
   @override
-  State<CustomizeScreen> createState() => _CustomizeScreenState();
-}
-
-class _CustomizeScreenState extends State<CustomizeScreen> {
-  String _selectedTheme = 'default';
-  double _fontSize = 18;
-  bool _autoNight = true;
-
-  @override
   Widget build(BuildContext context) {
+    final state = context.watch<ThemeProvider>();
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
@@ -24,7 +18,7 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            'الثيمات المتاحة',
+            'ألوان التطبيق',
             textDirection: TextDirection.rtl,
             style: theme.textTheme.titleLarge?.copyWith(
               color: colors.primary,
@@ -37,17 +31,17 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
             runSpacing: 12,
             children: ThemeService.themeNames.map((name) {
               final palette = ThemeService.getTheme(name);
-              final selected = _selectedTheme == name;
+              final selected = state.selectedTheme == name;
               return Semantics(
                 button: true,
                 selected: selected,
                 label: 'ثيم $name',
                 child: InkWell(
-                  onTap: () => setState(() => _selectedTheme = name),
+                  onTap: () => context.read<ThemeProvider>().setTheme(name),
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
-                    width: 82,
-                    height: 82,
+                    width: 88,
+                    height: 88,
                     decoration: BoxDecoration(
                       color: palette['surface'],
                       borderRadius: BorderRadius.circular(16),
@@ -60,7 +54,7 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 28,
+                          width: 30,
                           height: 7,
                           decoration: BoxDecoration(
                             color: palette['secondary'],
@@ -85,17 +79,28 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 28),
           Text(
-            'المحدد للمعاينة: $_selectedTheme',
+            'خط التطبيق',
             textDirection: TextDirection.rtl,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurface.withOpacity(.65),
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'Amiri', label: Text('أميري'), icon: Icon(Icons.text_fields)),
+              ButtonSegment(value: 'Musnad', label: Text('المسند'), icon: Icon(Icons.auto_awesome)),
+            ],
+            selected: {state.fontFamily},
+            onSelectionChanged: (selection) =>
+                context.read<ThemeProvider>().setFont(selection.first),
           ),
           const SizedBox(height: 28),
           Text(
-            'حجم الخط',
+            'حجم الخط العام: ${state.fontSize.round()}',
             textDirection: TextDirection.rtl,
             style: theme.textTheme.titleLarge?.copyWith(
               color: colors.primary,
@@ -103,47 +108,19 @@ class _CustomizeScreenState extends State<CustomizeScreen> {
             ),
           ),
           Slider(
-            value: _fontSize,
+            value: state.fontSize,
             min: 14,
-            max: 28,
-            label: '${_fontSize.toInt()}',
-            onChanged: (value) => setState(() => _fontSize = value),
+            max: 36,
+            divisions: 22,
+            label: state.fontSize.round().toString(),
+            onChanged: context.read<ThemeProvider>().setFontSize,
           ),
           Text(
-            '${_fontSize.toInt()} px',
+            'تُحفظ هذه الخيارات على الجهاز وتُطبّق على ثيم التطبيق. إعدادات خط المصحف داخل صفحة القراءة تبقى مستقلة حتى لا يتغيّر تخطيط صفحات المصحف المدني.',
             textDirection: TextDirection.rtl,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: theme.textTheme.bodySmall?.copyWith(
               color: colors.onSurface.withOpacity(.7),
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'الوضع الليلي التلقائي',
-            textDirection: TextDirection.rtl,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: colors.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _autoNight,
-            title: const Text('تفعيل تلقائي'),
-            subtitle: const Text('إعداد تجريبي؛ لم يُربط بعد بجدولة شروق الشمس وغروبها.'),
-            onChanged: (value) => setState(() => _autoNight = value),
-          ),
-          const SizedBox(height: 8),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Text(
-                'ملاحظة: اختيار الثيم وحجم الخط والوضع التلقائي في هذه الشاشة معاينة محلية حاليًا، ولا تُغيّر ثيم التطبيق بالكامل أو تُحفظ بعد إغلاقه بعد.',
-                textDirection: TextDirection.rtl,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurface.withOpacity(.7),
-                  height: 1.5,
-                ),
-              ),
+              height: 1.6,
             ),
           ),
         ],
