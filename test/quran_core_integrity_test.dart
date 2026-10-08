@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mudabbir_al_asrar/services/bookmark_service.dart';
+import 'package:mudabbir_al_asrar/data/datasources/local/quran_local_datasource.dart';
 import 'package:mudabbir_al_asrar/services/quran_loader_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 
@@ -20,6 +21,27 @@ void main() {
       final bySurah = await QuranLoaderService.loadBySurah();
       expect(bySurah.keys.toSet(), Set<int>.from(List<int>.generate(114, (i) => i + 1)));
       expect(bySurah.values.fold<int>(0, (sum, verses) => sum + verses.length), 6236);
+    });
+
+    test('repository data source works without an external database file', () async {
+      final source = QuranLocalDatasource();
+      final surahs = await source.getSurahs();
+      expect(surahs, hasLength(114));
+
+      final firstSurah = await source.getSurah(1);
+      expect(firstSurah.verseCount, 7);
+      final verses = await source.getVersesBySurah(1);
+      expect(verses, hasLength(7));
+      expect(verses.first['surah'], 1);
+      expect(verses.first['ayah'], 1);
+      expect(verses.first['text'], isA<String>());
+
+      final juzs = await source.getAllJuzs();
+      expect(juzs, hasLength(30));
+      expect((await source.getJuz(30)).number, 30);
+      expect(await source.getVerse(1, 1), isNotNull);
+      expect(await source.getVerse(1, 999), isNull);
+      expect(await source.searchVerses('بسم الله'), isNotEmpty);
     });
 
     test('unified Quran dataset and surah index are complete', () async {
