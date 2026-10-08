@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getSurahNameArabic, getPageNumber;
 import '../domain/models/quran_models.dart';
 import '../domain/entities/verse.dart';
 import 'quran_loader_service.dart';
