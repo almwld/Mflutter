@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import '../domain/entities/verse.dart';
+import 'mushaf_source.dart';
 
 class QuranLoaderService {
   static const int expectedAyahCount = 6236;
@@ -29,7 +30,26 @@ class QuranLoaderService {
         throw FormatException('سجل الآية رقم ${index + 1} ليس كائن JSON صالحًا');
       }
 
-      final ayah = Ayah.fromJson(Map<String, dynamic>.from(row));
+      final parsedAyah = Ayah.fromJson(Map<String, dynamic>.from(row));
+      // The bundled search JSON has placeholder page/juz metadata. Derive
+      // coordinates from the canonical 604-page Hafs Mushaf instead.
+      final pageNumber = MushafSource.pageForVerse(
+        parsedAyah.surahNumber,
+        parsedAyah.ayahNumber,
+      );
+      final ayah = Ayah(
+        id: parsedAyah.id,
+        surahNumber: parsedAyah.surahNumber,
+        surahName: parsedAyah.surahName,
+        ayahNumber: parsedAyah.ayahNumber,
+        text: parsedAyah.text,
+        isMakki: parsedAyah.isMakki,
+        juzNumber: MushafSource.juzForPage(pageNumber),
+        pageNumber: pageNumber,
+        jummal: parsedAyah.jummal,
+        axisType: parsedAyah.axisType,
+        energyLevel: parsedAyah.energyLevel,
+      );
       if (ayah.surahNumber < 1 || ayah.surahNumber > 114 ||
           ayah.ayahNumber < 1 || ayah.text.trim().isEmpty) {
         throw FormatException(
