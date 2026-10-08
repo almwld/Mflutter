@@ -44,7 +44,7 @@ class _AdvancedTechScreenState extends State<AdvancedTechScreen> {
         ]))),
         // الترددات الصوتية
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('🎵 ترددات صوتية', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('🎵 صوت ثنائي القناة', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
           Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             _buildFreqButton('سكينة', BinauralEngineService.playTranquility),
