@@ -47,9 +47,9 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
 
   static const Map<QuranMode, String> modeFonts = {
     QuranMode.musnad: 'Musnad',
-    QuranMode.oldArabic: 'MudabbirOld',
+    QuranMode.oldArabic: 'Amiri',
     QuranMode.uthmaniGold: 'Amiri',
-    QuranMode.hieroglyphic: 'Hieroglyphic',
+    QuranMode.hieroglyphic: 'NotoSansEgyptianHieroglyphs',
   };
 
   // ═══════════════════════════════════════
@@ -99,8 +99,10 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
     try {
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
+      final rawVerses = data[widget.surahNumber.toString()];
+      if (!mounted) return;
       setState(() {
-        _verses = List<dynamic>.from(data[widget.surahNumber.toString()] ?? []);
+        _verses = rawVerses is List ? List<dynamic>.from(rawVerses) : <dynamic>[];
         _loading = false;
       });
     } catch (e) {
@@ -125,22 +127,7 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
         return text;
     }
   }
-  String _toHiero(String text) {
-    const map = {
-      'ا': '𓂝', 'أ': '𓂝', 'إ': '𓂝', 'آ': '𓂝', 'ب': '𓃀', 'ت': '𓏏', 'ث': '𓍿',
-      'ج': '𓆓', 'ح': '𓎛', 'خ': '𓐍', 'د': '𓂧', 'ذ': '𓆑', 'ر': '𓂋', 'ز': '𓊃',
-      'س': '𓋴', 'ش': '𓈙', 'ص': '𓊮', 'ض': '𓍑', 'ط': '𓍔', 'ظ': '𓊪', 'ع': '𓂝',
-      'غ': '𓎼', 'ف': '𓆑', 'ق': '𓏘', 'ك': '𓎡', 'ل': '𓃭', 'م': '𓅓', 'ن': '𓈖',
-      'ه': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ة': '𓉔', 'ؤ': '𓅱', 'ئ': '𓇌',
-    };
-    final r = StringBuffer();
-    for (final rune in text.runes) {
-      final c = String.fromCharCode(rune);
-      if ('\\u064B\\u064C\\u064D\\u064E\\u064F\\u0650\\u0651\\u0652\\u0670'.contains(c)) continue;
-      r.write(map[c] ?? c);
-    }
-    return r.toString();
-  }
+  String _toHiero(String text) => TextTransformer.toHieroglyphic(text);
 
   TextStyle _getTextStyle() {
     return TextStyle(
