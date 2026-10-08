@@ -56,4 +56,25 @@ void main() {
     );
   });
 
+  test('canonical Al-Talaq spelling is preserved in both exact verses', () async {
+    for (final ayahNumber in <int>[227, 229]) {
+      final words = await QuranWordIndexService.wordsForVerse(2, ayahNumber);
+      expect(
+        words.any((word) =>
+            word.normalized == 'الطلاق' && word.text.contains('الطلاق')),
+        isTrue,
+        reason: 'Expected canonical الطلاق token at 2:$ayahNumber; got '
+            '${words.map((word) => word.text).join(' ')}',
+      );
+    }
+    final results = await QuranWordIndexService.searchWords('الطلاق');
+    expect(
+      results
+          .where((word) => word.surahNumber == 2)
+          .map((word) => word.ayahNumber)
+          .toSet(),
+      <int>{227, 229},
+    );
+  });
+
 }
