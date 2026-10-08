@@ -48,7 +48,7 @@ void main() {
       final quran = await QuranService.loadQuran();
       expect(quran.keys, containsAll(List<String>.generate(114, (i) => '${i + 1}')));
       expect(
-        quran.values.whereType<List>().fold<int>(0, (sum, verses) => sum + verses.length),
+        quran.values.whereType<List<dynamic>>().fold<int>(0, (int sum, List<dynamic> verses) => sum + verses.length),
         6236,
       );
 
