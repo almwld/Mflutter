@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/entities/verse.dart';
 import '../../domain/models/quran_models.dart';
@@ -16,8 +17,23 @@ class QuranRepositoryImpl {
   Future<List<Verse>> getSurahVerses(int n) async => (await _datasource.getVersesBySurah(n)).map(Ayah.fromJson).toList();
   Future<Verse?> getVerse(int s,int a) async { final row=await _datasource.getVerse(s,a); return row==null?null:Ayah.fromJson(row); }
   Future<List<Verse>> search(String q) async => (await _datasource.searchVerses(q)).map(Ayah.fromJson).toList();
-  Future<Verse> getRandomVerse() async { final rows=await _datasource.searchVerses(''); if(rows.isEmpty) throw StateError('لا توجد آيات محلية.'); return Ayah.fromJson(rows.first); }
-  Future<Verse> getDailyVerse() => getRandomVerse();
+  Future<Verse> getRandomVerse() async {
+    final rows = await _datasource.searchVerses('');
+    if (rows.isEmpty) throw StateError('لا توجد آيات في فهرس القرآن.');
+    return Ayah.fromJson(rows[Random().nextInt(rows.length)]);
+  }
+
+  /// Returns the same verse throughout the local calendar day.
+  Future<Verse> getDailyVerse() async {
+    final rows = await _datasource.searchVerses('');
+    if (rows.isEmpty) throw StateError('لا توجد آيات في فهرس القرآن.');
+    final now = DateTime.now();
+    final dayNumber = DateTime(now.year, now.month, now.day)
+        .difference(DateTime(2000, 1, 1))
+        .inDays;
+    final index = dayNumber % rows.length;
+    return Ayah.fromJson(rows[index]);
+  }
   Future<List<Juz>> getAllJuz() => _datasource.getAllJuzs();
 }
 
