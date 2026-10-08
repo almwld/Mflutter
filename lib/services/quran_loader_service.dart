@@ -9,15 +9,10 @@ class QuranLoaderService {
   static Future<List<Ayah>> loadAllAyahs() async {
     if (_cachedAyahs != null) return _cachedAyahs!;
     
-    try {
-      final jsonStr = await rootBundle.loadString('assets/quran_full.json');
-      final List<dynamic> jsonList = jsonDecode(jsonStr);
-      _cachedAyahs = jsonList.map((j) => Ayah.fromJson(j)).toList();
-      return _cachedAyahs!;
-    } catch (e) {
-      // إذا لم يوجد الملف، استخدم بيانات مضمنة
-      return _loadBuiltInQuran();
-    }
+    final jsonStr = await rootBundle.loadString('assets/quran_full.json');
+    final List<dynamic> jsonList = jsonDecode(jsonStr) as List<dynamic>;
+    _cachedAyahs = jsonList.map((j) => Ayah.fromJson(j as Map<String, dynamic>)).toList();
+    return _cachedAyahs!;
   }
 
   static Future<Map<int, List<Ayah>>> loadBySurah() async {
@@ -32,14 +27,4 @@ class QuranLoaderService {
     return _cachedBySurah!;
   }
 
-  static List<Ayah> _loadBuiltInQuran() {
-    // بيانات مضمنة لأشهر الآيات
-    return [
-      Ayah(id: 1, surahNumber: 1, surahName: 'الفاتحة', ayahNumber: 1, text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ', axisType: 'tranquil'),
-      Ayah(id: 2, surahNumber: 1, surahName: 'الفاتحة', ayahNumber: 2, text: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ', axisType: 'cosmic'),
-      Ayah(id: 255, surahNumber: 2, surahName: 'البقرة', ayahNumber: 255, text: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ', axisType: 'tranquil', jummal: 287, energyLevel: 0.87),
-      Ayah(id: 35, surahNumber: 24, surahName: 'النور', ayahNumber: 35, text: 'اللَّهُ نُورُ السَّمَاوَاتِ وَالْأَرْضِ', axisType: 'cosmic', jummal: 256, energyLevel: 0.95),
-      Ayah(id: 1, surahNumber: 112, surahName: 'الإخلاص', ayahNumber: 1, text: 'قُلْ هُوَ اللَّهُ أَحَدٌ', axisType: 'calculation'),
-    ];
-  }
 }

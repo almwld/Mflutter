@@ -26,6 +26,7 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
   QuranBackground _currentBg = QuranBackground.navy;
   List<dynamic> _verses = [];
   bool _loading = true;
+  String? _loadError;
 
   // ═══════════════════════════════════════
   // أسماء الأوضاع
@@ -103,19 +104,13 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _verses = _getBuiltIn();
+        _verses = [];
+        _loadError = 'تعذر تحميل بيانات المصحف المحلية: $e';
         _loading = false;
       });
     }
-  }
-
-  List<dynamic> _getBuiltIn() {
-    return [
-      {'text': 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ'},
-      {'text': 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ'},
-      {'text': 'الرَّحْمَنِ الرَّحِيمِ'},
-    ];
   }
 
   String _transformText(String text) {
@@ -217,6 +212,12 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
       ),
       body: _loading
           ? Center(child: CircularProgressIndicator(color: modeColors[_currentMode]))
+          : _loadError != null
+          ? Center(child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(_loadError!, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
+            ))
           : Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

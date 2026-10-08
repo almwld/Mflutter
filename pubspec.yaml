@@ -42,6 +42,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/unified_quran.json
+    - assets/quran_full.json
     - assets/musnad_quran.json
     - assets/hieroglyphic_quran.json
     - assets/all_knowledge.json

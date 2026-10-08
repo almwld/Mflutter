@@ -20,6 +20,7 @@ class QuranPageScreen extends StatefulWidget {
 class _QuranPageScreenState extends State<QuranPageScreen> {
   List<dynamic> _verses = [];
   bool _loading = true;
+  String? _loadError;
   bool _showTranslation = false;
   int _fontSize = 22;
   final ScrollController _scrollController = ScrollController();
@@ -39,33 +40,13 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         _loading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _verses = _getBuiltInSurah(widget.surahNumber);
+        _verses = [];
+        _loadError = 'تعذر تحميل بيانات المصحف المحلية: $e';
         _loading = false;
       });
     }
-  }
-
-  List<dynamic> _getBuiltInSurah(int number) {
-    // بيانات مضمنة للسور الشائعة
-    const builtIn = {
-      1: [
-        {'text': 'بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ'},
-        {'text': 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ'},
-        {'text': 'الرَّحْمَنِ الرَّحِيمِ'},
-        {'text': 'مَالِكِ يَوْمِ الدِّينِ'},
-        {'text': 'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ'},
-        {'text': 'اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ'},
-        {'text': 'صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ'},
-      ],
-      112: [
-        {'text': 'قُلْ هُوَ اللَّهُ أَحَدٌ'},
-        {'text': 'اللَّهُ الصَّمَدُ'},
-        {'text': 'لَمْ يَلِدْ وَلَمْ يُولَدْ'},
-        {'text': 'وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ'},
-      ],
-    };
-    return builtIn[number] ?? [{'text': 'جاري تحميل السورة...'}];
   }
 
   @override
@@ -101,6 +82,12 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
+          : _loadError != null
+          ? Center(child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(_loadError!, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
+            ))
           : Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
