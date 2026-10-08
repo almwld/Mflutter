@@ -40,7 +40,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
     if (q.isEmpty || _ayahs.isEmpty) return;
     setState(() { _searching = true; _error = null; });
     final n = _normalize(q);
-    final ref = RegExp(r'^(\d{1,3})\s*[:/.-]\s*(\d{1,3})).firstMatch(q);
+    final ref = RegExp(r'^(\d{1,3})\s*[:/.-]\s*(\d{1,3})$').firstMatch(q);
     final List<Ayah> hits;
     if (ref != null) {
       final s = int.parse(ref.group(1)!); final a = int.parse(ref.group(2)!);
