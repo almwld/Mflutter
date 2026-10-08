@@ -64,7 +64,7 @@ class _InsightScreenState extends State<InsightScreen> {
                     const SizedBox(height: 6),
                     Text('سؤال التدبر: ما الهداية أو المعنى الذي تستخلصه من هذه الآية في سياقها؟', textDirection: TextDirection.rtl, style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.68))),
                   ])),
-                );
+                ));
               },
             ),
     );
