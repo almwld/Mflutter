@@ -39,26 +39,26 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) return const Scaffold(backgroundColor: AppColors.background, body: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)));
+    final theme = Theme.of(context);\n    final colors = theme.colorScheme;\n    if (_loading) return Scaffold(backgroundColor: theme.scaffoldBackgroundColor, body: Center(child: CircularProgressIndicator(color: colors.primary)));
 
     final surahs = _bySurah.keys.toList()..sort();
     final ayahs = _bySurah[_selectedSurah] ?? [];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('القرآن الكريم', style: TextStyle(color: AppColors.primaryGold)),
         backgroundColor: AppColors.primaryNavy,
         actions: [
           PopupMenuButton<int>(
-            icon: const Icon(Icons.list, color: AppColors.primaryGold),
+            icon: const Icon(Icons.list),
             onSelected: (s) => setState(() { _selectedSurah = s; _currentPage = 0; }),
-            itemBuilder: (_) => surahs.map((s) => PopupMenuItem(value: s, child: Text('${_bySurah[s]!.first.surahName} (${_bySurah[s]!.length})', style: const TextStyle(color: Colors.white)))).toList(),
+            itemBuilder: (_) => surahs.map((s) => PopupMenuItem(value: s, child: Text('${_bySurah[s]!.first.surahName} (${_bySurah[s]!.length})', style: TextStyle(color: colors.onSurface)))).toList(),
           ),
         ],
       ),
       body: ayahs.isEmpty
-          ? const Center(child: Text('لا توجد آيات', style: TextStyle(color: Colors.white54)))
+          ? Center(child: Text('لا توجد آيات', style: TextStyle(color: colors.onSurface.withOpacity(.6))))
           : PageView.builder(
               itemCount: ayahs.length,
               onPageChanged: (p) => _currentPage = p,
@@ -67,14 +67,14 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
                 return _buildVerseCard(a);
               },
             ),
-      bottomNavigationBar: Container(padding: const EdgeInsets.all(8), color: AppColors.surface, child: Text('${_currentPage + 1} / ${ayahs.length}', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primaryGold))),
+      bottomNavigationBar: Container(padding: const EdgeInsets.all(8), color: colors.surface, child: Text('${_currentPage + 1} / ${ayahs.length}', textAlign: TextAlign.center, style: TextStyle(color: colors.primary))),
     );
   }
 
   Widget _buildVerseCard(Ayah a) {
     return Card(
       margin: const EdgeInsets.all(12),
-      color: AppColors.surface,
+      color: colors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -86,7 +86,7 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
                 child: SingleChildScrollView(
                   child: Text(
                     a.text,
-                    style: const TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'Amiri', fontWeight: FontWeight.bold, height: 1.8),
+                    style: theme.textTheme.headlineSmall?.copyWith(fontSize: 24, fontFamily: 'Amiri', fontWeight: FontWeight.bold, height: 1.8),
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
                   ),
@@ -94,8 +94,8 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
               ),
             ),
             const SizedBox(height: 16),
-            Text('${a.surahName} - الآية ${a.ayahNumber}', style: const TextStyle(color: AppColors.primaryGold, fontSize: 14)),
-            Text('جمل: ${a.jummal} | محور: ${a.axisType == 'cosmic' ? '🌌 كوني' : a.axisType == 'tranquil' ? '🌙 سكينة' : '📐 حساب'}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+            Text('${a.surahName} - الآية ${a.ayahNumber}', style: theme.textTheme.bodyMedium?.copyWith(color: colors.primary, fontSize: 14)),
+            Text('جمل: ${a.jummal} | محور: ${a.axisType == 'cosmic' ? '🌌 كوني' : a.axisType == 'tranquil' ? '🌙 سكينة' : '📐 حساب'}', style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.6), fontSize: 11)),
           ],
         ),
       ),
