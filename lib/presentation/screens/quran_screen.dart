@@ -39,7 +39,9 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);\n    final colors = theme.colorScheme;\n    if (_loading) return Scaffold(backgroundColor: theme.scaffoldBackgroundColor, body: Center(child: CircularProgressIndicator(color: colors.primary)));
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    if (_loading) return Scaffold(backgroundColor: theme.scaffoldBackgroundColor, body: Center(child: CircularProgressIndicator(color: colors.primary)));
 
     final surahs = _bySurah.keys.toList()..sort();
     final ayahs = _bySurah[_selectedSurah] ?? [];
@@ -47,8 +49,7 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('القرآن الكريم', style: TextStyle(color: AppColors.primaryGold)),
-        backgroundColor: AppColors.primaryNavy,
+        title: const Text('القرآن الكريم'),
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.list),
@@ -72,6 +73,8 @@ class _QuranScreenState extends State<QuranScreen> with TickerProviderStateMixin
   }
 
   Widget _buildVerseCard(Ayah a) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return Card(
       margin: const EdgeInsets.all(12),
       color: colors.surface,
