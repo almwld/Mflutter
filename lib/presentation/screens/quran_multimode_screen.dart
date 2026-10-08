@@ -125,22 +125,6 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
         return text;
     }
   }
-
-  String _removeDots(String text) {
-    const map = {
-      'ب': 'ٮ', 'ت': 'ٮ', 'ث': 'ٮ', 'ج': 'ح', 'خ': 'ح',
-      'ذ': 'د', 'ز': 'د', 'ش': 'س', 'ض': 'ص', 'ظ': 'ط',
-      'غ': 'ع', 'ف': 'ڡ', 'ق': 'ڡ', 'ن': 'ٮ', 'ي': 'ى',
-    };
-    final r = StringBuffer();
-    for (final rune in text.runes) {
-      final c = String.fromCharCode(rune);
-      if ('\\u064B\\u064C\\u064D\\u064E\\u064F\\u0650\\u0651\\u0652'.contains(c)) continue;
-      r.write(map[c] ?? c);
-    }
-    return r.toString();
-  }
-
   String _toHiero(String text) {
     const map = {
       'ا': '𓂝', 'أ': '𓂝', 'إ': '𓂝', 'آ': '𓂝', 'ب': '𓃀', 'ت': '𓏏', 'ث': '𓍿',
