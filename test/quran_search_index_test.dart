@@ -31,4 +31,13 @@ void main() {
       }
     });
   }
+
+  test('phrase search recognizes whitespace-separated Arabic words', () async {
+    final results = await QuranService().search('الحمد لله رب العالمين', limit: 20);
+    expect(
+      results.any((verse) => verse.surahNumber == 1 && verse.ayahNumber == 2),
+      isTrue,
+    );
+  });
+
 }
