@@ -28,7 +28,8 @@ class QuranLocalDatasource {
       };
 
   String _normalize(String value) => value
-      .replaceAll(RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'), '')
+      .replaceAll('ٰ', 'ا')
+      .replaceAll(RegExp(r'[ًٌٍَُِّْۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'), '')
       .replaceAll('ـ', '')
       .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
       .replaceAll('ى', 'ي')
