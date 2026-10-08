@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 
 class TafsirScreen extends StatelessWidget {
   final String verseText;
@@ -21,33 +20,53 @@ class TafsirScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final key = '$surahName:$ayahNumber';
-    final tafsir = _tafsirDB[key] ?? 'تفسير هذه الآية يدعوك للتدبر في معانيها العميقة.';
+    final tafsir = _tafsirDB[key] ??
+        'تفسير هذه الآية غير متوفر في قاعدة البيانات الحالية.';
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('التفسير', style: TextStyle(color: AppColors.primaryGold)),
-        backgroundColor: AppColors.primaryNavy,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text('📖 $verseText', style: TextStyle(color: Colors.white, fontSize: 22, fontFamily: 'Amiri')),
-            SizedBox(height: 20),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+      appBar: AppBar(title: const Text('التفسير')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Text(
+                '﴿$verseText﴾',
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontFamily: 'Amiri',
+                  height: 1.9,
+                  color: colors.onSurface,
+                ),
               ),
-              child: Text(tafsir, style: TextStyle(color: Colors.white70, fontSize: 18, height: 1.8)),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'سورة $surahName • الآية $ayahNumber',
+            textDirection: TextDirection.rtl,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                tafsir,
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.bodyLarge?.copyWith(height: 1.8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
