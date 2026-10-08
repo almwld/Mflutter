@@ -95,13 +95,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       ]),
     );
   }
-}  Future<void> _loadQuran() async {
-    // Keep the screen ready immediately; the canonical search index is
-    // loaded by QuranService from assets/quran_full.json.
-    setState(() => _quran = <String, dynamic>{});
-  }
-
-  Future<void> _search(String query) async {
+}  Future<void> _search(String query) async {
     if (query.trim().isEmpty) return;
 
     setState(() {
