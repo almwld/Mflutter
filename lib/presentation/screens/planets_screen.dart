@@ -120,7 +120,7 @@ class PlanetsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'تأثير الكواكب',
             style: TextStyle(
               fontFamily: 'Amiri',
@@ -192,7 +192,7 @@ class PlanetsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'أيام الأسبوع',
             style: TextStyle(
               fontFamily: 'Amiri',
