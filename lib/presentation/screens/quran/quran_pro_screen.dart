@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/text_transformer.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
@@ -42,14 +43,11 @@ class _QuranProScreenState extends State<QuranProScreen>
   static const _bgColor = Color(0xFF0A0E27);
   static const _goldColor = Color(0xFFFFD700);
 
-  // قائمة السور
-  final List<Map<String, dynamic>> _surahs = [
-    {'n': 1, 'name': 'الفاتحة'}, {'n': 2, 'name': 'البقرة'},
-    {'n': 3, 'name': 'آل عمران'}, {'n': 4, 'name': 'النساء'},
-    {'n': 36, 'name': 'يس'}, {'n': 55, 'name': 'الرحمن'},
-    {'n': 67, 'name': 'الملك'}, {'n': 112, 'name': 'الإخلاص'},
-    {'n': 113, 'name': 'الفلق'}, {'n': 114, 'name': 'الناس'},
-  ];
+  // فهرس كامل للسور الـ114 من مصدر أسماء السور المستخدم في المصحف.
+  late final List<Map<String, dynamic>> _surahs = List.generate(
+    114,
+    (index) => {'n': index + 1, 'name': getSurahNameArabic(index + 1)},
+  );
 
   @override
   void initState() {
@@ -100,7 +98,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     });
   }
 
-  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
+  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'dotless', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
 
   TextStyle _textStyle() {
     return TextStyle(
@@ -220,7 +218,7 @@ class _QuranProScreenState extends State<QuranProScreen>
             _modeButton('عثماني', QuranDisplayMode.uthmaniGold, '🕌'),
             _modeButton('المسند', QuranDisplayMode.musnadAncient, '𐩱'),
             _modeButton('بدون نقاط', QuranDisplayMode.dotless, 'ٮ'),
-            _modeButton('كوفي', QuranDisplayMode.kufi, '│'),
+            _modeButton('كوفي تجريبي', QuranDisplayMode.kufi, '│'),
             _modeButton('هيلوغريفية', QuranDisplayMode.hieroglyphic, '𓂝'),
             const SizedBox(width: 16),
             // أزرار التحكم
