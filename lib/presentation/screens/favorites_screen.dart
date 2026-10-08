@@ -25,25 +25,24 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('⭐ المفضلة', style: TextStyle(color: Color(0xFFFFD700))),
-        backgroundColor: const Color(0xFF1A237E),
+        title: const Text('المفضلة'),
       ),
       body: _bookmarks.isEmpty
-          ? const Center(child: Text('لا توجد علامات مفضلة', style: TextStyle(color: Colors.white38)))
+          ? Center(child: Text('لا توجد علامات مفضلة', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(.55))))
           : ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: _bookmarks.length,
               itemBuilder: (_, i) {
                 final b = _bookmarks[i];
                 return Card(
-                  color: const Color(0xFF1A237E).withOpacity(0.6),
+                  
                   child: ListTile(
-                    title: Text(b['text'] ?? '', style: const TextStyle(color: Color(0xFFFFECB3), fontFamily: 'Amiri'), textDirection: TextDirection.rtl, maxLines: 2),
-                    subtitle: Text('${b['surah']}:${b['ayah']}', style: const TextStyle(color: Color(0xFFFFD700))),
+                    title: Text(b['text'] ?? '', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontFamily: 'Amiri'), textDirection: TextDirection.rtl, maxLines: 2),
+                    subtitle: Text('${b['surah']}:${b['ayah']}', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error),
                       onPressed: () async {
                         await BookmarkService.removeBookmark(b['surah'], b['ayah']);
                         _loadBookmarks();
