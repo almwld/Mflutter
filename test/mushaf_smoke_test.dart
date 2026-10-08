@@ -16,8 +16,14 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(MushafScreen), findsNothing);
 
-    await tester.tap(find.text('المصحف الشريف'));
-    await tester.pump(const Duration(milliseconds: 500));
+    final readingCard = find.text('المصحف الشريف');
+    expect(readingCard, findsOneWidget);
+    await tester.ensureVisible(readingCard);
+    await tester.tap(readingCard);
+
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
 
     expect(find.byType(MushafScreen), findsOneWidget);
   });
