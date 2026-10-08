@@ -61,7 +61,7 @@ void main() {
       final words = await QuranWordIndexService.wordsForVerse(2, ayahNumber);
       expect(
         words.any((word) =>
-            word.normalized == 'الطلاق' && word.text.contains('الطلاق')),
+            word.normalized == 'الطلاق' && word.text.contains('ٱلطلاق')),
         isTrue,
         reason: 'Expected canonical الطلاق token at 2:$ayahNumber; got '
             '${words.map((word) => word.text).join(' ')}',
