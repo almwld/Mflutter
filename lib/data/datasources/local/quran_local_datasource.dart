@@ -1,84 +1,158 @@
+import '../../../domain/entities/verse.dart';
 import '../../../domain/models/quran_models.dart';
-import 'database_helper.dart';
+import '../../../services/mushaf_source.dart';
+import '../../../services/quran_loader_service.dart';
 
+/// Quran data source backed by the bundled, validated Hafs dataset.
+///
+/// This deliberately avoids relying on a database at a hard-coded external
+/// storage path, which is unavailable on fresh installs and scoped-storage
+/// Android versions.
 class QuranLocalDatasource {
-  final DatabaseHelper _dbHelper = DatabaseHelper();
   final Map<String, List<Map<String, dynamic>>> _versesCache = {};
+  List<Ayah>? _allAyahs;
+
+  Future<List<Ayah>> _loadAyahs() async =>
+      _allAyahs ??= await QuranLoaderService.loadAllAyahs();
+
+  Map<String, dynamic> _toRow(Ayah ayah) => <String, dynamic>{
+        'id': ayah.id,
+        'surah': ayah.surahNumber,
+        'surah_name': ayah.surahName,
+        'ayah': ayah.ayahNumber,
+        'text': ayah.text,
+        'text_simple': _normalize(ayah.text),
+        'juz': ayah.juzNumber,
+        'page': ayah.pageNumber,
+        'is_makki': ayah.isMakki ? 1 : 0,
+      };
+
+  String _normalize(String value) => value
+      .replaceAll(RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'), '')
+      .replaceAll('ـ', '')
+      .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .trim();
+
+  Future<List<Map<String, dynamic>>> getAllSurahs() async {
+    final ayahs = await _loadAyahs();
+    final firstBySurah = <int, Ayah>{};
+    final counts = <int, int>{};
+    for (final ayah in ayahs) {
+      firstBySurah.putIfAbsent(ayah.surahNumber, () => ayah);
+      counts.update(ayah.surahNumber, (count) => count + 1, ifAbsent: () => 1);
+    }
+    return firstBySurah.keys.toList()..sort();
+  }
 
   Future<Surah> getSurah(int number) async {
-    final values = await getAllSurahs();
-    final row = values.cast<Map<String, dynamic>>().firstWhere((item) => (item['surah'] as num?)?.toInt() == number, orElse: () => throw StateError('السورة غير موجودة: $number'));
-    final verses = await getVersesBySurah(number);
-    return Surah(number: number, nameArabic: (row['surah_name'] ?? '').toString(), nameEnglish: '', verseCount: verses.length, revelationType: '', pageNumber: 0);
+    if (number < 1 || number > 114) {
+      throw ArgumentError.value(number, 'number', 'يجب أن يكون رقم السورة بين 1 و114');
+    }
+    final ayahs = await _loadAyahs();
+    final verses = ayahs.where((ayah) => ayah.surahNumber == number).toList();
+    if (verses.isEmpty) throw StateError('السورة غير موجودة: $number');
+    return Surah(
+      number: number,
+      nameArabic: verses.first.surahName,
+      nameEnglish: '',
+      verseCount: verses.length,
+      revelationType: verses.first.isMakki ? 'مكية' : 'مدنية',
+      pageNumber: verses.first.pageNumber.clamp(1, 604).toInt(),
+    );
   }
 
   Future<List<Surah>> getSurahs() async {
-    final rows = await getAllSurahs();
-    final result = <Surah>[];
-    for (final row in rows) {
-      final number = (row['surah'] as num?)?.toInt() ?? 0;
-      if (number <= 0) continue;
-      final verses = await getVersesBySurah(number);
-      result.add(Surah(number: number, nameArabic: (row['surah_name'] ?? '').toString(), nameEnglish: '', verseCount: verses.length, revelationType: '', pageNumber: 0));
+    final ayahs = await _loadAyahs();
+    final grouped = <int, List<Ayah>>{};
+    for (final ayah in ayahs) {
+      grouped.putIfAbsent(ayah.surahNumber, () => <Ayah>[]).add(ayah);
     }
-    return result;
+    final numbers = grouped.keys.toList()..sort();
+    return numbers.map((number) {
+      final verses = grouped[number]!;
+      return Surah(
+        number: number,
+        nameArabic: verses.first.surahName,
+        nameEnglish: '',
+        verseCount: verses.length,
+        revelationType: verses.first.isMakki ? 'مكية' : 'مدنية',
+        pageNumber: verses.first.pageNumber.clamp(1, 604).toInt(),
+      );
+    }).toList(growable: false);
   }
 
-  Future<List<Map<String, dynamic>>> getVerses(int surahNumber) => getVersesBySurah(surahNumber);
+  Future<List<Map<String, dynamic>>> getVerses(int surahNumber) =>
+      getVersesBySurah(surahNumber);
 
   Future<List<Map<String, dynamic>>> getVersesByJuz(int juzNumber) async {
-    final db = await _dbHelper.database;
-    try {
-      return await db.query('verses', where: 'juz = ?', whereArgs: [juzNumber], orderBy: 'surah ASC, ayah ASC');
-    } catch (_) {
-      return const [];
+    if (juzNumber < 1 || juzNumber > 30) {
+      throw ArgumentError.value(juzNumber, 'juzNumber', 'يجب أن يكون رقم الجزء بين 1 و30');
     }
+    final ayahs = await _loadAyahs();
+    return ayahs
+        .where((ayah) => ayah.juzNumber == juzNumber)
+        .map(_toRow)
+        .toList(growable: false);
   }
 
-  Future<List<Juz>> getAllJuzs() async => const [];
-  Future<Juz> getJuz(int number) async => Juz(number: number);
+  Future<List<Juz>> getAllJuzs() async => List<Juz>.generate(30, (index) {
+        final number = index + 1;
+        final start = MushafSource.firstPageForJuz(number);
+        final end = number == 30
+            ? MushafSource.totalPages
+            : MushafSource.firstPageForJuz(number + 1) - 1;
+        return Juz(
+          number: number,
+          name: 'الجزء $number',
+          startPage: start,
+          endPage: end < start ? start : end,
+        );
+      }, growable: false);
+
+  Future<Juz> getJuz(int number) async {
+    if (number < 1 || number > 30) {
+      throw ArgumentError.value(number, 'number', 'يجب أن يكون رقم الجزء بين 1 و30');
+    }
+    return (await getAllJuzs())[number - 1];
+  }
 
   Future<List<Map<String, dynamic>>> getVersesBySurah(int surahNumber) async {
-    final key = surahNumber.toString();
-    if (_versesCache.containsKey(key)) {
-      return _versesCache[key]!;
+    if (surahNumber < 1 || surahNumber > 114) {
+      throw ArgumentError.value(surahNumber, 'surahNumber', 'يجب أن يكون رقم السورة بين 1 و114');
     }
+    final key = surahNumber.toString();
+    final cached = _versesCache[key];
+    if (cached != null) return cached;
 
-    final db = await _dbHelper.database;
-    final verses = await db.query(
-      'verses',
-      where: 'surah = ?',
-      whereArgs: [surahNumber],
-      orderBy: 'ayah ASC',
-    );
-
-    _versesCache[key] = verses;
-    return verses;
+    final ayahs = await _loadAyahs();
+    final rows = ayahs
+        .where((ayah) => ayah.surahNumber == surahNumber)
+        .map(_toRow)
+        .toList(growable: false);
+    _versesCache[key] = rows;
+    return rows;
   }
 
   Future<List<Map<String, dynamic>>> searchVerses(String query) async {
-    final db = await _dbHelper.database;
-    return await db.query(
-      'verses',
-      where: 'text_simple LIKE ?',
-      whereArgs: ['%$query%'],
-      limit: 50,
-    );
+    final normalized = _normalize(query);
+    final ayahs = await _loadAyahs();
+    if (normalized.isEmpty) return ayahs.map(_toRow).toList(growable: false);
+
+    return ayahs
+        .where((ayah) => _normalize(ayah.text).contains(normalized))
+        .take(50)
+        .map(_toRow)
+        .toList(growable: false);
   }
 
   Future<Map<String, dynamic>?> getVerse(int surah, int ayah) async {
-    final db = await _dbHelper.database;
-    final results = await db.query(
-      'verses',
-      where: 'surah = ? AND ayah = ?',
-      whereArgs: [surah, ayah],
-      limit: 1,
-    );
-    return results.isNotEmpty ? results.first : null;
-  }
-
-  Future<List<Map<String, dynamic>>> getAllSurahs() async {
-    final db = await _dbHelper.database;
-    return await db.rawQuery('SELECT DISTINCT surah, surah_name FROM verses ORDER BY surah');
+    if (surah < 1 || surah > 114 || ayah < 1) return null;
+    final verses = await getVersesBySurah(surah);
+    for (final verse in verses) {
+      if ((verse['ayah'] as int) == ayah) return verse;
+    }
+    return null;
   }
 }
