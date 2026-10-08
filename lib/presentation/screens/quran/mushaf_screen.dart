@@ -8,6 +8,7 @@ import '../../../services/ayah_coordinate_service.dart';
 import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
 import '../../widgets/quran/mushaf_nebula.dart';
+import '../../../services/quran_page_theme_service.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -31,6 +32,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   late final AnimationController _livingGlow;
   late final TransformationController _mushafZoomController;
   bool _zoomMode = false;
+  QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
@@ -49,6 +51,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
     _mushafZoomController = TransformationController();
     _restoreLastPage();
+    _restorePageTheme();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
@@ -61,6 +64,8 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _currentPage.dispose();
     super.dispose();
   }
+
+  Future<void> _restorePageTheme() async { final value = await QuranPageThemeService.load(); if (mounted) setState(() => _pageTheme = value); }
 
   Future<void> _restoreLastPage() async {
     final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
@@ -293,11 +298,12 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final quranGold = isDark ? _quranGoldDark : _quranGoldLight;
+    final quranGold = _pageTheme == QuranPageTheme.paper ? (isDark ? _quranGoldDark : _quranGoldLight) : QuranPageThemeService.text(_pageTheme);
+    final pageBackground = QuranPageThemeService.background(_pageTheme);
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: const Color(0xFF17130F),
+      backgroundColor: pageBackground,
       body: SafeArea(
         child: Stack(
           children: [
@@ -384,9 +390,19 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     );
                   },
                   pageBackgroundBuilder: (context, pageContent) {
-                    return DecoratedBox(
-                      decoration: const BoxDecoration(color: _paper),
-                      child: pageContent,
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: pageBackground,
+                        border: Border.all(color: _frame, width: 1.6),
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: const [BoxShadow(blurRadius: 10, spreadRadius: 1, offset: Offset(0, 2), color: Colors.black26)],
+                      ),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: pageBackground, border: Border.all(color: _frame.withOpacity(.38), width: .7)),
+                        child: pageContent,
+                      ),
                     );
                   },
                   onPageChanged: (pageNumber) {
