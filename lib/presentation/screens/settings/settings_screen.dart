@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../presentation/providers/theme_provider.dart';
+import '../../../services/quran_page_theme_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -8,6 +9,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.watch<ThemeProvider>();
+    return _SettingsBody(theme: theme);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
