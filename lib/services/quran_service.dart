@@ -49,8 +49,10 @@ class QuranService {
   /// String.normalize API that Dart does not provide.
   static String normalizeSearchText(String value) {
     return value
+        // Uthmani dagger alif represents an alif in common orthography.
+        .replaceAll('ٰ', 'ا')
         .replaceAll(
-          RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+          RegExp(r'[ًٌٍَُِّْۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
           '',
         )
         .replaceAll('ـ', '')
