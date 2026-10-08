@@ -99,30 +99,34 @@ class QuranWordIndexService {
     final ayahs = await QuranLoaderService.loadAllAyahs();
     final words = <QuranWordEntry>[];
     for (final Ayah ayah in ayahs) {
-      final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
-      final juz = MushafSource.juzForPage(page);
-      final tokens = ayah.text
-          .split(RegExp(r'\s+'))
-          .map((token) => token.trim())
-          .where((token) => _lettersIn(token).isNotEmpty)
-          .toList(growable: false);
-
-      for (var index = 0; index < tokens.length; index++) {
-        final token = tokens[index];
-        words.add(QuranWordEntry(
-          surahNumber: ayah.surahNumber,
-          ayahNumber: ayah.ayahNumber,
-          wordNumber: index + 1,
-          text: token,
-          normalized: normalize(token),
-          pageNumber: page,
-          juzNumber: juz,
-        ));
-      }
+      words.addAll(_wordsForAyah(ayah));
     }
 
     _cachedWords = List<QuranWordEntry>.unmodifiable(words);
     return _cachedWords!;
+  }
+
+  static List<QuranWordEntry> _wordsForAyah(Ayah ayah) {
+    final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
+    final juz = MushafSource.juzForPage(page);
+    final tokens = ayah.text
+        .split(RegExp(r'\s+'))
+        .map((token) => token.trim())
+        .where((token) => _lettersIn(token).isNotEmpty)
+        .toList(growable: false);
+
+    return List<QuranWordEntry>.generate(tokens.length, (index) {
+      final token = tokens[index];
+      return QuranWordEntry(
+        surahNumber: ayah.surahNumber,
+        ayahNumber: ayah.ayahNumber,
+        wordNumber: index + 1,
+        text: token,
+        normalized: normalize(token),
+        pageNumber: page,
+        juzNumber: juz,
+      );
+    }, growable: false);
   }
 
   static String _stripAttachedArticlePrefixes(String token) {
@@ -165,11 +169,16 @@ class QuranWordIndexService {
     int surahNumber,
     int ayahNumber,
   ) async {
-    final words = await loadWords();
-    return words
-        .where((word) =>
-            word.surahNumber == surahNumber && word.ayahNumber == ayahNumber)
-        .toList(growable: false);
+    if (surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
+      return const <QuranWordEntry>[];
+    }
+    final bySurah = await QuranLoaderService.loadBySurah();
+    final verses = bySurah[surahNumber];
+    if (verses == null) return const <QuranWordEntry>[];
+    for (final ayah in verses) {
+      if (ayah.ayahNumber == ayahNumber) return _wordsForAyah(ayah);
+    }
+    return const <QuranWordEntry>[];
   }
 
   static Future<List<QuranLetterEntry>> loadLetters() async {
@@ -203,12 +212,25 @@ class QuranWordIndexService {
     int surahNumber,
     int ayahNumber,
   ) async {
-    final letters = await loadLetters();
-    return letters
-        .where((letter) =>
-            letter.surahNumber == surahNumber &&
-            letter.ayahNumber == ayahNumber)
-        .toList(growable: false);
+    final words = await wordsForVerse(surahNumber, ayahNumber);
+    final letters = <QuranLetterEntry>[];
+    for (final word in words) {
+      final chars = _lettersIn(word.text);
+      for (var index = 0; index < chars.length; index++) {
+        final character = chars[index];
+        letters.add(QuranLetterEntry(
+          surahNumber: word.surahNumber,
+          ayahNumber: word.ayahNumber,
+          wordNumber: word.wordNumber,
+          letterNumber: index + 1,
+          letter: character,
+          abjadValue: _abjad[character] ?? 0,
+          pageNumber: word.pageNumber,
+          juzNumber: word.juzNumber,
+        ));
+      }
+    }
+    return List<QuranLetterEntry>.unmodifiable(letters);
   }
 
   /// Test and diagnostic hook for deterministic index rebuilding.
