@@ -152,6 +152,22 @@ class ExternalModelService {
         'لكن الموجود [${outputShape.join(', ')}].',
       );
     }
+
+    // The runtime passes List<double> values directly to TFLite. Reject
+    // quantized/integer tensors explicitly instead of letting a model fail
+    // later with a native type mismatch that could look like an inference bug.
+    if (input.type != TensorType.float32) {
+      throw StateError(
+        'نوع مدخل النموذج غير مدعوم: المطلوب float32، '
+        'والموجود ${input.type}.',
+      );
+    }
+    if (output.type != TensorType.float32) {
+      throw StateError(
+        'نوع مخرج النموذج غير مدعوم: المطلوب float32، '
+        'والموجود ${output.type}.',
+      );
+    }
   }
 
   void _runSmokeTest(Interpreter interpreter) {
@@ -197,6 +213,7 @@ class ExternalModelService {
     if (interpreter == null) return {'error': 'النموذج غير محمّل فعلياً.'};
 
     try {
+      _validateMudabbirContract(interpreter);
       final inputShape = interpreter.getInputTensor(0).shape;
       final outputShape = interpreter.getOutputTensor(0).shape;
       if (inputShape.length != 2 ||
