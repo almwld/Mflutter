@@ -35,7 +35,6 @@ class QuranLocalDatasource {
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
       .replaceAll('العلمين', 'العالمين')
-      
       .trim();
 
   Future<List<Map<String, dynamic>>> getAllSurahs() async {
