@@ -26,6 +26,13 @@ class QuranService {
       if (verses is! List || verses.isEmpty) {
         throw FormatException('بيانات السورة $surah مفقودة أو فارغة في unified_quran.json');
       }
+      final expectedCount = _verseCounts[surah - 1];
+      if (verses.length != expectedCount) {
+        throw FormatException(
+          'عدد آيات السورة $surah في unified_quran.json غير صحيح: '
+          'المتوقع $expectedCount، والموجود ${verses.length}',
+        );
+      }
       for (var index = 0; index < verses.length; index++) {
         final verse = verses[index];
         if (verse is! Map || verse['text'] is! String || (verse['text'] as String).trim().isEmpty) {
