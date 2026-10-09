@@ -129,8 +129,12 @@ class QuranService {
 
     final needle = _normalizeSearchToken(rawQuery);
     if (needle.isEmpty) return false;
-    final withoutArticle =
-        needle.startsWith('ال') && needle.length > 2 ? needle.substring(2) : needle;
+    // Keep hamza-bearing words such as الأذن distinct from أذن; removing
+    // the article in this case creates unrelated hits throughout the Quran.
+    final hamzaStem = RegExp(r'^ال[أإآ]').hasMatch(rawQuery);
+    final withoutArticle = !hamzaStem && needle.startsWith('ال') && needle.length > 2
+        ? needle.substring(2)
+        : needle;
     final tokens = _normalizeSearchToken(text)
         .split(RegExp(r'[^ء-يٱ]+'))
         .where((token) => token.isNotEmpty);
@@ -148,12 +152,20 @@ class QuranService {
     if (needle.isEmpty || limit <= 0) return const <Verse>[];
 
     final ayahs = await QuranLoaderService.loadAllAyahs();
+
+    // Prefer actual verse-text matches. Otherwise a word that is also a surah
+    // name (for example الطلاق) incorrectly returns every ayah in that surah.
+    final verseMatches = ayahs
+        .where((ayah) => _matchesSearch(ayah.text, needle))
+        .toList(growable: false);
+    if (verseMatches.isNotEmpty) {
+      return verseMatches.take(limit).toList(growable: false);
+    }
+
     return ayahs
-        .where((a) =>
-            _matchesSearch(a.text, needle) ||
-            _matchesSearch(a.surahName, needle))
+        .where((ayah) => _matchesSearch(ayah.surahName, needle))
         .take(limit)
-        .toList();
+        .toList(growable: false);
   }
 
   static const List<int> _verseCounts = [
