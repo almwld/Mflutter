@@ -81,6 +81,10 @@ void main() {
       'وإن عزموا ٱلطلاق فإن ٱلله سميع عليم',
     );
     expect(
+      QuranSourceCorrections.correctVerseText(2, 229, 'ٱلطلق مرتان'),
+      'ٱلطلاق مرتان',
+    );
+    expect(
       QuranSourceCorrections.correctVerseText(2, 229, 'فإن طلقها فلا تحل له'),
       'فإن طلقها فلا تحل له',
     );
