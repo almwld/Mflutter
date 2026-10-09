@@ -89,7 +89,7 @@ class TrainingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'يشترط نموذج float32 بمدخل [1, 4096] ومخرج [1, N] حيث N لا يقل عن 2، ومدرّباً على مستخرج الميزات المستخدم في التطبيق. سيُرفض النموذج غير المتوافق أو الذي يفشل اختبار الاستدلال.',
+                'يشترط نموذج بمدخل [1, 4096] ومخرج [1, N] حيث N لا يقل عن 2، ومدرّباً على مستخرج الميزات المستخدم في التطبيق. سيُرفض النموذج غير المتوافق أو الذي يفشل اختبار الاستدلال.',
                 style: TextStyle(color: Colors.white60, fontSize: 12),
                 textAlign: TextAlign.right,
               ),
