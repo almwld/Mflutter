@@ -110,10 +110,10 @@ class MudabbirUnifiedEngine {
   }
 
   static String _normalizeWord(String value) => value
-      .replaceAll(_marks, '').replaceAll('ـ', '').replaceAll('ٰ', 'ا').replaceAll('ٱ', 'ا').trim();
+      .replaceAll('ٰ', 'ا').replaceAll(_marks, '').replaceAll('ـ', '').replaceAll('ٱ', 'ا').trim();
 
   static String _normalizePhrase(String value) => value
-      .replaceAll(_marks, '').replaceAll('ـ', '').replaceAll('ٰ', 'ا')
+      .replaceAll('ٰ', 'ا').replaceAll(_marks, '').replaceAll('ـ', '')
       .replaceAll('ٱ', 'ا').replaceAll(RegExp(r'\s+'), ' ').trim();
 
   static String _stripPrefixes(String token) {
