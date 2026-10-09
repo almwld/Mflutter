@@ -5,6 +5,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getSurahNameArabic, get
 import '../domain/models/quran_models.dart';
 import '../domain/entities/verse.dart';
 import 'quran_loader_service.dart';
+import 'quran_source_corrections.dart';
 
 class QuranService {
   static Map<String, dynamic>? _cachedQuran;
@@ -19,7 +20,9 @@ class QuranService {
       throw const FormatException('صيغة unified_quran.json غير صحيحة: المتوقع كائن السور');
     }
 
-    final quran = Map<String, dynamic>.from(decoded);
+    final quran = QuranSourceCorrections.correctQuranMap(
+      Map<String, dynamic>.from(decoded),
+    );
     var verseCount = 0;
     for (var surah = 1; surah <= 114; surah++) {
       final verses = quran['$surah'];

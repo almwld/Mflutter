@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_loader_service.dart';
+import 'package:mudabbir_al_asrar/services/quran_source_corrections.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
 import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
 
@@ -72,6 +73,21 @@ void main() {
             'display="$displayText"; index="${ayah.text}"',
       );
     }
+  });
+
+  test('known unified-source spelling defects are corrected only at canonical references', () {
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 227, 'وإن عزموا ٱلطلق فإن ٱلله سميع عليم'),
+      'وإن عزموا ٱلطلاق فإن ٱلله سميع عليم',
+    );
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 229, 'فإن طلقها فلا تحل له'),
+      'فإن طلقها فلا تحل له',
+    );
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 228, 'الطلق'),
+      'الطلق',
+    );
   });
 
   test('search normalization does not invent letters in a distinct spelling', () {
