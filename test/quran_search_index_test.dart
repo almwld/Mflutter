@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
+import 'package:mudabbir_al_asrar/services/quran_loader_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
 import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
 
