@@ -432,12 +432,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                   ayahStyle: TextStyle(
                     color: quranGold,
                     height: 1.0,
-                    shadows: [
-                      Shadow(
-                        color: quranGold.withValues(alpha: 0.28),
-                        blurRadius: 1.8,
-                      ),
-                    ],
+                    // Keep QCF glyph rendering lightweight on lower-memory devices.
                   ),
                   customHighlightDecoration: (highlightColor) {
                     final pulse = 0.5 + 0.5 * _livingGlow.value;
@@ -473,7 +468,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                         color: pageBackground,
                         border: Border.all(color: _frame, width: 1.6),
                         borderRadius: BorderRadius.circular(8),
-                        boxShadow: const [BoxShadow(blurRadius: 10, spreadRadius: 1, offset: Offset(0, 2), color: Colors.black26)],
+                        // Avoid a blurred shadow on every QCF page; it can trigger expensive GPU layers.
                       ),
                       child: DecoratedBox(
                         decoration: BoxDecoration(color: pageBackground, border: Border.all(color: _frame.withOpacity(.38), width: .7)),
