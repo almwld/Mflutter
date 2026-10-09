@@ -51,6 +51,22 @@ jobs:
           if settings.exists():
               s = settings.read_text()
               s = s.replace('id("org.jetbrains.kotlin.android") version "1.8.22"', 'id("org.jetbrains.kotlin.android") version "2.2.0"')
+              # Resolve Kotlin/Gradle plugin transitives from the canonical Maven
+              # repositories instead of relying only on the Plugin Portal proxy.
+              marker = "pluginManagement {"
+              if marker in s:
+                  start = s.index(marker)
+                  repo_start = s.find("repositories {", start)
+                  repo_end = s.find("}", repo_start)
+                  if repo_start != -1 and repo_end != -1:
+                      block = s[repo_start:repo_end]
+                      if "google()" not in block:
+                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + "\\n        google()" + s[repo_start + len("repositories {"):]
+                      repo_start = s.find("repositories {", start)
+                      repo_end = s.find("}", repo_start)
+                      block = s[repo_start:repo_end]
+                      if "mavenCentral()" not in block:
+                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + "\\n        mavenCentral()" + s[repo_start + len("repositories {"):]
               settings.write_text(s)
           
           properties = Path("android/gradle.properties")
