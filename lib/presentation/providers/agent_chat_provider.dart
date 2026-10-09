@@ -5,12 +5,10 @@ import '../../services/agent_registry.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 import '../../services/mudabbir_unified_engine.dart';
-import '../../services/on_device_training_service.dart';
 import '../../services/ollama_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
   final MudabbirUnifiedEngine _unifiedEngine = MudabbirUnifiedEngine();
-  final OnDeviceTrainingService _training = OnDeviceTrainingService();
   final OllamaService _localModel = OllamaService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
