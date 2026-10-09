@@ -4,9 +4,11 @@ import '../../domain/entities/agent_task.dart';
 import '../../services/agent_registry.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
+import '../../services/mudabbir_unified_engine.dart';
 import '../../services/on_device_training_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
+  final MudabbirUnifiedEngine _unifiedEngine = MudabbirUnifiedEngine();
   final OnDeviceTrainingService _training = OnDeviceTrainingService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
@@ -78,10 +80,21 @@ class AgentChatProvider extends ChangeNotifier {
         final route = _route(query).where((a) => a.id != 'muwajjih').map((a) => a.name).toList();
         return route.isEmpty ? 'لم تُحدد حاجة لوكيل إضافي لهذا الطلب.' : 'تحليل الطلب: تم توجيهه فعلياً إلى: ${route.join(' ← ')}';
       case 'ayaat':
-        await initialize(); final hits=QuranicSearchEngine.search(query).take(8).toList();
-        if(hits.isEmpty) return 'لم تُوجد آية مطابقة بعد تطبيع النص في كامل الفهرس المحلي (6236 آية).';
-        return hits.map((v) => "${v['surah']} ${v['ayah']}: ${v['text']}").join('\\n');
-      case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: ${_abjad(query)}';
+        final result = await _unifiedEngine.analyze(query, limit: 8);
+        if (result.verses.isNotEmpty) {
+          return result.verses
+              .map((v) => '${v.surahName} ${v.reference}: ${v.text}')
+              .join('\n');
+        }
+        if (result.words.isNotEmpty) {
+          return result.words
+              .map((w) => '${w.reference} (كلمة ${w.wordNumber}): ${w.sourceText}')
+              .join('\n');
+        }
+        return result.summary;
+      case 'jummal':
+        final result = await _unifiedEngine.analyze('أبجد: ' + query);
+        return 'قيمة الجمل الحسابية للنص المدخل: ${result.totalAbjad ?? 0}';
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
         return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على ${hits.length} مواضع سياقية.';
