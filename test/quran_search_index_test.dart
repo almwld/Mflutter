@@ -46,6 +46,24 @@ void main() {
   }
 
 
+  test('display and search Quran sources match verse text after orthographic normalization', () async {
+    final indexedAyahs = await QuranLoaderService.loadAllAyahs();
+    final displayQuran = await QuranService.loadQuran();
+
+    for (final ayah in indexedAyahs) {
+      final displayVerses = displayQuran['${ayah.surahNumber}'] as List<dynamic>;
+      final displayVerse = displayVerses[ayah.ayahNumber - 1] as Map;
+      final displayText = displayVerse['text'] as String;
+      expect(
+        QuranService.normalizeSearchText(displayText),
+        QuranService.normalizeSearchText(ayah.text),
+        reason: 'Text differs between unified_quran.json and quran_full.json at '
+            '${ayah.surahNumber}:${ayah.ayahNumber}. '
+            'display="$displayText"; index="${ayah.text}"',
+      );
+    }
+  });
+
   test('search normalization does not invent letters in a distinct spelling', () {
     expect(QuranService.normalizeSearchText('الطلق'), 'الطلق');
     expect(QuranWordIndexService.normalize('الطلق'), 'الطلق');
