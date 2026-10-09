@@ -24,6 +24,15 @@ void main() {
     test('Quran index resolves ' + entry.key, () async {
       final results = await QuranWordIndexService.searchWords(entry.key);
       final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toSet().toList();
+      final verseSearchResults = await QuranService().search(entry.key, limit: 100);
+      final verseSearchRefs = verseSearchResults
+          .map((verse) => '${verse.surahNumber}:${verse.ayahNumber}')
+          .toSet();
+      expect(
+        verseSearchRefs,
+        entry.value.toSet(),
+        reason: 'Verse-level search returned incorrect references for ${entry.key}',
+      );
       final diagnosticVerse = entry.key == 'الطلاق'
           ? await QuranWordIndexService.wordsForVerse(2, 227)
           : const <QuranWordEntry>[];
