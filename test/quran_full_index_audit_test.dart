@@ -71,7 +71,8 @@ void main() {
         grouped.putIfAbsent(key, () => <dynamic>[]).add(letter);
         expect(letter.letterNumber, greaterThan(0));
         expect(letter.letter, isNotEmpty);
-        expect(letter.abjadValue, inInclusiveRange(0, 1000));
+        expect(letter.abjadValue, inInclusiveRange(1, 1000),
+            reason: 'Missing Abjad mapping for ${letter.letter} at ${letter.surahNumber}:${letter.ayahNumber}');
         expect(letter.pageNumber, inInclusiveRange(1, 604));
         expect(letter.juzNumber, inInclusiveRange(1, 30));
       }
