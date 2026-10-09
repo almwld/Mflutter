@@ -35,7 +35,7 @@ class CustomizeScreen extends StatelessWidget {
               return Semantics(
                 button: true,
                 selected: selected,
-                label: 'ثيم $name',
+                label: 'ثيم ${ThemeService.labelFor(name)}',
                 child: InkWell(
                   onTap: () => context.read<ThemeProvider>().setTheme(name),
                   borderRadius: BorderRadius.circular(16),
@@ -63,10 +63,10 @@ class CustomizeScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          name,
+                          ThemeService.labelFor(name),
                           textAlign: TextAlign.center,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
+                            color: palette['secondary'],
                             fontWeight: FontWeight.w600,
                           ),
                         ),

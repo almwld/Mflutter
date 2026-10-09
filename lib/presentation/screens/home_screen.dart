@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0D12),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(child: IndexedStack(index: _currentIndex, children: screens)),
       bottomNavigationBar: _buildNavigationBar(),
     );
@@ -53,9 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNavigationBar() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF11141B),
-        border: const Border(top: BorderSide(color: Color(0xFF292D36))),
-        boxShadow: const [BoxShadow(blurRadius: 18, offset: Offset(0, -6), color: Colors.black54)],
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)), 
+        boxShadow: [BoxShadow(blurRadius: 14, offset: const Offset(0, -4), color: Theme.of(context).colorScheme.shadow.withOpacity(.08))],
       ),
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
       child: Row(
@@ -76,18 +76,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   margin: const EdgeInsets.symmetric(horizontal: 3),
                   padding: const EdgeInsets.symmetric(vertical: 7),
                   decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF2A2413) : Colors.transparent,
+                    color: selected ? Theme.of(context).colorScheme.primary.withOpacity(.13) : Colors.transparent,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: selected ? const Color(0xFF8F7428) : Colors.transparent,
+                      color: selected ? Theme.of(context).colorScheme.primary.withOpacity(.65) : Colors.transparent,
                     ),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(item.$1, size: 22, color: selected ? const Color(0xFFD8B65A) : const Color(0xFF8B919C)),
+                      Icon(item.$1, size: 22, color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(.62)),
                       const SizedBox(height: 3),
-                      Text(item.$2, style: TextStyle(fontFamily: 'Amiri', fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? const Color(0xFFE4C878) : const Color(0xFF8B919C))),
+                      Text(item.$2, style: TextStyle(fontFamily: 'Amiri', fontSize: 11, fontWeight: selected ? FontWeight.bold : FontWeight.normal, color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withOpacity(.62))),
                     ],
                   ),
                 ),
@@ -110,11 +110,11 @@ class _MushafHome extends StatelessWidget {
       slivers: [
         SliverToBoxAdapter(child: _buildHeader(context)),
         SliverToBoxAdapter(child: _buildContinueCard(context)),
-        SliverToBoxAdapter(child: _buildSectionTitle('الوصول السريع', Icons.bolt_rounded)),
+        SliverToBoxAdapter(child: _buildSectionTitle(context, 'الوصول السريع', Icons.bolt_rounded)),
         SliverToBoxAdapter(child: _buildQuickActions(context)),
-        SliverToBoxAdapter(child: _buildSectionTitle('رحلة التدبر', Icons.auto_awesome_rounded)),
+        SliverToBoxAdapter(child: _buildSectionTitle(context, 'رحلة التدبر', Icons.auto_awesome_rounded)),
         SliverToBoxAdapter(child: _buildInsightSection(context)),
-        SliverToBoxAdapter(child: _buildSectionTitle('أدوات مُدَبِّر', Icons.tune_rounded)),
+        SliverToBoxAdapter(child: _buildSectionTitle(context, 'أدوات مُدَبِّر', Icons.tune_rounded)),
         SliverToBoxAdapter(child: _buildToolsSection(context)),
         const SliverPadding(padding: EdgeInsets.only(bottom: 18)),
       ],
@@ -130,27 +130,22 @@ class _MushafHome extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFF171A21),
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0xFF665226)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
-            child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFD8B65A), size: 25),
+            child: Icon(Icons.auto_awesome_rounded, color: Theme.of(context).colorScheme.primary, size: 25),
           ),
           const SizedBox(width: 12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('مُدَبِّر', style: TextStyle(fontFamily: 'Amiri', fontSize: 27, height: 1, fontWeight: FontWeight.bold, color: Color(0xFFE8D49A))),
-                SizedBox(height: 5),
-                Text('القرآن • التدبر • المعرفة', style: TextStyle(fontFamily: 'Amiri', fontSize: 12, color: Color(0xFF9298A4))),
-              ],
-            ),
-          ),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('مُدَبِّر', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 5),
+            Text('القرآن • التدبر • المعرفة', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(.65))),
+          ])), 
           IconButton(
             tooltip: 'الإعدادات',
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
-            icon: const Icon(Icons.settings_outlined, color: Color(0xFFA7ACB5)),
+            icon: Icon(Icons.settings_outlined, color: Theme.of(context).colorScheme.onSurface.withOpacity(.7)),
           ),
         ],
       ),
@@ -161,7 +156,7 @@ class _MushafHome extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Material(
-        color: const Color(0xFF171A21),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
@@ -170,30 +165,25 @@ class _MushafHome extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFF665226)),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Row(
               children: [
                 Container(
                   width: 54,
                   height: 66,
-                  decoration: BoxDecoration(color: const Color(0xFF242019), borderRadius: BorderRadius.circular(15)),
-                  child: const Center(child: Icon(Icons.menu_book_rounded, color: Color(0xFFD8B65A), size: 29)),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withOpacity(.12), borderRadius: BorderRadius.circular(15)), 
+                  child: Center(child: Icon(Icons.menu_book_rounded, color: Theme.of(context).colorScheme.primary, size: 29)), 
                 ),
                 const SizedBox(width: 15),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('متابعة القراءة', style: TextStyle(fontFamily: 'Amiri', fontSize: 12, color: Color(0xFF9B9FA8))),
-                      SizedBox(height: 5),
-                      Text('المصحف الشريف', style: TextStyle(fontFamily: 'Amiri', fontSize: 21, fontWeight: FontWeight.bold, color: Colors.white)),
-                      SizedBox(height: 4),
-                      Text('اضغط للعودة إلى آخر موضع قراءة', style: TextStyle(fontFamily: 'Amiri', fontSize: 11, color: Color(0xFF818792))),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFFD8B65A)),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('متابعة القراءة', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(.65))),
+                  const SizedBox(height: 5),
+                  Text('المصحف الشريف', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text('اضغط للعودة إلى آخر موضع قراءة', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withOpacity(.62))),
+                ])), 
+                Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
               ],
             ),
           ),
@@ -202,16 +192,16 @@ class _MushafHome extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, IconData icon) {
+  Widget _buildSectionTitle(BuildContext context, String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFFD8B65A)),
+          Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 7),
-          Text(title, style: const TextStyle(fontFamily: 'Amiri', fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFE1E3E7))),
+          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)), 
           const Spacer(),
-          Container(width: 42, height: 1, color: const Color(0xFF403922)),
+          Container(width: 42, height: 1, color: Theme.of(context).colorScheme.outlineVariant),
         ],
       ),
     );
@@ -287,7 +277,7 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF15181F),
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -297,25 +287,20 @@ class _ActionCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFF292D35)),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 22, color: const Color(0xFFD8B65A)),
+              Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 6),
               Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 11,
-                  height: 1.05,
-                  color: Color(0xFFD4D7DC),
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Amiri', fontSize: 11, height: 1.05, color: Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),
@@ -335,20 +320,20 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF15181F),
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFF292D35))),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(icon, color: const Color(0xFFD8B65A), size: 24),
+            Icon(icon, color: Theme.of(context).colorScheme.primary, size: 24),
             const SizedBox(height: 15),
-            Text(title, style: const TextStyle(fontFamily: 'Amiri', fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+            Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
             const SizedBox(height: 3),
-            Text(subtitle, style: const TextStyle(fontFamily: 'Amiri', fontSize: 10, color: Color(0xFF858B96))),
+            Text(subtitle, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Amiri', fontSize: 10, color: Theme.of(context).colorScheme.onSurface.withOpacity(.65))),
           ]),
         ),
       ),
@@ -365,7 +350,7 @@ class _ToolCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF15181F),
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(17),
       child: InkWell(
         borderRadius: BorderRadius.circular(17),
@@ -376,19 +361,14 @@ class _ToolCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 22, color: const Color(0xFFB7A36D)),
+              Icon(icon, size: 22, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 4),
               Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontFamily: 'Amiri',
-                  fontSize: 10,
-                  height: 1.0,
-                  color: Color(0xFFB9BDC5),
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Amiri', fontSize: 10, height: 1.0, color: Theme.of(context).colorScheme.onSurface.withOpacity(.8)),
               ),
             ],
           ),
@@ -417,10 +397,10 @@ class MoreScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B0D12),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('المزيد', style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.bold, color: Color(0xFFE1E3E7))),
-        backgroundColor: const Color(0xFF0B0D12),
+        title: const Text('المزيد'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
       body: ListView(
@@ -428,14 +408,14 @@ class MoreScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(color: const Color(0xFF15181F), borderRadius: BorderRadius.circular(22), border: Border.all(color: const Color(0xFF292D35))),
-            child: const Row(children: [
-              Icon(Icons.auto_awesome_rounded, color: Color(0xFFD8B65A), size: 30),
-              SizedBox(width: 12),
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: BorderRadius.circular(22), border: Border.all(color: Theme.of(context).colorScheme.outlineVariant)),
+            child: Row(children: [
+              Icon(Icons.auto_awesome_rounded, color: Theme.of(context).colorScheme.primary, size: 30),
+              const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('مساحة مُدَبِّر', style: TextStyle(fontFamily: 'Amiri', fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
-                SizedBox(height: 3),
-                Text('كل أدوات التطبيق في مكان واحد', style: TextStyle(fontFamily: 'Amiri', fontSize: 11, color: Color(0xFF858B96))),
+                Text('مساحة مُدَبِّر', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+                const SizedBox(height: 3),
+                Text('كل أدوات التطبيق في مكان واحد', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'Amiri', fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(.65))),
               ])),
             ]),
           ),
@@ -443,13 +423,13 @@ class MoreScreen extends StatelessWidget {
           ...items.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Material(
-              color: const Color(0xFF15181F),
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               child: ListTile(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                leading: Icon(item.$2, color: const Color(0xFFD0B15B)),
-                title: Text(item.$1, style: const TextStyle(fontFamily: 'Amiri', color: Color(0xFFD7D9DE))),
-                trailing: const Icon(Icons.chevron_left_rounded, color: Color(0xFF666D78)),
+                leading: Icon(item.$2, color: Theme.of(context).colorScheme.primary),
+                title: Text(item.$1),
+                trailing: Icon(Icons.chevron_left_rounded, color: Theme.of(context).colorScheme.onSurface.withOpacity(.55)), 
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.$3)),
               ),
             ),

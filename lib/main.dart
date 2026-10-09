@@ -16,57 +16,96 @@ void main() async {
 class MudabbirApp extends StatelessWidget {
   const MudabbirApp({super.key});
 
-  ThemeData _applyPreferences(ThemeData base, ThemeProvider state, {required bool dark}) {
+  ThemeData _applyPreferences(
+    ThemeData base,
+    ThemeProvider state, {
+    required bool dark,
+  }) {
     final palette = ThemeService.getTheme(state.selectedTheme);
-    final primary = palette['primary']!;
-    final secondary = palette['secondary']!;
-    final surface = palette['surface']!;
-    final background = dark ? palette['background']! : AppTheme.lightBackground;
-    final scheme = (dark
+    final brand = palette['primary']!;
+    final accent = palette['secondary']!;
+    final surface = palette[dark ? 'surface' : 'lightSurface']!;
+    final background =
+        palette[dark ? 'background' : 'lightBackground']!;
+    final foreground =
+        dark ? const Color(0xFFF7F4EC) : const Color(0xFF24202A);
+
+    final scheme = dark
         ? ColorScheme.dark(
-            primary: primary,
-            onPrimary: Colors.white,
-            secondary: secondary,
-            onSecondary: Colors.black,
+            primary: accent,
+            onPrimary: background,
+            secondary: brand,
+            onSecondary: Colors.white,
             surface: surface,
-            onSurface: const Color(0xFFF7F4EC),
+            onSurface: foreground,
             error: const Color(0xFFFF6B6B),
           )
         : ColorScheme.light(
-            primary: primary,
+            primary: brand,
             onPrimary: Colors.white,
-            secondary: secondary,
-            onSecondary: Colors.black,
-            surface: AppTheme.lightSurface,
-            onSurface: const Color(0xFF24202A),
+            secondary: accent,
+            onSecondary: const Color(0xFF24202A),
+            surface: surface,
+            onSurface: foreground,
             error: const Color(0xFFB3261E),
-          ));
+          );
+
     final textTheme = base.textTheme.apply(
       fontFamily: state.fontFamily,
       fontSizeFactor: state.fontSize / 20,
+      bodyColor: foreground,
+      displayColor: foreground,
     );
+
     return base.copyWith(
       brightness: dark ? Brightness.dark : Brightness.light,
       colorScheme: scheme,
-      primaryColor: primary,
+      primaryColor: brand,
       scaffoldBackgroundColor: background,
       textTheme: textTheme,
       appBarTheme: base.appBarTheme.copyWith(
-        backgroundColor: dark ? surface : primary,
-        foregroundColor: secondary,
-        iconTheme: IconThemeData(color: secondary),
+        backgroundColor: surface,
+        foregroundColor: dark ? accent : brand,
+        iconTheme: IconThemeData(color: dark ? accent : brand),
         titleTextStyle: base.appBarTheme.titleTextStyle?.copyWith(
-          color: secondary,
+          color: dark ? accent : brand,
           fontFamily: state.fontFamily,
           fontSize: state.fontSize,
         ),
       ),
-      cardTheme: base.cardTheme.copyWith(
-        color: dark ? surface : AppTheme.lightSurface,
-      ),
+      cardTheme: base.cardTheme.copyWith(color: surface),
       bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
-        backgroundColor: dark ? surface : primary,
-        selectedItemColor: secondary,
+        backgroundColor: surface,
+        selectedItemColor: dark ? accent : brand,
+        unselectedItemColor: foreground.withOpacity(.62),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        indicatorColor: (dark ? accent : brand).withOpacity(.16),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+          color: states.contains(WidgetState.selected)
+              ? (dark ? accent : brand)
+              : foreground.withOpacity(.62),
+        )),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+          fontFamily: state.fontFamily,
+          color: states.contains(WidgetState.selected)
+              ? (dark ? accent : brand)
+              : foreground.withOpacity(.72),
+        )),
+      ),
+      dividerTheme: DividerThemeData(color: foreground.withOpacity(.12)),
+      listTileTheme: ListTileThemeData(
+        iconColor: dark ? accent : brand,
+        textColor: foreground,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? accent : foreground),
+        trackColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected)
+                ? accent.withOpacity(.35)
+                : foreground.withOpacity(.12)),
       ),
     );
   }
