@@ -33,6 +33,7 @@ class LivingAyahPainter extends CustomPainter {
       growable: false,
     );
   }
+
   LivingAyahPainter({
     required this.pulse,
     required this.glow,
