@@ -68,8 +68,16 @@ class AgentChatProvider extends ChangeNotifier {
   List<AgentDefinition> _route(String query) {
     final result=<AgentDefinition>[AgentRegistry.byId('muwajjih')!];
     if(_selectedAgent!=null){final a=AgentRegistry.byId(_selectedAgent!);if(a!=null&&!result.any((x)=>x.id==a.id))result.add(a);}
-    if(RegExp(r'آية|قرآن|سورة|تفسير|معنى|النور|الصمد|تحليل').hasMatch(query.toLowerCase())){
-      for(final id in ['ayaat','tafsir','siyaq','jummal']){final a=AgentRegistry.byId(id);if(a!=null&&!result.any((x)=>x.id==id))result.add(a);}
+    final hasArabic = RegExp(r'[ء-يٱ]').hasMatch(query);
+    if (hasArabic || RegExp(r'آية|قرآن|سورة|بحث|ابحث|كلمة|موضع').hasMatch(query)) {
+      for (final id in ['ayaat', 'siyaq']) {
+        final a = AgentRegistry.byId(id);
+        if (a != null && !result.any((x) => x.id == id)) result.add(a);
+      }
+    }
+    if (RegExp(r'أبجد|الجمل|حساب الحروف|قيمة الحروف').hasMatch(query)) {
+      final a = AgentRegistry.byId('jummal');
+      if (a != null && !result.any((x) => x.id == a.id)) result.add(a);
     }
     final d=AgentRegistry.byId('damj')!;if(!result.any((x)=>x.id==d.id))result.add(d);return result;
   }
@@ -93,7 +101,8 @@ class AgentChatProvider extends ChangeNotifier {
         }
         return result.summary;
       case 'jummal':
-        final result = await _unifiedEngine.analyze('أبجد: ' + query);
+        final abjadQuery = RegExp(r'^\s*(?:أبجد|الجمل|حساب الحروف)\s*[:：]').hasMatch(query) ? query : 'أبجد: ' + query;
+        final result = await _unifiedEngine.analyze(abjadQuery);
         return 'قيمة الجمل الحسابية للنص المدخل: ${result.totalAbjad ?? 0}';
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
@@ -137,10 +146,6 @@ class AgentChatProvider extends ChangeNotifier {
     return context.isEmpty
         ? 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.'
         : 'النتائج الموثقة محلياً:\\n\\n$context';
-  }
-  int _abjad(String text){
-    const v={'ا':1,'أ':1,'إ':1,'آ':1,'ب':2,'ج':3,'د':4,'ه':5,'ة':5,'و':6,'ز':7,'ح':8,'ط':9,'ي':10,'ى':10,'ك':20,'ل':30,'م':40,'ن':50,'س':60,'ع':70,'ف':80,'ص':90,'ق':100,'ر':200,'ش':300,'ت':400,'ث':500,'خ':600,'ذ':700,'ض':800,'ظ':900,'غ':1000};
-    var total=0;for(final r in text.runes)total+=v[String.fromCharCode(r)]??0;return total;
   }
 
   String exportJson(){final t=_activeTask;if(t==null)return '{}';return const JsonEncoder.withIndent('  ').convert({'id':t.id,'query':t.userQuery,'status':t.status.name,'progress':t.progress,'steps':t.steps.map((s)=>{'agent':s.agentName,'title':s.title,'status':s.status.name,'result':s.result}).toList(),'answer':t.finalAnswer});}
