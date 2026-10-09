@@ -45,6 +45,16 @@ void main() {
     });
   }
 
+
+  test('search normalization does not invent letters in a distinct spelling', () {
+    expect(QuranService.normalizeSearchText('الطلق'), 'الطلق');
+    expect(QuranWordIndexService.normalize('الطلق'), 'الطلق');
+    // The actual Uthmani spelling still normalizes correctly without a
+    // text-rewriting exception.
+    expect(QuranService.normalizeSearchText('ٱلطلاق'), 'الطلاق');
+    expect(QuranWordIndexService.normalize('ٱلطلاق'), 'الطلاق');
+  });
+
   test('phrase search resolves the exact Al-Fatiha verse across dagger alif', () async {
     final results = await QuranService().search('الحمد لله رب العالمين', limit: 20);
     final fatihaWords = await QuranWordIndexService.wordsForVerse(1, 2);
