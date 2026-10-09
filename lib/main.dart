@@ -65,10 +65,10 @@ class MudabbirApp extends StatelessWidget {
       textTheme: textTheme,
       appBarTheme: base.appBarTheme.copyWith(
         backgroundColor: surface,
-        foregroundColor: accent,
-        iconTheme: IconThemeData(color: accent),
+        foregroundColor: dark ? accent : brand,
+        iconTheme: IconThemeData(color: dark ? accent : brand),
         titleTextStyle: base.appBarTheme.titleTextStyle?.copyWith(
-          color: accent,
+          color: dark ? accent : brand,
           fontFamily: state.fontFamily,
           fontSize: state.fontSize,
         ),
@@ -76,21 +76,21 @@ class MudabbirApp extends StatelessWidget {
       cardTheme: base.cardTheme.copyWith(color: surface),
       bottomNavigationBarTheme: base.bottomNavigationBarTheme.copyWith(
         backgroundColor: surface,
-        selectedItemColor: accent,
+        selectedItemColor: dark ? accent : brand,
         unselectedItemColor: foreground.withOpacity(.62),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: accent.withOpacity(.16),
+        indicatorColor: (dark ? accent : brand).withOpacity(.16),
         iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
           color: states.contains(WidgetState.selected)
-              ? accent
+              ? (dark ? accent : brand)
               : foreground.withOpacity(.62),
         )),
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
           fontFamily: state.fontFamily,
           color: states.contains(WidgetState.selected)
-              ? accent
+              ? (dark ? accent : brand)
               : foreground.withOpacity(.72),
         )),
       ),
