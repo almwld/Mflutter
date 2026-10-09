@@ -61,12 +61,12 @@ jobs:
                   if repo_start != -1 and repo_end != -1:
                       block = s[repo_start:repo_end]
                       if "google()" not in block:
-                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + "\\n        google()" + s[repo_start + len("repositories {"):]
+                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + chr(10) + "        google()" + s[repo_start + len("repositories {"):]
                       repo_start = s.find("repositories {", start)
                       repo_end = s.find("}", repo_start)
                       block = s[repo_start:repo_end]
                       if "mavenCentral()" not in block:
-                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + "\\n        mavenCentral()" + s[repo_start + len("repositories {"):]
+                          s = s[:repo_start] + s[repo_start:repo_start + len("repositories {")] + chr(10) + "        mavenCentral()" + s[repo_start + len("repositories {"):]
               settings.write_text(s)
           
           properties = Path("android/gradle.properties")
