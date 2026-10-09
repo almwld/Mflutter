@@ -44,10 +44,10 @@ void main() {
 
       for (final ayah in ayahs) {
         final sourceTokens = ayah.text
-            .split(RegExp(r'\\s+'))
+            .split(RegExp(r'\s+'))
             .map((token) => token.trim())
             .where((token) => RegExp(r'[ء-يٱ]').hasMatch(
-                token.replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u08D3-\\u08FF]'), '')
+                token.replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]'), '')
                     .replaceAll('ـ', '')))
             .toList(growable: false);
         final indexed = await QuranWordIndexService.wordsForVerse(
