@@ -16,30 +16,51 @@ class ThemeProvider extends ChangeNotifier {
   bool get isDark => _themeMode == ThemeMode.dark;
   bool get loaded => _loaded;
 
-  ThemeProvider() { _load(); }
+  ThemeProvider() {
+    _load();
+  }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _themeMode = (prefs.getBool('theme.dark') ?? true) ? ThemeMode.dark : ThemeMode.light;
-    _fontFamily = prefs.getString('theme.font') ?? 'Amiri';
-    _fontSize = (prefs.getDouble('theme.font_size') ?? 20).clamp(14, 36).toDouble();
+    final savedMode = prefs.getString('theme.mode');
+    _themeMode = switch (savedMode) {
+      'light' => ThemeMode.light,
+      'system' => ThemeMode.system,
+      'dark' => ThemeMode.dark,
+      _ => (prefs.getBool('theme.dark') ?? true)
+          ? ThemeMode.dark
+          : ThemeMode.light,
+    };
+    final savedFont = prefs.getString('theme.font') ?? 'Amiri';
+    _fontFamily = savedFont == 'Musnad' ? 'Musnad' : 'Amiri';
+    _fontSize = (prefs.getDouble('theme.font_size') ?? 20)
+        .clamp(14, 36)
+        .toDouble();
     final savedTheme = prefs.getString('theme.palette') ?? 'default';
-    _selectedTheme = ThemeService.themeNames.contains(savedTheme) ? savedTheme : 'default';
+    _selectedTheme = ThemeService.themeNames.contains(savedTheme)
+        ? savedTheme
+        : 'default';
     _loaded = true;
     notifyListeners();
   }
 
-  void toggleTheme() => setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
+  void toggleTheme() =>
+      setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark);
 
   void setThemeMode(ThemeMode mode) {
-    if (_themeMode == mode) return;
+    if (!{ThemeMode.light, ThemeMode.dark, ThemeMode.system}.contains(mode) ||
+        _themeMode == mode) {
+      return;
+    }
     _themeMode = mode;
     _persist();
     notifyListeners();
   }
 
   void setTheme(String name) {
-    if (!ThemeService.themeNames.contains(name) || _selectedTheme == name) return;
+    if (!ThemeService.themeNames.contains(name) || _selectedTheme == name) {
+      return;
+    }
     _selectedTheme = name;
     _persist();
     notifyListeners();
@@ -61,9 +82,24 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> resetToDefaults() async {
+    _themeMode = ThemeMode.dark;
+    _fontFamily = 'Amiri';
+    _fontSize = 20;
+    _selectedTheme = 'default';
+    await _persist();
+    notifyListeners();
+  }
+
   Future<void> _persist() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('theme.dark', isDark);
+    await prefs.setString('theme.mode', switch (_themeMode) {
+      ThemeMode.light => 'light',
+      ThemeMode.system => 'system',
+      ThemeMode.dark => 'dark',
+    });
+    // Keep the legacy key so older builds still read the selected mode.
+    await prefs.setBool('theme.dark', _themeMode != ThemeMode.light);
     await prefs.setString('theme.font', _fontFamily);
     await prefs.setDouble('theme.font_size', _fontSize);
     await prefs.setString('theme.palette', _selectedTheme);
