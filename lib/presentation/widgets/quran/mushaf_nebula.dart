@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-/// خلفية كونية خفيفة للمصحف. تتفاعل مع ميل الجهاز دون لمس تخطيط QCF.
+/// خلفية كونية خفيفة للمصحف؛ لا تستمع إلى المستشعرات حتى لا تعيد بناء الواجهة أثناء القراءة.
 class MushafNebula extends StatefulWidget {
   const MushafNebula({super.key, this.particleCount = 48});
 
@@ -28,7 +28,6 @@ class _MushafNebulaState extends State<MushafNebula>
     for (var i = 0; i < widget.particleCount; i++) {
       _particles.add(Offset(random.nextDouble(), random.nextDouble()));
     }
-
   }
 
   @override
