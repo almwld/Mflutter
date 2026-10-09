@@ -6,6 +6,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/text_transformer.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
+import '../../../services/quran_source_corrections.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
 
@@ -68,7 +69,7 @@ class _QuranProScreenState extends State<QuranProScreen>
       }
       if (!mounted) return;
       setState(() {
-        _quran = decoded;
+        _quran = QuranSourceCorrections.correctQuranMap(decoded);
         _musnadQuran = musnadQuran;
         _hieroglyphicQuran = hieroglyphicQuran;
         _loading = false;

@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
+import 'package:mudabbir_al_asrar/services/quran_loader_service.dart';
+import 'package:mudabbir_al_asrar/services/quran_source_corrections.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
 import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
 
@@ -24,6 +26,15 @@ void main() {
     test('Quran index resolves ' + entry.key, () async {
       final results = await QuranWordIndexService.searchWords(entry.key);
       final refs = results.map((v) => v.surahNumber.toString() + ':' + v.ayahNumber.toString()).toSet().toList();
+      final verseSearchResults = await QuranService().search(entry.key, limit: 100);
+      final verseSearchRefs = verseSearchResults
+          .map((verse) => '${verse.surahNumber}:${verse.ayahNumber}')
+          .toSet();
+      expect(
+        verseSearchRefs,
+        entry.value.toSet(),
+        reason: 'Verse-level search returned incorrect references for ${entry.key}',
+      );
       final diagnosticVerse = entry.key == 'الطلاق'
           ? await QuranWordIndexService.wordsForVerse(2, 227)
           : const <QuranWordEntry>[];
@@ -44,6 +55,53 @@ void main() {
       }
     });
   }
+
+
+  test('display and search Quran sources match verse text after orthographic normalization', () async {
+    final indexedAyahs = await QuranLoaderService.loadAllAyahs();
+    final displayQuran = await QuranService.loadQuran();
+
+    for (final ayah in indexedAyahs) {
+      final displayVerses = displayQuran['${ayah.surahNumber}'] as List<dynamic>;
+      final displayVerse = displayVerses[ayah.ayahNumber - 1] as Map;
+      final displayText = displayVerse['text'] as String;
+      expect(
+        QuranService.normalizeSearchText(displayText),
+        QuranService.normalizeSearchText(ayah.text),
+        reason: 'Text differs between unified_quran.json and quran_full.json at '
+            '${ayah.surahNumber}:${ayah.ayahNumber}. '
+            'display="$displayText"; index="${ayah.text}"',
+      );
+    }
+  });
+
+  test('known unified-source spelling defects are corrected only at canonical references', () {
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 227, 'وإن عزموا ٱلطلق فإن ٱلله سميع عليم'),
+      'وإن عزموا ٱلطلاق فإن ٱلله سميع عليم',
+    );
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 229, 'ٱلطلق مرتان'),
+      'ٱلطلاق مرتان',
+    );
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 229, 'فإن طلقها فلا تحل له'),
+      'فإن طلقها فلا تحل له',
+    );
+    expect(
+      QuranSourceCorrections.correctVerseText(2, 228, 'الطلق'),
+      'الطلق',
+    );
+  });
+
+  test('search normalization does not invent letters in a distinct spelling', () {
+    expect(QuranService.normalizeSearchText('الطلق'), 'الطلق');
+    expect(QuranWordIndexService.normalize('الطلق'), 'الطلق');
+    // The actual Uthmani spelling still normalizes correctly without a
+    // text-rewriting exception.
+    expect(QuranService.normalizeSearchText('ٱلطلاق'), 'الطلاق');
+    expect(QuranWordIndexService.normalize('ٱلطلاق'), 'الطلاق');
+  });
 
   test('phrase search resolves the exact Al-Fatiha verse across dagger alif', () async {
     final results = await QuranService().search('الحمد لله رب العالمين', limit: 20);
