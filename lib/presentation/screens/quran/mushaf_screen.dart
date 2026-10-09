@@ -408,7 +408,8 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     ],
                   );
                 },
-                child: InteractiveViewer(
+                child: RepaintBoundary(
+                  child: InteractiveViewer(
                   key: _mushafViewportKey,
                   transformationController: _mushafZoomController,
                   panEnabled: _zoomMode,
@@ -510,6 +511,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     _saveAyahCoordinate(surah, ayah, details.globalPosition);
                     _showAyahMenu(surah, ayah, details.globalPosition);
                   },
+                  ),
                 ),
                 ),
               ),
