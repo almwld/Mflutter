@@ -152,11 +152,6 @@ class ExternalModelService {
         'لكن الموجود [${outputShape.join(', ')}].',
       );
     }
-    if (input.type != TfLiteType.float32 || output.type != TfLiteType.float32) {
-      throw StateError(
-        'النموذج غير متوافق: يجب أن يكون مدخل ومخرج التصنيف من نوع float32.',
-      );
-    }
   }
 
   void _runSmokeTest(Interpreter interpreter) {
@@ -189,7 +184,7 @@ class ExternalModelService {
     final old = _loadedModels.remove(cleanName);
     old?.close();
     try {
-      _loadedModels[cleanName] = await Interpreter.fromFile(file);
+      _loadedModels[cleanName] = Interpreter.fromFile(file);
     } catch (e) {
       throw StateError('تعذر تحميل نموذج $cleanName: $e');
     }
