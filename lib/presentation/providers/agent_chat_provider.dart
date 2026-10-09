@@ -6,10 +6,12 @@ import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 import '../../services/mudabbir_unified_engine.dart';
 import '../../services/on_device_training_service.dart';
+import '../../services/ollama_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
   final MudabbirUnifiedEngine _unifiedEngine = MudabbirUnifiedEngine();
   final OnDeviceTrainingService _training = OnDeviceTrainingService();
+  final OllamaService _localModel = OllamaService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
   bool _paused = false, _cancelled = false, _quranReady = false;
@@ -108,10 +110,7 @@ class AgentChatProvider extends ChangeNotifier {
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
         return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على ${hits.length} مواضع سياقية.';
       case 'tadrib':
-        final ayahs = await QuranLoaderService.loadAllAyahs();
-        final verses = ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList();
-        await _training.startTraining(verses: verses, epochs: 1);
-        return 'اكتملت دورة تدريب فعلية على ${verses.length} آية محلياً.';
+        return 'التدريب الحقيقي غير متاح حالياً: لا يوجد مسار تدريب موصول بأوزان قابلة للتحديث. لم يبدأ التدريب ولم يتم تغيير الأوزان.';
       case 'ikhtibar':
         await initialize();
         final hits = QuranicSearchEngine.search(query).take(5).toList();
@@ -138,14 +137,42 @@ class AgentChatProvider extends ChangeNotifier {
   ];
 
   Future<String> _composeAnswer(AgentTask task) async {
-    // لا نسمح للنموذج اللغوي بإعادة صياغة النص القرآني أو اختلاق شواهد.
+    // The deterministic engine remains the evidence source. A local language
+    // model may summarize that evidence only when its server and model really
+    // exist; generated text is labeled separately and never replaces verse text.
     final context = task.steps
         .where((s) => s.result != null && s.result!.trim().isNotEmpty)
         .map((s) => '${s.agentName}: ${s.result}')
         .join('\\n\\n');
-    return context.isEmpty
-        ? 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.'
-        : 'النتائج الموثقة محلياً:\\n\\n$context';
+    if (context.isEmpty) {
+      return 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.';
+    }
+
+    final evidenceBlock = 'النتائج المصدرية المحلية كما هي:\\n\\n$context';
+    try {
+      final available = await _localModel.checkAvailability();
+      if (!available) {
+        return '$evidenceBlock\\n\\nلم يُستخدم نموذج لغوي: خادم Ollama المحلي غير متاح.';
+      }
+      final modelExists = await _localModel.hasModel();
+      if (!modelExists) {
+        return '$evidenceBlock\\n\\nلم يُستخدم نموذج لغوي: النموذج ${_localModel.modelName} غير موجود في خادم Ollama.';
+      }
+
+      final generated = await _localModel.generate(
+        'أنت مساعد محلي يلخص الأدلة المقدمة فقط. لا تقتبس الآيات ولا تعِد صياغة النص القرآني. '
+        'لا تخترع آيات أو مراجع أو أحكاماً شرعية أو حقائق علمية. إذا كانت الأدلة غير كافية فقل ذلك صراحة. '
+        'اكتب خلاصة موجزة، واذكر أن الخلاصة المولدة ليست تفسيراً شرعياً موثقاً.\\n'
+        'طلب المستخدم: ${task.userQuery}\\n'
+        'الأدلة التي لا يجوز تغييرها:\\n$context',
+        temperature: 0.2,
+        maxTokens: 300,
+      );
+      return 'خلاصة مولدة فعلياً بواسطة النموذج المحلي ${_localModel.modelName} (ليست تفسيراً موثقاً):\\n'
+          '$generated\\n\\n$evidenceBlock';
+    } catch (e) {
+      return '$evidenceBlock\\n\\nتعذر تشغيل النموذج المحلي؛ لم تُستخدم مخرجات مولدة. السبب: $e';
+    }
   }
 
   String exportJson(){final t=_activeTask;if(t==null)return '{}';return const JsonEncoder.withIndent('  ').convert({'id':t.id,'query':t.userQuery,'status':t.status.name,'progress':t.progress,'steps':t.steps.map((s)=>{'agent':s.agentName,'title':s.title,'status':s.status.name,'result':s.result}).toList(),'answer':t.finalAnswer});}
