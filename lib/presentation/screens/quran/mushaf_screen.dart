@@ -47,8 +47,8 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     final page = MushafSource.normalizePage(widget.initialPage);
     _currentPage.value = page;
     _pageController = PageController(initialPage: page - 1);
-    _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400))..repeat();
-    _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
+    _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _mushafZoomController = TransformationController();
     _restoreLastPage();
     _restorePageTheme();
@@ -63,6 +63,19 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _pageController.dispose();
     _currentPage.dispose();
     super.dispose();
+  }
+
+  void _startLivingEffects() {
+    if (_livingPulse.isAnimating && _livingGlow.isAnimating) return;
+    _livingPulse.repeat();
+    _livingGlow.repeat(reverse: true);
+  }
+
+  void _stopLivingEffects() {
+    _livingPulse.stop();
+    _livingGlow.stop();
+    _livingPulse.value = 0;
+    _livingGlow.value = 0;
   }
 
   Future<void> _restorePageTheme() async { final value = await QuranPageThemeService.load(); if (mounted) setState(() => _pageTheme = value); }
@@ -324,6 +337,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
         ),
       ];
     });
+    _startLivingEffects();
 
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final local = overlay.globalToLocal(position);
@@ -349,7 +363,10 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           );
         }
       }
-      if (mounted) setState(() => _highlights = const []);
+      if (mounted) {
+        setState(() => _highlights = const []);
+        _stopLivingEffects();
+      }
     });
   }
 
@@ -382,16 +399,17 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                         child: CustomPaint(
                           painter: LivingAyahPainter(
                             pulse: _livingPulse.value,
-                            glow: selected ? .72 + _livingGlow.value * .28 : .18,
+                            glow: selected ? .72 + _livingGlow.value * .28 : 0,
                             isGreatVerse: great,
-                            isActive: true,
+                            isActive: selected,
                           ),
                         ),
                       ),
                     ],
                   );
                 },
-                child: InteractiveViewer(
+                child: RepaintBoundary(
+                  child: InteractiveViewer(
                   key: _mushafViewportKey,
                   transformationController: _mushafZoomController,
                   panEnabled: _zoomMode,
@@ -472,6 +490,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     ReadingProgressService.saveLastPage(page);
                     if (_highlights.isNotEmpty) {
                       setState(() => _highlights = const []);
+                      _stopLivingEffects();
                     }
                   },
                   onDoubleTap: (surah, ayah) {
@@ -486,11 +505,13 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                         ),
                       ];
                     });
+                    _startLivingEffects();
                   },
                   onLongPressStart: (surah, ayah, details) {
                     _saveAyahCoordinate(surah, ayah, details.globalPosition);
                     _showAyahMenu(surah, ayah, details.globalPosition);
                   },
+                  ),
                 ),
                 ),
               ),
