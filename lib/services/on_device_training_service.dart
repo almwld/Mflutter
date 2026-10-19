@@ -1,106 +1,51 @@
 import 'dart:async';
-import '../python/mudabbir_python_engine.dart';
-import 'qwen_merge_service.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 
+/// Explicitly reports the current training capability.
+///
+/// The shipped runtime has TFLite inference only; it does not contain a
+/// trainable graph, optimizer, backpropagation implementation, or verified
+/// training dataset/labels. Refuse training rather than producing misleading
+/// "completed" events or exporting random/partially updated weights.
 class OnDeviceTrainingService {
   static final OnDeviceTrainingService _instance = OnDeviceTrainingService._();
   factory OnDeviceTrainingService() => _instance;
   OnDeviceTrainingService._();
 
-  final _engine = MudabbirPythonEngine();
-  bool _isTraining = false;
-  double _progress = 0.0;
-  String _status = 'جاهز';
-  List<Map<String, dynamic>> _history = [];
-
-  bool get isTraining => _isTraining;
-  double get progress => _progress;
-  String get status => _status;
-  List<Map<String, dynamic>> get history => _history;
+  bool get isTraining => false;
+  double get progress => 0.0;
+  String get status =>
+      'التدريب غير متاح: يلزم مسار تدريب فعلي ونموذج قابل للتدريب.';
+  List<Map<String, dynamic>> get history => const [];
 
   StreamController<Map<String, dynamic>>? _progressController;
-  Stream<Map<String, dynamic>>? get progressStream => _progressController?.stream;
+  Stream<Map<String, dynamic>>? get progressStream =>
+      _progressController?.stream;
 
-  /// بدء التدريب على الجهاز
   Future<void> startTraining({
     required List<Map<String, dynamic>> verses,
     int epochs = 50,
     String? qwenAdapterPath,
   }) async {
-    if (_isTraining) return;
-
-    _isTraining = true;
-    _progress = 0.0;
-    _status = 'جاري تهيئة البيانات...';
-    _progressController = StreamController<Map<String, dynamic>>.broadcast();
-
-    await _engine.initialize();
-
-    // تجهيز بيانات التدريب
-    final xTrain = <List<double>>[];
-    final yTrain = <int>[];
-
-    for (final verse in verses) {
-      final text = verse['text'] ?? '';
-      final features = _engine.extractFeatures(text);
-      xTrain.add(features);
-
-      // تصنيف حسب المحور
-      final axisType = verse['axis_type'] ?? 'cosmic';
-      switch (axisType) {
-        case 'cosmic': yTrain.add(0); break;
-        case 'tranquil': yTrain.add(1); break;
-        case 'calculation': yTrain.add(2); break;
-        default: yTrain.add(0);
-      }
+    if (verses.isEmpty) {
+      throw ArgumentError('لا يمكن بدء التدريب دون عينات.');
     }
-
-    _status = 'جاري التدريب... (${xTrain.length} عينة)';
-
-    // تشغيل التدريب
-    final result = await _engine.trainModel(
-      xTrain: xTrain,
-      yTrain: yTrain,
-      epochs: epochs,
-      learningRate: 0.002,
-      onProgress: (loss, epoch) {
-        _progress = epoch / epochs;
-        _status = 'Epoch $epoch/$epochs - Loss: ${loss.toStringAsFixed(4)}';
-        _progressController?.add({
-          'epoch': epoch,
-          'loss': loss,
-          'progress': _progress,
-        });
-      },
+    if (epochs < 1) {
+      throw ArgumentError.value(epochs, 'epochs', 'يجب أن تكون موجبة.');
+    }
+    throw UnsupportedError(
+      'لم يبدأ التدريب: إصدار التطبيق الحالي يدعم استدلال TFLite فقط، '
+      'ولا يحتوي على محرك تدريب حقيقي موصول بأوزان قابلة للتحديث. '
+      'لم يتم تعديل الأوزان أو تصدير نموذج.',
     );
-
-    _history = _engine.trainingHistory;
-    _status = 'اكتمل تدريب الطبقة المحلية؛ جارٍ فحص أوزان Qwen...';
-    final docs = await getApplicationDocumentsDirectory();
-    final candidate = qwenAdapterPath?.trim();
-    final adapter = candidate != null && candidate.isNotEmpty
-        ? candidate
-        : '${docs.path}/qwen_adapter';
-    final adapterDir = Directory(adapter);
-    QwenMergeResult? mergeResult;
-    if (await adapterDir.exists()) {
-      mergeResult = await QwenMergeService().mergeAdapter(adapterPath: adapter);
-      _status = mergeResult.merged
-          ? 'تم دمج أوزان Qwen وتحديث النموذج المحلي.'
-          : 'اكتمل التدريب لكن تعذر دمج Qwen: ${mergeResult.error ?? mergeResult.status}';
-    } else {
-      _status = 'اكتمل التدريب؛ لا يوجد LoRA adapter لـQwen بعد. تم الاحتفاظ بالأوزان المحلية دون ادعاء دمج.';
-    }
-    _isTraining = false;
-    _progressController?.add({'done': true, 'result': result, 'qwenMerge': mergeResult?.status});
   }
 
-  /// إيقاف التدريب
   void stopTraining() {
-    _isTraining = false;
-    _status = 'متوقف';
+    _progressController?.add({
+      'done': false,
+      'cancelled': true,
+      'status': 'لا توجد عملية تدريب فعلية قيد التشغيل.',
+    });
     _progressController?.close();
+    _progressController = null;
   }
 }
