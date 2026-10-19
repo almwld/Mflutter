@@ -4,10 +4,12 @@ import '../../domain/entities/agent_task.dart';
 import '../../services/agent_registry.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
-import '../../services/on_device_training_service.dart';
+import '../../services/mudabbir_unified_engine.dart';
+import '../../services/ollama_service.dart';
 
 class AgentChatProvider extends ChangeNotifier {
-  final OnDeviceTrainingService _training = OnDeviceTrainingService();
+  final MudabbirUnifiedEngine _unifiedEngine = MudabbirUnifiedEngine();
+  final OllamaService _localModel = OllamaService();
   AgentTask? _activeTask;
   final List<String> _messages = [];
   bool _paused = false, _cancelled = false, _quranReady = false;
@@ -66,8 +68,16 @@ class AgentChatProvider extends ChangeNotifier {
   List<AgentDefinition> _route(String query) {
     final result=<AgentDefinition>[AgentRegistry.byId('muwajjih')!];
     if(_selectedAgent!=null){final a=AgentRegistry.byId(_selectedAgent!);if(a!=null&&!result.any((x)=>x.id==a.id))result.add(a);}
-    if(RegExp(r'آية|قرآن|سورة|تفسير|معنى|النور|الصمد|تحليل').hasMatch(query.toLowerCase())){
-      for(final id in ['ayaat','tafsir','siyaq','jummal']){final a=AgentRegistry.byId(id);if(a!=null&&!result.any((x)=>x.id==id))result.add(a);}
+    final hasArabic = RegExp(r'[ء-يٱ]').hasMatch(query);
+    if (hasArabic || RegExp(r'آية|قرآن|سورة|بحث|ابحث|كلمة|موضع').hasMatch(query)) {
+      for (final id in ['ayaat', 'siyaq']) {
+        final a = AgentRegistry.byId(id);
+        if (a != null && !result.any((x) => x.id == id)) result.add(a);
+      }
+    }
+    if (RegExp(r'أبجد|الجمل|حساب الحروف|قيمة الحروف').hasMatch(query)) {
+      final a = AgentRegistry.byId('jummal');
+      if (a != null && !result.any((x) => x.id == a.id)) result.add(a);
     }
     final d=AgentRegistry.byId('damj')!;if(!result.any((x)=>x.id==d.id))result.add(d);return result;
   }
@@ -78,18 +88,27 @@ class AgentChatProvider extends ChangeNotifier {
         final route = _route(query).where((a) => a.id != 'muwajjih').map((a) => a.name).toList();
         return route.isEmpty ? 'لم تُحدد حاجة لوكيل إضافي لهذا الطلب.' : 'تحليل الطلب: تم توجيهه فعلياً إلى: ${route.join(' ← ')}';
       case 'ayaat':
-        await initialize(); final hits=QuranicSearchEngine.search(query).take(8).toList();
-        if(hits.isEmpty) return 'لم تُوجد آية مطابقة بعد تطبيع النص في كامل الفهرس المحلي (6236 آية).';
-        return hits.map((v) => "${v['surah']} ${v['ayah']}: ${v['text']}").join('\\n');
-      case 'jummal': return 'قيمة الجمل الحسابية للنص المدخل: ${_abjad(query)}';
+        final result = await _unifiedEngine.analyze(query, limit: 8);
+        if (result.verses.isNotEmpty) {
+          return result.verses
+              .map((v) => '${v.surahName} ${v.reference}: ${v.text}')
+              .join('\n');
+        }
+        if (result.words.isNotEmpty) {
+          return result.words
+              .map((w) => '${w.reference} (كلمة ${w.wordNumber}): ${w.sourceText}')
+              .join('\n');
+        }
+        return result.summary;
+      case 'jummal':
+        final abjadQuery = RegExp(r'^\s*(?:أبجد|الجمل|حساب الحروف)\s*[:：]').hasMatch(query) ? query : 'أبجد: ' + query;
+        final result = await _unifiedEngine.analyze(abjadQuery);
+        return 'قيمة الجمل الحسابية للنص المدخل: ${result.totalAbjad ?? 0}';
       case 'siyaq':
         await initialize(); final hits=QuranicSearchEngine.search(query).take(3).toList();
         return hits.isEmpty?'لا يوجد سياق مطابق في الفهرس المحلي.':'تم العثور على ${hits.length} مواضع سياقية.';
       case 'tadrib':
-        final ayahs = await QuranLoaderService.loadAllAyahs();
-        final verses = ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList();
-        await _training.startTraining(verses: verses, epochs: 1);
-        return 'اكتملت دورة تدريب فعلية على ${verses.length} آية محلياً.';
+        return 'التدريب الحقيقي غير متاح حالياً: لا يوجد مسار تدريب موصول بأوزان قابلة للتحديث. لم يبدأ التدريب ولم يتم تغيير الأوزان.';
       case 'ikhtibar':
         await initialize();
         final hits = QuranicSearchEngine.search(query).take(5).toList();
@@ -116,18 +135,42 @@ class AgentChatProvider extends ChangeNotifier {
   ];
 
   Future<String> _composeAnswer(AgentTask task) async {
-    // لا نسمح للنموذج اللغوي بإعادة صياغة النص القرآني أو اختلاق شواهد.
+    // The deterministic engine remains the evidence source. A local language
+    // model may summarize that evidence only when its server and model really
+    // exist; generated text is labeled separately and never replaces verse text.
     final context = task.steps
         .where((s) => s.result != null && s.result!.trim().isNotEmpty)
         .map((s) => '${s.agentName}: ${s.result}')
         .join('\\n\\n');
-    return context.isEmpty
-        ? 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.'
-        : 'النتائج الموثقة محلياً:\\n\\n$context';
-  }
-  int _abjad(String text){
-    const v={'ا':1,'أ':1,'إ':1,'آ':1,'ب':2,'ج':3,'د':4,'ه':5,'ة':5,'و':6,'ز':7,'ح':8,'ط':9,'ي':10,'ى':10,'ك':20,'ل':30,'م':40,'ن':50,'س':60,'ع':70,'ف':80,'ص':90,'ق':100,'ر':200,'ش':300,'ت':400,'ث':500,'خ':600,'ذ':700,'ض':800,'ظ':900,'غ':1000};
-    var total=0;for(final r in text.runes)total+=v[String.fromCharCode(r)]??0;return total;
+    if (context.isEmpty) {
+      return 'اكتمل التنفيذ المحلي دون العثور على دليل قرآني مباشر.';
+    }
+
+    final evidenceBlock = 'النتائج المصدرية المحلية كما هي:\\n\\n$context';
+    try {
+      final available = await _localModel.checkAvailability();
+      if (!available) {
+        return '$evidenceBlock\\n\\nلم يُستخدم نموذج لغوي: خادم Ollama المحلي غير متاح.';
+      }
+      final modelExists = await _localModel.hasModel();
+      if (!modelExists) {
+        return '$evidenceBlock\\n\\nلم يُستخدم نموذج لغوي: النموذج ${_localModel.modelName} غير موجود في خادم Ollama.';
+      }
+
+      final generated = await _localModel.generate(
+        'أنت مساعد محلي يلخص الأدلة المقدمة فقط. لا تقتبس الآيات ولا تعِد صياغة النص القرآني. '
+        'لا تخترع آيات أو مراجع أو أحكاماً شرعية أو حقائق علمية. إذا كانت الأدلة غير كافية فقل ذلك صراحة. '
+        'اكتب خلاصة موجزة، واذكر أن الخلاصة المولدة ليست تفسيراً شرعياً موثقاً.\\n'
+        'طلب المستخدم: ${task.userQuery}\\n'
+        'الأدلة التي لا يجوز تغييرها:\\n$context',
+        temperature: 0.2,
+        maxTokens: 300,
+      );
+      return 'خلاصة مولدة فعلياً بواسطة النموذج المحلي ${_localModel.modelName} (ليست تفسيراً موثقاً):\\n'
+          '$generated\\n\\n$evidenceBlock';
+    } catch (e) {
+      return '$evidenceBlock\\n\\nتعذر تشغيل النموذج المحلي؛ لم تُستخدم مخرجات مولدة. السبب: $e';
+    }
   }
 
   String exportJson(){final t=_activeTask;if(t==null)return '{}';return const JsonEncoder.withIndent('  ').convert({'id':t.id,'query':t.userQuery,'status':t.status.name,'progress':t.progress,'steps':t.steps.map((s)=>{'agent':s.agentName,'title':s.title,'status':s.status.name,'result':s.result}).toList(),'answer':t.finalAnswer});}
