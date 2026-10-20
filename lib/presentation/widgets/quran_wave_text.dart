@@ -62,7 +62,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
       math.max(1, widget.sequenceWordCount ?? _words.length).toInt();
 
   static List<String> _splitWords(String text) =>
-      text.trim().isEmpty ? <String>[] : text.trim().split(RegExp(r'\\s+'));
+      text.trim().isEmpty ? <String>[] : text.trim().split(RegExp(r'\s+'));
 
   static String _normalize(String word) {
     return word
