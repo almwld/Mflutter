@@ -10,8 +10,10 @@ void main() {
     await tester.pumpWidget(const MudabbirApp());
     expect(find.byType(SplashScreen), findsOneWidget);
 
+    // The splash route is replaced by a timer. Avoid pumpAndSettle here:
+    // the home screen may contain ongoing animations that never settle.
     await tester.pump(const Duration(milliseconds: 800));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(MushafScreen), findsNothing);
@@ -28,5 +30,3 @@ void main() {
     expect(find.byType(MushafScreen), findsOneWidget);
   });
 }
-
-// CI trigger: keep smoke-test navigation fix on the pushed main commit.
