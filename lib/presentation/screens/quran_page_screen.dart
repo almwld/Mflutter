@@ -64,22 +64,22 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       appBar: AppBar(
         title: Text(
           widget.surahName,
-          style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri'),
+          style: const TextStyle(color: AppColors.gold, fontFamily: 'Amiri'),
         ),
         backgroundColor: AppColors.primaryNavy,
         actions: [
           IconButton(
-            icon: const Icon(Icons.text_increase, color: Color(0xFFFFD700)),
+            icon: const Icon(Icons.text_increase, color: AppColors.gold),
             onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(16, 32).toInt()),
           ),
           IconButton(
-            icon: const Icon(Icons.text_decrease, color: Color(0xFFFFD700)),
+            icon: const Icon(Icons.text_decrease, color: AppColors.gold),
             onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(16, 32).toInt()),
           ),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
+          ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _loadError != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(24),
@@ -92,9 +92,9 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFF0A0E27),
-                    Color(0xFF1A237E),
-                    Color(0xFF0A0E27),
+                    AppColors.backgroundDark,
+                    AppColors.primaryNavy,
+                    AppColors.backgroundDark,
                   ],
                 ),
               ),
@@ -146,14 +146,14 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                               horizontal: 16, vertical: 6),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFFFD700), Color(0xFFB8860B)],
+                              colors: [AppColors.gold, Color(0xFFB8860B)],
                             ),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             '﴿$ayahNum﴾',
                             style: const TextStyle(
-                              color: Color(0xFF1A237E),
+                              color: AppColors.primaryNavy,
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
