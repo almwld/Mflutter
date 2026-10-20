@@ -116,7 +116,7 @@ class AbjadResultWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildAttributeChip(result.element, Icons.local_fire_department, Colors.red),
-        _buildAttributeChip(result.planet, Icons.public, Colors.blue),
+        _buildAttributeChip(result.planet, Icons.public, AppColors.primaryNavyLight),
         _buildAttributeChip(result.zodiac, Icons.star, Colors.purple),
       ],
     );
