@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -10,6 +11,7 @@ class AudioSynthesisService {
 
   static final AudioPlayer _player = AudioPlayer();
   static bool _isPlaying = false;
+  static StreamSubscription<void>? _completionSubscription;
   static bool get isPlaying => _isPlaying;
 
   static Future<void> playBinauralBeat({
@@ -33,9 +35,12 @@ class AudioSynthesisService {
       volume: volume.clamp(0.0, 0.5),
     );
     _isPlaying = true;
+    await _completionSubscription?.cancel();
+    _completionSubscription = _player.onPlayerComplete.listen((_) {
+      _isPlaying = false;
+    });
     try {
       await _player.play(BytesSource(bytes), volume: 1);
-      _player.onPlayerComplete.first.then((_) => _isPlaying = false);
     } catch (_) {
       _isPlaying = false;
       rethrow;
@@ -48,6 +53,8 @@ class AudioSynthesisService {
 
   static Future<void> stop() async {
     _isPlaying = false;
+    await _completionSubscription?.cancel();
+    _completionSubscription = null;
     await _player.stop();
   }
 
