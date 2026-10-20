@@ -55,7 +55,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
   late Duration _duration;
 
   int get _sequenceCount =>
-      math.max(1, widget.sequenceWordCount ?? _words.length);
+      math.max(1, widget.sequenceWordCount ?? _words.length).toInt();
 
   static String _normalize(String word) {
     return word
@@ -72,7 +72,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
       2400,
       count * widget.stepDuration.inMilliseconds,
     );
-    return Duration(milliseconds: milliseconds);
+    return Duration(milliseconds: milliseconds.toInt());
   }
 
   @override
@@ -83,7 +83,6 @@ class _QuranWaveTextState extends State<QuranWaveText>
         : widget.text.trim().split(RegExp(r'\s+'));
     _duration = _animationDuration();
     _controller = AnimationController(vsync: this, duration: _duration);
-    _syncAnimation();
   }
 
   @override
