@@ -75,8 +75,8 @@ class OccultDataService {
         );
       }
     } catch (_) {
-      // A missing, empty, or differently shaped optional knowledge asset
-      // must not prevent the offline explorer from opening.
+      // A missing or malformed optional asset must not block offline use.
+      return _starterEntries;
     }
 
     final result = byId.values.toList()
