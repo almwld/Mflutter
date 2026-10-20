@@ -82,8 +82,8 @@ class _QuranTextShimmerState extends State<QuranTextShimmer>
         child: widget.child,
         builder: (context, child) {
           final center = 0.08 + (_controller.value * 0.84);
-          final start = (center - 0.12).clamp(0.0, 1.0);
-          final end = (center + 0.12).clamp(0.0, 1.0);
+          final start = (center - 0.12).clamp(0.0, 1.0).toDouble();
+          final end = (center + 0.12).clamp(0.0, 1.0).toDouble();
           return ShaderMask(
             blendMode: BlendMode.srcIn,
             shaderCallback: (bounds) => LinearGradient(
