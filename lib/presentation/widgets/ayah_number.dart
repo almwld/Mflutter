@@ -20,7 +20,7 @@ class AyahNumber extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const AppColors.gold.withOpacity(0.3),
+            color: AppColors.gold.withOpacity(0.3),
             blurRadius: 4,
             spreadRadius: 1,
           ),
