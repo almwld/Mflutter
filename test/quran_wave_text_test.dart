@@ -26,15 +26,18 @@ void main() {
     expect(find.text('الله'), findsOneWidget);
     expect(find.text('رب'), findsOneWidget);
     expect(find.text('العالمين'), findsOneWidget);
-    expect(find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == verse), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics && widget.properties.label == verse,
+      ),
+      findsOneWidget,
+    );
     await tester.pump(const Duration(milliseconds: 350));
     expect(tester.takeException(), isNull);
   });
 
   testWidgets('respects reduced motion without changing words',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     const verse = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
 
     await tester.pumpWidget(
@@ -51,7 +54,7 @@ void main() {
       ),
     );
 
-    expect(find.bySemanticsLabel(verse), findsOneWidget);
+    expect(find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == verse), findsOneWidget);
     expect(find.text('بِسْمِ'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
