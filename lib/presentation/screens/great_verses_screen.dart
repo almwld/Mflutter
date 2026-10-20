@@ -125,10 +125,10 @@ class _GreatVersesScreenState extends State<GreatVersesScreen> {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(12),
-                  itemCount: verses.length,
+                  itemCount: GreatVersesScreen.verses.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (context, index) {
-                    final item = verses[index];
+                    final item = GreatVersesScreen.verses[index];
                     final reference = item['ref']!;
                     final ayah = _ayahByReference[reference];
                     return Card(
