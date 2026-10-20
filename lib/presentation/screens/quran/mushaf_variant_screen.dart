@@ -387,7 +387,7 @@ class _FixedMushafLine extends StatelessWidget {
       final marker = RegExp(r'^﴿(\d+)﴾$').firstMatch(segment);
       if (marker != null) {
         spans.add(TextSpan(
-          text: ' ۞\${marker.group(1)}۞ ',
+          text: ' ۞${marker.group(1)}۞ ',
           style: TextStyle(
             fontFamily: 'Amiri',
             fontSize: 15,
@@ -399,7 +399,7 @@ class _FixedMushafLine extends StatelessWidget {
         final converted = transform(segment);
         if (converted.isNotEmpty) {
           spans.add(TextSpan(
-            text: '\$converted ',
+            text: '$converted ',
             style: TextStyle(
               fontFamily: fontFamily,
               fontSize: 21,
