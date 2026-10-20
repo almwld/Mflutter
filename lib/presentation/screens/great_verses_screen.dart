@@ -1,3 +1,4 @@
+import '../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class GreatVersesScreen extends StatelessWidget {
@@ -19,10 +20,10 @@ class GreatVersesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
         title: const Text('🌟 آيات عظيمة', style: TextStyle(color: Color(0xFFFFD700))),
-        backgroundColor: const Color(0xFF1A237E),
+        backgroundColor: AppColors.primaryNavy,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(12),
@@ -33,7 +34,7 @@ class GreatVersesScreen extends StatelessWidget {
             color: const Color(0xFF1A237E).withOpacity(0.6),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFFFFD700),
+                backgroundColor: AppColors.gold,
                 child: Text('${i + 1}', style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold)),
               ),
               title: Text(v['title']!, style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
