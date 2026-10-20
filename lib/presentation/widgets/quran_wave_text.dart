@@ -18,7 +18,7 @@ class QuranWaveText extends StatefulWidget {
     this.sequenceWordOffset = 0,
     this.stepDuration = const Duration(milliseconds: 180),
     this.peakScale = 1.18,
-    this.textAlign = WrapAlignment.end,
+    this.textAlign = WrapAlignment.start,
   });
 
   final String text;
@@ -64,7 +64,15 @@ class _QuranWaveTextState extends State<QuranWaveText>
         .trim();
   }
 
-  bool _isImportant(String word) => _importantWords.contains(_normalize(word));
+  bool _isImportant(String word) {
+    final normalized = _normalize(word);
+    if (_importantWords.contains(normalized)) return true;
+    if (normalized.length > 1 &&
+        'وفبكل'.contains(normalized.substring(0, 1))) {
+      return _importantWords.contains(normalized.substring(1));
+    }
+    return false;
+  }
 
   Duration _animationDuration() {
     final count = widget.sequenceWordCount ?? _words.length;
