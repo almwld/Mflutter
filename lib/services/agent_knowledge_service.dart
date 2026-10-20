@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show FlutterError;
 import 'package:flutter/services.dart';
 
 import '../domain/entities/verse.dart';
