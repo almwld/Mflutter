@@ -390,7 +390,7 @@ class _FixedMushafLine extends StatelessWidget {
               sequenceWordOffset: sequenceWordOffset,
               textAlign: line.centered
                   ? WrapAlignment.center
-                  : WrapAlignment.end,
+                  : WrapAlignment.start,
             ),
           ),
         );
