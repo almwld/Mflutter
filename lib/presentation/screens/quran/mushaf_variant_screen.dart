@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 
 import '../../../services/mushaf_source.dart';
@@ -28,12 +29,25 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       ? const Color(0xFF241A12)
       : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
+  bool _systemBarsVisible = false;
+
+  Future<void> _setImmersiveMode(bool immersive) async {
+    await SystemChrome.setEnabledSystemUIMode(
+      immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+    );
+    if (mounted) setState(() => _systemBarsVisible = !immersive);
+  }
+
+  Future<void> _toggleSystemBars() async {
+    await _setImmersiveMode(_systemBarsVisible);
+  }
 
   @override
   void initState() {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _restorePageTheme();
   }
 
@@ -44,6 +58,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   @override
   void dispose() {
+    // Restore the app's normal system bars when leaving Mushaf reading.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller.dispose();
     super.dispose();
   }
@@ -89,8 +105,11 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
     return Scaffold(
       backgroundColor: _pageBackground,
-      body: SafeArea(
-        child: Column(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: _toggleSystemBars,
+        child: SafeArea(
+          child: Column(
           children: [
             _buildHeader(gold),
             Expanded(
@@ -109,6 +128,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
             ),
             _buildNavigation(gold),
           ],
+          ),
         ),
       ),
     );
