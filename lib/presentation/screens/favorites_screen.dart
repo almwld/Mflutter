@@ -64,7 +64,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final ayah = (bookmark['ayah'] as num).toInt();
     final page = MushafSource.pageForVerse(surah, ayah);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page)),
+      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)),
     );
   }
 
