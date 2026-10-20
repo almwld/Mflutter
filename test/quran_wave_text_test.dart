@@ -7,8 +7,6 @@ void main() {
 
   testWidgets('shows original Quran words and animates key words',
       (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     const verse = 'الله رب العالمين';
 
     await tester.pumpWidget(
@@ -28,7 +26,7 @@ void main() {
     expect(find.text('الله'), findsOneWidget);
     expect(find.text('رب'), findsOneWidget);
     expect(find.text('العالمين'), findsOneWidget);
-    expect(find.bySemanticsLabel(verse), findsOneWidget);
+    expect(find.byWidgetPredicate((widget) => widget is Semantics && widget.properties.label == verse), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 350));
     expect(tester.takeException(), isNull);
   });
