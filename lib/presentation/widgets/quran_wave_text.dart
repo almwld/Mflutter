@@ -18,7 +18,7 @@ class QuranWaveText extends StatefulWidget {
     this.sequenceWordCount,
     this.sequenceWordOffset = 0,
     this.stepDuration = const Duration(milliseconds: 180),
-    this.peakScale = 1.18,
+    this.peakScale = 1.15,
     this.textAlign = WrapAlignment.start,
   });
 
@@ -191,7 +191,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
       runAlignment: WrapAlignment.center,
       crossAxisAlignment: WrapCrossAlignment.center,
       textDirection: TextDirection.rtl,
-      spacing: 5,
+      spacing: 8,
       runSpacing: 7,
       children: [
         for (var index = 0; index < _words.length; index++)
