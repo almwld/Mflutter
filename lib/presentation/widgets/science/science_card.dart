@@ -125,7 +125,7 @@ class ScienceCard extends StatelessWidget {
       case ScienceType.letters:
         return Colors.amber;
       case ScienceType.numbers:
-        return Colors.blue;
+        return AppColors.primaryNavyLight;
       case ScienceType.elements:
         return Colors.red;
       case ScienceType.planets:
