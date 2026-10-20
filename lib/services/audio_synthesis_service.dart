@@ -32,7 +32,7 @@ class AudioSynthesisService {
       leftHz: carrierHz,
       rightHz: carrierHz + beatHz,
       duration: duration,
-      volume: volume.clamp(0.0, 0.5),
+      volume: volume.clamp(0.0, 0.5).toDouble(),
     );
     _isPlaying = true;
     await _completionSubscription?.cancel();
