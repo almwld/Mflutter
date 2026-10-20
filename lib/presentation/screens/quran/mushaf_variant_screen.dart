@@ -22,10 +22,11 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   MushafVariantMode _mode = MushafVariantMode.musnad;
 
   static const _paper = Color(0xFFF8F1E4);
-  static const _gold = Color(0xFF9A6B00);
-  static const _darkGold = Color(0xFFE2B84A);
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
   Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
+  Color get _headerInk => _pageTheme == QuranPageTheme.paper
+      ? const Color(0xFF241A12)
+      : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   @override
@@ -137,7 +138,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
             ),
             IconButton(
               tooltip: 'اختيار نمط العرض',
-              icon: Icon(Icons.tune_rounded, color: gold),
+              icon: Icon(Icons.tune_rounded, color: _headerInk),
               onPressed: () => _showModeSheet(context, gold),
             ),
           ],
