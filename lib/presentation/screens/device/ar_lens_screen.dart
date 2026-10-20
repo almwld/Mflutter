@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../services/smart_lens_service.dart';
@@ -465,9 +466,9 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
               alignment: AlignmentDirectional.centerEnd,
               child: IconButton(
                 tooltip: 'نسخ النص',
-                onPressed: () {
-                  // SelectableText allows selection; copying is available through the system selection menu.
-                  _notify('اضغط مطولًا على النص لنسخه.');
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: _recognizedText ?? ''));
+                  _notify('تم نسخ النص المستخرج.');
                 },
                 icon: const Icon(Icons.content_copy_rounded, color: Color(0xFF00BCD4)),
               ),
