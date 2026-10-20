@@ -7,7 +7,7 @@ import '../../providers/agent_chat_provider.dart';
 
 class AgentsScreen extends StatelessWidget {
   const AgentsScreen({super.key});
-  @override Widget build(BuildContext context)=>ChangeNotifierProvider(create:(_)=>AgentChatProvider(),child:const _AgentsView());
+  @override Widget build(BuildContext context)=>ChangeNotifierProvider(create:(_) => AgentChatProvider()..initialize(),child:const _AgentsView());
 }
 class _AgentsView extends StatefulWidget{const _AgentsView();@override State<_AgentsView> createState()=>_AgentsViewState();}
 class _AgentsViewState extends State<_AgentsView>{
@@ -18,6 +18,7 @@ class _AgentsViewState extends State<_AgentsView>{
     return Scaffold(backgroundColor:AppColors.background,appBar:AppBar(backgroundColor:AppColors.primaryNavy,title:const Text('مُدَبِّر — الوكلاء',style:TextStyle(color:AppColors.primaryGold)),actions:[Center(child:Text('\${AgentRegistry.all.length} وكيل',style:const TextStyle(color:Colors.white70))),const SizedBox(width:12)]),
     body:Column(children:[
       SizedBox(height:68,child:ListView.builder(scrollDirection:Axis.horizontal,reverse:true,padding:const EdgeInsets.all(10),itemCount:AgentRegistry.all.length,itemBuilder:(_,i){final a=AgentRegistry.all[i];final s=p.selectedAgent==a.id;return Padding(padding:const EdgeInsets.only(left:7),child:ChoiceChip(label:Text(a.name),selected:s,onSelected:(_)=>p.selectAgent(s?null:a.id)));})),
+      Padding(padding:const EdgeInsets.fromLTRB(14,0,14,8),child:Container(width:double.infinity,padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:AppColors.surface,borderRadius:BorderRadius.circular(14),border:Border.all(color:AppColors.primaryNavyLight.withOpacity(.35))),child:Column(crossAxisAlignment:CrossAxisAlignment.end,children:[Row(children:[const Icon(Icons.storage_rounded,color:AppColors.primaryNavyLight,size:18),const SizedBox(width:7),Expanded(child:Text('معرفة محلية من ملفات assets',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.bold))),Text('${p.indexedDocumentCount} مقطع',style:const TextStyle(color:AppColors.primaryGold,fontSize:12))]),const SizedBox(height:4),Text(p.loadedKnowledgeSources.isEmpty?'جارٍ فهرسة الأصول المحلية...':'المصادر: ${p.loadedKnowledgeSources.join(' • ')}',maxLines:2,overflow:TextOverflow.ellipsis,textDirection:TextDirection.rtl,style:const TextStyle(color:Colors.white60,fontSize:11))])),
       if(t!=null)_TaskBar(task:t,provider:p),
       Expanded(child:_TaskView(task:t,messages:p.messages)),
       SafeArea(top:false,child:Padding(padding:const EdgeInsets.all(10),child:Row(children:[
