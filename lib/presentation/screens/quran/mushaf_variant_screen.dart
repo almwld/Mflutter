@@ -4,6 +4,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
 import '../../../services/text_transformer.dart';
+import '../../widgets/quran_text_shimmer.dart';
 
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
 
@@ -358,14 +359,18 @@ class _FixedMushafLine extends StatelessWidget {
           child: Transform.scale(
             scaleX: scaleX,
             alignment: Alignment.center,
-            child: Text(
-              text,
-              textDirection: TextDirection.rtl,
-              textAlign: line.centered ? TextAlign.center : TextAlign.right,
-              softWrap: false,
-              maxLines: 1,
-              overflow: TextOverflow.clip,
-              style: style,
+            child: QuranTextShimmer(
+              baseColor: gold,
+              highlightColor: const Color(0xFFFFF4CC),
+              child: Text(
+                text,
+                textDirection: TextDirection.rtl,
+                textAlign: line.centered ? TextAlign.center : TextAlign.right,
+                softWrap: false,
+                maxLines: 1,
+                overflow: TextOverflow.clip,
+                style: style,
+              ),
             ),
           ),
         );
