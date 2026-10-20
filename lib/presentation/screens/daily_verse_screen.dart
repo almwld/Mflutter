@@ -53,6 +53,14 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
     }
   }
 
+  Future<void> _retryLoad() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    await _loadVerse();
+  }
+
   Future<void> _refreshBookmark() async {
     final verse = _current;
     if (verse == null) return;
@@ -138,10 +146,7 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
                         Text(_error!, textAlign: TextAlign.center, textDirection: TextDirection.rtl),
                         const SizedBox(height: 12),
                         FilledButton.icon(
-                          onPressed: () => setState(() {
-                            _loading = true;
-                            _error = null;
-                          }) == null ? null : _loadVerse(),
+                          onPressed: _retryLoad,
                           icon: const Icon(Icons.refresh),
                           label: const Text('إعادة المحاولة'),
                         ),
