@@ -25,12 +25,12 @@ class AgentMemoryService {
     final prefs = await SharedPreferences.getInstance();
     final rows = _decodeRows(prefs.getString(_historyKey));
     rows.add({
-      'query': query,
-      'answer': answer,
+      'query': query.length > 500 ? '${query.substring(0, 500)}…' : query,
+      'answer': answer.length > 6000 ? '${answer.substring(0, 6000)}…' : answer,
       'sources': sources,
       'savedAt': DateTime.now().toIso8601String(),
     });
-    final bounded = rows.length > 40 ? rows.sublist(rows.length - 40) : rows;
+    final bounded = rows.length > 20 ? rows.sublist(rows.length - 20) : rows;
     await prefs.setString(_historyKey, jsonEncode(bounded));
   }
 
@@ -44,12 +44,12 @@ class AgentMemoryService {
     final note = <String, dynamic>{
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
       'title': title,
-      'content': content,
+      'content': content.length > 12000 ? '${content.substring(0, 12000)}…' : content,
       'sources': sources,
       'createdAt': DateTime.now().toIso8601String(),
     };
     rows.add(note);
-    final bounded = rows.length > 100 ? rows.sublist(rows.length - 100) : rows;
+    final bounded = rows.length > 50 ? rows.sublist(rows.length - 50) : rows;
     await prefs.setString(_vaultKey, jsonEncode(bounded));
 
     // Read back from persistent storage to verify that the note was saved.
