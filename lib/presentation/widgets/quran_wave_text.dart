@@ -13,6 +13,7 @@ class QuranWaveText extends StatefulWidget {
     super.key,
     required this.text,
     required this.style,
+    this.importanceText,
     this.enabled = true,
     this.sequenceWordCount,
     this.sequenceWordOffset = 0,
@@ -23,6 +24,8 @@ class QuranWaveText extends StatefulWidget {
 
   final String text;
   final TextStyle style;
+  /// Original Arabic source used to identify key words in transformed scripts.
+  final String? importanceText;
   final bool enabled;
 
   /// When set, several line widgets can share one page-wide wave timeline.
@@ -51,11 +54,15 @@ class _QuranWaveTextState extends State<QuranWaveText>
   };
 
   late List<String> _words;
+  late List<String> _importanceWords;
   late AnimationController _controller;
   late Duration _duration;
 
   int get _sequenceCount =>
       math.max(1, widget.sequenceWordCount ?? _words.length).toInt();
+
+  static List<String> _splitWords(String text) =>
+      text.trim().isEmpty ? <String>[] : text.trim().split(RegExp(r'\\s+'));
 
   static String _normalize(String word) {
     return word
@@ -89,6 +96,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
     _words = widget.text.trim().isEmpty
         ? <String>[]
         : widget.text.trim().split(RegExp(r'\s+'));
+    _importanceWords = _splitWords(widget.importanceText ?? widget.text);
     _duration = _animationDuration();
     _controller = AnimationController(vsync: this, duration: _duration);
   }
@@ -103,6 +111,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
   void didUpdateWidget(covariant QuranWaveText oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.text != widget.text ||
+        oldWidget.importanceText != widget.importanceText ||
         oldWidget.sequenceWordCount != widget.sequenceWordCount ||
         oldWidget.stepDuration != widget.stepDuration) {
       _words = widget.text.trim().isEmpty
@@ -114,6 +123,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
     }
     if (oldWidget.enabled != widget.enabled ||
         oldWidget.text != widget.text ||
+        oldWidget.importanceText != widget.importanceText ||
         oldWidget.sequenceWordCount != widget.sequenceWordCount ||
         oldWidget.stepDuration != widget.stepDuration) {
       _syncAnimation();
@@ -135,7 +145,8 @@ class _QuranWaveTextState extends State<QuranWaveText>
   }
 
   double _scaleForWord(int index) {
-    if (!_isImportant(_words[index])) return 1;
+    if (index >= _importanceWords.length ||
+        !_isImportant(_importanceWords[index])) return 1;
     final globalPosition = _controller.value * _sequenceCount;
     final localPosition = globalPosition - widget.sequenceWordOffset;
     final distance = (localPosition - index).abs();
