@@ -117,6 +117,7 @@ class _MushafHome extends StatelessWidget {
         SliverToBoxAdapter(child: _buildQuickActions(context)),
         SliverToBoxAdapter(child: _buildSectionTitle(context, 'رحلة التدبر', Icons.auto_awesome_rounded)),
         SliverToBoxAdapter(child: _buildInsightSection(context)),
+        SliverToBoxAdapter(child: _buildSuperAgentsCard(context)),
         SliverToBoxAdapter(child: _buildSectionTitle(context, 'أدوات مُدَبِّر', Icons.tune_rounded)),
         SliverToBoxAdapter(child: _buildToolsSection(context)),
         const SliverPadding(padding: EdgeInsets.only(bottom: 18)),
@@ -242,6 +243,61 @@ class _MushafHome extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: _FeatureCard(title: 'التدبر', subtitle: 'اكتشف أدوات الفهم', icon: Icons.lightbulb_outline_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InsightScreen())))),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSuperAgentsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AgentsScreen()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.colorScheme.primary.withOpacity(.42)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(Icons.hub_rounded, color: theme.colorScheme.primary, size: 28),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('الوكلاء الفائقون', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'تخطيط • بحث من assets • تفكير نقدي • تحقق • ذاكرة محلية',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(.68)),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_back_ios_new_rounded, size: 17, color: theme.colorScheme.primary),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
