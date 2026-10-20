@@ -108,7 +108,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
                 onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => MushafScreen(initialPage: page))),
+                  builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false))),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(textDirection: TextDirection.rtl, children: [
@@ -159,7 +159,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => MushafScreen(initialPage: page),
+                        builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false),
                       )),
                       child: ListTile(
                         leading: CircleAvatar(
