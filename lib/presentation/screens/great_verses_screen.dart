@@ -22,7 +22,7 @@ class GreatVersesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: const Text('🌟 آيات عظيمة', style: TextStyle(color: Color(0xFFFFD700))),
+        title: const Text('🌟 آيات عظيمة', style: TextStyle(color: AppColors.gold)),
         backgroundColor: AppColors.primaryNavy,
       ),
       body: ListView.builder(
@@ -35,9 +35,9 @@ class GreatVersesScreen extends StatelessWidget {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: AppColors.gold,
-                child: Text('${i + 1}', style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold)),
+                child: Text('${i + 1}', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
               ),
-              title: Text(v['title']!, style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+              title: Text(v['title']!, style: const TextStyle(color: AppColors.gold, fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
               subtitle: Text('${v['desc']}\n${v['ref']}', style: const TextStyle(color: Colors.white54)),
             ),
           );
