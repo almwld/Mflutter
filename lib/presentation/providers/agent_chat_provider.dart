@@ -101,6 +101,7 @@ class AgentChatProvider extends ChangeNotifier {
           return;
         }
 
+        _currentStepNumber = i + 1;
         var step = task.steps[i].copyWith(
           status: StepStatus.running,
           startedAt: DateTime.now(),
@@ -204,7 +205,7 @@ class AgentChatProvider extends ChangeNotifier {
 
     if (_selectedAgent != null) add(_selectedAgent!);
     final normalized = AgentKnowledgeService.normalize(query);
-    if (RegExp(r'آية|قرآن|سورة|تفسير|معنى|النور|الصمد|مسند|هيروغليف|عثمان').hasMatch(normalized)) {
+    if (RegExp(r'ايه|قران|سوره|تفسير|معني|النور|الصمد|مسند|هيروغليف|عثمان').hasMatch(normalized)) {
       for (final id in ['ayaat', 'tafsir', 'siyaq']) {
         add(id);
       }
