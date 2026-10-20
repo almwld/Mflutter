@@ -1,4 +1,4 @@
-import '../core/constants/app_colors.dart';
+import '../../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class GreatVersesScreen extends StatelessWidget {
@@ -31,7 +31,7 @@ class GreatVersesScreen extends StatelessWidget {
         itemBuilder: (_, i) {
           final v = verses[i];
           return Card(
-            color: const Color(0xFF1A237E).withOpacity(0.6),
+            color: AppColors.primaryNavy.withOpacity(0.6),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: AppColors.gold,
