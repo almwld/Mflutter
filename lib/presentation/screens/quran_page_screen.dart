@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/constants/app_colors.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -59,13 +60,13 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
         title: Text(
           widget.surahName,
           style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri'),
         ),
-        backgroundColor: const Color(0xFF1A237E),
+        backgroundColor: AppColors.primaryNavy,
         actions: [
           IconButton(
             icon: const Icon(Icons.text_increase, color: Color(0xFFFFD700)),
@@ -113,11 +114,11 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                       color: Colors.white.withOpacity(0.03),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: const Color(0xFFFFD700).withOpacity(0.15),
+                        color: AppColors.gold.withOpacity(0.15),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFFFD700).withOpacity(0.05),
+                          color: AppColors.gold.withOpacity(0.05),
                           blurRadius: 10,
                           spreadRadius: 1,
                         ),
