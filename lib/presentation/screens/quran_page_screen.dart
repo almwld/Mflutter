@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../widgets/quran_text_shimmer.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -126,18 +127,22 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          text,
-                          style: TextStyle(
-                            fontSize: _fontSize.toDouble(),
-                            fontFamily: 'Amiri',
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFFFFECB3),
-                            height: 2.2,
-                            letterSpacing: 1.2,
+                        QuranTextShimmer(
+                          baseColor: const Color(0xFFFFECB3),
+                          highlightColor: const Color(0xFFFFFFFF),
+                          child: Text(
+                            text,
+                            style: TextStyle(
+                              fontSize: _fontSize.toDouble(),
+                              fontFamily: 'Amiri',
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFFECB3),
+                              height: 2.2,
+                              letterSpacing: 1.2,
+                            ),
+                            textAlign: TextAlign.justify,
+                            textDirection: TextDirection.rtl,
                           ),
-                          textAlign: TextAlign.justify,
-                          textDirection: TextDirection.rtl,
                         ),
                         const SizedBox(height: 12),
                         Container(
