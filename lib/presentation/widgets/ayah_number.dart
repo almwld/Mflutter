@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 class AyahNumber extends StatelessWidget {
   final int number;
@@ -12,14 +13,14 @@ class AyahNumber extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFFD700), Color(0xFFB8860B)],
+          colors: [AppColors.gold, AppColors.primaryGoldDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.3),
+            color: const AppColors.gold.withOpacity(0.3),
             blurRadius: 4,
             spreadRadius: 1,
           ),
@@ -31,7 +32,7 @@ class AyahNumber extends StatelessWidget {
           fontFamily: 'Amiri',
           fontSize: 13,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1A237E),
+          color: AppColors.primaryNavy,
         ),
       ),
     );
