@@ -385,6 +385,7 @@ class _FixedMushafLine extends StatelessWidget {
             alignment: Alignment.center,
             child: QuranWaveText(
               text: text,
+              importanceText: line.text,
               style: style,
               sequenceWordCount: sequenceWordCount,
               sequenceWordOffset: sequenceWordOffset,
