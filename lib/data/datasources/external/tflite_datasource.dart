@@ -126,11 +126,6 @@ class TFLiteDatasource {
     return shape.fold<int>(1, (count, dimension) => count * dimension);
   }
 
-  Map<String, dynamic> _processOutput(List<dynamic> output) => {
-        'output': output,
-        'shape': _inferShape(output),
-      };
-
   List<int> _inferShape(dynamic value) {
     if (value is! List) return const <int>[];
     if (value.isEmpty) return <int>[0];
