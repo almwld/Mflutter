@@ -135,6 +135,9 @@ class AgentRegistry {
     AgentDefinition('retriever','مسترجع','التشغيل','استرجاع المعرفة المفهرسة'),
     AgentDefinition('context','سياق جامع','التشغيل','تجميع السياق للوكيل'),
     AgentDefinition('narrator','صائغ','المخرجات','صياغة النتيجة النهائية'),
+    AgentDefinition('overthinker','المفكر المتعمق','الفكر العميق','فحص التناقضات والمخاطر والزوايا البديلة من الأدلة المتاحة'),
+    AgentDefinition('loop_engineering','هندسة الحلقة','التشغيل','إعادة المحاولة بحد أقصى ثلاث مرات مع توثيق سبب الفشل'),
+    AgentDefinition('obsidian','دفتر المعرفة','الذاكرة','حفظ واسترجاع الملاحظات المحلية مع مصدرها وتاريخها'),
   ];
 
   static List<AgentDefinition> get all => List.unmodifiable(_core);
