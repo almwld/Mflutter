@@ -4,7 +4,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
 import '../../../services/text_transformer.dart';
-import '../../widgets/quran_text_shimmer.dart';
+import '../../widgets/quran_wave_text.dart';
 
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
 
@@ -240,6 +240,9 @@ class _VariantPage extends StatelessWidget {
   final Color gold;
   final String Function(String) transform;
 
+  static int _wordCount(String text) =>
+      text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\\s+')).length;
+
   String get _fontFamily {
     switch (mode) {
       case MushafVariantMode.musnad:
@@ -271,6 +274,11 @@ class _VariantPage extends StatelessWidget {
         }
 
         final lines = snapshot.data!;
+        final sequenceWordCount = lines.fold<int>(
+          0,
+          (sum, line) => sum +
+              (line.isBlank || line.isSurahHeader ? 0 : _wordCount(line.text)),
+        );
         return LayoutBuilder(
           builder: (context, constraints) {
             final lineHeight = constraints.maxHeight / 15.0;
@@ -280,17 +288,29 @@ class _VariantPage extends StatelessWidget {
               color: paper,
               child: Column(
                 children: [
-                  for (final line in lines)
+                  for (var lineIndex = 0; lineIndex < lines.length; lineIndex++)
                     SizedBox(
                       height: lineHeight,
                       width: double.infinity,
-                      child: line.isBlank
+                      child: lines[lineIndex].isBlank
                           ? const SizedBox.shrink()
                           : _FixedMushafLine(
-                              line: line,
+                              line: lines[lineIndex],
                               transform: transform,
                               fontFamily: _fontFamily,
                               gold: gold,
+                              sequenceWordCount: sequenceWordCount,
+                              sequenceWordOffset: lines
+                                  .take(lineIndex)
+                                  .fold<int>(
+                                    0,
+                                    (sum, previous) =>
+                                        sum +
+                                        (previous.isBlank ||
+                                                previous.isSurahHeader
+                                            ? 0
+                                            : _wordCount(previous.text)),
+                                  ),
                             ),
                     ),
                 ],
@@ -309,12 +329,16 @@ class _FixedMushafLine extends StatelessWidget {
     required this.transform,
     required this.fontFamily,
     required this.gold,
+    required this.sequenceWordCount,
+    required this.sequenceWordOffset,
   });
 
   final MushafVariantLine line;
   final String Function(String) transform;
   final String fontFamily;
   final Color gold;
+  final int sequenceWordCount;
+  final int sequenceWordOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -359,19 +383,15 @@ class _FixedMushafLine extends StatelessWidget {
           child: Transform.scale(
             scaleX: scaleX,
             alignment: Alignment.center,
-            child: QuranTextShimmer(
-              baseColor: gold,
-              highlightColor: const Color(0xFFFFF4CC),
-              child: Text(
-                text,
-                textDirection: TextDirection.rtl,
-                textAlign: line.centered ? TextAlign.center : TextAlign.right,
-                softWrap: false,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: style,
-              ),
-            ),
+            child: QuranWaveText(
+              text: text,
+              style: style,
+              sequenceWordCount: sequenceWordCount,
+              sequenceWordOffset: sequenceWordOffset,
+              textAlign: line.centered
+                  ? WrapAlignment.center
+                  : WrapAlignment.end,
+            ),,
           ),
         );
       },
