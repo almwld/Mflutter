@@ -91,7 +91,7 @@ class SmartLensService {
           surahNumber: ayah.surahNumber,
           ayahNumber: ayah.ayahNumber,
           canonicalText: ayah.text,
-          score: score.clamp(0.0, 1.0),
+          score: score.clamp(0.0, 1.0).toDouble(),
         ));
       }
     }
