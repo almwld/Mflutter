@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/abjad_extended_service.dart';
@@ -29,7 +31,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   void dispose() {
     _abjad.dispose();
     _search.dispose();
-    AudioSynthesisService.stop();
+    unawaited(AudioSynthesisService.stop());
     super.dispose();
   }
 
