@@ -3,6 +3,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
@@ -23,12 +24,21 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   static const _paper = Color(0xFFF8F1E4);
   static const _gold = Color(0xFF9A6B00);
   static const _darkGold = Color(0xFFE2B84A);
+  Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
+  Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
+  QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   @override
   void initState() {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
+    _restorePageTheme();
+  }
+
+  Future<void> _restorePageTheme() async {
+    final theme = await QuranPageThemeService.load();
+    if (mounted) setState(() => _pageTheme = theme);
   }
 
   @override
@@ -74,11 +84,10 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final gold = dark ? _darkGold : _gold;
+    final gold = _pageTextColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF17130F),
+      backgroundColor: _pageBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -91,7 +100,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 itemBuilder: (_, index) => _VariantPage(
                   page: index + 1,
                   mode: _mode,
-                  paper: _paper,
+                  paper: _pageBackground,
                   gold: gold,
                   transform: _transform,
                 ),
@@ -106,7 +115,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildHeader(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
@@ -170,10 +179,10 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               ),
               const SizedBox(height: 8),
               for (final entry in [
-                (MushafVariantMode.musnad, 'المسند', 'النص العربي بحروف المسند'),
+                (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
                 (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
-                (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'تحويل العرض إلى الرموز الهيروغليفية'),
+                (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
                 ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -197,7 +206,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildNavigation(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
@@ -270,32 +279,47 @@ class _VariantPage extends StatelessWidget {
         }
 
         final lines = snapshot.data!;
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final lineHeight = constraints.maxHeight / 15.0;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        return Container(
+          // Match the canonical MushafScreen page frame and outer geometry.
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: paper,
+            border: Border.all(color: const Color(0xFF8C6A2D), width: 1.6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
               color: paper,
-              child: Column(
-                children: [
-                  for (final line in lines)
-                    SizedBox(
-                      height: lineHeight,
-                      width: double.infinity,
-                      child: line.isBlank
-                          ? const SizedBox.shrink()
-                          : _FixedMushafLine(
-                              line: line,
-                              transform: transform,
-                              fontFamily: _fontFamily,
-                              gold: gold,
-                            ),
-                    ),
-                ],
+              border: Border.all(
+                color: const Color(0xFF8C6A2D).withOpacity(.38),
+                width: .7,
               ),
-            );
-          },
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Exactly 15 fixed slots: script changes never reflow the page.
+                final lineHeight = constraints.maxHeight / 15.0;
+                return Column(
+                  children: [
+                    for (final line in lines)
+                      SizedBox(
+                        height: lineHeight,
+                        width: double.infinity,
+                        child: line.isBlank
+                            ? const SizedBox.shrink()
+                            : _FixedMushafLine(
+                                line: line,
+                                transform: transform,
+                                fontFamily: _fontFamily,
+                                gold: gold,
+                              ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
         );
       },
     );
