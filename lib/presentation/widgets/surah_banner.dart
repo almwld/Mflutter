@@ -25,12 +25,12 @@ class SurahBanner extends StatelessWidget {
               colors: [AppColors.primaryNavy, AppColors.primaryNavyLight, AppColors.primaryNavy],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const AppColors.gold, width: 1.5),
+            border: Border.all(color: AppColors.gold, width: 1.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(width: 40, height: 1, color: const AppColors.gold),
+              Container(width: 40, height: 1, color: AppColors.gold),
               const SizedBox(width: 16),
               Text(
                 'سُورَةُ $surahName',
@@ -43,7 +43,7 @@ class SurahBanner extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Container(width: 40, height: 1, color: const AppColors.gold),
+              Container(width: 40, height: 1, color: AppColors.gold),
             ],
           ),
         ),
