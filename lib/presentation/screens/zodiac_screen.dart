@@ -189,7 +189,7 @@ class ZodiacScreen extends StatelessWidget {
       'النار': Colors.red,
       'التراب': Colors.brown,
       'الهواء': Colors.grey,
-      'الماء': Colors.blue,
+      'الماء': Theme.of(context).colorScheme.secondary,
     };
     final color = elementColors[sign['element']] ?? colors.primary;
 
