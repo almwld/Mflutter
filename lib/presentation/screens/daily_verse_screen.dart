@@ -119,7 +119,7 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
       verse.ayahNumber,
     );
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page)),
+      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)),
     );
   }
 
