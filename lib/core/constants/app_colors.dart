@@ -11,11 +11,11 @@ class AppColors {
   static const Color textOnPrimary = Colors.white;
   static const Color background = Color(0xFF071C1B);
   static const Color backgroundLight = Color(0xFFF5F7FA);
-  static const Color backgroundDark = Color(0xFF0A0E27);
+  static const Color backgroundDark = Color(0xFF071C1B);
   static const Color deepBackground = Color(0xFF04110F);
   static const Color surface = Color(0xFF12352E);
   static const Color surfaceLight = Color(0xFF16453D);
-  static const Color cardBackground = Color(0xFF16213E);
+  static const Color cardBackground = Color(0xFF12352E);
   static const Color cardBackgroundDark = Color(0xFF0D2924);
   static const Color textPrimary = Colors.white;
   static const Color textPrimaryDark = Colors.white;
