@@ -391,7 +391,7 @@ class _FixedMushafLine extends StatelessWidget {
               textAlign: line.centered
                   ? WrapAlignment.center
                   : WrapAlignment.end,
-            ),,
+            ),
           ),
         );
       },
