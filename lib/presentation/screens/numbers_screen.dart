@@ -89,7 +89,7 @@ class NumbersScreen extends StatelessWidget {
   Widget _buildNumberCard(Map<String, dynamic> number) {
     final elementColors = {
       'النار': Colors.red,
-      'الماء': Colors.blue,
+      'الماء': AppColors.primaryNavyLight,
       'الهواء': Colors.grey,
       'التراب': Colors.brown,
       'الروح': AppColors.gold,
