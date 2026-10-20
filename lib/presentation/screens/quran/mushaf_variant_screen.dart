@@ -241,7 +241,7 @@ class _VariantPage extends StatelessWidget {
   final String Function(String) transform;
 
   static int _wordCount(String text) =>
-      text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\\s+')).length;
+      text.trim().isEmpty ? 0 : text.trim().split(RegExp(r'\s+')).length;
 
   String get _fontFamily {
     switch (mode) {
