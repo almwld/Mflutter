@@ -210,7 +210,7 @@ class AgentChatProvider extends ChangeNotifier {
         add(id);
       }
     }
-    if (RegExp(r'جمل|عدد|حساب|قيمة').hasMatch(normalized)) add('jummal');
+    if (RegExp(r'جمل|عدد|حساب|قيمه').hasMatch(normalized)) add('jummal');
     if (RegExp(r'ذاكرة|سابق|تذكر|ملاحظة|دفتر').hasMatch(normalized)) add('memory');
     add('overthinker');
     add('loop_engineering');
