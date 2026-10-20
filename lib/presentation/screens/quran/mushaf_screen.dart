@@ -14,9 +14,15 @@ import '../../../services/quran_page_theme_service.dart';
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
 /// بدلاً من إعادة توزيع النص اعتماداً على عدد الأحرف.
 class MushafScreen extends StatefulWidget {
-  const MushafScreen({super.key, this.initialPage = 1});
+  const MushafScreen({
+    super.key,
+    this.initialPage = 1,
+    this.restoreLastPage = true,
+  });
 
   final int initialPage;
+  /// Set false when opening a specific verse/page from search, favorites, or index.
+  final bool restoreLastPage;
 
   @override
   State<MushafScreen> createState() => _MushafScreenState();
@@ -50,7 +56,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _mushafZoomController = TransformationController();
-    _restoreLastPage();
+    if (widget.restoreLastPage) _restoreLastPage();
     _restorePageTheme();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
