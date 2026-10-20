@@ -83,7 +83,7 @@ class AgentKnowledgeService {
       ]);
       final text = _firstText(map, const [
         'content', 'description', 'summary', 'body', 'text', 'ayah',
-        'meaning', 'definition', 'info', 'value',
+        'meaning', 'definition', 'info', 'value', 'role', 'rule', 'purpose',
       ]);
       if (text != null && text.trim().length >= 12) {
         _documents.add(AgentKnowledgeDocument(
