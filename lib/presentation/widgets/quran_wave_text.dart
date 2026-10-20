@@ -114,9 +114,8 @@ class _QuranWaveTextState extends State<QuranWaveText>
         oldWidget.importanceText != widget.importanceText ||
         oldWidget.sequenceWordCount != widget.sequenceWordCount ||
         oldWidget.stepDuration != widget.stepDuration) {
-      _words = widget.text.trim().isEmpty
-          ? <String>[]
-          : widget.text.trim().split(RegExp(r'\s+'));
+      _words = _splitWords(widget.text);
+      _importanceWords = _splitWords(widget.importanceText ?? widget.text);
       _duration = _animationDuration();
       _controller.duration = _duration;
       _controller.value = 0;
