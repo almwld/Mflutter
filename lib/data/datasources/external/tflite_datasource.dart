@@ -86,11 +86,23 @@ class TFLiteDatasource {
     }
   }
 
+  /// Builds a nested Dart array matching the model's actual input tensor.
+  /// This is required for rank-3/rank-4 inputs such as image tensors.
   List<dynamic> _createInputArray(List<double> input, List<int> shape) {
-    if (shape.length == 2) {
-      return [input];
+    if (shape.isEmpty || shape.any((dimension) => dimension <= 0)) {
+      throw ArgumentError('Invalid input tensor dimensions: ' + shape.toString());
     }
-    return input;
+
+    final expectedElements =
+        shape.fold<int>(1, (count, dimension) => count * dimension);
+    if (input.length != expectedElements) {
+      throw ArgumentError(
+        'Input has ${input.length} elements but shape ' + shape.toString() +
+        ' requires ' + expectedElements.toString() + ' elements.',
+      );
+    }
+
+    return _reshape(input, shape);
   }
 
   Map<String, dynamic> _processOutput(List<dynamic> output) {
