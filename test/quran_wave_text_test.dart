@@ -7,6 +7,8 @@ void main() {
 
   testWidgets('shows original Quran words and animates key words',
       (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     const verse = 'الله رب العالمين';
 
     await tester.pumpWidget(
@@ -33,6 +35,8 @@ void main() {
 
   testWidgets('respects reduced motion without changing words',
       (tester) async {
+    final semantics = tester.ensureSemantics();
+    addTearDown(semantics.dispose);
     const verse = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
 
     await tester.pumpWidget(
