@@ -343,35 +343,81 @@ class _FixedMushafLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (line.isSurahHeader) {
-      return Center(
-        child: Text(
-          line.surah == null ? '' : getSurahNameArabic(line.surah!),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          style: TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-            color: gold,
+      // Decorative surah plaque with the canonical Mushaf double-frame motif.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF8C6A2D), width: 1.0),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: const Color(0xFF8C6A2D).withOpacity(.42),
+                width: .6,
+              ),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              line.surah == null ? '' : getSurahNameArabic(line.surah!),
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: gold,
+              ),
+            ),
           ),
         ),
       );
     }
 
-    final text = transform(line.text);
-    if (text.isEmpty) return const SizedBox.shrink();
+    if (line.segments.isEmpty) return const SizedBox.shrink();
+
+    // Transform Quran words only; preserve verse markers as ornamental spans.
+    final spans = <InlineSpan>[];
+    for (final segment in line.segments) {
+      final marker = RegExp(r'^﴿(\d+)﴾$').firstMatch(segment);
+      if (marker != null) {
+        spans.add(TextSpan(
+          text: ' ۞\${marker.group(1)}۞ ',
+          style: TextStyle(
+            fontFamily: 'Amiri',
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF8C6A2D),
+          ),
+        ));
+      } else {
+        final converted = transform(segment);
+        if (converted.isNotEmpty) {
+          spans.add(TextSpan(
+            text: '\$converted ',
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: gold,
+              height: 1.0,
+            ),
+          ));
+        }
+      }
+    }
+    if (spans.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final style = TextStyle(
-          fontFamily: fontFamily,
-          fontSize: 21,
-          fontWeight: FontWeight.w700,
-          color: gold,
-          height: 1.0,
-        );
+        final richText = TextSpan(children: spans);
         final painter = TextPainter(
-          text: TextSpan(text: text, style: style),
+          text: richText,
           textDirection: TextDirection.rtl,
           maxLines: 1,
         )..layout();
@@ -383,14 +429,13 @@ class _FixedMushafLine extends StatelessWidget {
           child: Transform.scale(
             scaleX: scaleX,
             alignment: Alignment.center,
-            child: Text(
-              text,
+            child: RichText(
+              text: richText,
               textDirection: TextDirection.rtl,
               textAlign: line.centered ? TextAlign.center : TextAlign.right,
               softWrap: false,
               maxLines: 1,
               overflow: TextOverflow.clip,
-              style: style,
             ),
           ),
         );
