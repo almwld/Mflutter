@@ -15,6 +15,7 @@ import 'settings/settings_screen.dart';
 import 'about_screen.dart';
 import 'device/ar_lens_screen.dart';
 import 'device/gaze_tracking_screen.dart';
+import 'occult_explorer_screen.dart';
 import 'elements_screen.dart';
 import 'numbers_screen.dart';
 import 'zodiac_screen.dart';
@@ -312,6 +313,7 @@ class _MushafHome extends StatelessWidget {
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
       ('الوكلاء', Icons.psychology_alt_rounded, const AgentsScreen()),
+      ('مستكشف المعرفة', Icons.auto_stories_rounded, const OccultExplorerScreen()),
       ('الإحصائيات', Icons.insights_rounded, const StatsScreen()),
       ('عدسة AR', Icons.view_in_ar_outlined, const ARLensScreen()),
       ('تتبع النظر', Icons.visibility_outlined, const GazeTrackingScreen()),
@@ -449,6 +451,7 @@ class MoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       ('الوكلاء', Icons.psychology_alt_rounded, const AgentsScreen()),
+      ('مستكشف المعرفة', Icons.auto_stories_rounded, const OccultExplorerScreen()),
       ('التدبر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
