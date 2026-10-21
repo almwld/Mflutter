@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 class ThemeService {
   static const Map<String, Map<String, Color>> _themes = {
     'default': {
-      'primary': Color(0xFF1A237E),
-      'secondary': Color(0xFFFFD700),
-      'background': Color(0xFF0A0E27),
-      'surface': Color(0xFF16213E),
-      'lightBackground': Color(0xFFF5F0E8),
-      'lightSurface': Color(0xFFFDF9F3),
+      'primary': Color(0xFF00838F),
+      'secondary': Color(0xFF00BCD4),
+      'background': Color(0xFF071C1B),
+      'surface': Color(0xFF12352E),
+      'lightBackground': Color(0xFFF5F7FA),
+      'lightSurface': Color(0xFFFFFFFF),
     },
     'emerald': {
       'primary': Color(0xFF004D40),
@@ -45,7 +45,7 @@ class ThemeService {
   };
 
   static const Map<String, String> themeLabels = {
-    'default': 'ملكي كلاسيكي',
+    'default': 'فيروزي وذهبي',
     'emerald': 'زمردي',
     'royal': 'أرجواني ملكي',
     'ocean': 'أزرق محيطي',

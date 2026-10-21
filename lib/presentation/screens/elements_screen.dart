@@ -34,7 +34,7 @@ class ElementsScreen extends StatelessWidget {
             'الماء',
             'العنصر الثاني',
             'الصفة: الرطوبة والبرودة',
-            Colors.blue,
+            AppColors.primaryNavyLight,
             Icons.water_drop,
           ),
           _buildElementCard(

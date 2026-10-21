@@ -65,7 +65,7 @@ class ZodiacScreen extends StatelessWidget {
           _buildLegendItem(context, 'النار', Colors.red),
           _buildLegendItem(context, 'التراب', Colors.brown),
           _buildLegendItem(context, 'الهواء', Colors.grey),
-          _buildLegendItem(context, 'الماء', Colors.blue),
+          _buildLegendItem(context, 'الماء', Theme.of(context).colorScheme.secondary),
         ],
       ),
     );
@@ -189,7 +189,7 @@ class ZodiacScreen extends StatelessWidget {
       'النار': Colors.red,
       'التراب': Colors.brown,
       'الهواء': Colors.grey,
-      'الماء': Colors.blue,
+      'الماء': Theme.of(context).colorScheme.secondary,
     };
     final color = elementColors[sign['element']] ?? colors.primary;
 

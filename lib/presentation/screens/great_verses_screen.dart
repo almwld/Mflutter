@@ -1,3 +1,4 @@
+import '../../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class GreatVersesScreen extends StatelessWidget {
@@ -19,10 +20,10 @@ class GreatVersesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
-        title: const Text('🌟 آيات عظيمة', style: TextStyle(color: Color(0xFFFFD700))),
-        backgroundColor: const Color(0xFF1A237E),
+        title: const Text('🌟 آيات عظيمة', style: TextStyle(color: AppColors.gold)),
+        backgroundColor: AppColors.primaryNavy,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(12),
@@ -30,13 +31,13 @@ class GreatVersesScreen extends StatelessWidget {
         itemBuilder: (_, i) {
           final v = verses[i];
           return Card(
-            color: const Color(0xFF1A237E).withOpacity(0.6),
+            color: AppColors.primaryNavy.withOpacity(0.6),
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFFFFD700),
-                child: Text('${i + 1}', style: const TextStyle(color: Color(0xFF1A237E), fontWeight: FontWeight.bold)),
+                backgroundColor: AppColors.gold,
+                child: Text('${i + 1}', style: const TextStyle(color: AppColors.primaryNavy, fontWeight: FontWeight.bold)),
               ),
-              title: Text(v['title']!, style: const TextStyle(color: Color(0xFFFFD700), fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+              title: Text(v['title']!, style: const TextStyle(color: AppColors.gold, fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
               subtitle: Text('${v['desc']}\n${v['ref']}', style: const TextStyle(color: Colors.white54)),
             ),
           );

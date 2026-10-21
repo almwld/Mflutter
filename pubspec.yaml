@@ -19,6 +19,7 @@ dependencies:
   sqflite: ^2.4.0
   encrypt: ^5.0.3
   sensors_plus: ^6.0.1
+  camera: ^0.11.2+1
   share_plus: ^10.0.2
   pdf: ^3.11.3
   audioplayers: ^6.1.0
@@ -47,6 +48,7 @@ flutter:
     - assets/musnad_quran.json
     - assets/hieroglyphic_quran.json
     - assets/all_knowledge.json
+    - assets/agent_knowledge.json
     - assets/mushaf_layout.json
     - assets/fonts/
     - assets/images/

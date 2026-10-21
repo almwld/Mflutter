@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 
 class SurahBanner extends StatelessWidget {
   final String surahName;
@@ -21,15 +22,15 @@ class SurahBanner extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1A237E), Color(0xFF283593), Color(0xFF1A237E)],
+              colors: [AppColors.primaryNavy, AppColors.primaryNavyLight, AppColors.primaryNavy],
             ),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFFD700), width: 1.5),
+            border: Border.all(color: AppColors.gold, width: 1.5),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(width: 40, height: 1, color: const Color(0xFFFFD700)),
+              Container(width: 40, height: 1, color: AppColors.gold),
               const SizedBox(width: 16),
               Text(
                 'سُورَةُ $surahName',
@@ -37,12 +38,12 @@ class SurahBanner extends StatelessWidget {
                   fontFamily: 'Amiri',
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFFD700),
+                  color: AppColors.gold,
                   letterSpacing: 2,
                 ),
               ),
               const SizedBox(width: 16),
-              Container(width: 40, height: 1, color: const Color(0xFFFFD700)),
+              Container(width: 40, height: 1, color: AppColors.gold),
             ],
           ),
         ),
@@ -55,7 +56,7 @@ class SurahBanner extends StatelessWidget {
               fontFamily: 'Amiri',
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Color(0xFFFFD700),
+              color: AppColors.gold,
             ),
           ),
         ],

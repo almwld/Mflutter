@@ -15,6 +15,9 @@ import 'settings/settings_screen.dart';
 import 'about_screen.dart';
 import 'device/ar_lens_screen.dart';
 import 'device/gaze_tracking_screen.dart';
+import 'elements_screen.dart';
+import 'numbers_screen.dart';
+import 'zodiac_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -114,6 +117,7 @@ class _MushafHome extends StatelessWidget {
         SliverToBoxAdapter(child: _buildQuickActions(context)),
         SliverToBoxAdapter(child: _buildSectionTitle(context, 'رحلة التدبر', Icons.auto_awesome_rounded)),
         SliverToBoxAdapter(child: _buildInsightSection(context)),
+        SliverToBoxAdapter(child: _buildSuperAgentsCard(context)),
         SliverToBoxAdapter(child: _buildSectionTitle(context, 'أدوات مُدَبِّر', Icons.tune_rounded)),
         SliverToBoxAdapter(child: _buildToolsSection(context)),
         const SliverPadding(padding: EdgeInsets.only(bottom: 18)),
@@ -243,11 +247,71 @@ class _MushafHome extends StatelessWidget {
     );
   }
 
+  Widget _buildSuperAgentsCard(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AgentsScreen()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: theme.colorScheme.primary.withOpacity(.42)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(Icons.hub_rounded, color: theme.colorScheme.primary, size: 28),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('الوكلاء الفائقون', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(
+                        'تخطيط • بحث من assets • تفكير نقدي • تحقق • ذاكرة محلية',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withOpacity(.68)),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_back_ios_new_rounded, size: 17, color: theme.colorScheme.primary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildToolsSection(BuildContext context) {
     final items = [
-      ('الوكلاء', Icons.psychology_alt_rounded, const AgentsScreen()),
+      ('تصفح القرآن', Icons.menu_book_rounded, const QuranIndexScreen()),
+      ('علم العناصر', Icons.water_drop_outlined, const ElementsScreen()),
+      ('علم الأعداد', Icons.numbers_rounded, const NumbersScreen()),
+      ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('التدبر والبصائر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
+      ('الوكلاء', Icons.psychology_alt_rounded, const AgentsScreen()),
       ('الإحصائيات', Icons.insights_rounded, const StatsScreen()),
       ('عدسة AR', Icons.view_in_ar_outlined, const ARLensScreen()),
       ('تتبع النظر', Icons.visibility_outlined, const GazeTrackingScreen()),

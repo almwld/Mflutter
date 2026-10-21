@@ -4,11 +4,11 @@ class AppTheme {
   static const fontFamily = 'Amiri';
   static const gold = Color(0xFFFFD700);
   static const goldDark = Color(0xFFB8860B);
-  static const navy = Color(0xFF1A237E);
-  static const darkBackground = Color(0xFF0A0E27);
-  static const darkSurface = Color(0xFF16213E);
-  static const lightBackground = Color(0xFFF5F0E8);
-  static const lightSurface = Color(0xFFFDF9F3);
+  static const navy = Color(0xFF00838F);
+  static const darkBackground = Color(0xFF071C1B);
+  static const darkSurface = Color(0xFF12352E);
+  static const lightBackground = Color(0xFFF5F7FA);
+  static const lightSurface = Color(0xFFFFFFFF);
 
   static ThemeData get darkTheme => _buildTheme(dark: true);
   static ThemeData get lightTheme => _buildTheme(dark: false);

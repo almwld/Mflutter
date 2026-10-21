@@ -1,3 +1,4 @@
+import '../../core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class DivineNamesScreen extends StatelessWidget {
@@ -29,13 +30,13 @@ class DivineNamesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E27),
+      backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(title: const Text('🕌 الأسماء الحسنى', style: TextStyle(color: Color(0xFFFFD700)))),
       body: GridView.count(
         crossAxisCount: 2,
         padding: const EdgeInsets.all(10),
         children: names.map((n) => Card(
-          color: const Color(0xFF1A237E).withOpacity(0.6),
+          color: AppColors.primaryNavy.withOpacity(0.6),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text(n['name']!, style: const TextStyle(color: Color(0xFFFFD700), fontSize: 20, fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),

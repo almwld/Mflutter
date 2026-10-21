@@ -170,7 +170,7 @@ class InsightCard extends StatelessWidget {
       case InsightCategory.quran:
         return Colors.green;
       case InsightCategory.science:
-        return Colors.blue;
+        return AppColors.primaryNavyLight;
       case InsightCategory.wisdom:
         return Colors.orange;
       default:
