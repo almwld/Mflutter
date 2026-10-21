@@ -1,15 +1,19 @@
 import 'dart:io';
-import 'package:tflite_flutter/tflite_flutter.dart';
+
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+
 import '../utils/feature_extractor.dart';
 
-/// Loads user-supplied TFLite models from the device filesystem.
+/// Loads user-imported TFLite models from the app-private support directory.
 ///
-/// The model directory is intentionally external to the Flutter asset bundle:
-/// models discovered there must be opened with [Interpreter.fromFile].
+/// Models are copied into app-private storage so they remain accessible after
+/// Android process restarts and do not depend on broad external-storage access.
 class ExternalModelService {
-  static const String _modelsPath =
-      '/storage/emulated/0/Download/mudabbir_models/';
+  static const String _modelsDirectoryName = 'mudabbir_models';
+  static const String _selectedModelKey = 'mudabbir.selected_tflite_model';
+
   static final ExternalModelService _instance =
       ExternalModelService._internal();
 
@@ -18,14 +22,21 @@ class ExternalModelService {
 
   final Map<String, Interpreter> _loadedModels = {};
   final FeatureExtractor _featureExtractor = FeatureExtractor();
+
   String? _selectedModel;
   String? get selectedModel => _selectedModel;
 
+  Future<Directory> _modelsDirectory() async {
+    final support = await getApplicationSupportDirectory();
+    final directory = Directory('${support.path}/$_modelsDirectoryName');
+    await directory.create(recursive: true);
+    return directory;
+  }
+
   Future<bool> checkModelsExist() async {
     try {
-      final directory = Directory(_modelsPath);
-      if (!await directory.exists()) return false;
-      await for (final entity in directory.list()) {
+      final directory = await _modelsDirectory();
+      await for (final entity in directory.list(followLinks: false)) {
         if (entity is File && entity.path.toLowerCase().endsWith('.tflite')) {
           return true;
         }
@@ -36,48 +47,77 @@ class ExternalModelService {
     }
   }
 
+  /// Loads models from private storage and restores the user's selected model.
   Future<void> loadAllModels() async {
     try {
-      final directory = Directory(_modelsPath);
-      if (!await directory.exists()) return;
-
-      await for (final entity in directory.list()) {
-        if (entity is File && entity.path.toLowerCase().endsWith('.tflite')) {
-          final fileName = entity.uri.pathSegments.last;
-          final modelName =
-              fileName.substring(0, fileName.length - '.tflite'.length);
-          await loadModel(modelName);
+      final directory = await _modelsDirectory();
+      await for (final entity in directory.list(followLinks: false)) {
+        if (entity is! File ||
+            !entity.path.toLowerCase().endsWith('.tflite')) {
+          continue;
         }
+
+        final fileName = entity.uri.pathSegments.last;
+        final modelName =
+            fileName.substring(0, fileName.length - '.tflite'.length);
+        await loadModelFromPath(modelName, entity.path);
       }
-    } catch (e) {
-      print('Error loading models: $e');
+
+      final preferences = await SharedPreferences.getInstance();
+      final savedName = preferences.getString(_selectedModelKey);
+      if (savedName != null && _loadedModels.containsKey(savedName)) {
+        _selectedModel = savedName;
+      } else if (savedName != null) {
+        await preferences.remove(_selectedModelKey);
+        _selectedModel = null;
+      }
+    } catch (error) {
+      throw StateError('تعذر تحميل النماذج المحلية: $error');
     }
   }
 
-  /// Loads a model from the same filesystem directory checked above.
-  ///
-  /// [Interpreter.fromAsset] is deliberately not used here because these are
-  /// external files, not Flutter bundle assets.
+  /// Imports a TFLite file into private app storage and loads it.
   Future<String> importAndLoadModel(String sourcePath) async {
     final source = File(sourcePath);
-    if (!await source.exists()) throw StateError('ملف النموذج غير موجود.');
-    if (!source.path.toLowerCase().endsWith('.tflite')) throw StateError('هذا التطبيق يقبل حالياً نماذج TFLite (.tflite) للتحليل المحلي.');
-    final dir = await getApplicationSupportDirectory();
-    final models = Directory('${dir.path}/mudabbir_models');
-    await models.create(recursive: true);
+    if (!await source.exists()) {
+      throw StateError('ملف النموذج غير موجود.');
+    }
+    if (!source.path.toLowerCase().endsWith('.tflite')) {
+      throw StateError(
+        'هذا التطبيق يقبل حالياً نماذج TFLite (.tflite) للتحليل المحلي.',
+      );
+    }
+
+    final directory = await _modelsDirectory();
     final name = source.uri.pathSegments.last;
-    final target = File('${models.path}/$name');
-    await source.copy(target.path);
+    final target = File('${directory.path}/$name');
+    if (source.absolute.path != target.absolute.path) {
+      await source.copy(target.path);
+    }
+
     final modelName = name.substring(0, name.length - '.tflite'.length);
     await loadModelFromPath(modelName, target.path);
     _selectedModel = modelName;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_selectedModelKey, modelName);
     return modelName;
   }
 
   Future<void> loadModel(String modelName) async {
-    final file = File('$_modelsPath${modelName.trim()}.tflite');
-    if (!await file.exists()) throw StateError('Model file not found: ${file.path}');
-    await loadModelFromPath(modelName, file.path);
+    final cleanName = modelName.trim();
+    if (cleanName.isEmpty ||
+        cleanName.contains('/') ||
+        cleanName.contains('\\') ||
+        cleanName == '.' ||
+        cleanName == '..') {
+      throw ArgumentError('Invalid model name.');
+    }
+    final directory = await _modelsDirectory();
+    final file = File('${directory.path}/$cleanName.tflite');
+    if (!await file.exists()) {
+      throw StateError('Model file not found: ${file.path}');
+    }
+    await loadModelFromPath(cleanName, file.path);
   }
 
   Future<void> loadModelFromPath(String modelName, String modelPath) async {
@@ -97,14 +137,12 @@ class ExternalModelService {
     try {
       final interpreter = await Interpreter.fromFile(file);
       _loadedModels[cleanName] = interpreter;
-    } catch (e) {
-      throw StateError('Failed to load model $cleanName: $e');
+    } catch (error) {
+      throw StateError('Failed to load model $cleanName: $error');
     }
   }
 
-  List<double> extractFeatures(String text) {
-    return _featureExtractor.extract(text);
-  }
+  List<double> extractFeatures(String text) => _featureExtractor.extract(text);
 
   Map<String, dynamic> runInference(
     String modelName,
@@ -120,8 +158,7 @@ class ExternalModelService {
       final outputShape = interpreter.getOutputTensor(0).shape;
       if (inputShape.length != 2 || inputShape[0] != 1) {
         return {
-          'error':
-              'Unsupported model input shape: ${inputShape.join('x')}',
+          'error': 'Unsupported model input shape: ${inputShape.join('x')}',
         };
       }
       if (inputShape[1] != features.length) {
@@ -131,10 +168,8 @@ class ExternalModelService {
         };
       }
 
-      final input = [features];
       final output = _allocateOutput(outputShape);
-      interpreter.run(input, output);
-
+      interpreter.run([features], output);
       final flat = _flattenNumbers(output);
       return {
         'prediction': flat.isNotEmpty ? flat.first : null,
@@ -143,8 +178,8 @@ class ExternalModelService {
         'inputShape': inputShape,
         'outputShape': outputShape,
       };
-    } catch (e) {
-      return {'error': e.toString()};
+    } catch (error) {
+      return {'error': error.toString()};
     }
   }
 
@@ -155,8 +190,10 @@ class ExternalModelService {
     return {
       'loaded': true,
       'name': modelName,
-      'inputShape': interpreter.getInputTensors(),
-      'outputShape': interpreter.getOutputTensors(),
+      'inputShapes':
+          interpreter.getInputTensors().map((tensor) => tensor.shape).toList(),
+      'outputShapes':
+          interpreter.getOutputTensors().map((tensor) => tensor.shape).toList(),
     };
   }
 
@@ -185,6 +222,11 @@ class ExternalModelService {
   Future<void> unloadModel(String modelName) async {
     final interpreter = _loadedModels.remove(modelName);
     interpreter?.close();
+    if (_selectedModel == modelName) {
+      _selectedModel = null;
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_selectedModelKey);
+    }
   }
 
   Future<void> unloadAllModels() async {
@@ -192,6 +234,9 @@ class ExternalModelService {
       interpreter.close();
     }
     _loadedModels.clear();
+    _selectedModel = null;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_selectedModelKey);
   }
 
   List<String> get loadedModels => _loadedModels.keys.toList();
@@ -205,6 +250,7 @@ class ExternalModelService {
       }
       return List<dynamic>.generate(size, (_) => build(depth + 1));
     }
+
     return build(0);
   }
 
