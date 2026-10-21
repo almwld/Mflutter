@@ -1,1 +1,37 @@
-{}
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "tarot-fool",
+      "name": "المهرج — The Fool",
+      "category": "tarot",
+      "description": "مدخل تعريفي لرمز البداية والتجربة الجديدة في بعض مدارس التاروت.",
+      "properties": {"number": 0, "element": "يختلف حسب المدرسة"},
+      "source": "Starter reference — not a prediction"
+    },
+    {
+      "id": "rune-fehu",
+      "name": "فيهو — Fehu",
+      "category": "runes",
+      "description": "رمز من الأبجدية الرونية ارتبط تاريخياً بالماشية والثروة في المصادر الجرمانية القديمة.",
+      "properties": {"system": "Elder Futhark"},
+      "source": "Historical / cultural reference"
+    },
+    {
+      "id": "crystal-amethyst",
+      "name": "الجمشت — Amethyst",
+      "category": "crystals",
+      "description": "نوع من الكوارتز البنفسجي؛ أما الادعاءات العلاجية أو الروحية المنسوبة إليه فليست حقائق علمية مثبتة.",
+      "properties": {"mineral": "Quartz", "Mohs hardness": 7},
+      "source": "Mineralogical reference"
+    },
+    {
+      "id": "emerald-tablet",
+      "name": "لوح الزمرد — Emerald Tablet",
+      "category": "hermeticism",
+      "description": "نص قصير مشهور في تاريخ الهرمسية والخيمياء، وصل عبر تقاليد مخطوطية متعددة.",
+      "properties": {"field": "History of esotericism"},
+      "source": "Historical text reference"
+    }
+  ]
+}
