@@ -26,7 +26,7 @@ class _InsightScreenState extends State<InsightScreen> {
   }
   void _open(Ayah ayah) {
     final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
-    Navigator.push(context, MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page)));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)));
   }
 
   @override Widget build(BuildContext context) {
