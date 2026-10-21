@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
@@ -21,18 +23,43 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   MushafVariantMode _mode = MushafVariantMode.musnad;
 
   static const _paper = Color(0xFFF8F1E4);
-  static const _gold = Color(0xFF9A6B00);
-  static const _darkGold = Color(0xFFE2B84A);
+  Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
+  Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
+  Color get _headerInk => _pageTheme == QuranPageTheme.paper
+      ? const Color(0xFF241A12)
+      : _pageTextColor;
+  QuranPageTheme _pageTheme = QuranPageTheme.paper;
+  bool _systemBarsVisible = false;
+
+  Future<void> _setImmersiveMode(bool immersive) async {
+    await SystemChrome.setEnabledSystemUIMode(
+      immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+    );
+    if (mounted) setState(() => _systemBarsVisible = !immersive);
+  }
+
+  Future<void> _toggleSystemBars() async {
+    await _setImmersiveMode(_systemBarsVisible);
+  }
 
   @override
   void initState() {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _restorePageTheme();
+  }
+
+  Future<void> _restorePageTheme() async {
+    final theme = await QuranPageThemeService.load();
+    if (mounted) setState(() => _pageTheme = theme);
   }
 
   @override
   void dispose() {
+    // Restore the app's normal system bars when leaving Mushaf reading.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _controller.dispose();
     super.dispose();
   }
@@ -74,13 +101,15 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final gold = dark ? _darkGold : _gold;
+    final gold = _pageTextColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF17130F),
-      body: SafeArea(
-        child: Column(
+      backgroundColor: _pageBackground,
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onDoubleTap: _toggleSystemBars,
+        child: SafeArea(
+          child: Column(
           children: [
             _buildHeader(gold),
             Expanded(
@@ -91,7 +120,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 itemBuilder: (_, index) => _VariantPage(
                   page: index + 1,
                   mode: _mode,
-                  paper: _paper,
+                  paper: _pageBackground,
                   gold: gold,
                   transform: _transform,
                 ),
@@ -99,6 +128,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
             ),
             _buildNavigation(gold),
           ],
+          ),
         ),
       ),
     );
@@ -106,7 +136,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildHeader(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
@@ -128,7 +158,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
             ),
             IconButton(
               tooltip: 'اختيار نمط العرض',
-              icon: Icon(Icons.tune_rounded, color: gold),
+              icon: Icon(Icons.tune_rounded, color: _headerInk),
               onPressed: () => _showModeSheet(context, gold),
             ),
           ],
@@ -170,10 +200,10 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               ),
               const SizedBox(height: 8),
               for (final entry in [
-                (MushafVariantMode.musnad, 'المسند', 'النص العربي بحروف المسند'),
+                (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
                 (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
-                (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'تحويل العرض إلى الرموز الهيروغليفية'),
+                (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
                 ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -197,7 +227,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildNavigation(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
@@ -270,32 +300,47 @@ class _VariantPage extends StatelessWidget {
         }
 
         final lines = snapshot.data!;
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final lineHeight = constraints.maxHeight / 15.0;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        return Container(
+          // Match the canonical MushafScreen page frame and outer geometry.
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: paper,
+            border: Border.all(color: const Color(0xFF8C6A2D), width: 1.6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
               color: paper,
-              child: Column(
-                children: [
-                  for (final line in lines)
-                    SizedBox(
-                      height: lineHeight,
-                      width: double.infinity,
-                      child: line.isBlank
-                          ? const SizedBox.shrink()
-                          : _FixedMushafLine(
-                              line: line,
-                              transform: transform,
-                              fontFamily: _fontFamily,
-                              gold: gold,
-                            ),
-                    ),
-                ],
+              border: Border.all(
+                color: const Color(0xFF8C6A2D).withOpacity(.38),
+                width: .7,
               ),
-            );
-          },
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Exactly 15 fixed slots: script changes never reflow the page.
+                final lineHeight = constraints.maxHeight / 15.0;
+                return Column(
+                  children: [
+                    for (final line in lines)
+                      SizedBox(
+                        height: lineHeight,
+                        width: double.infinity,
+                        child: line.isBlank
+                            ? const SizedBox.shrink()
+                            : _FixedMushafLine(
+                                line: line,
+                                transform: transform,
+                                fontFamily: _fontFamily,
+                                gold: gold,
+                              ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ),
         );
       },
     );
@@ -318,35 +363,81 @@ class _FixedMushafLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (line.isSurahHeader) {
-      return Center(
-        child: Text(
-          line.surah == null ? '' : getSurahNameArabic(line.surah!),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          style: TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-            color: gold,
+      // Decorative surah plaque with the canonical Mushaf double-frame motif.
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFF8C6A2D), width: 1.0),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: const Color(0xFF8C6A2D).withOpacity(.42),
+                width: .6,
+              ),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              line.surah == null ? '' : getSurahNameArabic(line.surah!),
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: TextStyle(
+                fontFamily: 'Amiri',
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: gold,
+              ),
+            ),
           ),
         ),
       );
     }
 
-    final text = transform(line.text);
-    if (text.isEmpty) return const SizedBox.shrink();
+    if (line.segments.isEmpty) return const SizedBox.shrink();
+
+    // Transform Quran words only; preserve verse markers as ornamental spans.
+    final spans = <InlineSpan>[];
+    for (final segment in line.segments) {
+      final marker = RegExp(r'^﴿(\d+)﴾$').firstMatch(segment);
+      if (marker != null) {
+        spans.add(TextSpan(
+          text: ' ۞${marker.group(1)}۞ ',
+          style: TextStyle(
+            fontFamily: 'Amiri',
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF8C6A2D),
+          ),
+        ));
+      } else {
+        final converted = transform(segment);
+        if (converted.isNotEmpty) {
+          spans.add(TextSpan(
+            text: '$converted ',
+            style: TextStyle(
+              fontFamily: fontFamily,
+              fontSize: 21,
+              fontWeight: FontWeight.w700,
+              color: gold,
+              height: 1.0,
+            ),
+          ));
+        }
+      }
+    }
+    if (spans.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final style = TextStyle(
-          fontFamily: fontFamily,
-          fontSize: 21,
-          fontWeight: FontWeight.w700,
-          color: gold,
-          height: 1.0,
-        );
+        final richText = TextSpan(children: spans);
         final painter = TextPainter(
-          text: TextSpan(text: text, style: style),
+          text: richText,
           textDirection: TextDirection.rtl,
           maxLines: 1,
         )..layout();
@@ -358,14 +449,13 @@ class _FixedMushafLine extends StatelessWidget {
           child: Transform.scale(
             scaleX: scaleX,
             alignment: Alignment.center,
-            child: Text(
-              text,
+            child: RichText(
+              text: richText,
               textDirection: TextDirection.rtl,
               textAlign: line.centered ? TextAlign.center : TextAlign.right,
               softWrap: false,
               maxLines: 1,
               overflow: TextOverflow.clip,
-              style: style,
             ),
           ),
         );
