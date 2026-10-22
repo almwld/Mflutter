@@ -3,6 +3,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
 
@@ -21,15 +22,69 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   int _page = 1;
   MushafVariantMode _mode = MushafVariantMode.musnad;
 
-  static const _paper = Color(0xFFF8F1E4);
-  static const _gold = Color(0xFF9A6B00);
-  static const _darkGold = Color(0xFFE2B84A);
+  static const _frame = Color(0xFF8C6A2D);
+  QuranPageTheme _pageTheme = QuranPageTheme.paper;
+
+  Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
+  Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
+  Color get _headerInk => _pageTheme == QuranPageTheme.paper
+      ? const Color(0xFF241A12)
+      : _pageTextColor;
 
   @override
   void initState() {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
+    _restorePageTheme();
+  }
+
+  Future<void> _restorePageTheme() async {
+    final theme = await QuranPageThemeService.load();
+    if (mounted) setState(() => _pageTheme = theme);
+  }
+
+  Future<void> _showPageThemePicker() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _pageBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('مظهر صفحات المصحف', style: TextStyle(
+                fontFamily: 'Amiri', fontSize: 20, fontWeight: FontWeight.w800,
+                color: _headerInk,
+              )),
+              const SizedBox(height: 10),
+              for (final theme in QuranPageTheme.values)
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: QuranPageThemeService.background(theme),
+                    child: Icon(Icons.menu_book_rounded,
+                      color: QuranPageThemeService.text(theme)),
+                  ),
+                  title: Text(QuranPageThemeService.label(theme),
+                    style: TextStyle(fontFamily: 'Amiri', color: _headerInk,
+                      fontWeight: FontWeight.w700)),
+                  trailing: _pageTheme == theme
+                      ? const Icon(Icons.check_circle, color: _frame) : null,
+                  onTap: () async {
+                    setState(() => _pageTheme = theme);
+                    await QuranPageThemeService.save(theme);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -75,11 +130,10 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final gold = dark ? _darkGold : _gold;
+    final gold = _pageTextColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF17130F),
+      backgroundColor: _pageBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -92,7 +146,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 itemBuilder: (_, index) => _VariantPage(
                   page: index + 1,
                   mode: _mode,
-                  paper: _paper,
+                  paper: _pageBackground,
                   gold: gold,
                   transform: _transform,
                 ),
@@ -107,25 +161,30 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildHeader(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
           children: [
             IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
-              color: const Color(0xFF241A12),
+              color: _headerInk,
               onPressed: () => Navigator.of(context).pop(),
             ),
             Expanded(
               child: Text(
                 '$_modeName — صفحة $_page',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF241A12),
+                style: TextStyle(
+                  color: _headerInk,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+            ),
+            IconButton(
+              tooltip: 'مظهر صفحات المصحف',
+              icon: Icon(Icons.palette_outlined, color: gold),
+              onPressed: _showPageThemePicker,
             ),
             IconButton(
               tooltip: 'اختيار نمط العرض',
@@ -141,7 +200,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   void _showModeSheet(BuildContext context, Color gold) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: _paper,
+      backgroundColor: _pageBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -198,7 +257,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   Widget _buildNavigation(Color gold) {
     return Material(
-      color: _paper,
+      color: _pageBackground,
       child: SizedBox(
         height: 54,
         child: Row(
@@ -279,44 +338,54 @@ class _VariantPage extends StatelessWidget {
           (sum, line) => sum +
               (line.isBlank || line.isSurahHeader ? 0 : _wordCount(line.text)),
         );
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final lineHeight = constraints.maxHeight / 15.0;
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: paper,
+            border: Border.all(color: _frame, width: 1.6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
               color: paper,
-              child: Column(
-                children: [
-                  for (var lineIndex = 0; lineIndex < lines.length; lineIndex++)
-                    SizedBox(
-                      height: lineHeight,
-                      width: double.infinity,
-                      child: lines[lineIndex].isBlank
-                          ? const SizedBox.shrink()
-                          : _FixedMushafLine(
-                              line: lines[lineIndex],
-                              transform: transform,
-                              fontFamily: _fontFamily,
-                              gold: gold,
-                              sequenceWordCount: sequenceWordCount,
-                              sequenceWordOffset: lines
-                                  .take(lineIndex)
-                                  .fold<int>(
+              border: Border.all(color: _frame.withOpacity(.38), width: .7),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Measure the inner page content so all 15 line slots fit without overflow.
+                  final lineHeight = constraints.maxHeight / 15.0;
+                  return Column(
+                    children: [
+                      for (var lineIndex = 0; lineIndex < lines.length; lineIndex++)
+                        SizedBox(
+                          height: lineHeight,
+                          width: double.infinity,
+                          child: lines[lineIndex].isBlank
+                              ? const SizedBox.shrink()
+                              : _FixedMushafLine(
+                                  line: lines[lineIndex],
+                                  transform: transform,
+                                  fontFamily: _fontFamily,
+                                  gold: gold,
+                                  sequenceWordCount: sequenceWordCount,
+                                  sequenceWordOffset: lines.take(lineIndex).fold<int>(
                                     0,
-                                    (sum, previous) =>
-                                        sum +
-                                        (previous.isBlank ||
-                                                previous.isSurahHeader
+                                    (sum, previous) => sum +
+                                        (previous.isBlank || previous.isSurahHeader
                                             ? 0
                                             : _wordCount(previous.text)),
                                   ),
-                            ),
-                    ),
-                ],
+                                ),
+                        ),
+                    ],
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
@@ -343,22 +412,44 @@ class _FixedMushafLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (line.isSurahHeader) {
-      return Center(
-        child: Text(
-          line.surah == null ? '' : getSurahNameArabic(line.surah!),
-          maxLines: 1,
-          overflow: TextOverflow.clip,
-          style: TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-            color: gold,
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+          decoration: BoxDecoration(
+            border: Border.all(color: _frame, width: 1.0),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 1),
+            decoration: BoxDecoration(
+              border: Border.all(color: _frame.withOpacity(.42), width: .6),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: Text(
+              line.surah == null ? '' : getSurahNameArabic(line.surah!),
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: TextStyle(fontFamily: 'Amiri', fontSize: 17,
+                fontWeight: FontWeight.w800, color: gold),
+            ),
           ),
         ),
       );
     }
 
-    final text = transform(line.text);
+    final tokens = <String>[];
+    for (final segment in line.segments) {
+      if (segment.startsWith('﴿') && segment.endsWith('﴾') && segment.length > 2) {
+        tokens.add('۞${segment.substring(1, segment.length - 1)}۞');
+      } else {
+        final converted = transform(segment);
+        if (converted.isNotEmpty) tokens.add(converted);
+      }
+    }
+    final text = tokens.join(' ');
     if (text.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
