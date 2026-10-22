@@ -58,7 +58,6 @@ flutter:
     - assets/mushaf_layout.json
     - assets/fonts/
     - assets/images/
-    - assets/models/
   fonts:
     - family: Amiri
       fonts:
