@@ -46,11 +46,13 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             : <dynamic>[];
         _loading = false;
       });
-      // Count activity only after the local Quran content has loaded successfully.
-      try {
-        await DailyStreakService.recordActivity();
-      } catch (error) {
-        debugPrint('Could not persist reading activity: $error');
+      // Count activity only when the requested surah contains real verse data.
+      if (rawVerses is List && rawVerses.isNotEmpty) {
+        try {
+          await DailyStreakService.recordActivity();
+        } catch (error) {
+          debugPrint('Could not persist reading activity: $error');
+        }
       }
     } catch (e) {
       if (!mounted) return;
