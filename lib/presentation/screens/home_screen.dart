@@ -19,6 +19,19 @@ import 'occult_explorer_screen.dart';
 import 'elements_screen.dart';
 import 'numbers_screen.dart';
 import 'zodiac_screen.dart';
+import 'quran_screen.dart';
+import 'abjad_screen.dart';
+import 'training_screen.dart';
+import 'miracles_screen.dart';
+import 'compare_screen.dart';
+import 'nucleus_screen.dart';
+import 'sovereign_hub_screen.dart';
+import 'cosmic_services_screen.dart';
+import 'ai_advanced_screen.dart';
+import 'personalization_screen.dart';
+import 'player_profile_screen.dart';
+import 'recitation_screen.dart';
+import 'help_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -461,6 +474,19 @@ class MoreScreen extends StatelessWidget {
       ('تتبع النظر', Icons.visibility_outlined, const GazeTrackingScreen()),
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
+      ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
+      ('حاسبة الأبجد', Icons.calculate_outlined, const AbjadCalculatorScreen()),
+      ('التدريب', Icons.model_training_rounded, const TrainingScreen()),
+      ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
+      ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
+      ('النواة', Icons.psychology_rounded, const NucleusScreen()),
+      ('مركز السيادة', Icons.hub_rounded, const SovereignHubScreen()),
+      ('الخدمات الكونية', Icons.rocket_launch_rounded, const CosmicServicesScreen()),
+      ('الذكاء المتقدم', Icons.memory_rounded, const AIAdvancedScreen()),
+      ('التخصيص المتقدم', Icons.tune_rounded, const PersonalizationScreen()),
+      ('الملف الشخصي', Icons.person_outline_rounded, const PlayerProfileScreen()),
+      ('مشغل التلاوة', Icons.play_circle_outline_rounded, const RecitationScreen()),
+      ('المساعدة', Icons.help_outline_rounded, const HelpScreen()),
     ];
 
     return Scaffold(
