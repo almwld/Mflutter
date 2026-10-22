@@ -1,10 +1,41 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:mudabbir_al_asrar/presentation/screens/recitation_screen.dart';
+
+class _FakeRecitationAudioEngine implements RecitationAudioEngine {
+  final StreamController<void> _completion = StreamController<void>.broadcast();
+
+  @override
+  Stream<void> get onPlayerComplete => _completion.stream;
+
+  @override
+  Future<void> setReleaseMode(ReleaseMode mode) async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> playUrl(String url) async {}
+
+  @override
+  Future<void> pause() async {}
+
+  @override
+  Future<void> resume() async {}
+
+  @override
+  Future<void> dispose() => _completion.close();
+}
 
 void main() {
   testWidgets('recitation screen exposes all Quran surahs and explains streaming', (tester) async {
-    await tester.pumpWidget(const MaterialApp(home: RecitationScreen()));
+    final audio = _FakeRecitationAudioEngine();
+    await tester.pumpWidget(MaterialApp(
+      home: RecitationScreen(audioEngineFactory: () => audio),
+    ));
 
     // QuranLoaderService reads the bundled JSON asynchronously. Let that
     // asset I/O finish outside the widget test's fake async clock; then pump
