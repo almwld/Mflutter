@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
+import '../../services/quran_source_corrections.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -39,7 +40,9 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       final rawVerses = data[widget.surahNumber.toString()];
       if (!mounted) return;
       setState(() {
-        _verses = rawVerses is List ? List<dynamic>.from(rawVerses) : <dynamic>[];
+        _verses = rawVerses is List
+            ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
+            : <dynamic>[];
         _loading = false;
       });
     } catch (e) {
