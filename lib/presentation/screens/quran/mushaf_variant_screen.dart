@@ -456,6 +456,7 @@ class _FixedMushafLine extends StatelessWidget {
               sequenceWordCount: sequenceWordCount,
               sequenceWordOffset: sequenceWordOffset,
               textAlign: line.centered ? WrapAlignment.center : WrapAlignment.start,
+              singleLine: true,
             ),
           ),
         );
