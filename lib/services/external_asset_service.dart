@@ -70,7 +70,8 @@ class ExternalAssetService {
   /// needed, and the files are copied into app-private storage.
   Future<List<String>> pickAndImportOptionalAssets() async {
     final selection = await FilePicker.platform.pickFiles(
-      type: FileType.any,
+      type: FileType.custom,
+      allowedExtensions: const <String>['traineddata', 'task', 'tflite', 'json'],
       allowMultiple: true,
       withData: false,
     );
