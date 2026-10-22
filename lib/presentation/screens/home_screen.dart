@@ -485,7 +485,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
   String _normalizeSearchText(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
       .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
       .replaceAll(RegExp(r'[ؤئ]'), 'ء')
       .replaceAll('ى', 'ي');
