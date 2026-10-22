@@ -23,7 +23,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.0'
+          flutter-version: '3.47.7'
           channel: stable
           cache: true
 
@@ -38,7 +38,7 @@ jobs:
           from pathlib import Path
           gradle = Path("android/app/build.gradle.kts")
           text = gradle.read_text()
-          text = text.replace("minSdk = flutter.minSdkVersion", "minSdk = 24")
+          text = text.replace("minSdk = flutter.minSdkVersion", "minSdk = 26")
           text = text.replace("targetSdk = flutter.targetSdkVersion", "targetSdk = 36")
           text = text.replace("compileSdk = flutter.compileSdkVersion", "compileSdk = 36")
           gradle.write_text(text)
@@ -111,6 +111,71 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Remove obsolete Tesseract Gradle buildscript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          roots = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+          candidates = list(roots.glob("flutter_tesseract_ocr-*/android/build.gradle"))
+          if not candidates:
+              raise SystemExit("flutter_tesseract_ocr Gradle file was not found after pub get")
+
+          for path in candidates:
+              source = path.read_text()
+              lines = source.splitlines(keepends=True)
+              start = next((i for i, line in enumerate(lines)
+                            if line.strip() == "buildscript {"), None)
+              if start is not None:
+                  depth = 0
+                  end = None
+                  for i in range(start, len(lines)):
+                      depth += lines[i].count("{") - lines[i].count("}")
+                      if i > start and depth == 0:
+                          end = i + 1
+                          break
+                  if end is None:
+                      raise SystemExit(f"Unclosed buildscript block in {path}")
+                  lines = lines[:start] + lines[end:]
+              patched = "".join(lines).replace("jcenter()", "mavenCentral()")
+              if "jcenter()" in patched:
+                  raise SystemExit(f"Stale jcenter() remains in {path}")
+              path.write_text(patched)
+
+          # tflite_flutter 0.12.1 has Java/Kotlin target drift in its
+          # Gradle file on the newer toolchain; patch the cached plugin too.
+          tflite_files = list(roots.glob("tflite_flutter-*/android/build.gradle"))
+          if not tflite_files:
+              raise SystemExit("tflite_flutter Gradle file was not found after pub get")
+          for path in tflite_files:
+              source = path.read_text()
+              patched = source.replace("JavaVersion.VERSION_11", "JavaVersion.VERSION_17")
+              patched = patched.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
+              if "JavaVersion.VERSION_11" in patched or "JavaVersion.VERSION_1_8" in patched:
+                  raise SystemExit(f"Legacy Java target remains in {path}")
+              if patched != source:
+                  path.write_text(patched)
+
+          # Align Java compile tasks across Android subprojects with Kotlin JVM 17.
+          root_gradle = Path("android/build.gradle.kts")
+          if not root_gradle.exists():
+              raise SystemExit("Generated Android root Gradle file was not found")
+          root_text = root_gradle.read_text()
+          marker = "// Mudabbir CI: align Java and Kotlin bytecode targets"
+          if marker not in root_text:
+              root_text += """
+
+          // Mudabbir CI: align Java and Kotlin bytecode targets
+          subprojects {
+              tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+                  sourceCompatibility = JavaVersion.VERSION_17.toString()
+                  targetCompatibility = JavaVersion.VERSION_17.toString()
+              }
+          }
+          """
+              root_gradle.write_text(root_text)
+          PY
 
       - name: Analyze
         run: flutter analyze --no-fatal-infos

@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import '../services/ollama_service.dart';
+import '../services/local_gguf_runtime_service.dart';
 
 class SovereignChatProvider extends ChangeNotifier {
+  SovereignChatProvider() {
+    _gguf.addListener(_onRuntimeChanged);
+  }
+
   final OllamaService _localAi = OllamaService();
+  final LocalGgufRuntimeService _gguf = LocalGgufRuntimeService.instance;
+
+  void _onRuntimeChanged() => notifyListeners();
+
+  bool get hasActiveLocalModel => _gguf.isLoaded || _localAi.isRunning;
+
   bool _isLoading = false;
   String _insight = '';
 
@@ -21,19 +32,33 @@ class SovereignChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _insight = await _localAi.generate(
-        'أنت مُدَبِّر، مساعد معرفي محلي. أجب بالعربية الفصحى بدقة. '
-        'لا تدّعِ امتلاك مصادر أو قدرات غير متاحة محلياً.\n'
-        'التركيز: ' + focus.toString() + '\n'
-        'البيئة: ' + topography + '\n'
-        'الرنين: ' + abjad.toString() + '\n\n'
-        'السؤال: ' + query.trim(),
-      );
+      final prompt = 'أنت مُدَبِّر، مساعد معرفي محلي. أجب بالعربية الفصحى بدقة. '
+          'لا تدّعِ امتلاك مصادر أو قدرات غير متاحة محلياً.\n'
+          'التركيز: $focus\n'
+          'البيئة: $topography\n'
+          'الرنين العددي: $abjad\n\n'
+          'السؤال: ${query.trim()}';
+      if (_gguf.isLoaded) {
+        _insight = await _gguf.generateGroundedAnswer(
+          question: prompt,
+          evidence: 'لم يتم إرفاق آيات قرآنية أو مصادر خارجية بهذه الشاشة؛ '
+              'لا تنسب أقوالًا إلى القرآن أو مصادر غير متاحة.',
+          maxTokens: 384,
+        );
+      } else {
+        _insight = await _localAi.generate(prompt);
+      }
     } catch (_) {
       _insight = 'تعذر الوصول إلى النموذج المحلي. تحقق من تشغيله ثم أعد المحاولة.';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _gguf.removeListener(_onRuntimeChanged);
+    super.dispose();
   }
 }

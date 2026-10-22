@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
 import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
+import 'package:mudabbir_al_asrar/services/quranic_search_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -96,4 +97,28 @@ void main() {
     }
   });
 
+
+  test('Quranic search index rebuilds when canonical verse content changes', () {
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'الفاتحة', 'ayah': '1', 'text': 'النور'},
+    ]);
+    expect(QuranicSearchEngine.search('النور'), isNotEmpty);
+
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'الفاتحة', 'ayah': '1', 'text': 'الرحمة'},
+    ]);
+    expect(QuranicSearchEngine.search('النور'), isEmpty);
+    expect(QuranicSearchEngine.search('الرحمة'), isNotEmpty);
+  });
+
+  test('Mushaf source uses canonical 604-page, 30-juz, 60-hizb metadata', () {
+    expect(MushafSource.totalPages, 604);
+    expect(MushafSource.totalJuz, 30);
+    expect(MushafSource.totalHizb, 60);
+    expect(MushafSource.totalSurahs, 114);
+    expect(MushafSource.normalizePage(0), 1);
+    expect(MushafSource.normalizePage(605), 604);
+    expect(MushafSource.pageForVerse(1, 1), 1);
+    expect(MushafSource.pageForVerse(114, 6), 604);
+  });
 }

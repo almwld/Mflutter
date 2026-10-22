@@ -12,7 +12,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _checkingModel = true;
-  bool _modelAvailable = false;
   late final ChatProvider _chat;
 
   static const _quickReplies = [
@@ -28,24 +27,18 @@ class _ChatScreenState extends State<ChatScreen> {
     _chat = ChatProvider();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _chat.checkLocalModel().then((available) {
+      _chat.checkLocalModel().whenComplete(() {
         if (!mounted) return;
-        setState(() {
-          _modelAvailable = available;
-          _checkingModel = false;
-        });
+        setState(() => _checkingModel = false);
       });
     });
   }
 
   Future<void> _checkModel() async {
     if (!mounted) return;
-    final available = await _chat.checkLocalModel();
+    await _chat.checkLocalModel();
     if (!mounted) return;
-    setState(() {
-      _modelAvailable = available;
-      _checkingModel = false;
-    });
+    setState(() => _checkingModel = false);
   }
 
   void _sendMessage() {
@@ -93,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(_modelAvailable ? Icons.cloud_done : Icons.cloud_off),
+                  : Icon(_chat.hasActiveLocalModel ? Icons.cloud_done : Icons.cloud_off),
               onPressed: _checkingModel ? null : _checkModel,
             ),
             IconButton(
@@ -129,9 +122,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _modelBanner() {
     final text = _checkingModel
         ? 'جارٍ فحص النموذج المحلي…'
-        : _modelAvailable
-            ? 'النموذج المحلي متصل • mudabbir'
-            : 'النموذج المحلي غير متصل • 127.0.0.1:11434';
+        : _chat.localModelLabel;
 
     return Container(
       width: double.infinity,
@@ -140,9 +131,9 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Row(
         children: [
           Icon(
-            _modelAvailable ? Icons.check_circle : Icons.info_outline,
+            _chat.hasActiveLocalModel ? Icons.check_circle : Icons.info_outline,
             size: 18,
-            color: _modelAvailable ? const Color(0xFF36C7A5) : Colors.white54,
+            color: _chat.hasActiveLocalModel ? const Color(0xFF36C7A5) : Colors.white54,
           ),
           const SizedBox(width: 8),
           Expanded(
