@@ -38,4 +38,25 @@ void main() {
       expect(finder, findsOneWidget, reason: 'Missing More entry: $label');
     }
   });
+
+  testWidgets('More screen search filters tools and can be cleared', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
+
+    final search = find.byType(TextField);
+    expect(search, findsOneWidget);
+
+    await tester.enterText(search, 'التلاوة');
+    await tester.pumpAndSettle();
+    expect(find.text('مشغل التلاوة'), findsOneWidget);
+    expect(find.text('القرآن التفاعلي'), findsNothing);
+    expect(find.text('1 نتيجة'), findsOneWidget);
+
+    await tester.enterText(search, 'لا توجد أداة مطابقة');
+    await tester.pumpAndSettle();
+    expect(find.text('لا توجد واجهة بهذا الاسم'), findsOneWidget);
+
+    await tester.enterText(search, '');
+    await tester.pumpAndSettle();
+    expect(find.text('القرآن التفاعلي'), findsOneWidget);
+  });
 }
