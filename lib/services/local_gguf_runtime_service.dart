@@ -267,12 +267,20 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       _controller = null;
       _loaded = false;
       final controller = LlamaController();
-      await controller.loadModel(
-        modelPath: file.path,
-        threads: threads.clamp(1, 8).toInt(),
-        contextSize: contextSize.clamp(512, 4096).toInt(),
-        gpuLayers: 0,
-      );
+      try {
+        await controller.loadModel(
+          modelPath: file.path,
+          threads: threads.clamp(1, 8).toInt(),
+          contextSize: contextSize.clamp(512, 4096).toInt(),
+          gpuLayers: 0,
+        );
+      } catch (_) {
+        // A failed native load can still allocate partial native resources.
+        try {
+          await controller.dispose();
+        } catch (_) {}
+        rethrow;
+      }
       _controller = controller;
       _loadedPath = file.path;
       _loaded = true;
