@@ -157,30 +157,6 @@ jobs:
               if patched != source:
                   path.write_text(patched)
 
-          # file_picker 10.x still declares compileSdk 34 while its
-          # lifecycle dependency now requires Android API 36.
-          picker_files = list(roots.glob("file_picker-*/android/build.gradle"))
-          if not picker_files:
-              raise SystemExit("file_picker Gradle file was not found after pub get")
-          for path in picker_files:
-              lines = path.read_text().splitlines(keepends=True)
-              changed = False
-              for index, line in enumerate(lines):
-                  stripped = line.strip()
-                  if stripped.startswith("compileSdkVersion ") and stripped.split()[-1].isdigit():
-                      indent = line[:len(line) - len(line.lstrip())]
-                      lines[index] = indent + "compileSdkVersion 36\n"
-                      changed = True
-                      break
-                  if stripped.startswith("compileSdk = ") and stripped.split()[-1].isdigit():
-                      indent = line[:len(line) - len(line.lstrip())]
-                      lines[index] = indent + "compileSdk = 36\n"
-                      changed = True
-                      break
-              if not changed:
-                  raise SystemExit(f"Could not set compileSdk 36 in {path}")
-              path.write_text("".join(lines))
-
           # Align Java compile tasks across Android subprojects with Kotlin JVM 17.
           root_gradle = Path("android/build.gradle.kts")
           if not root_gradle.exists():
