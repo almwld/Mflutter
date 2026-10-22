@@ -153,8 +153,10 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     if (eye == null || eye.contour.length < 6) return null;
     final xs = eye.contour.map((point) => point.x).toList();
     final ys = eye.contour.map((point) => point.y).toList();
-    final width = xs.reduce(math.max) - xs.reduce(math.min);
-    final height = ys.reduce(math.max) - ys.reduce(math.min);
+    final width = xs.reduce((a, b) => a > b ? a : b) -
+        xs.reduce((a, b) => a < b ? a : b);
+    final height = ys.reduce((a, b) => a > b ? a : b) -
+        ys.reduce((a, b) => a < b ? a : b);
     if (!width.isFinite || !height.isFinite || width < 2 || height < 1) {
       return null;
     }
