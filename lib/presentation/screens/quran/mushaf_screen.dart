@@ -37,7 +37,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
   // لون نص المصحف: ذهبي فاخر، مع درجة أعمق للنهار لرفع التباين على ورق المصحف.
-  static const _quranGoldLight = Color(0xFFD49A16);
+  static const _quranGoldLight = Color(0xFF805600);
   static const _quranGoldDark = Color(0xFFFFD45A);
   static const _frame = Color(0xFF8C6A2D);
 
