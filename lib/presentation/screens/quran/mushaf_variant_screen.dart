@@ -7,6 +7,8 @@ import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
 
+const Color _mushafFrameColor = Color(0xFF8C6A2D);
+
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
 
 class MushafVariantScreen extends StatefulWidget {
@@ -22,7 +24,6 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   int _page = 1;
   MushafVariantMode _mode = MushafVariantMode.musnad;
 
-  static const _frame = Color(0xFF8C6A2D);
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
@@ -73,7 +74,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                     style: TextStyle(fontFamily: 'Amiri', color: _headerInk,
                       fontWeight: FontWeight.w700)),
                   trailing: _pageTheme == theme
-                      ? const Icon(Icons.check_circle, color: _frame) : null,
+                      ? const Icon(Icons.check_circle, color: _mushafFrameColor) : null,
                   onTap: () async {
                     setState(() => _pageTheme = theme);
                     await QuranPageThemeService.save(theme);
@@ -343,13 +344,13 @@ class _VariantPage extends StatelessWidget {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             color: paper,
-            border: Border.all(color: _frame, width: 1.6),
+            border: Border.all(color: _mushafFrameColor, width: 1.6),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: paper,
-              border: Border.all(color: _frame.withOpacity(.38), width: .7),
+              border: Border.all(color: _mushafFrameColor.withOpacity(.38), width: .7),
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -418,14 +419,14 @@ class _FixedMushafLine extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
           decoration: BoxDecoration(
-            border: Border.all(color: _frame, width: 1.0),
+            border: Border.all(color: _mushafFrameColor, width: 1.0),
             borderRadius: BorderRadius.circular(7),
           ),
           child: Container(
             alignment: Alignment.center,
             padding: const EdgeInsets.symmetric(vertical: 1),
             decoration: BoxDecoration(
-              border: Border.all(color: _frame.withOpacity(.42), width: .6),
+              border: Border.all(color: _mushafFrameColor.withOpacity(.42), width: .6),
               borderRadius: BorderRadius.circular(5),
             ),
             child: Text(
