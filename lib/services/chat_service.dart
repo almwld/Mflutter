@@ -58,7 +58,7 @@ class ChatService {
     final buffer = StringBuffer();
 
     // المقدمة
-    buffer.writeln('✨ إليك نتائج تحليل طلبك:\n');
+    buffer.writeln('إليك نتائج الحسابات المحلية ومخرجات النماذج المتاحة:\n');
 
     // نتائج الجمل
     buffer.writeln('📊 حساب الجمل:');
@@ -81,17 +81,31 @@ class ChatService {
       }
     }
 
-    // تحليل الطاقة
-    if (energy['prediction'] != null) {
-      buffer.writeln('⚡ تحليل الطاقة:');
-      final prediction = (energy['prediction'] as num?)?.toDouble();
-      if (prediction != null) buffer.writeln('• المستوى: ${(prediction * 100).toStringAsFixed(0)}%');
+    // Generic model output is shown as raw data, not mislabeled as energy.
+    if (energy['prediction'] is num) {
+      buffer.writeln('مخرج النموذج المحلي (قيمة خام غير مفسّرة):');
+      buffer.writeln('• القيمة الأولى: ${(energy['prediction'] as num).toString()}');
+      final rawOutputs = energy['raw_outputs'];
+      if (rawOutputs is List) {
+        buffer.writeln('• عدد قيم المخرجات: ${rawOutputs.length}');
+      }
+      buffer.writeln(
+        'هذا الرقم ليس قياسًا للطاقة أو تشخيصًا أو استنتاجًا علميًا؛ '
+        'يلزم توثيق مهمة النموذج قبل تفسيره.',
+      );
+      buffer.writeln('');
+    } else if (energy['error'] != null) {
+      buffer.writeln('النموذج المحلي: ${energy['error']}');
       buffer.writeln('');
     }
 
     // سؤال البصيرة
-    buffer.writeln('💡 سؤال البصيرة:');
+    buffer.writeln('سؤال تأملي اختياري:');
     buffer.writeln(_generateInsightQuestion(abjadResult));
+    buffer.writeln(
+      'تنبيه: الأسئلة التأملية وحسابات الجمل لا تمثل تفسيرًا للقرآن '
+      'ولا دليلًا علميًا على علاقة سببية.',
+    );
 
     return buffer.toString();
   }
