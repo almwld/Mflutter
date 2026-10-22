@@ -556,7 +556,7 @@ class _MessageBubble extends StatelessWidget {
   const _MessageBubble({required this.text});
   @override
   Widget build(BuildContext context) => Align(
-        alignment: Alignment.centerStart,
+        alignment: AlignmentDirectional.centerStart,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 560),
           margin: const EdgeInsets.only(bottom: 8),
