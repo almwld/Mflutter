@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../services/quran_loader_service.dart';
 
 class RecitationScreen extends StatefulWidget {
   const RecitationScreen({super.key});
@@ -13,13 +14,9 @@ class RecitationScreen extends StatefulWidget {
 }
 
 class _RecitationScreenState extends State<RecitationScreen> {
-  static const _surahs = <({String name, int number, int ayahs})>[
-    (name: 'الفاتحة', number: 1, ayahs: 7),
-    (name: 'البقرة', number: 2, ayahs: 286),
-    (name: 'الإخلاص', number: 112, ayahs: 4),
-    (name: 'الفلق', number: 113, ayahs: 5),
-    (name: 'الناس', number: 114, ayahs: 6),
-  ];
+  List<({String name, int number, int ayahs})> _surahs = [];
+  bool _loadingSurahList = true;
+  String? _surahListError;
 
   late final AudioPlayer _player;
   StreamSubscription<void>? _completionSubscription;
@@ -37,9 +34,42 @@ class _RecitationScreenState extends State<RecitationScreen> {
     super.initState();
     _player = AudioPlayer();
     unawaited(_player.setReleaseMode(ReleaseMode.stop));
+    unawaited(_loadSurahs());
     _completionSubscription = _player.onPlayerComplete.listen((_) {
       if (!_stoppedByUser && _playing && !_paused) unawaited(_playNextAyah());
     });
+  }
+
+  Future<void> _loadSurahs() async {
+    try {
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      final names = <int, String>{};
+      final counts = <int, int>{};
+      for (final ayah in ayahs) {
+        names.putIfAbsent(ayah.surahNumber, () => ayah.surahName);
+        counts.update(ayah.surahNumber, (count) => count + 1, ifAbsent: () => 1);
+      }
+      final numbers = names.keys.toList()..sort();
+      final loaded = numbers
+          .map((number) => (
+                name: names[number]!,
+                number: number,
+                ayahs: counts[number]!,
+              ))
+          .toList(growable: false);
+      if (!mounted) return;
+      setState(() {
+        _surahs = loaded;
+        _loadingSurahList = false;
+        _surahListError = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingSurahList = false;
+        _surahListError = 'تعذر تحميل قائمة السور من فهرس القرآن المحلي: $error';
+      });
+    }
   }
 
   String _ayahUrl(int surahNumber, int ayahNumber) {
@@ -186,7 +216,38 @@ class _RecitationScreenState extends State<RecitationScreen> {
               ),
             ),
           Expanded(
-            child: ListView.separated(
+            child: _loadingSurahList
+                ? const Center(child: CircularProgressIndicator())
+                : _surahListError != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _surahListError!,
+                                textAlign: TextAlign.center,
+                                textDirection: TextDirection.rtl,
+                                style: const TextStyle(color: Colors.white70),
+                              ),
+                              const SizedBox(height: 12),
+                              FilledButton.icon(
+                                onPressed: () {
+                                  setState(() {
+                                    _loadingSurahList = true;
+                                    _surahListError = null;
+                                  });
+                                  unawaited(_loadSurahs());
+                                },
+                                icon: const Icon(Icons.refresh_rounded),
+                                label: const Text('إعادة المحاولة'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               itemCount: _surahs.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
