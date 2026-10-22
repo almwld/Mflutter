@@ -20,6 +20,7 @@ class QuranWaveText extends StatefulWidget {
     this.stepDuration = const Duration(milliseconds: 180),
     this.peakScale = 1.15,
     this.textAlign = WrapAlignment.start,
+    this.singleLine = false,
   });
 
   final String text;
@@ -35,6 +36,8 @@ class QuranWaveText extends StatefulWidget {
   final Duration stepDuration;
   final double peakScale;
   final WrapAlignment textAlign;
+  /// Keep fixed-layout Mushaf lines on one visual line without reflow.
+  final bool singleLine;
 
   @override
   State<QuranWaveText> createState() => _QuranWaveTextState();
@@ -186,6 +189,38 @@ class _QuranWaveTextState extends State<QuranWaveText>
   }
 
   Widget _buildWords(double Function(int index) scaleForWord) {
+    final children = <Widget>[
+      for (var index = 0; index < _words.length; index++)
+        Transform.scale(
+          scale: scaleForWord(index),
+          alignment: Alignment.center,
+          child: Text(
+            _words[index],
+            textDirection: TextDirection.rtl,
+            style: (_words[index].startsWith('۞') && _words[index].endsWith('۞'))
+                ? widget.style.copyWith(
+                    fontFamily: 'Amiri',
+                    fontSize: 15,
+                    color: const Color(0xFF8C6A2D),
+                  )
+                : widget.style,
+            softWrap: false,
+          ),
+        ),
+    ];
+
+    if (widget.singleLine) {
+      return OverflowBox(
+        maxWidth: double.infinity,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          textDirection: TextDirection.rtl,
+          children: children,
+        ),
+      );
+    }
+
     return Wrap(
       alignment: widget.textAlign,
       runAlignment: WrapAlignment.center,
@@ -193,21 +228,8 @@ class _QuranWaveTextState extends State<QuranWaveText>
       textDirection: TextDirection.rtl,
       spacing: 8,
       runSpacing: 7,
-      children: [
-        for (var index = 0; index < _words.length; index++)
-          Transform.scale(
-            scale: scaleForWord(index),
-            alignment: Alignment.center,
-            child: Text(
-              _words[index],
-              textDirection: TextDirection.rtl,
-              style: (_words[index].startsWith('۞') && _words[index].endsWith('۞'))
-                  ? widget.style.copyWith(fontFamily: 'Amiri', fontSize: 15, color: const Color(0xFF8C6A2D))
-                  : widget.style,
-              softWrap: false,
-            ),
-          ),
-      ],
+      children: children,
     );
+  }
   }
 }
