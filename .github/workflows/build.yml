@@ -152,11 +152,11 @@ jobs:
           for path in tflite_files:
               source = path.read_text()
               patched, source_count = re.subn(
-                  r"(?m)^(\\s*sourceCompatibility\\s*=?\\s*)JavaVersion\\.VERSION_[A-Z0-9_]+",
-                  r"\\1JavaVersion.VERSION_17", source, count=1)
+                  r"(?m)^(\s*sourceCompatibility\s*=?\s*)JavaVersion\\.VERSION_[A-Z0-9_]+",
+                  r"\1JavaVersion.VERSION_17", source, count=1)
               patched, target_count = re.subn(
-                  r"(?m)^(\\s*targetCompatibility\\s*=?\\s*)JavaVersion\\.VERSION_[A-Z0-9_]+",
-                  r"\\1JavaVersion.VERSION_17", patched, count=1)
+                  r"(?m)^(\s*targetCompatibility\s*=?\s*)JavaVersion\\.VERSION_[A-Z0-9_]+",
+                  r"\1JavaVersion.VERSION_17", patched, count=1)
               if source_count != 1 or target_count != 1:
                   raise SystemExit(f"Could not align Java 17 targets in {path}")
               path.write_text(patched)
