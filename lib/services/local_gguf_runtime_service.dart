@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
@@ -460,24 +461,38 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     }
   }
 
+  /// Checks the fixed GGUF v2/v3 header before any large native allocation.
+  /// This is an early structural check, not a substitute for llama.cpp loading
+  /// the complete model and validating its metadata/tensor payload.
+  @visibleForTesting
+  static bool isGgufHeaderValid(List<int> header, int fileLength) {
+    if (fileLength < 24 || header.length < 24) return false;
+    if (header[0] != 0x47 ||
+        header[1] != 0x47 ||
+        header[2] != 0x55 ||
+        header[3] != 0x46) {
+      return false;
+    }
+    final bytes = Uint8List.fromList(header.take(24).toList(growable: false));
+    final data = ByteData.sublistView(bytes);
+    final version = data.getUint32(4, Endian.little);
+    if (version != 2 && version != 3) return false;
+    final tensorCount = data.getUint64(8, Endian.little);
+    final metadataCount = data.getUint64(16, Endian.little);
+    return tensorCount > 0 &&
+        tensorCount <= 1000000 &&
+        metadataCount > 0 &&
+        metadataCount <= 100000;
+  }
+
   Future<bool> _isValidGguf(File file) async {
     try {
-      if (!await file.exists() || await file.length() < _minimumGgufBytes) return false;
+      final length = await file.length();
+      if (!await file.exists() || length < _minimumGgufBytes) return false;
       final handle = await file.open();
       try {
-        final header = await handle.read(8);
-        if (header.length != 8 ||
-            header[0] != 0x47 ||
-            header[1] != 0x47 ||
-            header[2] != 0x55 ||
-            header[3] != 0x46) {
-          return false;
-        }
-        final version = header[4] |
-            (header[5] << 8) |
-            (header[6] << 16) |
-            (header[7] << 24);
-        return version == 2 || version == 3;
+        final header = await handle.read(24);
+        return isGgufHeaderValid(header, length);
       } finally {
         await handle.close();
       }
