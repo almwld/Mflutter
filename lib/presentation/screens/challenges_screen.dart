@@ -1,60 +1,134 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
+import '../../services/local_activity_summary_service.dart';
 
 class ChallengesScreen extends StatelessWidget {
   const ChallengesScreen({super.key});
-
-  static final List<Map<String, dynamic>> _challenges = [
-    {'title': 'تدبر ٣ آيات', 'desc': 'اقرأ وتدبر ٣ آيات اليوم', 'xp': 50, 'progress': 0.66},
-    {'title': 'اكتشف علماً جديداً', 'desc': 'استخدم ميزة العلوم', 'xp': 30, 'progress': 1.0},
-    {'title': 'احسب ٥ جمل', 'desc': 'استخدم حاسبة الجمل', 'xp': 40, 'progress': 0.4},
-    {'title': 'شارك آية', 'desc': 'شارك آية مع صديق', 'xp': 20, 'progress': 0.0},
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('التحديات', style: TextStyle(color: AppColors.primaryGold)),
+        title: const Text('أهداف القراءة', style: TextStyle(color: AppColors.primaryGold)),
         backgroundColor: AppColors.primaryNavy,
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.all(20),
-        itemCount: _challenges.length,
-        itemBuilder: (context, index) {
-          final c = _challenges[index];
-          return Container(
-            margin: EdgeInsets.only(bottom: 12),
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('+${c['xp']} XP', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-                    Text(c['title']!, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                  ],
+      body: FutureBuilder<LocalActivitySummary>(
+        future: const LocalActivitySummaryService().load(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'تعذر تحميل تقدمك المحلي. أعد فتح الشاشة للمحاولة.',
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: Colors.white70),
                 ),
-                SizedBox(height: 8),
-                Text(c['desc']!, style: TextStyle(color: Colors.white54)),
-                SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: (c['progress'] as double),
-                  backgroundColor: AppColors.surface,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    c['progress'] == 1.0 ? AppColors.success : AppColors.primaryGold,
-                  ),
-                ),
-              ],
+              ),
+            );
+          }
+          final activity = snapshot.data!;
+          final goals = <({String title, String description, int current, int target})>[
+            (
+              title: 'زيارة 10 صفحات من المصحف',
+              description: 'تُحتسب الصفحات التي فتحتها داخل التطبيق.',
+              current: activity.pagesRead,
+              target: 10,
             ),
+            (
+              title: 'حفظ 5 آيات في المفضلة',
+              description: 'تُحتسب الآيات المحفوظة محليًا.',
+              current: activity.bookmarkCount,
+              target: 5,
+            ),
+            (
+              title: 'القراءة في 7 أيام مختلفة',
+              description: 'تُحتسب أيام القراءة المسجلة على هذا الجهاز.',
+              current: activity.readingDays,
+              target: 7,
+            ),
+            (
+              title: 'بناء سلسلة قراءة من 3 أيام',
+              description: 'تُحتسب الأيام المتتالية حتى اليوم.',
+              current: activity.currentStreak,
+              target: 3,
+            ),
+          ];
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const Text(
+                'أهداف شخصية مبنية على نشاطك الفعلي',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: AppColors.primaryGold, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'لا توجد نقاط خبرة أو مكافآت مصطنعة. يتحدث التقدم من سجل القراءة والمفضلة المحلي.',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              for (final goal in goals)
+                _goalCard(
+                  title: goal.title,
+                  description: goal.description,
+                  current: goal.current,
+                  target: goal.target,
+                ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _goalCard({
+    required String title,
+    required String description,
+    required int current,
+    required int target,
+  }) {
+    final progress = (current / target).clamp(0.0, 1.0).toDouble();
+    final complete = current >= target;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            title,
+            textAlign: TextAlign.right,
+            style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(description, textAlign: TextAlign.right, style: const TextStyle(color: Colors.white54)),
+          const SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: AppColors.background,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              complete ? AppColors.success : AppColors.primaryGold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            complete ? 'اكتمل الهدف' : '$current / $target',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: complete ? AppColors.success : Colors.white70),
+          ),
+        ],
       ),
     );
   }
