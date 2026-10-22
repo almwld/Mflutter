@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/text_transformer.dart';
+import '../../services/quran_source_corrections.dart';
 
 /// 📖 شاشة المصحف — ٤ خطوط × ٣ خلفيات
 enum QuranMode { musnad, oldArabic, uthmaniGold, hieroglyphic }
@@ -102,7 +103,9 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
       final rawVerses = data[widget.surahNumber.toString()];
       if (!mounted) return;
       setState(() {
-        _verses = rawVerses is List ? List<dynamic>.from(rawVerses) : <dynamic>[];
+        _verses = rawVerses is List
+            ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
+            : <dynamic>[];
         _loading = false;
       });
     } catch (e) {
