@@ -30,6 +30,7 @@ class MushafVariantLayoutService {
       final map = (raw as Map).cast<String, dynamic>();
       final words = <String>[];
       final markers = <String>[];
+      final segments = <String>[];
       final rawWords = (map['words'] as List?) ?? const [];
 
       for (final rawWord in rawWords) {
@@ -53,9 +54,13 @@ class MushafVariantLayoutService {
             .toList();
 
         if (kind == 'marker') {
-          markers.add('﴿$ayah﴾');
+          final marker = '﴿$ayah﴾';
+          markers.add(marker);
+          segments.add(marker);
         } else if (wordIndex <= verseWords.length) {
-          words.add(verseWords[wordIndex - 1]);
+          final wordText = verseWords[wordIndex - 1];
+          words.add(wordText);
+          segments.add(wordText);
         }
       }
 
@@ -66,12 +71,13 @@ class MushafVariantLayoutService {
           surah: map['surah'] as int?,
           words: List.unmodifiable(words),
           markers: List.unmodifiable(markers),
+          segments: List.unmodifiable(segments),
         ),
       );
     }
 
     while (result.length < 15) {
-      result.add(const MushafVariantLine(type: 'blank', centered: false, surah: null, words: [], markers: []));
+      result.add(const MushafVariantLine(type: 'blank', centered: false, surah: null, words: [], markers: [], segments: []));
     }
     return result.take(15).toList(growable: false);
   }
@@ -84,6 +90,7 @@ class MushafVariantLine {
     required this.surah,
     required this.words,
     required this.markers,
+    required this.segments,
   });
 
   final String type;
@@ -91,9 +98,11 @@ class MushafVariantLine {
   final int? surah;
   final List<String> words;
   final List<String> markers;
+  /// Ordered source words and ayah markers for faithful per-script conversion.
+  final List<String> segments;
 
   bool get isBlank => type == 'blank';
   bool get isSurahHeader => type == 'surah_name';
 
-  String get text => [...words, ...markers].join(' ');
+  String get text => segments.join(' ');
 }
