@@ -22,9 +22,10 @@ class GazeFusionService {
   double _pitchBias = 0.0;
   double _emaX = 0.5;
   double _emaY = 0.5;
+  bool _calibrated = false;
   static const _alpha = 0.32;
 
-  bool get isCalibrated => _yawScale != 1.0 || _yawBias != 0.0 || _pitchScale != 1.0 || _pitchBias != 0.0;
+  bool get isCalibrated => _calibrated;
 
   Future<void> load() async {
     final p = await SharedPreferences.getInstance();
@@ -32,15 +33,18 @@ class GazeFusionService {
     _yawBias = p.getDouble('gaze_cal_yaw_bias') ?? 0.0;
     _pitchScale = p.getDouble('gaze_cal_pitch_scale') ?? 1.0;
     _pitchBias = p.getDouble('gaze_cal_pitch_bias') ?? 0.0;
+    _calibrated = p.getBool('gaze_calibrated') ??
+        (_yawScale != 1.0 || _yawBias != 0.0 || _pitchScale != 1.0 || _pitchBias != 0.0);
   }
 
   Future<void> clear() async {
     _yawScale = 1.0; _yawBias = 0.0;
     _pitchScale = 1.0; _pitchBias = 0.0;
+    _emaX = 0.5; _emaY = 0.5; _calibrated = false;
     final p = await SharedPreferences.getInstance();
     for (final k in [
       'gaze_cal_yaw_scale','gaze_cal_yaw_bias',
-      'gaze_cal_pitch_scale','gaze_cal_pitch_bias',
+      'gaze_cal_pitch_scale','gaze_cal_pitch_bias','gaze_calibrated',
     ]) { await p.remove(k); }
   }
 
@@ -59,7 +63,7 @@ class GazeFusionService {
     return GazeScreenPoint(
       x: x * width,
       y: y * height,
-      confidence: confidence,
+      confidence: confidence.clamp(0.0, 1.0),
     );
   }
 
@@ -75,11 +79,13 @@ class GazeFusionService {
     _yawBias = yaw.$2;
     _pitchScale = pitch.$1;
     _pitchBias = pitch.$2;
+    _calibrated = true;
     final p = await SharedPreferences.getInstance();
     await p.setDouble('gaze_cal_yaw_scale', _yawScale);
     await p.setDouble('gaze_cal_yaw_bias', _yawBias);
     await p.setDouble('gaze_cal_pitch_scale', _pitchScale);
     await p.setDouble('gaze_cal_pitch_bias', _pitchBias);
+    await p.setBool('gaze_calibrated', true);
   }
 
   (double, double) _fitAxis(List<double> input, List<double> target) {
