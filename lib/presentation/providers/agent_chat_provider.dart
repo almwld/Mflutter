@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/agent_task.dart';
 import '../../services/agent_knowledge_service.dart';
+import '../../services/local_gguf_runtime_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
 import '../../services/on_device_training_service.dart';
@@ -143,7 +144,7 @@ class AgentChatProvider extends ChangeNotifier {
         }
       }
 
-      final answer = _composeAnswer(task);
+      final answer = await _composeAnswer(task);
       task = task.copyWith(
         status: TaskStatus.completed,
         completedAt: DateTime.now(),
@@ -391,16 +392,42 @@ class AgentChatProvider extends ChangeNotifier {
             : _sourcesFromText(result).join(', ')),
       ];
 
-  String _composeAnswer(AgentTask task) {
+  Future<String> _composeAnswer(AgentTask task) async {
     final results = task.steps
         .where((step) => step.result != null && step.result!.trim().isNotEmpty)
         .map((step) => '${step.title}:\n${step.result}')
         .toList();
-    return results.isEmpty
-        ? 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.'
-        : 'تقرير الوكلاء المحلي:\n\n${results.join('\n\n')}\n\n'
-            'المصادر المحمّلة: ${_knowledge.loadedSources.join(', ')}. '
-            'المعالجة هنا استرجاع محلي وفحوص قابلة للتتبع؛ لا يُدّعى تشغيل نموذج GGUF غير موجود ضمن assets.';
+    if (results.isEmpty) {
+      return 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.';
+    }
+
+    final evidence = results.join('\n\n');
+    final sourceList = _knowledge.loadedSources.join(', ');
+    final runtime = LocalGgufRuntimeService.instance;
+    if (runtime.isLoaded) {
+      try {
+        final boundedEvidence = evidence.length > 12000
+            ? '${evidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
+            : evidence;
+        final generated = await runtime.generateGroundedAnswer(
+          question: task.userQuery,
+          evidence: boundedEvidence,
+          maxTokens: 512,
+        );
+        return 'إجابة مولّدة محليًا بواسطة نموذج GGUF المحمّل (ليست نصًا قرآنيًا):\n'
+            '$generated\n\n'
+            'الأدلة المسترجعة من التطبيق، للرجوع والتحقق:\n$evidence\n\n'
+            'المصادر المحمّلة: $sourceList. يجب التحقق من أي استنتاج مولّد مقابل النصوص المصدرية.';
+      } catch (error) {
+        return 'تعذر الاستدلال بالنموذج المحلي؛ لم أستبدل ذلك بإجابة مولّدة وهمية.\n\n'
+            'تقرير الأدلة المحلية:\n$evidence\n\n'
+            'سبب تعذر النموذج: $error\nالمصادر: $sourceList.';
+      }
+    }
+
+    return 'تقرير الوكلاء المحلي:\n\n$evidence\n\n'
+        'المصادر المحمّلة: $sourceList. '
+        'هذه نتائج استرجاع وفحوص محلية؛ لم يُشغّل نموذج توليدي لأن GGUF غير محمّل.';
   }
 
   List<String> _sourcesFromText(String text) {
