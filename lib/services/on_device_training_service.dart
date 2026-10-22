@@ -61,10 +61,13 @@ class OnDeviceTrainingService {
         switch (rawAxis) {
           case 'cosmic':
             label = 0;
+            break;
           case 'tranquil':
             label = 1;
+            break;
           case 'calculation':
             label = 2;
+            break;
           default:
             throw FormatException(
               'تصنيف العينة رقم ${index + 1} غير معروف: $rawAxis',
