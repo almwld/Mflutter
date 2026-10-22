@@ -64,11 +64,13 @@ class ChatProvider extends ChangeNotifier {
                 .map((verse) =>
                     '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
                 .join('\n');
-        reply = await _gguf.generateGroundedAnswer(
+        final generated = await _gguf.generateGroundedAnswer(
           question: cleanText,
           evidence: evidence,
           maxTokens: 512,
         );
+        reply = '$generated\n\n'
+            'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
       } else {
         reply = await _localAi.generate(
           'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
