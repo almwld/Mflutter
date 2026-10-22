@@ -416,7 +416,55 @@ class _FixedMushafLine extends StatelessWidget {
 
     final tokens = <String>[];
     for (final segment in line.segments) {
-      final marker = RegExp('^﴿([0-9]+)﴾$').firstMatch(segment);
+      final marker = RegExp(r'^﴿([0-9]+)﴾.firstMatch(segment);
+      if (marker != null) {
+        tokens.add('۞' + marker.group(1)! + '۞');
+      } else {
+        final converted = transform(segment);
+        if (converted.isNotEmpty) tokens.add(converted);
+      }
+    }
+    final text = tokens.join(' ');
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final style = TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 21,
+          fontWeight: FontWeight.w700,
+          color: gold,
+          height: 1.0,
+        );
+        final painter = TextPainter(
+          text: TextSpan(text: text, style: style),
+          textDirection: TextDirection.rtl,
+          maxLines: 1,
+        )..layout();
+        final scaleX = painter.width <= constraints.maxWidth
+            ? 1.0
+            : constraints.maxWidth / painter.width;
+
+        return Center(
+          child: Transform.scale(
+            scaleX: scaleX,
+            alignment: Alignment.center,
+            child: QuranWaveText(
+              text: text,
+              importanceText: line.text,
+              style: style,
+              sequenceWordCount: sequenceWordCount,
+              sequenceWordOffset: sequenceWordOffset,
+              textAlign: line.centered ? WrapAlignment.center : WrapAlignment.start,
+              singleLine: true,
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+).firstMatch(segment);
       if (marker != null) {
         tokens.add('۞' + marker.group(1)! + '۞');
       } else {
