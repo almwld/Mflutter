@@ -393,10 +393,13 @@ class AgentChatProvider extends ChangeNotifier {
     if (results.isEmpty) return 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.';
 
     final evidence = results.join('\n\n');
+    final boundedEvidence = evidence.length > 5000
+        ? evidence.substring(0, 5000) + '\n[تم اختصار الأدلة لتناسب سياق النموذج المحلي]'
+        : evidence;
     final localModel = LocalGgufService.instance;
     if (localModel.isLoaded) {
       final prompt = 'سؤال المستخدم: ' + task.userQuery +
-          '\n\nنتائج الوكلاء والأدلة المحلية:\n' + evidence +
+          '\n\nنتائج الوكلاء والأدلة المحلية:\n' + boundedEvidence +
           '\n\nاكتب إجابة مركزة، واذكر حدود الأدلة ولا تخترع آيات أو مراجع.';
       final generated = await localModel.generateOnce(
         systemPrompt: 'أنت نموذج لغوي محلي داخل مُدَبِّر. استخدم الأدلة المقدمة فقط، '
