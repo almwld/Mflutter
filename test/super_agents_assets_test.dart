@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mudabbir_al_asrar/services/agent_memory_service.dart';
 import 'package:mudabbir_al_asrar/services/agent_registry.dart';
 import 'package:mudabbir_al_asrar/services/agent_knowledge_service.dart';
+import 'package:mudabbir_al_asrar/services/local_gguf_runtime_service.dart';
 import 'package:mudabbir_al_asrar/python/mudabbir_python_engine.dart';
 
 void main() {
@@ -82,6 +83,18 @@ void main() {
         epochs: 1,
       ),
       throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('GGUF runtime never claims inference before a successful model load', () async {
+    final runtime = LocalGgufRuntimeService.instance;
+    expect(runtime.isLoaded, isFalse);
+    await expectLater(
+      runtime.generateGroundedAnswer(
+        question: 'اختبار',
+        evidence: 'مصدر محلي تجريبي',
+      ),
+      throwsA(isA<StateError>()),
     );
   });
 }
