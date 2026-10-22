@@ -31,7 +31,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   static const modelUrl =
       'https://huggingface.co/mradermacher/3arabLM-4B-islamic-v2-GGUF/resolve/main/3arabLM-4B-islamic-v2.Q4_K_M.gguf';
   static const _minimumGgufBytes = 1024 * 1024;
-  static const _minimumDefaultModelBytes = 2000000000;
+  static const _minimumDefaultModelBytes = 2650000000;
 
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
@@ -331,12 +331,19 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       if (!await file.exists() || await file.length() < _minimumGgufBytes) return false;
       final handle = await file.open();
       try {
-        final header = await handle.read(4);
-        return header.length == 4 &&
-            header[0] == 0x47 &&
-            header[1] == 0x47 &&
-            header[2] == 0x55 &&
-            header[3] == 0x46;
+        final header = await handle.read(8);
+        if (header.length != 8 ||
+            header[0] != 0x47 ||
+            header[1] != 0x47 ||
+            header[2] != 0x55 ||
+            header[3] != 0x46) {
+          return false;
+        }
+        final version = header[4] |
+            (header[5] << 8) |
+            (header[6] << 16) |
+            (header[7] << 24);
+        return version == 2 || version == 3;
       } finally {
         await handle.close();
       }
