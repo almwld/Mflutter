@@ -75,6 +75,9 @@ class OnDeviceTrainingService {
         }
         xTrain.add(_engine.extractFeatures(rawText));
         yTrain.add(label);
+        if (index % 32 == 31) {
+          await Future<void>.delayed(Duration.zero);
+        }
       }
 
       _status = 'تدريب مصنف محلي فعلي على ${xTrain.length} عينة...';
