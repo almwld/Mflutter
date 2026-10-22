@@ -172,11 +172,15 @@ class ExternalModelService {
       interpreter.run([features], output);
       final flat = _flattenNumbers(output);
       return {
+        // Preserve the raw tensor. A generic TFLite model's first output is
+        // not automatically an energy score, probability, diagnosis, or label.
         'prediction': flat.isNotEmpty ? flat.first : null,
-        'confidence': _calculateConfidence(flat),
+        'raw_outputs': flat,
         'model': modelName,
         'inputShape': inputShape,
         'outputShape': outputShape,
+        'interpretation':
+            'مخرجات رقمية خام؛ لا تُفسّر دلاليًا ما لم تتوفر بطاقة تعريف موثقة للنموذج.',
       };
     } catch (error) {
       return {'error': error.toString()};
@@ -197,22 +201,22 @@ class ExternalModelService {
     };
   }
 
-  double _calculateConfidence(List<double> outputs) {
-    if (outputs.isEmpty) return 0.0;
-    final maxVal = outputs.reduce((a, b) => a > b ? a : b);
-    return maxVal.clamp(0.0, 1.0);
-  }
-
+  /// Backward-compatible entry point. Results remain raw model outputs;
+  /// the app cannot infer "energy" semantics from an arbitrary TFLite tensor.
   Future<Map<String, dynamic>> runEnergyAnalysis(String text) async {
     final model = _selectedModel;
     if (model == null) return {'error': 'لم يتم اختيار نموذج محلي TFLite.'};
     return runInference(model, extractFeatures(text));
   }
 
+  /// A generic classifier does not perform pattern discovery merely because
+  /// the same inference was invoked twice.
   Future<Map<String, dynamic>> runPatternDiscovery(String text) async {
-    final model = _selectedModel;
-    if (model == null) return {'error': 'لم يتم اختيار نموذج محلي TFLite.'};
-    return runInference(model, extractFeatures(text));
+    return {
+      'supported': false,
+      'error':
+          'اكتشاف الأنماط غير متاح دون نموذج موثق لهذه المهمة؛ لم تُختلق نتيجة.',
+    };
   }
 
   Future<Map<String, dynamic>> runTopicClassification(String text) async {
