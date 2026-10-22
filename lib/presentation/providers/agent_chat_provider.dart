@@ -388,16 +388,16 @@ class AgentChatProvider extends ChangeNotifier {
   Future<String> _composeAnswer(AgentTask task) async {
     final results = task.steps
         .where((step) => step.result != null && step.result!.trim().isNotEmpty)
-        .map((step) => step.title + ':\\n' + step.result!)
+        .map((step) => step.title + ':\n' + step.result!)
         .toList();
     if (results.isEmpty) return 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.';
 
-    final evidence = results.join('\\n\\n');
+    final evidence = results.join('\n\n');
     final localModel = LocalGgufService.instance;
     if (localModel.isLoaded) {
       final prompt = 'سؤال المستخدم: ' + task.userQuery +
-          '\\n\\nنتائج الوكلاء والأدلة المحلية:\\n' + evidence +
-          '\\n\\nاكتب إجابة مركزة، واذكر حدود الأدلة ولا تخترع آيات أو مراجع.';
+          '\n\nنتائج الوكلاء والأدلة المحلية:\n' + evidence +
+          '\n\nاكتب إجابة مركزة، واذكر حدود الأدلة ولا تخترع آيات أو مراجع.';
       final generated = await localModel.generateOnce(
         systemPrompt: 'أنت نموذج لغوي محلي داخل مُدَبِّر. استخدم الأدلة المقدمة فقط، '
             'ولا تخترع آيات أو مراجع أو نتائج أدوات. وضّح صراحةً عندما لا تكفي الأدلة، '
@@ -406,12 +406,12 @@ class AgentChatProvider extends ChangeNotifier {
         maxTokens: 768,
         temperature: 0.55,
       );
-      return generated + '\\n\\nالمصادر المحلية المفحوصة: ' +
+      return generated + '\n\nالمصادر المحلية المفحوصة: ' +
           _knowledge.loadedSources.join(', ') +
           '. التوليد تم على الجهاز باستخدام نموذج GGUF محمّل.';
     }
 
-    return 'تقرير الوكلاء المحلي:\\n\\n' + evidence + '\\n\\n' +
+    return 'تقرير الوكلاء المحلي:\n\n' + evidence + '\n\n' +
         'المصادر المحمّلة: ' + _knowledge.loadedSources.join(', ') +
         '. هذا تقرير استرجاع محلي قابل للتتبع؛ لتحويله إلى إجابة مولّدة، حمّل نموذج GGUF من شاشة الذكاء المحلي.';
   }
