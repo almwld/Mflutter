@@ -86,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       height: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Icon(_modelAvailable ? Icons.cloud_done : Icons.cloud_off),
+                  : Icon(_chat.hasActiveLocalModel ? Icons.cloud_done : Icons.cloud_off),
               onPressed: _checkingModel ? null : _checkModel,
             ),
             IconButton(
