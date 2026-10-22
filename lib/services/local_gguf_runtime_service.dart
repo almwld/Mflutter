@@ -132,7 +132,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           );
           var received = offset;
           _downloadProgress = totalBytes != null && totalBytes > 0
-              ? (received / totalBytes).clamp(0.0, 1.0)
+              ? (received / totalBytes).clamp(0.0, 1.0).toDouble()
               : null;
           onProgress?.call(GgufDownloadProgress(received, totalBytes));
           notifyListeners();
@@ -205,7 +205,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       }
       final temp = File('${target.path}.importing');
       if (await temp.exists()) await temp.delete();
-      await temp.writeAsBytes(await source.readAsBytes(), flush: true);
+      await source.openRead().pipe(temp.openWrite());
       if (!await _isValidGguf(temp)) {
         await temp.delete();
         throw const FormatException('فشل التحقق من نسخة النموذج بعد الاستيراد.');
@@ -240,8 +240,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final controller = LlamaController();
       await controller.loadModel(
         modelPath: file.path,
-        threads: threads.clamp(1, 8),
-        contextSize: contextSize.clamp(512, 4096),
+        threads: threads.clamp(1, 8).toInt(),
+        contextSize: contextSize.clamp(512, 4096).toInt(),
         gpuLayers: 0,
       );
       _controller = controller;
@@ -278,7 +278,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         ChatMessage(role: 'user', content: prompt),
       ],
       template: 'chatml',
-      maxTokens: maxTokens.clamp(32, 1024),
+      maxTokens: maxTokens.clamp(32, 1024).toInt(),
       temperature: 0.25,
       topP: 0.9,
     )) {
