@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../services/reading_progress_service.dart';
+import '../../../services/daily_streak_service.dart';
 import '../../../services/ayah_coordinate_service.dart';
 import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
@@ -489,6 +492,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       _mushafZoomController.value = Matrix4.identity();
                     }
                     ReadingProgressService.saveLastPage(page);
+                    unawaited(DailyStreakService.recordActivity().catchError((_) {}));
                     if (_highlights.isNotEmpty) {
                       setState(() => _highlights = const []);
                       _stopLivingEffects();
