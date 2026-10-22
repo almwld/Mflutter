@@ -28,7 +28,7 @@ class ExternalAssetService {
   }
 
   static String _normalizeAssetPath(String path) {
-    final normalized = path.replaceAll('\\\\', '/').replaceFirst(RegExp(r'^/+'), '');
+    final normalized = path.replaceAll(String.fromCharCode(92), '/').replaceFirst(RegExp(r'^/+'), '');
     if (!normalized.startsWith('assets/') ||
         normalized.split('/').any((part) => part == '..' || part.isEmpty)) {
       throw ArgumentError.value(path, 'assetPath', 'Expected a safe path below assets/.');
@@ -81,7 +81,7 @@ class ExternalAssetService {
     for (final selected in selection.files) {
       final sourcePath = selected.path;
       if (sourcePath == null || sourcePath.isEmpty) continue;
-      final name = selected.name.split('/').last.split('\\\\').last;
+      final name = selected.name.split('/').last.split(String.fromCharCode(92)).last;
       if (name.isEmpty || name == '.' || name == '..') continue;
 
       final lower = name.toLowerCase();
