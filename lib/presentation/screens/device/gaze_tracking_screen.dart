@@ -171,7 +171,13 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
   }
 
   Future<void> _processFrame(CameraImage image) async {
-    if (_processing || !_tracking || !mounted || _detector == null || _viewSize.isEmpty) return;
+    if (_processing || !_tracking || !mounted || _detector == null) return;
+    // A viewport can be temporarily zero-sized during layout/rotation. Treat
+    // that as an unusable frame, not as permission to keep stale gaze state.
+    if (_viewSize.isEmpty) {
+      _rejectFrame();
+      return;
+    }
     _processing = true;
     try {
       final faces = await _detector!.detectFacesFromCameraImage(
@@ -249,6 +255,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
       }
       setState(() => _point = point);
     } catch (error) {
+      _rejectFrame();
       if (mounted) setState(() => _error = 'تعذر تحليل إطار الكاميرا: $error');
     } finally {
       _processing = false;
