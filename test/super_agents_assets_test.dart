@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mudabbir_al_asrar/services/agent_memory_service.dart';
 import 'package:mudabbir_al_asrar/services/agent_registry.dart';
 import 'package:mudabbir_al_asrar/services/agent_knowledge_service.dart';
+import 'package:mudabbir_al_asrar/services/local_gguf_runtime_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -54,5 +55,17 @@ void main() {
     final matches = await vault.searchVault('اختبار الوكلاء');
     expect(matches, hasLength(1));
     expect(matches.single['sources'], contains('assets/agent_knowledge.json'));
+  });
+
+  test('GGUF runtime never claims inference before a successful model load', () async {
+    final runtime = LocalGgufRuntimeService.instance;
+    expect(runtime.isLoaded, isFalse);
+    await expectLater(
+      runtime.generateGroundedAnswer(
+        question: 'اختبار',
+        evidence: 'مصدر محلي تجريبي',
+      ),
+      throwsA(isA<StateError>()),
+    );
   });
 }
