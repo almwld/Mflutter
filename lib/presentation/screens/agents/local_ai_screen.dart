@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -97,7 +96,7 @@ class _LocalAiScreenState extends State<LocalAiScreen> {
           _scrollToBottom();
         },
         onError: (Object error) {
-          if (mounted) setState(() => _error = 'فشل التوليد المحلي: $error');
+          if (mounted) setState(() { _error = 'فشل التوليد المحلي: $error'; _busy = false; });
         },
         onDone: () {
           if (mounted) setState(() => _busy = false);
