@@ -49,7 +49,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
   }
 
   Future<void> _selectSurah(int index) async {
-    _generation++;
+    final generation = ++_generation;
     _stoppedByUser = false;
     _error = null;
     setState(() {
@@ -61,9 +61,10 @@ class _RecitationScreenState extends State<RecitationScreen> {
     });
     try {
       await _player.stop();
-      await _playCurrentAyah(_generation);
+      if (!mounted || generation != _generation) return;
+      await _playCurrentAyah(generation);
     } catch (error) {
-      _showPlaybackError(error);
+      _showPlaybackError(error, generation: generation);
     }
   }
 
@@ -77,7 +78,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
       if (!mounted || generation != _generation) return;
       setState(() { _loading = false; _playing = true; _paused = false; });
     } catch (error) {
-      _showPlaybackError(error);
+      _showPlaybackError(error, generation: generation);
     }
   }
 
@@ -92,9 +93,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
     await _playCurrentAyah(_generation);
   }
 
-  void _showPlaybackError(Object error) {
+  void _showPlaybackError(Object error, {int? generation}) {
     debugPrint('Recitation playback failed: $error');
-    if (!mounted) return;
+    if (!mounted || (generation != null && generation != _generation)) return;
     setState(() {
       _playing = false;
       _paused = false;
@@ -104,16 +105,17 @@ class _RecitationScreenState extends State<RecitationScreen> {
   }
 
   Future<void> _togglePause() async {
+    final generation = _generation;
     try {
       if (_paused) {
         await _player.resume();
-        if (mounted) setState(() => _paused = false);
+        if (mounted && generation == _generation) setState(() => _paused = false);
       } else {
         await _player.pause();
-        if (mounted) setState(() => _paused = true);
+        if (mounted && generation == _generation) setState(() => _paused = true);
       }
     } catch (error) {
-      _showPlaybackError(error);
+      _showPlaybackError(error, generation: generation);
     }
   }
 
