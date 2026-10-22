@@ -146,16 +146,23 @@ class TrainingScreen extends StatelessWidget {
     );
   }
 
-  void _startTraining(BuildContext context, TrainingProvider provider) async {
-    // تحميل الآيات
-    final ayahs = await QuranLoaderService.loadAllAyahs();
-    final versesData = ayahs.map((a) => {
-      'text': a.text,
-      'axis_type': a.axisType,
-    }).toList();
+  Future<void> _startTraining(BuildContext context, TrainingProvider provider) async {
+    try {
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      final versesData = ayahs.map((a) => {
+        'text': a.text,
+        'axis_type': a.axisType,
+      }).toList();
 
-    if (context.mounted) {
-      provider.trainOnVerses(versesData, epochs: 50);
+      if (context.mounted) {
+        await provider.trainOnVerses(versesData, epochs: 50);
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر بدء التدريب: $error')),
+        );
+      }
     }
   }
 
@@ -169,10 +176,14 @@ class TrainingScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('🏷️ التصنيف: ${result['energy_label']}', style: const TextStyle(color: Colors.white)),
-            Text('📊 الثقة: ${(result['confidence'] * 100).toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white70)),
-            Text('🔢 الجمل: ${result['jummal']?.toInt() ?? 0}', style: const TextStyle(color: Colors.white70)),
-            Text('🔮 mod19: ${result['mod19']?.toInt() ?? 0}', style: const TextStyle(color: Colors.white54)),
+            Text('فهرس الفئة الرقمي: ${result['class_index']}', style: const TextStyle(color: Colors.white)),
+            Text('الدرجة النسبية: ${((result['confidence'] as num).toDouble() * 100).toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white70)),
+            Text(
+              result['interpretation']?.toString() ??
+                  'مخرج رقمي تجريبي لا يحمل دلالة روحية أو تفسيرية مثبتة.',
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
           ],
         ),
       ),
