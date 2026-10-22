@@ -106,8 +106,13 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           final response = await request.close().timeout(const Duration(minutes: 2));
           if (response.statusCode != HttpStatus.ok &&
               response.statusCode != HttpStatus.partialContent) {
+            final statusCode = response.statusCode;
             await response.drain<void>();
-            throw HttpException('خادم النموذج أعاد HTTP ${response.statusCode}.');
+            if (statusCode == HttpStatus.requestedRangeNotSatisfiable &&
+                await partial.exists()) {
+              await partial.delete();
+            }
+            throw HttpException('خادم النموذج أعاد HTTP $statusCode.');
           }
 
           if (offset > 0 && response.statusCode == HttpStatus.ok) {
@@ -167,7 +172,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           return target;
         } catch (error) {
           lastError = error;
-          _status = 'انقطع التنزيل؛ الاحتفاظ بالجزء لاستئنافه (محاولة $attempt/$maxAttempts).';
+          // A full-sized file with an invalid GGUF magic is corrupt, not a
+          // resumable partial. Remove it so retries do not loop at EOF.
+          if (await partial.exists() &&
+              await partial.length() >= _minimumDefaultModelBytes &&
+              !await _isValidGguf(partial)) {
+            await partial.delete();
+          }
+          _status = 'انقطع التنزيل؛ الاحتفاظ بالجزء الصالح لاستئنافه (محاولة $attempt/$maxAttempts).';
           notifyListeners();
           if (attempt < maxAttempts) {
             await Future<void>.delayed(Duration(seconds: math.min(attempt * 3, 15)));
