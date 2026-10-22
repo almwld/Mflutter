@@ -149,8 +149,27 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     return ((iris - minValue) / extent).clamp(0.0, 1.0).toDouble();
   }
 
+  double? _eyeOpenness(Eye? eye) {
+    if (eye == null || eye.contour.length < 6) return null;
+    final xs = eye.contour.map((point) => point.x).toList();
+    final ys = eye.contour.map((point) => point.y).toList();
+    final width = xs.reduce(math.max) - xs.reduce(math.min);
+    final height = ys.reduce(math.max) - ys.reduce(math.min);
+    if (!width.isFinite || !height.isFinite || width < 2 || height < 1) {
+      return null;
+    }
+    final ratio = height / width;
+    return ratio.isFinite ? ratio : null;
+  }
+
+  void _rejectFrame() {
+    if (mounted && _point != null) setState(() => _point = null);
+    _dwell.reset();
+    _dwellNoticeShown = false;
+  }
+
   Future<void> _processFrame(CameraImage image) async {
-    if (_processing || !_tracking || !mounted || _detector == null) return;
+    if (_processing || !_tracking || !mounted || _detector == null || _viewSize.isEmpty) return;
     _processing = true;
     try {
       final faces = await _detector!.detectFacesFromCameraImage(
@@ -158,20 +177,48 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
       );
       if (!mounted) return;
       if (faces.isEmpty) {
-        setState(() => _point = null);
-        _dwell.reset();
-        _dwellNoticeShown = false;
+        _rejectFrame();
         return;
       }
       final eyes = faces.first.eyes;
-      final xs = [_eyeRatio(eyes?.leftEye, true), _eyeRatio(eyes?.rightEye, true)].whereType<double>().toList();
-      final ys = [_eyeRatio(eyes?.leftEye, false), _eyeRatio(eyes?.rightEye, false)].whereType<double>().toList();
-      if (xs.isEmpty || ys.isEmpty) return;
+      final leftEye = eyes?.leftEye;
+      final rightEye = eyes?.rightEye;
+      final leftX = _eyeRatio(leftEye, true);
+      final rightX = _eyeRatio(rightEye, true);
+      final leftY = _eyeRatio(leftEye, false);
+      final rightY = _eyeRatio(rightEye, false);
+      final leftOpenness = _eyeOpenness(leftEye);
+      final rightOpenness = _eyeOpenness(rightEye);
 
-      // Mirror X to match the front-camera preview; fuse eye position with
-      // accelerometer tilt and use gyroscope magnitude to discount motion.
-      final eyeX = 1 - xs.reduce((a, b) => a + b) / xs.length;
-      final eyeY = ys.reduce((a, b) => a + b) / ys.length;
+      // Require two usable, visibly open eyes. Invalid/closed-eye frames must
+      // not leave a stale cursor on screen or continue a dwell timer.
+      if (leftX == null || rightX == null || leftY == null || rightY == null ||
+          leftOpenness == null || rightOpenness == null ||
+          leftOpenness < .07 || rightOpenness < .07) {
+        _rejectFrame();
+        return;
+      }
+
+      // Mirror X to match the front-camera preview. Confidence here is an
+      // explicit heuristic quality score from eye openness, bilateral
+      // agreement and motion—not a calibrated model probability.
+      final eyeX = 1 - (leftX + rightX) / 2;
+      final eyeY = (leftY + rightY) / 2;
+      final opennessQuality =
+          (math.min(leftOpenness, rightOpenness) / .22).clamp(0.0, 1.0);
+      final symmetryError = (leftX - rightX).abs() + (leftY - rightY).abs();
+      final symmetryQuality = (1.0 - symmetryError / 1.1).clamp(0.0, 1.0);
+      final motionQuality = (1.0 - _motion * .7).clamp(.2, 1.0);
+      final quality = (opennessQuality * symmetryQuality * motionQuality)
+          .clamp(0.0, 1.0)
+          .toDouble();
+      if (quality < .45) {
+        _rejectFrame();
+        return;
+      }
+
+      // Fuse the eye-position estimate with device tilt; this remains a
+      // heuristic gaze approximation rather than a trained L2CS prediction.
       final yaw = (eyeX - .5) * 120 + _tiltX * 8;
       final pitch = (.5 - eyeY) * 100 + _tiltY * 8;
       _yaw = yaw;
@@ -181,7 +228,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
         pitchDegrees: pitch,
         width: _viewSize.width,
         height: _viewSize.height,
-        confidence: (.85 - _motion * .5).clamp(.25, .85).toDouble(),
+        confidence: quality,
       );
       final event = _dwell.update(x: point.x, y: point.y, confidence: point.confidence);
       if (event.intent == GazeIntent.dwellActivated && !_dwellNoticeShown) {
@@ -313,6 +360,13 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
                             textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           Text(_tracking ? 'المعالجة محلية • لا تُحفظ الصور ولا تُرفع' : 'التتبع متوقف',
                             textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                          Text(
+                            _point == null
+                                ? 'جودة التتبع: لا توجد قراءة موثوقة'
+                                : 'جودة التتبع التقديرية: ${(_point!.confidence * 100).round()}% • تقدير هندسي وليس احتمال نموذج مدرّب',
+                            textDirection: TextDirection.rtl,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
                         ],
                       )),
                     )),
