@@ -1,4 +1,4 @@
-import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart' show FlutterError;
 
 import 'external_asset_service.dart';
 
