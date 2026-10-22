@@ -32,6 +32,10 @@ import 'personalization_screen.dart';
 import 'player_profile_screen.dart';
 import 'recitation_screen.dart';
 import 'help_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/abjad_provider.dart';
+import '../providers/training_provider.dart';
+import '../../providers/sovereign_chat_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -475,11 +479,11 @@ class MoreScreen extends StatelessWidget {
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
       ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
-      ('حاسبة الأبجد', Icons.calculate_outlined, const AbjadCalculatorScreen()),
-      ('التدريب', Icons.model_training_rounded, const TrainingScreen()),
+      ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
+      ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
       ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
-      ('النواة', Icons.psychology_rounded, const NucleusScreen()),
+      ('النواة', Icons.psychology_rounded, ChangeNotifierProvider<SovereignChatProvider>(create: (_) => SovereignChatProvider(), child: const NucleusScreen())),
       ('مركز السيادة', Icons.hub_rounded, const SovereignHubScreen()),
       ('الخدمات الكونية', Icons.rocket_launch_rounded, const CosmicServicesScreen()),
       ('الذكاء المتقدم', Icons.memory_rounded, const AIAdvancedScreen()),
