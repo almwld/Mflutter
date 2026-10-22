@@ -117,7 +117,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final partial = File('${target.path}.part');
       if (await _isValidDefaultModel(target)) {
         await _selectModel(modelFileName);
-        _status = 'النموذج الافتراضي موجود وبنية GGUF صالحة.';
+        _status = 'النموذج الافتراضي موجود وحجمه وترويسة GGUF مطابقان للفحص الأولي.';
         return target;
       }
 
@@ -223,7 +223,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           await partial.rename(target.path);
           await _selectModel(modelFileName);
           _downloadProgress = 1;
-          _status = 'اكتمل التنزيل والتحقق البنيوي من GGUF.';
+          _status = 'اكتمل التنزيل؛ اجتاز الملف فحص الحجم وترويسة GGUF. يجب تحميله بنجاح قبل تأكيد قابلية الاستدلال.';
           return target;
         } catch (error) {
           lastError = error;
