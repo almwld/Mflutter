@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -145,6 +146,14 @@ class AgentChatProvider extends ChangeNotifier {
       }
 
       final answer = await _composeAnswer(task);
+      // Local GGUF generation can run while the final answer is composed.
+      // If the user cancels during that phase, do not report a completed task
+      // or persist a cancelled run as a successful answer.
+      if (_cancelled) {
+        _activeTask = task.copyWith(status: TaskStatus.cancelled);
+        notifyListeners();
+        return;
+      }
       task = task.copyWith(
         status: TaskStatus.completed,
         completedAt: DateTime.now(),
@@ -178,6 +187,11 @@ class AgentChatProvider extends ChangeNotifier {
   void cancel() {
     _cancelled = true;
     _paused = false;
+    // Stop native generation too; otherwise the task would remain busy until
+    // llama.cpp finishes even though the user explicitly cancelled it.
+    if (LocalGgufRuntimeService.instance.isGenerating) {
+      unawaited(LocalGgufRuntimeService.instance.stopGeneration());
+    }
     if (_activeTask != null) {
       _activeTask = _activeTask!.copyWith(status: TaskStatus.cancelled);
       notifyListeners();
