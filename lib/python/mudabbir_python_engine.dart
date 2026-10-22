@@ -416,25 +416,17 @@ class MudabbirPythonEngine {
     final features = extractFeatures(text);
     final output = forward(features);
 
-    const energyLabels = [
-      'نور', 'سكينة', 'رحمة', 'قوة', 'حكمة',
-      'حب', 'عدل', 'جمال', 'حق', 'وحدة',
-    ];
-
-    // أعلى طاقة
-    int maxIdx = 0;
-    for (int i = 1; i < output.length; i++) {
+    var maxIdx = 0;
+    for (var i = 1; i < output.length; i++) {
       if (output[i] > output[maxIdx]) maxIdx = i;
     }
 
     return {
-      'energy_label': energyLabels[maxIdx],
+      'class_index': maxIdx,
       'confidence': output[maxIdx],
-      'energy_distribution': output,
-      'jummal': features[50] * 1000,
-      'mod19': features[51] * 19,
-      'mod7': features[52] * 7,
-      'golden_ratio_aligned': features[2502] > 0.9,
+      'class_probabilities': output,
+      'interpretation':
+          'مخرج مصنف رقمي محلي فقط؛ فهرس الفئة ليس اسم طاقة أو معنى روحيًا أو تفسيرًا للقرآن.',
     };
   }
 }
