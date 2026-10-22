@@ -72,10 +72,17 @@ void main() {
 
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
-    // The ListView retains its scroll offset while the filtered result list
-    // changes. Return to the top before asserting the first lazy-built item.
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, 1000));
+
+    // Filtering a lazy list can preserve an offset beyond the restored
+    // content's extent. Scroll to the expected item instead of assuming one
+    // drag is sufficient to reset the scroll position.
+    final firstTool = find.text('القرآن التفاعلي');
+    await tester.scrollUntilVisible(
+      firstTool,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-    expect(find.text('القرآن التفاعلي'), findsOneWidget);
+    expect(firstTool, findsOneWidget);
   });
 }
