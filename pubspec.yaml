@@ -20,7 +20,7 @@ dependencies:
   encrypt: ^5.0.3
   sensors_plus: ^6.0.1
   camera: ^0.11.2+1
-  face_detection_tflite: 6.2.7
+  face_detection_tflite: 6.2.8
   flutter_tesseract_ocr: ^0.4.31
   google_mlkit_commons: ^0.11.0
   google_mlkit_image_labeling: ^0.14.1
