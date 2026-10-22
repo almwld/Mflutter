@@ -521,12 +521,12 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
             runSpacing: 8,
             children: [
               OutlinedButton.icon(
-                onPressed: _working || _runtime.isBusy || _runtime.isGenerating ? null : _importModel,
+                onPressed: _working || _runtime.isBusy || _runtime.isGenerating || _runtime.isLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open),
                 label: const Text('استيراد 3arabLM'),
               ),
               OutlinedButton.icon(
-                onPressed: _working || _runtime.isBusy || _runtime.isGenerating ? null : _downloadModel,
+                onPressed: _working || _runtime.isBusy || _runtime.isGenerating || _runtime.isLoaded ? null : _downloadModel,
                 icon: const Icon(Icons.download),
                 label: const Text('تنزيل 3arabLM'),
               ),
