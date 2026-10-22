@@ -5,7 +5,13 @@ import 'package:mudabbir_al_asrar/presentation/screens/recitation_screen.dart';
 void main() {
   testWidgets('recitation screen exposes all Quran surahs and explains streaming', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: RecitationScreen()));
-    await tester.pumpAndSettle();
+
+    // The screen starts an asynchronous local Quran load while showing an
+    // indeterminate progress indicator. pumpAndSettle waits forever for that
+    // animation to stop, so use bounded pumps while the future resolves.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.text('التلاوة الصوتية'), findsOneWidget);
     expect(find.text('تلاوة مشاري العفاسي'), findsOneWidget);
@@ -19,7 +25,7 @@ void main() {
         260,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
       expect(item, findsOneWidget, reason: 'Missing recitation entry: $name');
     }
   });
