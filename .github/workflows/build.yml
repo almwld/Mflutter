@@ -143,23 +143,25 @@ jobs:
                   raise SystemExit(f"Stale jcenter() remains in {path}")
               path.write_text(patched)
 
-          # tflite_flutter 0.12.1 targets Kotlin bytecode 17 but its Java
-          # compile options still target 11; align both tasks to Java 17.
-          import re
-          tflite_files = list(roots.glob("tflite_flutter-*/android/build.gradle"))
-          if not tflite_files:
-              raise SystemExit("tflite_flutter Gradle file was not found after pub get")
-          for path in tflite_files:
-              source = path.read_text()
-              patched, source_count = re.subn(
-                  r"(?m)^(\s*sourceCompatibility\s*=?\s*)JavaVersion\.VERSION_[A-Z0-9_]+",
-                  r"\1JavaVersion.VERSION_17", source, count=1)
-              patched, target_count = re.subn(
-                  r"(?m)^(\s*targetCompatibility\s*=?\s*)JavaVersion\.VERSION_[A-Z0-9_]+",
-                  r"\1JavaVersion.VERSION_17", patched, count=1)
-              if source_count != 1 or target_count != 1:
-                  raise SystemExit(f"Could not align Java 17 targets in {path}")
-              path.write_text(patched)
+          # Modern Kotlin plugins target JVM 17. Align Java compile tasks
+          # across Android subprojects to avoid Java 11 / Kotlin 17 mismatch.
+          root_gradle = Path("android/build.gradle.kts")
+          if not root_gradle.exists():
+              raise SystemExit("Generated Android root Gradle file was not found")
+          root_text = root_gradle.read_text()
+          marker = "// Mudabbir CI: align Java and Kotlin bytecode targets"
+          if marker not in root_text:
+              root_text += """
+
+          // Mudabbir CI: align Java and Kotlin bytecode targets
+          subprojects {
+              tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+                  sourceCompatibility = JavaVersion.VERSION_17.toString()
+                  targetCompatibility = JavaVersion.VERSION_17.toString()
+              }
+          }
+          """
+              root_gradle.write_text(root_text)
           PY
 
       - name: Analyze
