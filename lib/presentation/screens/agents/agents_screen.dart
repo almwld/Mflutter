@@ -488,7 +488,7 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
-                  'الذكاء التوليدي المحلي — GGUF',
+                  'النموذج اللغوي المحلي — GGUF',
                   textDirection: TextDirection.rtl,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
@@ -523,7 +523,7 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
               OutlinedButton.icon(
                 onPressed: _working || _runtime.isBusy || _runtime.isGenerating || _runtime.isLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open),
-                label: const Text('استيراد 3arabLM'),
+                label: const Text('استيراد GGUF من الهاتف'),
               ),
               OutlinedButton.icon(
                 onPressed: _working || _runtime.isBusy || _runtime.isGenerating || _runtime.isLoaded ? null : _downloadModel,
@@ -547,7 +547,7 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
           ),
           const SizedBox(height: 4),
           const Text(
-            'يُحفظ النموذج في مساحة التطبيق الخاصة. حجم 3arabLM Q4_K_M نحو 2.71 GB؛ يحتاج مساحة تخزين وذاكرة كافية. لا يُعد الملف صالحًا للاستدلال حتى ينجح تحميله في llama.cpp.',
+            'اختر أي ملف ‎.gguf من الهاتف؛ يُنسخ إلى مساحة التطبيق الخاصة ويُفحص رأس GGUF قبل اعتماده. بعد الاستيراد اضغط «تحميل النموذج» لتجربة تشغيله في llama.cpp. قد لا تعمل بعض الملفات إذا كانت بنيتها أو معماريتها غير مدعومة أو كانت ذاكرة الجهاز غير كافية.',
             textDirection: TextDirection.rtl,
             style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.5),
           ),

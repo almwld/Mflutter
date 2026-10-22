@@ -57,13 +57,30 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   Future<File> modelFile() async {
     final directory = await _modelDirectory();
+    final marker = File('${directory.path}/selected-model.txt');
+    if (await marker.exists()) {
+      final selected = (await marker.readAsString()).trim();
+      if (selected.toLowerCase().endsWith('.gguf') &&
+          !selected.contains('/') &&
+          !selected.contains(String.fromCharCode(92)) &&
+          selected != '.' &&
+          selected != '..') {
+        return File('${directory.path}/$selected');
+      }
+    }
     return File('${directory.path}/$modelFileName');
+  }
+
+  Future<void> _selectModel(String fileName) async {
+    final directory = await _modelDirectory();
+    await File('${directory.path}/selected-model.txt')
+        .writeAsString(fileName, flush: true);
   }
 
   Future<bool> hasValidModel() async {
     try {
       final file = await modelFile();
-      return await _isValidDefaultModel(file);
+      return await _isValidGguf(file);
     } catch (_) {
       return false;
     }
@@ -93,7 +110,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final target = File('${directory.path}/$modelFileName');
       final partial = File('${target.path}.part');
       if (await _isValidDefaultModel(target)) {
-        _status = 'النموذج موجود وموقّع ببنية GGUF صحيحة.';
+        await _selectModel(modelFileName);
+        _status = 'النموذج الافتراضي موجود وبنية GGUF صالحة.';
         return target;
       }
 
@@ -190,6 +208,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
           if (await target.exists()) await target.delete();
           await partial.rename(target.path);
+          await _selectModel(modelFileName);
           _downloadProgress = 1;
           _status = 'اكتمل التنزيل والتحقق البنيوي من GGUF.';
           return target;
@@ -237,30 +256,36 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final sourceName = source.uri.pathSegments.isEmpty
           ? ''
           : source.uri.pathSegments.last;
-      if (sourceName != modelFileName) {
-        throw FormatException('اختر الملف $modelFileName؛ هذه الشاشة مهيأة لهذا النموذج تحديدًا.');
+      if (!sourceName.toLowerCase().endsWith('.gguf') ||
+          sourceName == '.' ||
+          sourceName == '..' ||
+          sourceName.contains('/') ||
+          sourceName.contains(String.fromCharCode(92))) {
+        throw const FormatException('اختر ملفًا بامتداد .gguf من الهاتف.');
       }
-      if (!await _isValidDefaultModel(source)) {
+      if (!await _isValidGguf(source)) {
         throw const FormatException(
-          'ملف 3arabLM غير مكتمل أو لا يحتوي ترويسة GGUF صالحة. '
-          'أكمل التنزيل قبل الاستيراد.',
+          'الملف ليس GGUF صالحًا أو أنه غير مكتمل (الترويسة/الحجم غير صالحين).',
         );
       }
-      final target = await modelFile();
+      final directory = await _modelDirectory();
+      final target = File('${directory.path}/$sourceName');
       if (source.absolute.path == target.absolute.path) {
-        _status = 'النموذج موجود في مجلد التطبيق.';
+        await _selectModel(sourceName);
+        _status = 'النموذج المحدد موجود بالفعل في مساحة التطبيق: $sourceName';
         return target;
       }
       final temp = File('${target.path}.importing');
       if (await temp.exists()) await temp.delete();
       await source.openRead().pipe(temp.openWrite());
-      if (!await _isValidDefaultModel(temp)) {
+      if (!await _isValidGguf(temp)) {
         await temp.delete();
-        throw const FormatException('فشل التحقق من نسخة النموذج بعد الاستيراد.');
+        throw const FormatException('فشل التحقق من نسخة GGUF بعد الاستيراد.');
       }
       if (await target.exists()) await target.delete();
       await temp.rename(target.path);
-      _status = 'تم استيراد GGUF إلى مساحة التطبيق الخاصة.';
+      await _selectModel(sourceName);
+      _status = 'تم استيراد النموذج $sourceName إلى مساحة التطبيق الخاصة.';
       return target;
     } catch (error) {
       _status = 'فشل استيراد النموذج: $error';
@@ -279,8 +304,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     notifyListeners();
     try {
       final file = await modelFile();
-      if (!await _isValidDefaultModel(file)) {
-        throw StateError('لم يُعثر على ملف 3arabLM GGUF مكتمل وصالح في مساحة التطبيق.');
+      if (!await _isValidGguf(file)) {
+        throw StateError('لم يُعثر على ملف GGUF صالح في مساحة التطبيق. استورد نموذجًا من الهاتف أولًا.');
       }
       final previousController = _controller;
       _controller = null;
