@@ -19,9 +19,9 @@ class GazeTrackingScreen extends StatefulWidget {
 class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     with WidgetsBindingObserver {
   static const _targets = <Offset>[
-    Offset(.15, .18), Offset(.5, .18), Offset(.85, .18),
+    Offset(.15, .22), Offset(.5, .22), Offset(.85, .22),
     Offset(.15, .5), Offset(.5, .5), Offset(.85, .5),
-    Offset(.15, .82), Offset(.5, .82), Offset(.85, .82),
+    Offset(.15, .78), Offset(.5, .78), Offset(.85, .78),
   ];
 
   final _fusion = GazeFusionService.instance;
@@ -181,7 +181,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
         pitchDegrees: pitch,
         width: _viewSize.width,
         height: _viewSize.height,
-        confidence: (.85 - _motion * .2).clamp(.45, .85).toDouble(),
+        confidence: (.85 - _motion * .5).clamp(.25, .85).toDouble(),
       );
       final event = _dwell.update(x: point.x, y: point.y, confidence: point.confidence);
       if (event.intent == GazeIntent.dwellActivated && !_dwellNoticeShown) {
