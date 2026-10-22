@@ -92,20 +92,21 @@ class LocalGgufService {
       final controller = LlamaController();
       pendingController = controller;
       var gpuLayers = 0;
+      var freeRamBytes = 0;
       try {
         final gpu = await controller.detectGpu();
+        freeRamBytes = gpu.freeRamBytes;
         gpuLayers = gpu.recommendedGpuLayers;
-        if (gpu.freeRamBytes < 2 * 1024 * 1024 * 1024) gpuLayers = 0;
+        // Keep a conservative CPU-only path on devices with less than 4 GiB free.
+        if (freeRamBytes < 4 * 1024 * 1024 * 1024) gpuLayers = 0;
       } catch (_) {
         gpuLayers = 0;
+        freeRamBytes = 0;
       }
 
       final processors = Platform.numberOfProcessors;
       final threads = processors < 2 ? 2 : (processors > 4 ? 4 : processors);
-      final freeRamBytes = await _safeFreeRam(controller);
-      final contextSize = freeRamBytes != null && freeRamBytes < 2 * 1024 * 1024 * 1024
-          ? 1024
-          : 2048;
+      final contextSize = freeRamBytes < 4 * 1024 * 1024 * 1024 ? 1024 : 2048;
       await controller.loadModel(
         modelPath: file.path,
         threads: threads,
@@ -128,14 +129,6 @@ class LocalGgufService {
     }
   }
 
-  Future<int?> _safeFreeRam(LlamaController controller) async {
-    try {
-      final gpu = await controller.detectGpu();
-      return gpu.freeRamBytes;
-    } catch (_) {
-      return null;
-    }
-  }
 
   Stream<String> generateChat({
     required String systemPrompt,
