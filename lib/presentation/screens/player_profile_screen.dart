@@ -15,7 +15,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   @override
   void initState() {
     super.initState();
-    DailyStreakService.recordActivity();
+    _loadStreak();
+  }
+
+  Future<void> _loadStreak() async {
+    await DailyStreakService.initialize();
+    if (mounted) setState(() {});
   }
 
   @override
