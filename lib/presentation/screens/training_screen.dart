@@ -176,10 +176,14 @@ class TrainingScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('🏷️ التصنيف: ${result['energy_label']}', style: const TextStyle(color: Colors.white)),
-            Text('📊 الثقة: ${(result['confidence'] * 100).toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white70)),
-            Text('🔢 الجمل: ${result['jummal']?.toInt() ?? 0}', style: const TextStyle(color: Colors.white70)),
-            Text('🔮 mod19: ${result['mod19']?.toInt() ?? 0}', style: const TextStyle(color: Colors.white54)),
+            Text('فهرس الفئة الرقمي: ${result['class_index']}', style: const TextStyle(color: Colors.white)),
+            Text('الدرجة النسبية: ${((result['confidence'] as num).toDouble() * 100).toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white70)),
+            Text(
+              result['interpretation']?.toString() ??
+                  'مخرج رقمي تجريبي لا يحمل دلالة روحية أو تفسيرية مثبتة.',
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
+            ),
           ],
         ),
       ),
