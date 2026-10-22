@@ -30,7 +30,26 @@ class AgentKnowledgeService {
   int get documentCount => _documents.length;
   List<String> get loadedSources => List.unmodifiable(_loadedSources);
 
-  Future<void> initialize() => _initializing ??= _initialize();
+  Future<void> initialize() async {
+    final pending = _initializing;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+
+    final attempt = _initialize();
+    _initializing = attempt;
+    try {
+      await attempt;
+    } catch (error, stackTrace) {
+      // Do not pin a failed Future forever or leave a half-built index behind.
+      _documents.clear();
+      _loadedSources.clear();
+      _variantsLoaded = false;
+      _initializing = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
 
   Future<void> _initialize() async {
     await _loadJsonAsset(_knowledgeAsset);
@@ -127,10 +146,11 @@ class AgentKnowledgeService {
 
   Future<void> _loadVariantsIfNeeded() async {
     if (_variantsLoaded) return;
-    _variantsLoaded = true;
     for (final path in _variantAssets) {
       await _loadJsonAsset(path);
     }
+    // Mark complete only after every optional source has been attempted.
+    _variantsLoaded = true;
   }
 
   Future<List<AgentKnowledgeDocument>> search(
