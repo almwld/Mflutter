@@ -36,6 +36,11 @@ import 'package:provider/provider.dart';
 import '../providers/abjad_provider.dart';
 import '../providers/training_provider.dart';
 import '../../providers/sovereign_chat_provider.dart';
+import 'community_screen.dart';
+import 'challenges_screen.dart';
+import 'leaderboard_screen.dart';
+import 'planets_screen.dart';
+import 'letters_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -491,6 +496,11 @@ class MoreScreen extends StatelessWidget {
       ('الملف الشخصي', Icons.person_outline_rounded, const PlayerProfileScreen()),
       ('مشغل التلاوة', Icons.play_circle_outline_rounded, const RecitationScreen()),
       ('المساعدة', Icons.help_outline_rounded, const HelpScreen()),
+      ('المجتمع', Icons.groups_rounded, const CommunityScreen()),
+      ('التحديات', Icons.flag_outlined, const ChallengesScreen()),
+      ('لوحة المتصدرين', Icons.leaderboard_rounded, const LeaderboardScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+      ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
 
     return Scaffold(
