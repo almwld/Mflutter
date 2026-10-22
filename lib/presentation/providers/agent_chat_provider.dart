@@ -328,8 +328,15 @@ class AgentChatProvider extends ChangeNotifier {
           verses: ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList(),
           epochs: 1,
         );
-        return 'أُرسلت دورة تدريب واحدة إلى خدمة التدريب المحلية على ${ayahs.length} آية. '
-            'هذا لا يعني أن أوزان نموذج لغوي قد تغيّرت.';
+        final trainingStatus = _training.status;
+        if (trainingStatus.startsWith('فشل') ||
+            trainingStatus.startsWith('تعذر') ||
+            trainingStatus.startsWith('أُلغي')) {
+          return 'لم يكتمل التدريب. الحالة الفعلية: $trainingStatus';
+        }
+        return 'حالة التدريب المحلي: $trainingStatus '
+            '(العينات المتاحة: ${ayahs.length}). هذا مصنف صغير منفصل؛ '
+            'لا يُعد نموذجًا لغويًا توليديًا ولم تتغير أوزان Qwen/GGUF.';
       case 'muraqib':
         final task = _activeTask;
         return 'مراقبة التنفيذ: الحالة=${task?.status.name ?? 'غير متاحة'}؛ '
