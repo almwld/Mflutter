@@ -8,26 +8,45 @@ class TrainingProvider extends ChangeNotifier {
   final _engine = MudabbirPythonEngine();
   StreamSubscription<Map<String, dynamic>>? _subscription;
   bool _initialized = false;
+  String? _modelInitializationError;
 
   bool get isTraining => _trainingService.isTraining;
   double get progress => _trainingService.progress;
-  String get status => _trainingService.status;
+  String get status {
+    if (_modelInitializationError != null &&
+        !_engine.isInitialized &&
+        _trainingService.status == 'جاهز') {
+      return 'لا يوجد نموذج مدرّب محمّل؛ يمكن بدء تدريب المصنف المحلي.';
+    }
+    return _trainingService.status;
+  }
   List<Map<String, dynamic>> get history => _trainingService.history;
   bool get modelLoaded => _engine.isInitialized;
 
   Future<void> initialize() async {
     if (_initialized) return;
-    await _engine.initialize();
-    _initialized = true;
-    notifyListeners();
+    try {
+      await _engine.initialize();
+      _modelInitializationError = null;
+    } catch (error) {
+      // A missing starter checkpoint must not block training from scratch.
+      _modelInitializationError = error.toString();
+    } finally {
+      _initialized = true;
+      notifyListeners();
+    }
   }
 
   Future<void> trainOnVerses(List<Map<String, dynamic>> verses, {int epochs = 50}) async {
     await initialize();
     await _subscription?.cancel();
+    // startTraining creates its run-scoped stream synchronously before its
+    // first await, so subscribe after invoking it rather than to a null stream.
+    final training = _trainingService.startTraining(verses: verses, epochs: epochs);
     _subscription = _trainingService.progressStream?.listen((_) => notifyListeners());
     try {
-      await _trainingService.startTraining(verses: verses, epochs: epochs);
+      await training;
+      if (_engine.isInitialized) _modelInitializationError = null;
     } finally {
       await _subscription?.cancel();
       _subscription = null;
