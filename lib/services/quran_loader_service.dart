@@ -23,6 +23,8 @@ class QuranLoaderService {
     final ayahs = <Ayah>[];
     final references = <String>{};
     final countsBySurah = <int, int>{};
+    var previousSurah = 0;
+    var previousAyah = 0;
 
     for (var index = 0; index < decoded.length; index++) {
       final row = decoded[index];
@@ -62,6 +64,22 @@ class QuranLoaderService {
       if (!references.add(reference)) {
         throw FormatException('مرجع آية مكرر في فهرس القرآن: $reference');
       }
+
+      // The canonical corpus must be ordered, not merely contain 6,236 unique
+      // references. This catches swapped records and gaps at surah boundaries.
+      if (ayah.surahNumber != previousSurah) {
+        if (ayah.surahNumber != previousSurah + 1 || ayah.ayahNumber != 1) {
+          throw FormatException(
+            'ترتيب القرآن غير متصل عند السجل ${index + 1}: $reference',
+          );
+        }
+      } else if (ayah.ayahNumber != previousAyah + 1) {
+        throw FormatException(
+          'ترتيب آيات السورة ${ayah.surahNumber} غير متصل عند السجل ${index + 1}: $reference',
+        );
+      }
+      previousSurah = ayah.surahNumber;
+      previousAyah = ayah.ayahNumber;
 
       countsBySurah.update(
         ayah.surahNumber,
