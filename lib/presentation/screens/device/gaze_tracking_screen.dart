@@ -54,12 +54,12 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     _accelerometer = accelerometerEvents.listen((e) {
       final magnitude = math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z);
       if (magnitude > .1) {
-        _tiltX = (e.y / magnitude).clamp(-1.0, 1.0);
-        _tiltY = (e.x / magnitude).clamp(-1.0, 1.0);
+        _tiltX = (e.y / magnitude).clamp(-1.0, 1.0).toDouble();
+        _tiltY = (e.x / magnitude).clamp(-1.0, 1.0).toDouble();
       }
     }, onError: (_) {});
     _gyroscope = gyroscopeEvents.listen((e) {
-      _motion = (math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z).clamp(0.0, 5.0) / 5.0);
+      _motion = (math.sqrt(e.x * e.x + e.y * e.y + e.z * e.z).clamp(0.0, 5.0) / 5.0).toDouble();
     }, onError: (_) {});
     _initialize();
   }
@@ -146,7 +146,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     final extent = maxValue - minValue;
     if (extent < 1 || !extent.isFinite) return null;
     final iris = horizontal ? eye.irisCenter.x : eye.irisCenter.y;
-    return ((iris - minValue) / extent).clamp(0.0, 1.0);
+    return ((iris - minValue) / extent).clamp(0.0, 1.0).toDouble();
   }
 
   Future<void> _processFrame(CameraImage image) async {
@@ -181,7 +181,7 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
         pitchDegrees: pitch,
         width: _viewSize.width,
         height: _viewSize.height,
-        confidence: (.85 - _motion * .2).clamp(.45, .85),
+        confidence: (.85 - _motion * .2).clamp(.45, .85).toDouble(),
       );
       final event = _dwell.update(x: point.x, y: point.y, confidence: point.confidence);
       if (event.intent == GazeIntent.dwellActivated && !_dwellNoticeShown) {
@@ -324,8 +324,8 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
                       )
                     else if (_tracking && _point != null)
                       Positioned(
-                        left: (_point!.x - 14).clamp(0.0, constraints.maxWidth - 28),
-                        top: (_point!.y - 14).clamp(0.0, constraints.maxHeight - 28),
+                        left: (_point!.x - 14).clamp(0.0, constraints.maxWidth - 28).toDouble(),
+                        top: (_point!.y - 14).clamp(0.0, constraints.maxHeight - 28).toDouble(),
                         child: Container(width: 28, height: 28, decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.amber, width: 3),
