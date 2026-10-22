@@ -110,4 +110,15 @@ void main() {
     expect(QuranicSearchEngine.search('النور'), isEmpty);
     expect(QuranicSearchEngine.search('الرحمة'), isNotEmpty);
   });
+
+  test('Mushaf source uses canonical 604-page, 30-juz, 60-hizb metadata', () {
+    expect(MushafSource.totalPages, 604);
+    expect(MushafSource.totalJuz, 30);
+    expect(MushafSource.totalHizb, 60);
+    expect(MushafSource.totalSurahs, 114);
+    expect(MushafSource.normalizePage(0), 1);
+    expect(MushafSource.normalizePage(605), 604);
+    expect(MushafSource.pageForVerse(1, 1), 1);
+    expect(MushafSource.pageForVerse(114, 6), 604);
+  });
 }
