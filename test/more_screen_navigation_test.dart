@@ -39,6 +39,21 @@ void main() {
     }
   });
 
+  testWidgets('Arabic search ignores hamza variants and tashkeel', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
+    final search = find.byType(TextField);
+
+    await tester.enterText(search, 'القران');
+    await tester.pumpAndSettle();
+    expect(find.text('القرآن التفاعلي'), findsOneWidget);
+    expect(find.text('1 نتيجة'), findsOneWidget);
+
+    await tester.enterText(search, 'التَّدريب');
+    await tester.pumpAndSettle();
+    expect(find.text('التدريب'), findsOneWidget);
+    expect(find.text('1 نتيجة'), findsOneWidget);
+  });
+
   testWidgets('More screen search filters tools and can be cleared', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
