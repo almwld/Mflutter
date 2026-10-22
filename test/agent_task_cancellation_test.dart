@@ -15,6 +15,7 @@ void main() {
 
     expect(provider.activeTask?.status, TaskStatus.cancelled);
     expect(provider.activeTask?.finalAnswer, isNull);
+    expect(provider.messages.where((message) => message.startsWith('تعذر إكمال المهمة:')), isEmpty);
     provider.dispose();
   });
 }
