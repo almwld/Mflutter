@@ -31,6 +31,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   static const modelUrl =
       'https://huggingface.co/mradermacher/3arabLM-4B-islamic-v2-GGUF/resolve/main/3arabLM-4B-islamic-v2.Q4_K_M.gguf';
   static const _minimumGgufBytes = 1024 * 1024;
+  static const _minimumDefaultModelBytes = 2000000000;
 
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
@@ -83,7 +84,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     Object? lastError;
 
     try {
-      if (await _isValidGguf(target)) {
+      if (await _isValidDefaultModel(target)) {
         _status = 'النموذج موجود وموقّع ببنية GGUF صحيحة.';
         return target;
       }
@@ -120,7 +121,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
                 : RegExp(r'^bytes (\d+)-(\d+)/(\d+)$').firstMatch(range);
             if (match == null || int.parse(match.group(1)!) != offset) {
               await response.drain<void>();
-              throw HttpException('استجابة Range غير متوافقة؛ حُفظ الجزء السابق لإعادة المحاولة.');
+              await partial.delete().catchError((_) => partial);
+              throw HttpException('استجابة Range غير متوافقة؛ أُزيل الجزء غير القابل للاستئناف.');
             }
           }
 
@@ -154,7 +156,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           if (totalBytes != null && actualBytes != totalBytes) {
             throw HttpException('اكتمل الاتصال قبل اكتمال الملف: $actualBytes من $totalBytes بايت.');
           }
-          if (!await _isValidGguf(partial)) {
+          if (!await _isValidDefaultModel(partial)) {
             throw const FormatException('الملف المكتمل لا يحتوي ترويسة GGUF صالحة أو حجمه غير كافٍ.');
           }
 
@@ -301,6 +303,15 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     if (controller != null) await controller.dispose();
     _status = 'تم إيقاف النموذج وتحرير موارده.';
     notifyListeners();
+  }
+
+  Future<bool> _isValidDefaultModel(File file) async {
+    try {
+      return await file.length() >= _minimumDefaultModelBytes &&
+          await _isValidGguf(file);
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> _isValidGguf(File file) async {
