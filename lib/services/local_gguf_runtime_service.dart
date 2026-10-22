@@ -255,7 +255,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final source = File(sourcePath);
       final sourceName = source.uri.pathSegments.isEmpty
           ? ''
-          : Uri.decodeComponent(source.uri.pathSegments.last);
+          : source.uri.pathSegments.last;
       if (!sourceName.toLowerCase().endsWith('.gguf') ||
           sourceName == '.' ||
           sourceName == '..' ||
