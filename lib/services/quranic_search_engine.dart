@@ -1,15 +1,24 @@
 class QuranicSearchEngine {
   static final Map<String, List<Map<String, String>>> _index = {};
   static bool _ready = false;
+  static int? _indexSignature;
   static String normalize(String value) => value.replaceAll(RegExp(r'[ًٌٍَُِّْـ]'), '').replaceAll(RegExp(r'[إأآٱ]'), 'ا').replaceAll('ى', 'ي').replaceAll('ة', 'ه').replaceAll(RegExp(r'[ۖۗۚۛۙۜ۞﴿﴾.,،؛:!?]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   static void indexVerses(List<Map<String, String>> verses) {
-    if (_ready) return;
+    final signature = Object.hashAll(
+      verses.map((verse) => Object.hash(
+        verse['surah'],
+        verse['ayah'],
+        verse['text'],
+      )),
+    );
+    if (_ready && _indexSignature == signature) return;
     _index.clear();
     for (final verse in verses) {
       for (final word in normalize(verse['text'] ?? '').split(' ').where((w) => w.length >= 2)) {
         _index.putIfAbsent(word, () => <Map<String, String>>[]).add(verse);
       }
     }
+    _indexSignature = signature;
     _ready = true;
   }
   static List<Map<String, String>> search(String query) {
