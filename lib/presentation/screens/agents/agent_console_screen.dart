@@ -7,6 +7,7 @@ import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
 import '../../../services/local_gguf_runtime_service.dart';
 import '../../providers/agent_chat_provider.dart';
+import '../../../services/external_asset_service.dart';
 
 class AgentConsoleScreen extends StatelessWidget {
   const AgentConsoleScreen({super.key});
@@ -28,6 +29,21 @@ class _AgentConsoleView extends StatefulWidget {
 class _AgentConsoleViewState extends State<_AgentConsoleView> {
   final _controller = TextEditingController();
   String _layer = 'الكل';
+
+  Future<void> _importOptionalAssets() async {
+    try {
+      final imported = await ExternalAssetService.instance.pickAndImportOptionalAssets();
+      if (!mounted || imported.isEmpty) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم استيراد ${imported.length} ملفًا اختياريًا إلى مساحة التطبيق.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر استيراد الأصول: $error')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -60,6 +76,11 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
             ],
           ),
           actions: [
+            IconButton(
+              tooltip: 'استيراد أصول OCR / ML Kit والنماذج المحلية',
+              onPressed: _importOptionalAssets,
+              icon: const Icon(Icons.folder_open_outlined),
+            ),
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 14),
               child: Center(
