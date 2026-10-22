@@ -152,6 +152,8 @@ jobs:
               source = path.read_text()
               patched = source.replace("JavaVersion.VERSION_11", "JavaVersion.VERSION_17")
               patched = patched.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
+              if "JavaVersion.VERSION_11" in patched or "JavaVersion.VERSION_1_8" in patched:
+                  raise SystemExit(f"Legacy Java target remains in {path}")
               if patched != source:
                   path.write_text(patched)
 
