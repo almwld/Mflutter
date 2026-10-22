@@ -81,9 +81,15 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         .writeAsString(fileName, flush: true);
   }
 
+  /// Checks the selected file's header; the bundled default additionally
+  /// requires the expected minimum size. Native model loading remains the
+  /// final compatibility check and is the only point that enables inference.
   Future<bool> hasValidModel() async {
     try {
       final file = await modelFile();
+      if (file.path.endsWith('/$modelFileName')) {
+        return await _isValidDefaultModel(file);
+      }
       return await _isValidGguf(file);
     } catch (_) {
       return false;
