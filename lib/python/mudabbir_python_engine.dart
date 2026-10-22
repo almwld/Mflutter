@@ -40,6 +40,7 @@ class MudabbirPythonEngine {
       _initialized = true;
     } catch (e) {
       _initialized = false;
+      if (await loadModelFromDisk()) return;
       rethrow;
     }
   }
@@ -115,174 +116,236 @@ class MudabbirPythonEngine {
   /// تمرير أمامي كامل: Input → Hidden → Output
   List<double> forward(List<double> input) {
     if (!_initialized) {
-      throw StateError('محرك مُدَبِّر غير مهيأ: أوزان النموذج المطلوبة غير متاحة.');
+      throw StateError('محرك مُدَبِّر غير مهيأ: لم يتم تحميل نموذج صالح.');
+    }
+    if (input.length != 4096 || input.any((value) => !value.isFinite)) {
+      throw ArgumentError('يتطلب النموذج 4096 ميزة رقمية صالحة.');
     }
 
-    // تحويل المدخل إلى مصفوفة عمودية
+    if (_modelWeights['architecture'] == 'linear_sparse_v2') {
+      final weights = (_modelWeights['weights'] as List)
+          .map((value) => (value as num).toDouble())
+          .toList(growable: false);
+      final biases = (_modelWeights['biases'] as List)
+          .map((value) => (value as num).toDouble())
+          .toList(growable: false);
+      if (weights.length != 4096 * 10 || biases.length != 10) {
+        throw StateError('أبعاد أوزان المصنف المحلي غير صالحة.');
+      }
+      final logits = List<double>.from(biases);
+      for (var feature = 0; feature < input.length; feature++) {
+        final value = input[feature];
+        if (value == 0) continue;
+        final offset = feature * 10;
+        for (var category = 0; category < 10; category++) {
+          logits[category] += value * weights[offset + category];
+        }
+      }
+      return softmax(logits);
+    }
+
+    // Backward compatibility for previously exported three-layer weights.
     final x = [input];
-
-    // الطبقة المخفية ١: 4096 → 512
-    var w1 = (_modelWeights['w1'] as List?)?.cast<double>() ?? [];
-    var b1 = (_modelWeights['b1'] as List?)?.cast<double>() ?? [];
+    final w1 = (_modelWeights['w1'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
+    final b1 = (_modelWeights['b1'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
     if (w1.length != 4096 * 512 || b1.length != 512) {
-      throw StateError('أوزان w1/b1 غير متوافقة مع بنية النموذج.');
+      throw StateError('أوزان النموذج غير متوافقة؛ أعد التدريب أو استورد نموذجًا صالحًا.');
     }
-
     final w1Matrix = List.generate(4096, (i) => w1.sublist(i * 512, (i + 1) * 512));
-    var h1 = matMul(x, w1Matrix)[0];
+    final h1 = matMul(x, w1Matrix)[0];
     for (int i = 0; i < h1.length; i++) {
-      h1[i] = (h1[i] + b1[i]).clamp(0, double.infinity); // ReLU
+      h1[i] = (h1[i] + b1[i]).clamp(0, double.infinity);
     }
-
-    // الطبقة المخفية ٢: 512 → 256
-    var w2 = (_modelWeights['w2'] as List?)?.cast<double>() ?? [];
-    var b2 = (_modelWeights['b2'] as List?)?.cast<double>() ?? [];
+    final w2 = (_modelWeights['w2'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
+    final b2 = (_modelWeights['b2'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
     if (w2.length != 512 * 256 || b2.length != 256) {
-      throw StateError('أوزان w2/b2 غير متوافقة مع بنية النموذج.');
+      throw StateError('أوزان الطبقة الثانية غير متوافقة.');
     }
-
     final w2Matrix = List.generate(512, (i) => w2.sublist(i * 256, (i + 1) * 256));
-    var h2 = matMul([h1], w2Matrix)[0];
+    final h2 = matMul([h1], w2Matrix)[0];
     for (int i = 0; i < h2.length; i++) {
       h2[i] = (h2[i] + b2[i]).clamp(0, double.infinity);
     }
-
-    // طبقة المخرجات: 256 → 10 (طاقات)
-    var w3 = (_modelWeights['w3'] as List?)?.cast<double>() ?? [];
-    var b3 = (_modelWeights['b3'] as List?)?.cast<double>() ?? [];
+    final w3 = (_modelWeights['w3'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
+    final b3 = (_modelWeights['b3'] as List?)?.map((v) => (v as num).toDouble()).toList() ?? [];
     if (w3.length != 256 * 10 || b3.length != 10) {
-      throw StateError('أوزان w3/b3 غير متوافقة مع بنية النموذج.');
+      throw StateError('أوزان طبقة المخرجات غير متوافقة.');
     }
-
     final w3Matrix = List.generate(256, (i) => w3.sublist(i * 10, (i + 1) * 10));
-    var output = matMul([h2], w3Matrix)[0];
+    final output = matMul([h2], w3Matrix)[0];
     for (int i = 0; i < output.length; i++) {
       output[i] += b3[i];
     }
-
     return softmax(output);
   }
 
   // ═══════════════════════════════════════════════════════════
-  // التدريب على الهاتف (On-Device Training)
+  // التدريب المحلي: مصنف softmax صغير مع تحديث جميع الأوزان
   // ═══════════════════════════════════════════════════════════
 
-  /// تدريب نموذج من الصفر باستخدام بيانات القرآن
   Future<Map<String, dynamic>> trainModel({
     required List<List<double>> xTrain,
     required List<int> yTrain,
     int epochs = 100,
     double learningRate = 0.001,
     Function(double loss, int epoch)? onProgress,
+    bool Function()? shouldCancel,
   }) async {
+    if (xTrain.isEmpty || xTrain.length != yTrain.length) {
+      throw ArgumentError('بيانات التدريب فارغة أو عدد التصنيفات لا يطابق العينات.');
+    }
+    if (epochs < 1 || epochs > 500) {
+      throw ArgumentError('عدد العصور يجب أن يكون بين 1 و500.');
+    }
+    if (!learningRate.isFinite || learningRate <= 0 || learningRate > 1) {
+      throw ArgumentError('معدل التعلم يجب أن يكون أكبر من صفر ولا يتجاوز 1.');
+    }
+    for (var i = 0; i < xTrain.length; i++) {
+      if (xTrain[i].length != 4096 || xTrain[i].any((v) => !v.isFinite)) {
+        throw ArgumentError('عينة التدريب رقم ${i + 1} لا تحتوي 4096 ميزة رقمية صالحة.');
+      }
+      if (yTrain[i] < 0 || yTrain[i] >= 10) {
+        throw ArgumentError('تصنيف العينة رقم ${i + 1} خارج النطاق 0..9.');
+      }
+    }
+
+    final random = Random(4096 + xTrain.length + epochs);
+    final weights = List<double>.generate(
+      4096 * 10,
+      (_) => (random.nextDouble() * 2 - 1) * 0.002,
+    );
+    final biases = List<double>.filled(10, 0);
     final history = <Map<String, dynamic>>[];
-    final random = Random();
+    final activeFeatures = <List<int>>[
+      for (final sample in xTrain)
+        [for (var i = 0; i < sample.length; i++) if (sample[i] != 0) i],
+    ];
 
-    // تهيئة الأوزان
-    final w1 = List.generate(4096 * 512, (_) => (random.nextDouble() * 2 - 1) * 0.02);
-    final b1 = List.filled(512, 0.0);
-    final w2 = List.generate(512 * 256, (_) => (random.nextDouble() * 2 - 1) * 0.02);
-    final b2 = List.filled(256, 0.0);
-    final w3 = List.generate(256 * 10, (_) => (random.nextDouble() * 2 - 1) * 0.02);
-    final b3 = List.filled(10, 0.0);
-
-    final nSamples = xTrain.length;
-
-    for (int epoch = 0; epoch < epochs; epoch++) {
-      double totalLoss = 0;
-
-      for (int s = 0; s < nSamples; s++) {
-        // تمرير أمامي
-        final x = xTrain[s];
-        final w1Matrix = List.generate(4096, (i) => w1.sublist(i * 512, (i + 1) * 512));
-        var h1 = matMul([x], w1Matrix)[0];
-        for (int i = 0; i < h1.length; i++) h1[i] = (h1[i] + b1[i]).clamp(0, double.infinity);
-
-        final w2Matrix = List.generate(512, (i) => w2.sublist(i * 256, (i + 1) * 256));
-        var h2 = matMul([h1], w2Matrix)[0];
-        for (int i = 0; i < h2.length; i++) h2[i] = (h2[i] + b2[i]).clamp(0, double.infinity);
-
-        final w3Matrix = List.generate(256, (i) => w3.sublist(i * 10, (i + 1) * 10));
-        var output = matMul([h2], w3Matrix)[0];
-        for (int i = 0; i < output.length; i++) output[i] += b3[i];
-
-        final probs = softmax(output);
-
-        // خسارة Cross-Entropy
-        final target = List.filled(10, 0.0);
-        target[yTrain[s] % 10] = 1.0;
-        double loss = 0;
-        for (int i = 0; i < 10; i++) {
-          loss -= target[i] * log(max(probs[i], 1e-10));
+    for (var epoch = 0; epoch < epochs; epoch++) {
+      if (shouldCancel?.call() ?? false) {
+        throw StateError('أُلغي التدريب قبل اكتماله؛ لم يُعلن نجاح التدريب.');
+      }
+      var totalLoss = 0.0;
+      for (var sampleIndex = 0; sampleIndex < xTrain.length; sampleIndex++) {
+        if (shouldCancel?.call() ?? false) {
+          throw StateError('أُلغي التدريب قبل اكتماله؛ لم يُعلن نجاح التدريب.');
         }
-        totalLoss += loss;
-
-        // انتشار خلفي مبسط (SGD)
-        for (int i = 0; i < 10; i++) {
-          b3[i] -= learningRate * (probs[i] - target[i]);
+        final sample = xTrain[sampleIndex];
+        final logits = List<double>.from(biases);
+        for (final feature in activeFeatures[sampleIndex]) {
+          final value = sample[feature];
+          final offset = feature * 10;
+          for (var category = 0; category < 10; category++) {
+            logits[category] += value * weights[offset + category];
+          }
         }
-        for (int i = 0; i < 256; i++) {
-          for (int j = 0; j < 10; j++) {
-            w3[i * 10 + j] -= learningRate * h2[i] * (probs[j] - target[j]);
+        final probabilities = softmax(logits);
+        final target = yTrain[sampleIndex];
+        totalLoss -= log(max(probabilities[target], 1e-12));
+        for (var category = 0; category < 10; category++) {
+          final gradient = probabilities[category] - (category == target ? 1.0 : 0.0);
+          biases[category] -= learningRate * gradient;
+          for (final feature in activeFeatures[sampleIndex]) {
+            final index = feature * 10 + category;
+            weights[index] -= learningRate * xTrain[sampleIndex][feature] * gradient;
           }
         }
       }
-
-      final avgLoss = totalLoss / nSamples;
-      history.add({'epoch': epoch + 1, 'loss': avgLoss});
-
-      if (onProgress != null) {
-        onProgress(avgLoss, epoch + 1);
+      final averageLoss = totalLoss / xTrain.length;
+      if (!averageLoss.isFinite) {
+        throw StateError('ظهرت خسارة غير صالحة؛ أُوقف التدريب لحماية النموذج.');
       }
+      history.add({'epoch': epoch + 1, 'loss': averageLoss});
+      onProgress?.call(averageLoss, epoch + 1);
     }
 
-    // حفظ الأوزان
+    final previousWeights = _modelWeights;
     _modelWeights = {
-      'w1': w1,
-      'b1': b1,
-      'w2': w2,
-      'b2': b2,
-      'w3': w3,
-      'b3': b3,
+      'schema_version': 2,
+      'architecture': 'linear_sparse_v2',
+      'input_size': 4096,
+      'class_count': 10,
+      'weights': weights,
+      'biases': biases,
     };
     _trainingHistory = history;
-
-    // حفظ على القرص
-    await _saveModelToDisk();
-
+    _initialized = true;
+    try {
+      await _saveModelToDisk();
+    } catch (_) {
+      _modelWeights = previousWeights;
+      _initialized = previousWeights.isNotEmpty;
+      rethrow;
+    }
     return {
       'status': 'completed',
+      'architecture': 'linear_sparse_v2',
       'epochs': epochs,
+      'samples': xTrain.length,
       'final_loss': history.last['loss'],
-      'weights_size': w1.length + w2.length + w3.length,
+      'weights_size': weights.length + biases.length,
     };
   }
 
-  /// حفظ النموذج المُدرّب
   Future<void> _saveModelToDisk() async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final modelFile = File('${dir.path}/mudabbir_trained_weights.json');
-      await modelFile.writeAsString(jsonEncode(_modelWeights));
-
-      final historyFile = File('${dir.path}/training_history.json');
-      await historyFile.writeAsString(jsonEncode(_trainingHistory));
-    } catch (e) {
-      // فشل الحفظ - النموذج موجود في الذاكرة فقط
-    }
+    final dir = await getApplicationDocumentsDirectory();
+    final modelFile = File('${dir.path}/mudabbir_trained_weights.json');
+    final historyFile = File('${dir.path}/training_history.json');
+    final modelTemp = File('${modelFile.path}.tmp');
+    final historyTemp = File('${historyFile.path}.tmp');
+    await modelTemp.writeAsString(jsonEncode(_modelWeights), flush: true);
+    await historyTemp.writeAsString(jsonEncode(_trainingHistory), flush: true);
+    await modelTemp.rename(modelFile.path);
+    await historyTemp.rename(historyFile.path);
   }
 
-  /// تحميل نموذج من القرص
   Future<bool> loadModelFromDisk() async {
     try {
       final dir = await getApplicationDocumentsDirectory();
       final modelFile = File('${dir.path}/mudabbir_trained_weights.json');
-      if (await modelFile.exists()) {
-        _modelWeights = jsonDecode(await modelFile.readAsString());
-        return true;
+      final historyFile = File('${dir.path}/training_history.json');
+      if (!await modelFile.exists()) return false;
+      final decoded = jsonDecode(await modelFile.readAsString());
+      if (decoded is! Map) return false;
+      final candidate = Map<String, dynamic>.from(decoded);
+      if (candidate['architecture'] == 'linear_sparse_v2') {
+        final weights = candidate['weights'];
+        final biases = candidate['biases'];
+        if (weights is! List || weights.length != 4096 * 10 ||
+            biases is! List || biases.length != 10 ||
+            weights.any((v) => v is! num || !v.isFinite) ||
+            biases.any((v) => v is! num || !v.isFinite)) {
+          return false;
+        }
+      } else {
+        final w1 = candidate['w1'];
+        final b1 = candidate['b1'];
+        final w2 = candidate['w2'];
+        final b2 = candidate['b2'];
+        final w3 = candidate['w3'];
+        final b3 = candidate['b3'];
+        if (w1 is! List || w1.length != 4096 * 512 ||
+            b1 is! List || b1.length != 512 ||
+            w2 is! List || w2.length != 512 * 256 ||
+            b2 is! List || b2.length != 256 ||
+            w3 is! List || w3.length != 256 * 10 ||
+            b3 is! List || b3.length != 10) {
+          return false;
+        }
       }
-      return false;
-    } catch (e) {
+      _modelWeights = candidate;
+      if (await historyFile.exists()) {
+        final history = jsonDecode(await historyFile.readAsString());
+        if (history is List) {
+          _trainingHistory = history
+              .whereType<Map>()
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList();
+        }
+      }
+      _initialized = true;
+      return true;
+    } catch (_) {
       return false;
     }
   }
