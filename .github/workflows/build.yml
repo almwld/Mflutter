@@ -112,6 +112,38 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Remove obsolete Tesseract Gradle buildscript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          roots = Path.home() / ".pub-cache" / "hosted" / "pub.dev"
+          candidates = list(roots.glob("flutter_tesseract_ocr-*/android/build.gradle"))
+          if not candidates:
+              raise SystemExit("flutter_tesseract_ocr Gradle file was not found after pub get")
+
+          for path in candidates:
+              source = path.read_text()
+              lines = source.splitlines(keepends=True)
+              start = next((i for i, line in enumerate(lines)
+                            if line.strip() == "buildscript {"), None)
+              if start is not None:
+                  depth = 0
+                  end = None
+                  for i in range(start, len(lines)):
+                      depth += lines[i].count("{") - lines[i].count("}")
+                      if i > start and depth == 0:
+                          end = i + 1
+                          break
+                  if end is None:
+                      raise SystemExit(f"Unclosed buildscript block in {path}")
+                  lines = lines[:start] + lines[end:]
+              patched = "".join(lines).replace("jcenter()", "mavenCentral()")
+              if "jcenter()" in patched:
+                  raise SystemExit(f"Stale jcenter() remains in {path}")
+              path.write_text(patched)
+          PY
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
