@@ -309,7 +309,8 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
     try {
       await action();
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+      final cancelled = _runtime.status.contains('أُلغي');
+      if (mounted && !cancelled) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('تعذرت العملية: $error')),
       );
     } finally {
@@ -370,6 +371,12 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
                 icon: const Icon(Icons.download_rounded, size: 17),
                 label: const Text('تنزيل 3arabLM'),
               ),
+              if (_runtime.isDownloading)
+                OutlinedButton.icon(
+                  onPressed: () async => _runtime.cancelDownload(),
+                  icon: const Icon(Icons.cancel_outlined, size: 17),
+                  label: const Text('إلغاء التنزيل'),
+                ),
               FilledButton.icon(
                 onPressed: busy ? null : _runtime.isLoaded
                     ? () => _run(_runtime.unloadModel)
