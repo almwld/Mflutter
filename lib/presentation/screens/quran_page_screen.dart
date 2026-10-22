@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
+import '../../services/daily_streak_service.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -45,6 +46,12 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             : <dynamic>[];
         _loading = false;
       });
+      // Count activity only after the local Quran content has loaded successfully.
+      try {
+        await DailyStreakService.recordActivity();
+      } catch (error) {
+        debugPrint('Could not persist reading activity: $error');
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
