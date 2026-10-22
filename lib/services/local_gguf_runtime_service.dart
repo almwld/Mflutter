@@ -75,17 +75,21 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   }) async {
     _ensureAndroid();
     if (_busy) throw StateError('هناك عملية نموذج أخرى جارية.');
+    if (maxAttempts < 1 || maxAttempts > 10) {
+      throw ArgumentError('عدد محاولات التنزيل يجب أن يكون بين 1 و10.');
+    }
     _busy = true;
     _downloadProgress = 0;
     _status = 'جارٍ تنزيل النموذج مع دعم الاستئناف...';
     notifyListeners();
 
-    final directory = await _modelDirectory();
-    final target = File('${directory.path}/$modelFileName');
-    final partial = File('${target.path}.part');
     Object? lastError;
-
     try {
+      // Keep all filesystem setup inside try/finally so a storage exception
+      // cannot leave the service permanently marked busy.
+      final directory = await _modelDirectory();
+      final target = File('${directory.path}/$modelFileName');
+      final partial = File('${target.path}.part');
       if (await _isValidDefaultModel(target)) {
         _status = 'النموذج موجود وموقّع ببنية GGUF صحيحة.';
         return target;
