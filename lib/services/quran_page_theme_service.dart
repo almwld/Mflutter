@@ -33,7 +33,7 @@ class QuranPageThemeService {
   static Color text(QuranPageTheme theme) {
     switch (theme) {
       case QuranPageTheme.paper:
-        return const Color(0xFFD49A16);
+        return const Color(0xFF805600); // Deep gold: readable on the paper background.
       case QuranPageTheme.black:
       case QuranPageTheme.navy:
       case QuranPageTheme.deepGreen:
