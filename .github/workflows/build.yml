@@ -166,11 +166,9 @@ jobs:
 
           // Mudabbir CI: align Java and Kotlin bytecode targets
           subprojects {
-              afterEvaluate {
-                  tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
-                      sourceCompatibility = JavaVersion.VERSION_17.toString()
-                      targetCompatibility = JavaVersion.VERSION_17.toString()
-                  }
+              tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+                  sourceCompatibility = JavaVersion.VERSION_17.toString()
+                  targetCompatibility = JavaVersion.VERSION_17.toString()
               }
           }
           """
