@@ -7,6 +7,7 @@ import 'package:mudabbir_al_asrar/services/agent_memory_service.dart';
 import 'package:mudabbir_al_asrar/services/agent_registry.dart';
 import 'package:mudabbir_al_asrar/services/agent_knowledge_service.dart';
 import 'package:mudabbir_al_asrar/services/local_gguf_runtime_service.dart';
+import 'package:mudabbir_al_asrar/python/mudabbir_python_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,34 @@ void main() {
     final matches = await vault.searchVault('اختبار الوكلاء');
     expect(matches, hasLength(1));
     expect(matches.single['sources'], contains('assets/agent_knowledge.json'));
+  });
+
+  test('local trainer rejects empty datasets before claiming completion', () async {
+    final engine = MudabbirPythonEngine();
+    await expectLater(
+      engine.trainModel(xTrain: const [], yTrain: const []),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('local trainer validates feature dimensions and labels', () async {
+    final engine = MudabbirPythonEngine();
+    await expectLater(
+      engine.trainModel(
+        xTrain: [List<double>.filled(4, 0)],
+        yTrain: const [0],
+        epochs: 1,
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
+    await expectLater(
+      engine.trainModel(
+        xTrain: [List<double>.filled(4096, 0)],
+        yTrain: const [10],
+        epochs: 1,
+      ),
+      throwsA(isA<ArgumentError>()),
+    );
   });
 
   test('GGUF runtime never claims inference before a successful model load', () async {
