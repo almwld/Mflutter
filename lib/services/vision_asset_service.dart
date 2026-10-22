@@ -1,7 +1,9 @@
 import 'package:flutter/services.dart';
 
-/// Validates that the vision model assets are present in the Flutter bundle.
-/// It does not copy or modify model files.
+import 'external_asset_service.dart';
+
+/// Validates optional vision models imported into app-private storage.
+/// Large model files are intentionally not bundled in the APK.
 class VisionAssetService {
   const VisionAssetService._();
 
@@ -10,12 +12,23 @@ class VisionAssetService {
 
   static Future<Map<String, int>> validate() async {
     final result = <String, int>{};
+    final missing = <String>[];
     for (final path in [faceLandmarkerAsset, gazeModelAsset]) {
-      final data = await rootBundle.load(path);
-      if (data.lengthInBytes == 0) {
-        throw StateError('ملف النموذج فارغ: $path');
+      try {
+        final data = await ExternalAssetService.instance.loadBytes(path);
+        if (data.lengthInBytes == 0) {
+          throw StateError('ملف النموذج فارغ: $path');
+        }
+        result[path] = data.lengthInBytes;
+      } on FlutterError {
+        missing.add(path);
       }
-      result[path] = data.lengthInBytes;
+    }
+    if (missing.isNotEmpty) {
+      throw StateError(
+        'ملفات الرؤية غير مستوردة: ${missing.join(', ')}. '
+        'افتح مساحة الوكلاء > استيراد أصول OCR/ML Kit واختر الملفات المحلية.',
+      );
     }
     return result;
   }
