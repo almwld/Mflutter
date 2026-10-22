@@ -376,9 +376,15 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     _controller = null;
     _loaded = false;
     _loadedPath = null;
-    if (controller != null) await controller.dispose();
-    _status = 'تم إيقاف النموذج وتحرير موارده.';
-    notifyListeners();
+    try {
+      if (controller != null) await controller.dispose();
+      _status = 'تم إيقاف النموذج وتحرير موارده.';
+    } catch (error) {
+      _status = 'تم فصل النموذج عن الواجهة، لكن تحرير المورد الأصلي أبلغ عن خطأ: $error';
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
   }
 
   Future<bool> _isValidDefaultModel(File file) async {
