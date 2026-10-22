@@ -372,8 +372,8 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final quranGold = _pageTheme == QuranPageTheme.paper ? (isDark ? _quranGoldDark : _quranGoldLight) : QuranPageThemeService.text(_pageTheme);
+    // Page theme controls its own contrast; system brightness must not override paper gold.
+    final quranGold = QuranPageThemeService.text(_pageTheme);
     final pageBackground = QuranPageThemeService.background(_pageTheme);
 
     return Scaffold(
