@@ -23,6 +23,7 @@ class SmartLensService {
     // Optional model may be imported manually instead of downloaded at runtime.
     final imported = await ExternalAssetService.instance.findImportedFile('ara.traineddata');
     if (imported != null && await imported.length() > 1000000) {
+      await model.parent.create(recursive: true);
       await imported.copy(model.path);
       return;
     }
