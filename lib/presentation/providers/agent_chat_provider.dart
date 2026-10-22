@@ -25,6 +25,7 @@ class AgentChatProvider extends ChangeNotifier {
   final Map<String, int> _attemptsByAgent = {};
   bool _paused = false;
   bool _cancelled = false;
+  int _executionGeneration = 0;
   bool _initialized = false;
   String? _selectedAgent;
 
@@ -63,6 +64,7 @@ class AgentChatProvider extends ChangeNotifier {
     final oldStatus = _activeTask?.status;
     if (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused) return;
 
+    final generation = ++_executionGeneration;
     _cancelled = false;
     _paused = false;
     _attemptsByAgent.clear();
@@ -89,17 +91,15 @@ class AgentChatProvider extends ChangeNotifier {
     try {
       await initialize();
       for (var i = 0; i < agents.length; i++) {
-        if (_cancelled) {
-          _activeTask = task.copyWith(status: TaskStatus.cancelled);
-          notifyListeners();
+        if (_isCancelledFor(generation)) {
+          _markCancelledIfCurrent(task);
           return;
         }
-        while (_paused && !_cancelled) {
+        while (_paused && !_isCancelledFor(generation)) {
           await Future<void>.delayed(const Duration(milliseconds: 100));
         }
-        if (_cancelled) {
-          _activeTask = task.copyWith(status: TaskStatus.cancelled);
-          notifyListeners();
+        if (_isCancelledFor(generation)) {
+          _markCancelledIfCurrent(task);
           return;
         }
 
@@ -113,7 +113,7 @@ class AgentChatProvider extends ChangeNotifier {
         notifyListeners();
 
         try {
-          final result = await _executeWithRetries(agents[i], clean);
+          final result = await _executeWithRetries(agents[i], clean, generation: generation);
           step = step.copyWith(
             status: StepStatus.done,
             progress: 1,
@@ -128,9 +128,8 @@ class AgentChatProvider extends ChangeNotifier {
           // The runtime may throw when stopGeneration interrupts native
           // inference. Preserve cancellation instead of marking this step as
           // failed and allowing retries or a false failure state.
-          if (_cancelled) {
-            _activeTask = task.copyWith(status: TaskStatus.cancelled);
-            notifyListeners();
+          if (_isCancelledFor(generation)) {
+            _markCancelledIfCurrent(task);
             return;
           }
           step = step.copyWith(
@@ -157,9 +156,8 @@ class AgentChatProvider extends ChangeNotifier {
       // Local GGUF generation can run while the final answer is composed.
       // If the user cancels during that phase, do not report a completed task
       // or persist a cancelled run as a successful answer.
-      if (_cancelled) {
-        _activeTask = task.copyWith(status: TaskStatus.cancelled);
-        notifyListeners();
+      if (_isCancelledFor(generation)) {
+        _markCancelledIfCurrent(task);
         return;
       }
       task = task.copyWith(
@@ -179,9 +177,8 @@ class AgentChatProvider extends ChangeNotifier {
       // Cancellation wins over an initialization/generation error. A native
       // stop can surface as an exception; it must not turn a cancelled task
       // into a failed one or append a misleading failure message.
-      if (_cancelled) {
-        _activeTask = task.copyWith(status: TaskStatus.cancelled);
-        notifyListeners();
+      if (_isCancelledFor(generation)) {
+        _markCancelledIfCurrent(task);
         return;
       }
       task = task.copyWith(status: TaskStatus.failed, error: error.toString());
@@ -200,8 +197,19 @@ class AgentChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  bool _isCancelledFor(int generation) =>
+      _cancelled || generation != _executionGeneration;
+
+  void _markCancelledIfCurrent(AgentTask task) {
+    // An older async run must never overwrite the currently selected task.
+    if (_activeTask?.id != task.id) return;
+    _activeTask = task.copyWith(status: TaskStatus.cancelled);
+    notifyListeners();
+  }
+
   void cancel() {
     _cancelled = true;
+    _executionGeneration++;
     _paused = false;
     // Stop native generation too; otherwise the task would remain busy until
     // llama.cpp finishes even though the user explicitly cancelled it.
@@ -252,21 +260,25 @@ class AgentChatProvider extends ChangeNotifier {
     return result;
   }
 
-  Future<String> _executeWithRetries(AgentDefinition agent, String query) async {
+  Future<String> _executeWithRetries(
+    AgentDefinition agent,
+    String query, {
+    required int generation,
+  }) async {
     Object? lastError;
     for (var attempt = 1; attempt <= 3; attempt++) {
-      if (_cancelled) {
+      if (_isCancelledFor(generation)) {
         throw StateError('أُلغي تنفيذ الوكيل ${agent.name}.');
       }
       _attemptsByAgent[agent.id] = attempt;
       try {
         final result = await _executeAgent(agent, query);
-        if (_cancelled) {
+        if (_isCancelledFor(generation)) {
           throw StateError('أُلغي تنفيذ الوكيل ${agent.name}.');
         }
         return result;
       } catch (error) {
-        if (_cancelled) rethrow;
+        if (_isCancelledFor(generation)) rethrow;
         lastError = error;
         if (attempt < 3) {
           await Future<void>.delayed(Duration(milliseconds: 150 * attempt));
