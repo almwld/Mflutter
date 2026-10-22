@@ -258,7 +258,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   Future<void> loadModel({int threads = 4, int contextSize = 2048}) async {
     _ensureAndroid();
-    if (_busy) throw StateError('هناك عملية نموذج أخرى جارية.');
+    if (_busy || _generating) throw StateError('أوقف العملية الحالية قبل تحميل النموذج.');
     _busy = true;
     _status = 'جارٍ تحميل النموذج داخل llama.cpp...';
     notifyListeners();
@@ -354,6 +354,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   }
 
   Future<void> unloadModel() async {
+    if (_busy || _generating) {
+      throw StateError('أوقف العملية الحالية قبل تحرير النموذج.');
+    }
     final controller = _controller;
     _controller = null;
     _loaded = false;
