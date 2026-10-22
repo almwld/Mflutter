@@ -1,5 +1,5 @@
-import '../services/bookmark_service.dart';
-import '../services/reading_progress_service.dart';
+import 'bookmark_service.dart';
+import 'reading_progress_service.dart';
 
 /// A truthful, on-device activity summary. It intentionally makes no claims
 /// about other users or community-wide activity.
@@ -39,5 +39,5 @@ class LocalActivitySummary {
   final int currentStreak;
   final int bookmarkCount;
 
-  double get khatmahProgress => (pagesRead / 604).clamp(0.0, 1.0);
+  double get khatmahProgress => (pagesRead / 604).clamp(0.0, 1.0).toDouble();
 }
