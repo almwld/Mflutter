@@ -483,6 +483,13 @@ class _MoreScreenState extends State<MoreScreen> {
     super.dispose();
   }
 
+  String _normalizeSearchText(String value) => value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي');
+
   @override
   Widget build(BuildContext context) {
     final items = [
@@ -516,9 +523,9 @@ class _MoreScreenState extends State<MoreScreen> {
       ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
       ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
-    final normalizedQuery = _query.trim().toLowerCase();
+    final normalizedQuery = _normalizeSearchText(_query.trim());
     final filteredItems = items
-        .where((item) => item.$1.toLowerCase().contains(normalizedQuery))
+        .where((item) => _normalizeSearchText(item.$1).contains(normalizedQuery))
         .toList(growable: false);
 
     return Scaffold(
