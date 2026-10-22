@@ -254,6 +254,11 @@ class MudabbirPythonEngine {
             weights[index] -= learningRate * xTrain[sampleIndex][feature] * gradient;
           }
         }
+        // Yield periodically so the UI can repaint and cooperative cancellation
+        // can be observed instead of freezing the main isolate for an epoch.
+        if (sampleIndex % 16 == 15) {
+          await Future<void>.delayed(Duration.zero);
+        }
       }
       final averageLoss = totalLoss / xTrain.length;
       if (!averageLoss.isFinite) {
