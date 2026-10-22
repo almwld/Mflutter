@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
+import '../../services/local_activity_summary_service.dart';
 
 class CommunityScreen extends StatelessWidget {
   const CommunityScreen({super.key});
@@ -9,47 +11,106 @@ class CommunityScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('المجتمع', style: TextStyle(color: AppColors.primaryGold)),
+        title: const Text('المجتمع والتدبر', style: TextStyle(color: AppColors.primaryGold)),
         backgroundColor: AppColors.primaryNavy,
       ),
-      body: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text('🌍 إحصائيات المجتمع', style: TextStyle(color: AppColors.primaryGold, fontSize: 20, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            _buildCommunityCard('📖 آية اليوم المتداولة', 'آية الكرسي - البقرة:255'),
-            _buildCommunityCard('🔬 العلم الأكثر استكشافاً', 'علم الفلك'),
-            _buildCommunityCard('🔮 الصفة الأكثر تدبراً', 'الرحمن'),
-            _buildCommunityCard('👥 المستخدمين النشطين', '1,234 مستخدم'),
-            SizedBox(height: 24),
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+      body: FutureBuilder<LocalActivitySummary>(
+        future: const LocalActivitySummaryService().load(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'تعذر تحميل إحصاءات القراءة المحلية. حاول مجددًا.\n${snapshot.error ?? ''}',
+                  textAlign: TextAlign.center,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text('🤝 انضم إلينا', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text('شارك في تدبر القرآن مع مجتمع عالمي. تعلم وعلّم.', style: TextStyle(color: Colors.white70)),
-                ],
+            );
+          }
+          final activity = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              const Text(
+                'نشاطك المحلي',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: AppColors.primaryGold, fontSize: 22, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 8),
+              const Text(
+                'هذه الأرقام محفوظة على جهازك فقط، وليست إحصاءات جماعية أو بيانات مستخدمين آخرين.',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: Colors.white70),
+              ),
+              const SizedBox(height: 16),
+              _statCard('الصفحات التي زرتها', '${activity.pagesRead} / 604'),
+              _statCard('الأيام التي قرأت فيها', '${activity.readingDays}'),
+              _statCard('سلسلة القراءة الحالية', '${activity.currentStreak} يوم'),
+              _statCard('الآيات المحفوظة', '${activity.bookmarkCount}'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text('تقدم الختمة المحلي', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    LinearProgressIndicator(
+                      value: activity.khatmahProgress,
+                      backgroundColor: AppColors.background,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${(activity.khatmahProgress * 100).toStringAsFixed(1)}% وفق الصفحات التي زرتها داخل التطبيق',
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('المجتمع المباشر', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Text(
+                      'لم يتم ربط هذه الشاشة بعد بخدمة مجتمع وخادم إحصاءات مشترك؛ لذلك لا نعرض أعداد مستخدمين أو آيات متداولة وهمية.',
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildCommunityCard(String title, String value) {
+  Widget _statCard(String title, String value) {
     return Container(
-      margin: EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -57,8 +118,10 @@ class CommunityScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(value, style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-          Text(title, style: TextStyle(color: Colors.white70)),
+          Text(value, style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+          Flexible(
+            child: Text(title, textAlign: TextAlign.right, style: const TextStyle(color: Colors.white70)),
+          ),
         ],
       ),
     );
