@@ -86,7 +86,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   void _open(Ayah ayah) {
     final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page)),
+      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)),
     );
   }
 
