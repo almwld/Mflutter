@@ -99,6 +99,12 @@ class ChatService {
       buffer.writeln('');
     }
 
+    if (pattern['supported'] == false || pattern['error'] != null) {
+      buffer.writeln('اكتشاف الأنماط: غير متاح لهذا النموذج العام.');
+      buffer.writeln((pattern['error'] ?? 'لا توجد نتيجة موثقة.').toString());
+      buffer.writeln('');
+    }
+
     // سؤال البصيرة
     buffer.writeln('سؤال تأملي اختياري:');
     buffer.writeln(_generateInsightQuestion(abjadResult));
