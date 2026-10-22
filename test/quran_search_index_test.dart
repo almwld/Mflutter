@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/quran_service.dart';
 import 'package:mudabbir_al_asrar/services/quran_word_index_service.dart';
 import 'package:mudabbir_al_asrar/services/mushaf_source.dart';
+import 'package:mudabbir_al_asrar/services/quranic_search_engine.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -96,4 +97,17 @@ void main() {
     }
   });
 
+
+  test('Quranic search index rebuilds when canonical verse content changes', () {
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'الفاتحة', 'ayah': '1', 'text': 'النور'},
+    ]);
+    expect(QuranicSearchEngine.search('النور'), isNotEmpty);
+
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'الفاتحة', 'ayah': '1', 'text': 'الرحمة'},
+    ]);
+    expect(QuranicSearchEngine.search('النور'), isEmpty);
+    expect(QuranicSearchEngine.search('الرحمة'), isNotEmpty);
+  });
 }
