@@ -146,16 +146,23 @@ class TrainingScreen extends StatelessWidget {
     );
   }
 
-  void _startTraining(BuildContext context, TrainingProvider provider) async {
-    // تحميل الآيات
-    final ayahs = await QuranLoaderService.loadAllAyahs();
-    final versesData = ayahs.map((a) => {
-      'text': a.text,
-      'axis_type': a.axisType,
-    }).toList();
+  Future<void> _startTraining(BuildContext context, TrainingProvider provider) async {
+    try {
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      final versesData = ayahs.map((a) => {
+        'text': a.text,
+        'axis_type': a.axisType,
+      }).toList();
 
-    if (context.mounted) {
-      provider.trainOnVerses(versesData, epochs: 50);
+      if (context.mounted) {
+        await provider.trainOnVerses(versesData, epochs: 50);
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر بدء التدريب: $error')),
+        );
+      }
     }
   }
 
