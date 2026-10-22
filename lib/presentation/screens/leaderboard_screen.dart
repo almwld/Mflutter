@@ -1,59 +1,102 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
+import '../../services/local_activity_summary_service.dart';
 
 class LeaderboardScreen extends StatelessWidget {
   const LeaderboardScreen({super.key});
-
-  static final List<Map<String, dynamic>> _leaders = [
-    {'name': 'أحمد', 'score': 1250, 'level': 3, 'badge': '🌟'},
-    {'name': 'فاطمة', 'score': 980, 'level': 3, 'badge': '⭐'},
-    {'name': 'عمر', 'score': 750, 'level': 2, 'badge': '💫'},
-    {'name': 'أنت', 'score': 520, 'level': 2, 'badge': '🔥'},
-    {'name': 'سارة', 'score': 340, 'level': 1, 'badge': '🌱'},
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('المتصدرون', style: TextStyle(color: AppColors.primaryGold)),
+        title: const Text('التصدر والإنجاز', style: TextStyle(color: AppColors.primaryGold)),
         backgroundColor: AppColors.primaryNavy,
       ),
-      body: ListView.builder(
-        padding: EdgeInsets.all(20),
-        itemCount: _leaders.length,
-        itemBuilder: (context, index) {
-          final leader = _leaders[index];
-          final isMe = leader['name'] == 'أنت';
-          return Container(
-            margin: EdgeInsets.only(bottom: 10),
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isMe ? AppColors.primaryGold.withOpacity(0.1) : AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: isMe ? Border.all(color: AppColors.primaryGold, width: 2) : null,
-            ),
-            child: Row(
-              children: [
-                Text('${index + 1}', style: TextStyle(color: index < 3 ? AppColors.primaryGold : Colors.white54, fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(width: 16),
-                Text(leader['badge']!, style: TextStyle(fontSize: 28)),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(leader['name']!, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('المستوى ${leader['level']}', style: TextStyle(color: Colors.white54)),
-                    ],
-                  ),
+      body: FutureBuilder<LocalActivitySummary>(
+        future: const LocalActivitySummaryService().load(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'تعذر تحميل إنجازاتك المحلية.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70),
                 ),
-                Text('${leader['score']}', style: TextStyle(color: AppColors.primaryGold, fontSize: 22, fontWeight: FontWeight.bold)),
-              ],
-            ),
+              ),
+            );
+          }
+          final activity = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                ),
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('لوحة المتصدرين الجماعية غير متاحة بعد', textAlign: TextAlign.right,
+                      style: TextStyle(color: AppColors.primaryGold, fontSize: 20, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 10),
+                    Text(
+                      'لا يوجد حاليًا خادم يجمع نقاط المستخدمين ويزامنها؛ لذلك لا نعرض أسماء أو درجات افتراضية على أنها بيانات حقيقية.',
+                      textDirection: TextDirection.rtl,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'إنجازك على هذا الجهاز',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: AppColors.primaryGold, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              _stat('الصفحات التي زرتها', '${activity.pagesRead}'),
+              _stat('الآيات المحفوظة', '${activity.bookmarkCount}'),
+              _stat('أيام القراءة', '${activity.readingDays}'),
+              _stat('سلسلة القراءة الحالية', '${activity.currentStreak} يوم'),
+              const SizedBox(height: 12),
+              const Text(
+                'هذه الإحصاءات محلية ولا تُرسل إلى أي جهة.',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: Colors.white54),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _stat(String label, String value) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(value, style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+          Flexible(
+            child: Text(label, textAlign: TextAlign.right, style: const TextStyle(color: Colors.white70)),
+          ),
+        ],
       ),
     );
   }
