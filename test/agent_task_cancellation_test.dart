@@ -18,4 +18,22 @@ void main() {
     expect(provider.messages.where((message) => message.startsWith('تعذر إكمال المهمة:')), isEmpty);
     provider.dispose();
   });
+
+  test('an older cancelled task cannot overwrite a newer task', () async {
+    final provider = AgentChatProvider();
+    final first = provider.executeTask('المهمة الأولى');
+    provider.cancel();
+
+    final second = provider.executeTask('المهمة الثانية');
+    provider.cancel();
+    await Future.wait<void>([first, second]);
+
+    expect(provider.activeTask?.userQuery, 'المهمة الثانية');
+    expect(provider.activeTask?.status, TaskStatus.cancelled);
+    expect(
+      provider.messages.where((message) => message.startsWith('تعذر إكمال المهمة:')),
+      isEmpty,
+    );
+    provider.dispose();
+  });
 }
