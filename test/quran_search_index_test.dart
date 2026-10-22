@@ -111,6 +111,32 @@ void main() {
     expect(QuranicSearchEngine.search('الرحمة'), isNotEmpty);
   });
 
+  test('search normalization removes Quranic tashkeel without changing source text', () {
+    const source = 'الرَّحْمَٰنِ';
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'الفاتحة', 'ayah': '1', 'text': source},
+    ]);
+
+    expect(QuranicSearchEngine.normalize(source), 'الرحمن');
+    final results = QuranicSearchEngine.search('الرحمن');
+    expect(results, hasLength(1));
+    expect(results.single['text'], source);
+  });
+
+  test('search uses cached unique verses and root search preserves verse order', () {
+    QuranicSearchEngine.indexVerses(const [
+      {'id': '1', 'surah': 'البقرة', 'ayah': '1', 'text': 'نور ورحمة'},
+      {'id': '2', 'surah': 'البقرة', 'ayah': '2', 'text': 'نور وهدى'},
+      {'id': '2', 'surah': 'البقرة', 'ayah': '2', 'text': 'نور وهدى'},
+    ]);
+
+    expect(QuranicSearchEngine.search('نور'), hasLength(2));
+    expect(
+      QuranicSearchEngine.searchByRoot('هدى').map((verse) => verse['ayah']),
+      ['2'],
+    );
+  });
+
   test('Mushaf source uses canonical 604-page, 30-juz, 60-hizb metadata', () {
     expect(MushafSource.totalPages, 604);
     expect(MushafSource.totalJuz, 30);
