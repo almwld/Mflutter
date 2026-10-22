@@ -466,8 +466,22 @@ class _ToolCard extends StatelessWidget {
   }
 }
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
+
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -502,6 +516,10 @@ class MoreScreen extends StatelessWidget {
       ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
       ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
+    final normalizedQuery = _query.trim().toLowerCase();
+    final filteredItems = items
+        .where((item) => item.$1.toLowerCase().contains(normalizedQuery))
+        .toList(growable: false);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -527,7 +545,59 @@ class MoreScreen extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 14),
-          ...items.map((item) => Padding(
+          TextField(
+            controller: _searchController,
+            textDirection: TextDirection.rtl,
+            textInputAction: TextInputAction.search,
+            onChanged: (value) => setState(() => _query = value),
+            decoration: InputDecoration(
+              hintText: 'ابحث عن أداة أو واجهة...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              _query.isEmpty ? '${items.length} واجهة وأداة' : '${filteredItems.length} نتيجة',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(.65),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (filteredItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 12),
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 38, color: Theme.of(context).colorScheme.onSurface.withOpacity(.45)),
+                  const SizedBox(height: 10),
+                  const Text('لا توجد واجهة بهذا الاسم', textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ...filteredItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Material(
               color: Theme.of(context).colorScheme.surface,
