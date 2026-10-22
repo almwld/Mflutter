@@ -231,5 +231,4 @@ class _QuranWaveTextState extends State<QuranWaveText>
       children: children,
     );
   }
-  }
 }
