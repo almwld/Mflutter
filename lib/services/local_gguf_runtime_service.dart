@@ -93,7 +93,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final target = File('${directory.path}/$modelFileName');
       final partial = File('${target.path}.part');
       if (await _isValidDefaultModel(target)) {
-        _status = 'النموذج موجود وموقّع ببنية GGUF صحيحة.';
+        _status = 'النموذج موجود ومكتمل واجتاز فحص ترويسة GGUF.';
         return target;
       }
 
