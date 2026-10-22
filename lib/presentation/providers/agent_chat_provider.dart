@@ -125,6 +125,14 @@ class AgentChatProvider extends ChangeNotifier {
           _activeTask = task;
           notifyListeners();
         } catch (error) {
+          // The runtime may throw when stopGeneration interrupts native
+          // inference. Preserve cancellation instead of marking this step as
+          // failed and allowing retries or a false failure state.
+          if (_cancelled) {
+            _activeTask = task.copyWith(status: TaskStatus.cancelled);
+            notifyListeners();
+            return;
+          }
           step = step.copyWith(
             status: StepStatus.failed,
             result: error.toString(),
@@ -168,6 +176,14 @@ class AgentChatProvider extends ChangeNotifier {
       );
       notifyListeners();
     } catch (error) {
+      // Cancellation wins over an initialization/generation error. A native
+      // stop can surface as an exception; it must not turn a cancelled task
+      // into a failed one or append a misleading failure message.
+      if (_cancelled) {
+        _activeTask = task.copyWith(status: TaskStatus.cancelled);
+        notifyListeners();
+        return;
+      }
       task = task.copyWith(status: TaskStatus.failed, error: error.toString());
       _activeTask = task;
       _messages.add('تعذر إكمال المهمة: $error');
@@ -239,10 +255,18 @@ class AgentChatProvider extends ChangeNotifier {
   Future<String> _executeWithRetries(AgentDefinition agent, String query) async {
     Object? lastError;
     for (var attempt = 1; attempt <= 3; attempt++) {
+      if (_cancelled) {
+        throw StateError('أُلغي تنفيذ الوكيل ${agent.name}.');
+      }
       _attemptsByAgent[agent.id] = attempt;
       try {
-        return await _executeAgent(agent, query);
+        final result = await _executeAgent(agent, query);
+        if (_cancelled) {
+          throw StateError('أُلغي تنفيذ الوكيل ${agent.name}.');
+        }
+        return result;
       } catch (error) {
+        if (_cancelled) rethrow;
         lastError = error;
         if (attempt < 3) {
           await Future<void>.delayed(Duration(milliseconds: 150 * attempt));
