@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
 import '../../providers/agent_chat_provider.dart';
+import 'local_ai_screen.dart';
 
 class AgentsScreen extends StatelessWidget {
   const AgentsScreen({super.key});
@@ -46,6 +47,16 @@ class _AgentsViewState extends State<_AgentsView> {
           style: TextStyle(color: AppColors.primaryGold),
         ),
         actions: [
+          IconButton(
+            tooltip: 'الذكاء المحلي GGUF',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const LocalAiScreen()),
+              );
+              if (mounted) setState(() {});
+            },
+            icon: const Icon(Icons.memory_rounded, color: AppColors.primaryGold),
+          ),
           Center(
             child: Text(
               '${AgentRegistry.all.length} وكيل',
