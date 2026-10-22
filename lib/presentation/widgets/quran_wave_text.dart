@@ -201,18 +201,8 @@ class _QuranWaveTextState extends State<QuranWaveText>
             child: Text(
               _words[index],
               textDirection: TextDirection.rtl,
-              style: RegExp('^۞[0-9]+۞
-          ),
-      ],
-    );
-  }
-}
-).hasMatch(_words[index])
-                  ? widget.style.copyWith(
-                      fontFamily: 'Amiri',
-                      fontSize: 15,
-                      color: const Color(0xFF8C6A2D),
-                    )
+              style: (_words[index].startsWith('۞') && _words[index].endsWith('۞'))
+                  ? widget.style.copyWith(fontFamily: 'Amiri', fontSize: 15, color: const Color(0xFF8C6A2D))
                   : widget.style,
               softWrap: false,
             ),
