@@ -60,7 +60,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     final marker = File('${directory.path}/selected-model.txt');
     if (await marker.exists()) {
       final selected = (await marker.readAsString()).trim();
-      if (selected.endsWith('.gguf') &&
+      if (selected.toLowerCase().endsWith('.gguf') &&
           !selected.contains('/') &&
           !selected.contains(String.fromCharCode(92)) &&
           selected != '.' &&
