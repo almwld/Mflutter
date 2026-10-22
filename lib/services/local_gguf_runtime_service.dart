@@ -74,7 +74,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     int maxAttempts = 5,
   }) async {
     _ensureAndroid();
-    if (_busy) throw StateError('هناك عملية نموذج أخرى جارية.');
+    if (_busy || _generating || _loaded) {
+      throw StateError('أوقف التوليد وأفرغ النموذج قبل استبدال ملف GGUF.');
+    }
     if (maxAttempts < 1 || maxAttempts > 10) {
       throw ArgumentError('عدد محاولات التنزيل يجب أن يكون بين 1 و10.');
     }
@@ -209,7 +211,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   Future<File> importModel(String sourcePath) async {
     _ensureAndroid();
-    if (_busy) throw StateError('هناك عملية نموذج أخرى جارية.');
+    if (_busy || _generating || _loaded) {
+      throw StateError('أوقف التوليد وأفرغ النموذج قبل استبدال ملف GGUF.');
+    }
     _busy = true;
     _status = 'جارٍ فحص ملف GGUF المستورد...';
     notifyListeners();
