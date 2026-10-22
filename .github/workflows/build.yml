@@ -143,8 +143,19 @@ jobs:
                   raise SystemExit(f"Stale jcenter() remains in {path}")
               path.write_text(patched)
 
-          # Modern Kotlin plugins target JVM 17. Align Java compile tasks
-          # across Android subprojects to avoid Java 11 / Kotlin 17 mismatch.
+          # tflite_flutter 0.12.1 has Java/Kotlin target drift in its
+          # Gradle file on the newer toolchain; patch the cached plugin too.
+          tflite_files = list(roots.glob("tflite_flutter-*/android/build.gradle"))
+          if not tflite_files:
+              raise SystemExit("tflite_flutter Gradle file was not found after pub get")
+          for path in tflite_files:
+              source = path.read_text()
+              patched = source.replace("JavaVersion.VERSION_11", "JavaVersion.VERSION_17")
+              patched = patched.replace("JavaVersion.VERSION_1_8", "JavaVersion.VERSION_17")
+              if patched != source:
+                  path.write_text(patched)
+
+          # Align Java compile tasks across Android subprojects with Kotlin JVM 17.
           root_gradle = Path("android/build.gradle.kts")
           if not root_gradle.exists():
               raise SystemExit("Generated Android root Gradle file was not found")
@@ -155,9 +166,11 @@ jobs:
 
           // Mudabbir CI: align Java and Kotlin bytecode targets
           subprojects {
-              tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
-                  sourceCompatibility = JavaVersion.VERSION_17.toString()
-                  targetCompatibility = JavaVersion.VERSION_17.toString()
+              afterEvaluate {
+                  tasks.withType<org.gradle.api.tasks.compile.JavaCompile>().configureEach {
+                      sourceCompatibility = JavaVersion.VERSION_17.toString()
+                      targetCompatibility = JavaVersion.VERSION_17.toString()
+                  }
               }
           }
           """
