@@ -85,10 +85,12 @@ class LocalGgufService {
     if (!await file.exists()) throw StateError('ملف النموذج غير موجود: $path');
 
     _loading = true;
+    LlamaController? pendingController;
     try {
       await _controller?.dispose();
       _controller = null;
       final controller = LlamaController();
+      pendingController = controller;
       var gpuLayers = 0;
       try {
         final gpu = await controller.detectGpu();
@@ -111,9 +113,11 @@ class LocalGgufService {
         gpuLayers: gpuLayers,
       );
       _controller = controller;
+      pendingController = null;
       _modelPath = file.path;
       _modelName = modelName ?? file.uri.pathSegments.last;
     } catch (error) {
+      await pendingController?.dispose();
       await _controller?.dispose();
       _controller = null;
       _modelPath = null;
