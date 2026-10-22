@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
@@ -36,6 +37,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
   bool _busy = false;
+  bool _downloading = false;
+  bool _cancelDownloadRequested = false;
+  HttpClient? _downloadClient;
   bool _generating = false;
   bool _loaded = false;
   double? _downloadProgress;
@@ -43,6 +47,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   String get status => _status;
   bool get isBusy => _busy;
+  bool get isDownloading => _downloading;
   bool get isGenerating => _generating;
   bool get isLoaded => _loaded;
   double? get downloadProgress => _downloadProgress;
@@ -77,9 +82,15 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         .writeAsString(fileName, flush: true);
   }
 
+  /// Checks the selected file's header; the bundled default additionally
+  /// requires the expected minimum size. Native model loading remains the
+  /// final compatibility check and is the only point that enables inference.
   Future<bool> hasValidModel() async {
     try {
       final file = await modelFile();
+      if (file.path.endsWith('/$modelFileName')) {
+        return await _isValidDefaultModel(file);
+      }
       return await _isValidGguf(file);
     } catch (_) {
       return false;
@@ -98,6 +109,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       throw ArgumentError('عدد محاولات التنزيل يجب أن يكون بين 1 و10.');
     }
     _busy = true;
+    _downloading = true;
+    _cancelDownloadRequested = false;
     _downloadProgress = 0;
     _status = 'جارٍ تنزيل النموذج مع دعم الاستئناف...';
     notifyListeners();
@@ -111,14 +124,18 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final partial = File('${target.path}.part');
       if (await _isValidDefaultModel(target)) {
         await _selectModel(modelFileName);
-        _status = 'النموذج الافتراضي موجود وبنية GGUF صالحة.';
+        _status = 'النموذج الافتراضي موجود وحجمه وترويسة GGUF مطابقان للفحص الأولي.';
         return target;
       }
 
       for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (_cancelDownloadRequested) {
+          throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+        }
         final client = HttpClient()
           ..connectionTimeout = const Duration(seconds: 30)
           ..idleTimeout = const Duration(seconds: 60);
+        _downloadClient = client;
         RandomAccessFile? output;
         try {
           var offset = await partial.exists() ? await partial.length() : 0;
@@ -173,6 +190,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           var lastProgressNotification = DateTime.now();
 
           await for (final chunk in response.timeout(const Duration(seconds: 90))) {
+            if (_cancelDownloadRequested) {
+              throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+            }
             await output.writeFrom(chunk);
             received += chunk.length;
             final progress = totalBytes != null && totalBytes > 0
@@ -210,10 +230,15 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           await partial.rename(target.path);
           await _selectModel(modelFileName);
           _downloadProgress = 1;
-          _status = 'اكتمل التنزيل والتحقق البنيوي من GGUF.';
+          _status = 'اكتمل التنزيل؛ اجتاز الملف فحص الحجم وترويسة GGUF. يجب تحميله بنجاح قبل تأكيد قابلية الاستدلال.';
           return target;
         } catch (error) {
           lastError = error;
+          if (_cancelDownloadRequested) {
+            _status = 'أُلغي التنزيل؛ احتُفظ بالجزء غير المكتمل لاستئنافه لاحقًا.';
+            notifyListeners();
+            throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+          }
           // A full-sized file with an invalid GGUF magic is corrupt, not a
           // resumable partial. Remove it so retries do not loop at EOF.
           if (await partial.exists() &&
@@ -231,16 +256,31 @@ class LocalGgufRuntimeService extends ChangeNotifier {
             await output?.close();
           } catch (_) {}
           client.close(force: true);
+          if (identical(_downloadClient, client)) _downloadClient = null;
         }
       }
       throw StateError('تعذر إكمال تنزيل GGUF بعد $maxAttempts محاولات: $lastError');
     } catch (error) {
-      _status = 'فشل تنزيل النموذج: $error';
+      _status = _cancelDownloadRequested
+          ? 'أُلغي تنزيل النموذج؛ يمكنك استئنافه لاحقًا.'
+          : 'فشل تنزيل النموذج: $error';
       rethrow;
     } finally {
       _busy = false;
+      _downloading = false;
+      _downloadClient?.close(force: true);
+      _downloadClient = null;
       notifyListeners();
     }
+  }
+
+  /// Stops the active HTTP transfer while preserving the resumable .part file.
+  Future<void> cancelDownload() async {
+    if (!_downloading) return;
+    _cancelDownloadRequested = true;
+    _status = 'جارٍ إيقاف التنزيل مع الاحتفاظ بالجزء المكتمل...';
+    _downloadClient?.close(force: true);
+    notifyListeners();
   }
 
   Future<File> importModel(String sourcePath) async {
@@ -421,24 +461,38 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     }
   }
 
+  /// Checks the fixed GGUF v2/v3 header before any large native allocation.
+  /// This is an early structural check, not a substitute for llama.cpp loading
+  /// the complete model and validating its metadata/tensor payload.
+  @visibleForTesting
+  static bool isGgufHeaderValid(List<int> header, int fileLength) {
+    if (fileLength < 24 || header.length < 24) return false;
+    if (header[0] != 0x47 ||
+        header[1] != 0x47 ||
+        header[2] != 0x55 ||
+        header[3] != 0x46) {
+      return false;
+    }
+    final bytes = Uint8List.fromList(header.take(24).toList(growable: false));
+    final data = ByteData.sublistView(bytes);
+    final version = data.getUint32(4, Endian.little);
+    if (version != 2 && version != 3) return false;
+    final tensorCount = data.getUint64(8, Endian.little);
+    final metadataCount = data.getUint64(16, Endian.little);
+    return tensorCount > 0 &&
+        tensorCount <= 1000000 &&
+        metadataCount > 0 &&
+        metadataCount <= 100000;
+  }
+
   Future<bool> _isValidGguf(File file) async {
     try {
-      if (!await file.exists() || await file.length() < _minimumGgufBytes) return false;
+      final length = await file.length();
+      if (!await file.exists() || length < _minimumGgufBytes) return false;
       final handle = await file.open();
       try {
-        final header = await handle.read(8);
-        if (header.length != 8 ||
-            header[0] != 0x47 ||
-            header[1] != 0x47 ||
-            header[2] != 0x55 ||
-            header[3] != 0x46) {
-          return false;
-        }
-        final version = header[4] |
-            (header[5] << 8) |
-            (header[6] << 16) |
-            (header[7] << 24);
-        return version == 2 || version == 3;
+        final header = await handle.read(24);
+        return isGgufHeaderValid(header, length);
       } finally {
         await handle.close();
       }
