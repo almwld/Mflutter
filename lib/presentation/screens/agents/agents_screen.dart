@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
+import '../../../services/local_gguf_runtime_service.dart';
 import '../../providers/agent_chat_provider.dart';
 
 class AgentsScreen extends StatelessWidget {
@@ -137,6 +139,7 @@ class _AgentsViewState extends State<_AgentsView> {
               ),
             ),
           ),
+          const _LocalGgufModelCard(),
           if (task != null) _TaskBar(task: task, provider: provider),
           Expanded(child: _TaskView(task: task, messages: provider.messages)),
           SafeArea(
@@ -379,4 +382,171 @@ class _Message extends StatelessWidget {
           style: const TextStyle(color: Colors.white, height: 1.7),
         ),
       );
+}
+
+
+class _LocalGgufModelCard extends StatefulWidget {
+  const _LocalGgufModelCard();
+
+  @override
+  State<_LocalGgufModelCard> createState() => _LocalGgufModelCardState();
+}
+
+class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
+  final LocalGgufRuntimeService _runtime = LocalGgufRuntimeService.instance;
+  bool _hasModel = false;
+  bool _working = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _runtime.addListener(_onRuntimeChanged);
+    _refreshModel();
+  }
+
+  @override
+  void dispose() {
+    _runtime.removeListener(_onRuntimeChanged);
+    super.dispose();
+  }
+
+  void _onRuntimeChanged() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _refreshModel() async {
+    final valid = await _runtime.hasValidModel();
+    if (mounted) setState(() => _hasModel = valid);
+  }
+
+  Future<void> _importModel() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['gguf'],
+      allowMultiple: false,
+      withData: false,
+    );
+    final path = picked?.files.singleOrNull?.path;
+    if (path == null) return;
+    await _run(() async {
+      await _runtime.importModel(path);
+      await _refreshModel();
+    });
+  }
+
+  Future<void> _downloadModel() async {
+    await _run(() async {
+      await _runtime.downloadDefaultModel();
+      await _refreshModel();
+    });
+  }
+
+  Future<void> _loadModel() async {
+    await _run(() => _runtime.loadModel());
+  }
+
+  Future<void> _unloadModel() async {
+    await _run(_runtime.unloadModel);
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    if (_working) return;
+    setState(() => _working = true);
+    try {
+      await action();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تعذر تنفيذ العملية: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+      await _refreshModel();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = _runtime.downloadProgress;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.primaryNavyLight.withOpacity(.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.memory_rounded, color: AppColors.primaryNavyLight),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'الذكاء التوليدي المحلي — GGUF',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Icon(
+                _runtime.isLoaded ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: _runtime.isLoaded ? Colors.greenAccent : Colors.white38,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _runtime.status,
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+          if (progress != null && _runtime.isBusy) ...[
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: progress),
+            const SizedBox(height: 3),
+            Text(
+              '${(progress * 100).toStringAsFixed(1)}%',
+              style: const TextStyle(color: Colors.white54, fontSize: 11),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _working || _runtime.isBusy ? null : _importModel,
+                icon: const Icon(Icons.file_open),
+                label: const Text('استيراد GGUF'),
+              ),
+              OutlinedButton.icon(
+                onPressed: _working || _runtime.isBusy ? null : _downloadModel,
+                icon: const Icon(Icons.download),
+                label: const Text('تنزيل 3arabLM'),
+              ),
+              FilledButton.icon(
+                onPressed: _working || _runtime.isBusy
+                    ? null
+                    : (_runtime.isLoaded ? _unloadModel : (_hasModel ? _loadModel : null)),
+                icon: Icon(_runtime.isLoaded ? Icons.stop_circle : Icons.play_arrow),
+                label: Text(_runtime.isLoaded ? 'إيقاف النموذج' : 'تحميل النموذج'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'يُحفظ النموذج في مساحة التطبيق الخاصة. حجم 3arabLM Q4_K_M نحو 2.71 GB؛ يحتاج مساحة تخزين وذاكرة كافية. لا يُعد الملف صالحًا للاستدلال حتى ينجح تحميله في llama.cpp.',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
