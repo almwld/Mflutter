@@ -62,7 +62,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final selected = (await marker.readAsString()).trim();
       if (selected.endsWith('.gguf') &&
           !selected.contains('/') &&
-          !selected.contains(r'\\') &&
+          !selected.contains(String.fromCharCode(92)) &&
           selected != '.' &&
           selected != '..') {
         return File('${directory.path}/$selected');
@@ -260,7 +260,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           sourceName == '.' ||
           sourceName == '..' ||
           sourceName.contains('/') ||
-          sourceName.contains(r'\\')) {
+          sourceName.contains(String.fromCharCode(92))) {
         throw const FormatException('اختر ملفًا بامتداد .gguf من الهاتف.');
       }
       if (!await _isValidGguf(source)) {
