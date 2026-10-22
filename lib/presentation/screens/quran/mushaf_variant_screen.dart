@@ -477,13 +477,16 @@ class _FixedMushafLine extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: line.centered ? Alignment.center : Alignment.centerRight,
-            child: QuranWaveText(
-              text: text,
-              importanceText: line.text,
-              style: style,
-              sequenceWordCount: sequenceWordCount,
-              sequenceWordOffset: sequenceWordOffset,
-              textAlign: WrapAlignment.start,
+            child: UnconstrainedBox(
+              constrainedAxis: Axis.vertical,
+              child: QuranWaveText(
+                text: text,
+                importanceText: line.text,
+                style: style,
+                sequenceWordCount: sequenceWordCount,
+                sequenceWordOffset: sequenceWordOffset,
+                textAlign: WrapAlignment.start,
+              ),
             ),
           ),
         );
