@@ -220,13 +220,13 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'نمط عرض المصحف',
                 style: TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF241A12),
+                  color: _headerInk,
                 ),
               ),
               const SizedBox(height: 8),
@@ -242,8 +242,14 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                     _mode == entry.$1 ? Icons.radio_button_checked : Icons.radio_button_off,
                     color: _mode == entry.$1 ? gold : const Color(0xFF8A7B61),
                   ),
-                  title: Text(entry.$2, style: const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700)),
-                  subtitle: Text(entry.$3, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11)),
+                  title: Text(entry.$2, style: TextStyle(
+                    fontFamily: 'Amiri', fontWeight: FontWeight.w700,
+                    color: _headerInk,
+                  )),
+                  subtitle: Text(entry.$3, style: TextStyle(
+                    fontFamily: 'Amiri', fontSize: 11,
+                    color: _headerInk.withOpacity(.78),
+                  )),
                   onTap: () {
                     setState(() => _mode = entry.$1);
                     Navigator.pop(sheetContext);
@@ -462,28 +468,22 @@ class _FixedMushafLine extends StatelessWidget {
           color: gold,
           height: 1.0,
         );
-        final painter = TextPainter(
-          text: TextSpan(text: text, style: style),
-          textDirection: TextDirection.rtl,
-          maxLines: 1,
-        )..layout();
-        final scaleX = painter.width <= constraints.maxWidth
-            ? 1.0
-            : constraints.maxWidth / painter.width;
 
-        return Center(
-          child: Transform.scale(
-            scaleX: scaleX,
-            alignment: Alignment.center,
+        // FittedBox gives the word wave an unconstrained natural width first,
+        // then scales the entire line into its fixed Mushaf slot. This prevents
+        // Wrap from creating a second row and preserves the 15-line page grid.
+        return SizedBox(
+          width: constraints.maxWidth,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: line.centered ? Alignment.center : Alignment.centerRight,
             child: QuranWaveText(
               text: text,
               importanceText: line.text,
               style: style,
               sequenceWordCount: sequenceWordCount,
               sequenceWordOffset: sequenceWordOffset,
-              textAlign: line.centered
-                  ? WrapAlignment.center
-                  : WrapAlignment.start,
+              textAlign: WrapAlignment.start,
             ),
           ),
         );
