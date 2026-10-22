@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/services.dart';
+import '../services/external_asset_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 
@@ -30,12 +30,12 @@ class MudabbirPythonEngine {
 
       // 1. تحميل المفردات (Tokenizer)
       // 2. تحميل أوزان النموذج المُدرّب مسبقاً
-      final weightsJson = await rootBundle.loadString('assets/models/mudabbir_weights.json');
+      final weightsJson = await ExternalAssetService.instance.loadString('assets/models/mudabbir_weights.json');
       _modelWeights = jsonDecode(weightsJson);
 
       // 3. تحميل سجل التدريب
       try {
-        final historyJson = await rootBundle.loadString('assets/models/training_history.json');
+        final historyJson = await ExternalAssetService.instance.loadString('assets/models/training_history.json');
         _trainingHistory = List<Map<String, dynamic>>.from(jsonDecode(historyJson));
       } catch (_) {
         _trainingHistory = [];
