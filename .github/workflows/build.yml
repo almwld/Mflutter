@@ -169,12 +169,12 @@ jobs:
                   stripped = line.strip()
                   if stripped.startswith("compileSdkVersion ") and stripped.split()[-1].isdigit():
                       indent = line[:len(line) - len(line.lstrip())]
-                      lines[index] = indent + "compileSdkVersion 36\\n"
+                      lines[index] = indent + "compileSdkVersion 36\n"
                       changed = True
                       break
                   if stripped.startswith("compileSdk = ") and stripped.split()[-1].isdigit():
                       indent = line[:len(line) - len(line.lstrip())]
-                      lines[index] = indent + "compileSdk = 36\\n"
+                      lines[index] = indent + "compileSdk = 36\n"
                       changed = True
                       break
               if not changed:
