@@ -151,15 +151,30 @@ class LocalGgufRuntimeService extends ChangeNotifier {
               : null;
           onProgress?.call(GgufDownloadProgress(received, totalBytes));
           notifyListeners();
+          var lastNotifiedProgress = _downloadProgress ?? -1.0;
+          var lastProgressNotification = DateTime.now();
 
           await for (final chunk in response.timeout(const Duration(seconds: 90))) {
             await output.writeFrom(chunk);
             received += chunk.length;
-            _downloadProgress = totalBytes != null && totalBytes > 0
-                ? (received / totalBytes).clamp(0.0, 1.0)
+            final progress = totalBytes != null && totalBytes > 0
+                ? (received / totalBytes).clamp(0.0, 1.0).toDouble()
                 : null;
+            final now = DateTime.now();
+            final shouldNotify = progress == null
+                ? _downloadProgress != null
+                : progress >= 1 ||
+                    lastNotifiedProgress < 0 ||
+                    progress - lastNotifiedProgress >= 0.005 ||
+                    now.difference(lastProgressNotification) >=
+                        const Duration(milliseconds: 500);
+            if (shouldNotify) {
+              _downloadProgress = progress;
+              lastNotifiedProgress = progress ?? -1.0;
+              lastProgressNotification = now;
+              notifyListeners();
+            }
             onProgress?.call(GgufDownloadProgress(received, totalBytes));
-            notifyListeners();
           }
           await output.flush();
           await output.close();
