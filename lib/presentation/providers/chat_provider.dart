@@ -46,38 +46,40 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final String reply;
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      QuranicSearchEngine.indexVerses(ayahs
+          .map((ayah) => <String, String>{
+                'id': ayah.id.toString(),
+                'surah': ayah.surahName,
+                'ayah': ayah.ayahNumber.toString(),
+                'text': ayah.text,
+              })
+          .toList());
+      final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
+      final evidence = hits.isEmpty
+          ? 'لم يُعثر على تطابق نصي في assets/quran_full.json؛ لا تستخدم نصًا قرآنيًا غير موثق.'
+          : hits
+              .map((verse) =>
+                  '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
+              .join('\n');
+
+      final String generated;
       if (_gguf.isLoaded) {
-        final ayahs = await QuranLoaderService.loadAllAyahs();
-        QuranicSearchEngine.indexVerses(ayahs
-            .map((ayah) => <String, String>{
-                  'id': ayah.id.toString(),
-                  'surah': ayah.surahName,
-                  'ayah': ayah.ayahNumber.toString(),
-                  'text': ayah.text,
-                })
-            .toList());
-        final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
-        final evidence = hits.isEmpty
-            ? 'لم يُعثر على تطابق نصي في assets/quran_full.json؛ لا تستخدم نصًا قرآنيًا غير موثق.'
-            : hits
-                .map((verse) =>
-                    '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
-                .join('\n');
-        final generated = await _gguf.generateGroundedAnswer(
+        generated = await _gguf.generateGroundedAnswer(
           question: cleanText,
           evidence: evidence,
           maxTokens: 512,
         );
-        reply = '$generated\n\n'
-            'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
       } else {
-        reply = await _localAi.generate(
+        generated = await _localAi.generate(
           'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
-          'أجب بالعربية الفصحى بدقة ووضوح، ولا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
-          'المستخدم: $cleanText\n\nمُدَبِّر:',
+          'أجب بالعربية الفصحى بدقة ووضوح. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة. '
+          'لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
+          'المستخدم: $cleanText\n\nالأدلة المحلية:\n$evidence\n\nمُدَبِّر:',
         );
       }
+      final reply = '$generated\n\n'
+          'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
 
       _messages.add(ChatMessage(text: reply, isUser: false));
     } catch (e) {
