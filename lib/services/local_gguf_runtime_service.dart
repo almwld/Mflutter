@@ -36,12 +36,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
   bool _busy = false;
+  bool _generating = false;
   bool _loaded = false;
   double? _downloadProgress;
   String? _loadedPath;
 
   String get status => _status;
   bool get isBusy => _busy;
+  bool get isGenerating => _generating;
   bool get isLoaded => _loaded;
   double? get downloadProgress => _downloadProgress;
   String? get loadedPath => _loadedPath;
@@ -295,21 +297,33 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         'ميّز بين نص المصدر والاستنتاج المولّد.\n\n'
         'السؤال: $question\n\nالأدلة المحلية:\n$evidence';
     final buffer = StringBuffer();
-    await for (final token in controller.generateChat(
-      messages: [
-        ChatMessage(role: 'system', content: 'مساعد عربي حذر، يذكر حدود الأدلة ولا يختلق المراجع.'),
-        ChatMessage(role: 'user', content: prompt),
-      ],
-      template: 'chatml',
-      maxTokens: maxTokens.clamp(32, 1024).toInt(),
-      temperature: 0.25,
-      topP: 0.9,
-    )) {
-      buffer.write(token);
+    _generating = true;
+    _status = 'جارٍ التوليد محليًا...';
+    notifyListeners();
+    try {
+      await for (final token in controller.generateChat(
+        messages: [
+          ChatMessage(role: 'system', content: 'مساعد عربي حذر، يذكر حدود الأدلة ولا يختلق المراجع.'),
+          ChatMessage(role: 'user', content: prompt),
+        ],
+        template: 'chatml',
+        maxTokens: maxTokens.clamp(32, 1024).toInt(),
+        temperature: 0.25,
+        topP: 0.9,
+      ).timeout(const Duration(seconds: 120))) {
+        buffer.write(token);
+      }
+      final answer = buffer.toString().trim();
+      if (answer.isEmpty) throw StateError('أعاد النموذج إجابة فارغة.');
+      _status = 'اكتمل الاستدلال المحلي.';
+      return answer;
+    } catch (error) {
+      _status = 'فشل الاستدلال المحلي: $error';
+      rethrow;
+    } finally {
+      _generating = false;
+      notifyListeners();
     }
-    final answer = buffer.toString().trim();
-    if (answer.isEmpty) throw StateError('أعاد النموذج إجابة فارغة.');
-    return answer;
   }
 
   Future<void> stopGeneration() async {
