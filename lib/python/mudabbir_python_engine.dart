@@ -24,6 +24,10 @@ class MudabbirPythonEngine {
     if (_initialized) return;
 
     try {
+      // Prefer the user's trained checkpoint over bundled starter weights so
+      // training persists across restarts and is not silently overwritten.
+      if (await loadModelFromDisk()) return;
+
       // 1. تحميل المفردات (Tokenizer)
       // 2. تحميل أوزان النموذج المُدرّب مسبقاً
       final weightsJson = await rootBundle.loadString('assets/models/mudabbir_weights.json');
