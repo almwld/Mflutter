@@ -6,9 +6,17 @@ import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
 class ChatProvider extends ChangeNotifier {
+  ChatProvider() {
+    _gguf.addListener(_onGgufChanged);
+  }
+
   final List<ChatMessage> _messages = [];
   final OllamaService _localAi = OllamaService();
   final LocalGgufRuntimeService _gguf = LocalGgufRuntimeService.instance;
+
+  void _onGgufChanged() => notifyListeners();
+
+  bool get hasActiveLocalModel => _gguf.isLoaded || _localAi.isRunning;
 
   bool _loading = false;
   String? _error;
@@ -88,5 +96,11 @@ class ChatProvider extends ChangeNotifier {
     _messages.clear();
     _error = null;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _gguf.removeListener(_onGgufChanged);
+    super.dispose();
   }
 }
