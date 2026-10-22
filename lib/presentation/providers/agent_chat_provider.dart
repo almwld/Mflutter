@@ -6,6 +6,7 @@ import '../../domain/entities/agent_task.dart';
 import '../../services/agent_knowledge_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
+import '../../services/local_gguf_service.dart';
 import '../../services/on_device_training_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
@@ -143,7 +144,7 @@ class AgentChatProvider extends ChangeNotifier {
         }
       }
 
-      final answer = _composeAnswer(task);
+      final answer = await _composeAnswer(task);
       task = task.copyWith(
         status: TaskStatus.completed,
         completedAt: DateTime.now(),
@@ -384,16 +385,35 @@ class AgentChatProvider extends ChangeNotifier {
             : _sourcesFromText(result).join(', ')),
       ];
 
-  String _composeAnswer(AgentTask task) {
+  Future<String> _composeAnswer(AgentTask task) async {
     final results = task.steps
         .where((step) => step.result != null && step.result!.trim().isNotEmpty)
-        .map((step) => '${step.title}:\n${step.result}')
+        .map((step) => step.title + ':\\n' + step.result!)
         .toList();
-    return results.isEmpty
-        ? 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.'
-        : 'تقرير الوكلاء المحلي:\n\n${results.join('\n\n')}\n\n'
-            'المصادر المحمّلة: ${_knowledge.loadedSources.join(', ')}. '
-            'المعالجة هنا استرجاع محلي وفحوص قابلة للتتبع؛ لا يُدّعى تشغيل نموذج GGUF غير موجود ضمن assets.';
+    if (results.isEmpty) return 'اكتمل المسار دون نتائج؛ لم يتم اختلاق إجابة.';
+
+    final evidence = results.join('\\n\\n');
+    final localModel = LocalGgufService.instance;
+    if (localModel.isLoaded) {
+      final prompt = 'سؤال المستخدم: ' + task.userQuery +
+          '\\n\\nنتائج الوكلاء والأدلة المحلية:\\n' + evidence +
+          '\\n\\nاكتب إجابة مركزة، واذكر حدود الأدلة ولا تخترع آيات أو مراجع.';
+      final generated = await localModel.generateOnce(
+        systemPrompt: 'أنت نموذج لغوي محلي داخل مُدَبِّر. استخدم الأدلة المقدمة فقط، '
+            'ولا تخترع آيات أو مراجع أو نتائج أدوات. وضّح صراحةً عندما لا تكفي الأدلة، '
+            'وافصل بين النص المصدر والاستنتاج. أجب بالعربية.',
+        userPrompt: prompt,
+        maxTokens: 768,
+        temperature: 0.55,
+      );
+      return generated + '\\n\\nالمصادر المحلية المفحوصة: ' +
+          _knowledge.loadedSources.join(', ') +
+          '. التوليد تم على الجهاز باستخدام نموذج GGUF محمّل.';
+    }
+
+    return 'تقرير الوكلاء المحلي:\\n\\n' + evidence + '\\n\\n' +
+        'المصادر المحمّلة: ' + _knowledge.loadedSources.join(', ') +
+        '. هذا تقرير استرجاع محلي قابل للتتبع؛ لتحويله إلى إجابة مولّدة، حمّل نموذج GGUF من شاشة الذكاء المحلي.';
   }
 
   List<String> _sourcesFromText(String text) {
