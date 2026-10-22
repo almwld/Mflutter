@@ -426,7 +426,7 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
       allowMultiple: false,
       withData: false,
     );
-    final path = picked?.files.singleOrNull?.path;
+    final path = picked == null || picked.files.isEmpty ? null : picked.files.first.path;
     if (path == null) return;
     await _run(() async {
       await _runtime.importModel(path);
