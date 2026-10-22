@@ -36,7 +36,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
   void initState() {
     super.initState();
     _player = AudioPlayer();
-    _player.setReleaseMode(ReleaseMode.stop);
+    unawaited(_player.setReleaseMode(ReleaseMode.stop));
     _completionSubscription = _player.onPlayerComplete.listen((_) {
       if (!_stoppedByUser && _playing && !_paused) unawaited(_playNextAyah());
     });
@@ -55,7 +55,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
     setState(() {
       _currentIndex = index;
       _currentAyah = 1;
-      _playing = true;
+      _playing = false;
       _paused = false;
       _loading = true;
     });
@@ -93,6 +93,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
   }
 
   void _showPlaybackError(Object error) {
+    debugPrint('Recitation playback failed: $error');
     if (!mounted) return;
     setState(() {
       _playing = false;
