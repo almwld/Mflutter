@@ -57,6 +57,10 @@ void main() {
 
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
+    // The ListView retains its scroll offset while the filtered result list
+    // changes. Return to the top before asserting the first lazy-built item.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, 1000));
+    await tester.pumpAndSettle();
     expect(find.text('القرآن التفاعلي'), findsOneWidget);
   });
 }
