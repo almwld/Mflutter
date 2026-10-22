@@ -129,9 +129,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _modelBanner() {
     final text = _checkingModel
         ? 'جارٍ فحص النموذج المحلي…'
-        : _modelAvailable
-            ? 'النموذج المحلي متصل • mudabbir'
-            : 'النموذج المحلي غير متصل • 127.0.0.1:11434';
+        : _chat.localModelLabel;
 
     return Container(
       width: double.infinity,
