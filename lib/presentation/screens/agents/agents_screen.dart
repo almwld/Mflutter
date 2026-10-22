@@ -523,7 +523,7 @@ class _LocalGgufModelCardState extends State<_LocalGgufModelCard> {
               OutlinedButton.icon(
                 onPressed: _working || _runtime.isBusy ? null : _importModel,
                 icon: const Icon(Icons.file_open),
-                label: const Text('استيراد GGUF'),
+                label: const Text('استيراد 3arabLM'),
               ),
               OutlinedButton.icon(
                 onPressed: _working || _runtime.isBusy ? null : _downloadModel,
