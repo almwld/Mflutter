@@ -6,6 +6,7 @@ import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
+import '../../widgets/quran_wave_text.dart';
 
 enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
 
@@ -269,6 +270,8 @@ class _VariantPage extends StatelessWidget {
   final Color gold;
   final String Function(String) transform;
 
+  static int _wordCount(String text) => text.trim().isEmpty ? 0 : text.trim().split(' ').where((word) => word.isNotEmpty).length;
+
   String get _fontFamily {
     switch (mode) {
       case MushafVariantMode.musnad:
@@ -300,6 +303,7 @@ class _VariantPage extends StatelessWidget {
         }
 
         final lines = snapshot.data!;
+        final sequenceWordCount = lines.fold<int>(0, (sum, line) => sum + (line.isBlank || line.isSurahHeader ? 0 : _wordCount(line.text)));
         return Container(
           // Match the canonical MushafScreen page frame and outer geometry.
           margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
@@ -323,17 +327,22 @@ class _VariantPage extends StatelessWidget {
                 final lineHeight = constraints.maxHeight / 15.0;
                 return Column(
                   children: [
-                    for (final line in lines)
+                    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++)
                       SizedBox(
                         height: lineHeight,
                         width: double.infinity,
-                        child: line.isBlank
+                        child: lines[lineIndex].isBlank
                             ? const SizedBox.shrink()
                             : _FixedMushafLine(
-                                line: line,
+                                line: lines[lineIndex],
                                 transform: transform,
                                 fontFamily: _fontFamily,
                                 gold: gold,
+                                sequenceWordCount: sequenceWordCount,
+                                sequenceWordOffset: lines.take(lineIndex).fold<int>(
+                                  0,
+                                  (sum, previous) => sum + (previous.isBlank || previous.isSurahHeader ? 0 : _wordCount(previous.text)),
+                                ),
                               ),
                       ),
                   ],
@@ -353,12 +362,16 @@ class _FixedMushafLine extends StatelessWidget {
     required this.transform,
     required this.fontFamily,
     required this.gold,
+    required this.sequenceWordCount,
+    required this.sequenceWordOffset,
   });
 
   final MushafVariantLine line;
   final String Function(String) transform;
   final String fontFamily;
   final Color gold;
+  final int sequenceWordCount;
+  final int sequenceWordOffset;
 
   @override
   Widget build(BuildContext context) {
@@ -401,43 +414,29 @@ class _FixedMushafLine extends StatelessWidget {
 
     if (line.segments.isEmpty) return const SizedBox.shrink();
 
-    // Transform Quran words only; preserve verse markers as ornamental spans.
-    final spans = <InlineSpan>[];
+    final tokens = <String>[];
     for (final segment in line.segments) {
-      final marker = RegExp(r'^﴿(\d+)﴾$').firstMatch(segment);
-      if (marker != null) {
-        spans.add(TextSpan(
-          text: ' ۞${marker.group(1)}۞ ',
-          style: TextStyle(
-            fontFamily: 'Amiri',
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF8C6A2D),
-          ),
-        ));
+      if (segment.startsWith('﴿') && segment.endsWith('﴾') && segment.length > 2) {
+        tokens.add('۞' + segment.substring(1, segment.length - 1) + '۞');
       } else {
         final converted = transform(segment);
-        if (converted.isNotEmpty) {
-          spans.add(TextSpan(
-            text: '$converted ',
-            style: TextStyle(
-              fontFamily: fontFamily,
-              fontSize: 21,
-              fontWeight: FontWeight.w700,
-              color: gold,
-              height: 1.0,
-            ),
-          ));
-        }
+        if (converted.isNotEmpty) tokens.add(converted);
       }
     }
-    if (spans.isEmpty) return const SizedBox.shrink();
+    final text = tokens.join(' ');
+    if (text.isEmpty) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final richText = TextSpan(children: spans);
+        final style = TextStyle(
+          fontFamily: fontFamily,
+          fontSize: 21,
+          fontWeight: FontWeight.w700,
+          color: gold,
+          height: 1.0,
+        );
         final painter = TextPainter(
-          text: richText,
+          text: TextSpan(text: text, style: style),
           textDirection: TextDirection.rtl,
           maxLines: 1,
         )..layout();
@@ -449,13 +448,14 @@ class _FixedMushafLine extends StatelessWidget {
           child: Transform.scale(
             scaleX: scaleX,
             alignment: Alignment.center,
-            child: RichText(
-              text: richText,
-              textDirection: TextDirection.rtl,
-              textAlign: line.centered ? TextAlign.center : TextAlign.right,
-              softWrap: false,
-              maxLines: 1,
-              overflow: TextOverflow.clip,
+            child: QuranWaveText(
+              text: text,
+              importanceText: line.text,
+              style: style,
+              sequenceWordCount: sequenceWordCount,
+              sequenceWordOffset: sequenceWordOffset,
+              textAlign: line.centered ? WrapAlignment.center : WrapAlignment.start,
+              singleLine: true,
             ),
           ),
         );
