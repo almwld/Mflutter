@@ -61,7 +61,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   Future<bool> hasValidModel() async {
     try {
       final file = await modelFile();
-      return await _isValidGguf(file);
+      return await _isValidDefaultModel(file);
     } catch (_) {
       return false;
     }
@@ -209,8 +209,17 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     notifyListeners();
     try {
       final source = File(sourcePath);
-      if (!await _isValidGguf(source)) {
-        throw const FormatException('الملف المحدد ليس GGUF صالحًا أو أنه غير مكتمل.');
+      final sourceName = source.uri.pathSegments.isEmpty
+          ? ''
+          : source.uri.pathSegments.last;
+      if (sourceName != modelFileName) {
+        throw FormatException('اختر الملف $modelFileName؛ هذه الشاشة مهيأة لهذا النموذج تحديدًا.');
+      }
+      if (!await _isValidDefaultModel(source)) {
+        throw const FormatException(
+          'ملف 3arabLM غير مكتمل أو لا يحتوي ترويسة GGUF صالحة. '
+          'أكمل التنزيل قبل الاستيراد.',
+        );
       }
       final target = await modelFile();
       if (source.absolute.path == target.absolute.path) {
@@ -220,7 +229,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       final temp = File('${target.path}.importing');
       if (await temp.exists()) await temp.delete();
       await source.openRead().pipe(temp.openWrite());
-      if (!await _isValidGguf(temp)) {
+      if (!await _isValidDefaultModel(temp)) {
         await temp.delete();
         throw const FormatException('فشل التحقق من نسخة النموذج بعد الاستيراد.');
       }
@@ -245,8 +254,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     notifyListeners();
     try {
       final file = await modelFile();
-      if (!await _isValidGguf(file)) {
-        throw StateError('لم يُعثر على ملف GGUF مكتمل وصالح في مساحة التطبيق.');
+      if (!await _isValidDefaultModel(file)) {
+        throw StateError('لم يُعثر على ملف 3arabLM GGUF مكتمل وصالح في مساحة التطبيق.');
       }
       await _controller?.dispose();
       _controller = null;
