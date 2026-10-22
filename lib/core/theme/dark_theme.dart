@@ -46,7 +46,7 @@ class DarkTheme {
       ),
 
       // البطاقات
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: AppColors.cardBackgroundDark,
         elevation: 4,
         shadowColor: Colors.black.withOpacity(0.4),
@@ -108,7 +108,7 @@ class DarkTheme {
       ),
 
       // الحوارات
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.cardBackgroundDark,
         elevation: 8,
         shape: RoundedRectangleBorder(
