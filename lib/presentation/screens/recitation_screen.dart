@@ -6,8 +6,47 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/quran_loader_service.dart';
 
+/// Minimal audio contract keeps the screen testable without a native audio
+/// plugin; the production adapter below delegates to audioplayers.
+abstract interface class RecitationAudioEngine {
+  Stream<void> get onPlayerComplete;
+  Future<void> setReleaseMode(ReleaseMode mode);
+  Future<void> stop();
+  Future<void> playUrl(String url);
+  Future<void> pause();
+  Future<void> resume();
+  Future<void> dispose();
+}
+
+class AudioplayersRecitationEngine implements RecitationAudioEngine {
+  final AudioPlayer _player = AudioPlayer();
+
+  @override
+  Stream<void> get onPlayerComplete => _player.onPlayerComplete;
+
+  @override
+  Future<void> setReleaseMode(ReleaseMode mode) => _player.setReleaseMode(mode);
+
+  @override
+  Future<void> stop() => _player.stop();
+
+  @override
+  Future<void> playUrl(String url) => _player.play(UrlSource(url));
+
+  @override
+  Future<void> pause() => _player.pause();
+
+  @override
+  Future<void> resume() => _player.resume();
+
+  @override
+  Future<void> dispose() => _player.dispose();
+}
+
 class RecitationScreen extends StatefulWidget {
-  const RecitationScreen({super.key});
+  const RecitationScreen({super.key, this.audioEngineFactory});
+
+  final RecitationAudioEngine Function()? audioEngineFactory;
 
   @override
   State<RecitationScreen> createState() => _RecitationScreenState();
@@ -18,7 +57,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
   bool _loadingSurahList = true;
   String? _surahListError;
 
-  late final AudioPlayer _player;
+  late final RecitationAudioEngine _player;
   StreamSubscription<void>? _completionSubscription;
   int? _currentIndex;
   int _currentAyah = 1;
@@ -32,7 +71,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
   @override
   void initState() {
     super.initState();
-    _player = AudioPlayer();
+    _player = widget.audioEngineFactory?.call() ?? AudioplayersRecitationEngine();
     unawaited(_player.setReleaseMode(ReleaseMode.stop));
     unawaited(_loadSurahs());
     _completionSubscription = _player.onPlayerComplete.listen((_) {
@@ -104,7 +143,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
     final surah = _surahs[index];
     setState(() { _loading = true; _error = null; });
     try {
-      await _player.play(UrlSource(_ayahUrl(surah.number, _currentAyah)));
+      await _player.playUrl(_ayahUrl(surah.number, _currentAyah));
       if (!mounted || generation != _generation) return;
       setState(() { _loading = false; _playing = true; _paused = false; });
     } catch (error) {
