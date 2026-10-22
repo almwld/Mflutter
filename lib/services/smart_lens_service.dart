@@ -6,6 +6,7 @@ import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 
 import 'quran_loader_service.dart';
+import 'external_asset_service.dart';
 
 /// Offline-first smart-lens services. Arabic OCR and Quran matching run locally
 /// after the Arabic Tesseract model has been downloaded once.
@@ -18,6 +19,14 @@ class SmartLensService {
     final path = await FlutterTesseractOcr.getTessdataPath();
     final model = File('$path/ara.traineddata');
     if (await model.exists() && await model.length() > 1000000) return;
+
+    // Optional model may be imported manually instead of downloaded at runtime.
+    final imported = await ExternalAssetService.instance.findImportedFile('ara.traineddata');
+    if (imported != null && await imported.length() > 1000000) {
+      await imported.copy(model.path);
+      return;
+    }
+
     final pending = _arabicModelDownload;
     if (pending != null) {
       await pending;
