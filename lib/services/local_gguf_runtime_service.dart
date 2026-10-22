@@ -36,6 +36,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
   bool _busy = false;
+  bool _downloading = false;
+  bool _cancelDownloadRequested = false;
+  HttpClient? _downloadClient;
   bool _generating = false;
   bool _loaded = false;
   double? _downloadProgress;
@@ -43,6 +46,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   String get status => _status;
   bool get isBusy => _busy;
+  bool get isDownloading => _downloading;
   bool get isGenerating => _generating;
   bool get isLoaded => _loaded;
   double? get downloadProgress => _downloadProgress;
@@ -98,6 +102,8 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       throw ArgumentError('عدد محاولات التنزيل يجب أن يكون بين 1 و10.');
     }
     _busy = true;
+    _downloading = true;
+    _cancelDownloadRequested = false;
     _downloadProgress = 0;
     _status = 'جارٍ تنزيل النموذج مع دعم الاستئناف...';
     notifyListeners();
@@ -116,9 +122,13 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       }
 
       for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+        if (_cancelDownloadRequested) {
+          throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+        }
         final client = HttpClient()
           ..connectionTimeout = const Duration(seconds: 30)
           ..idleTimeout = const Duration(seconds: 60);
+        _downloadClient = client;
         RandomAccessFile? output;
         try {
           var offset = await partial.exists() ? await partial.length() : 0;
@@ -173,6 +183,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           var lastProgressNotification = DateTime.now();
 
           await for (final chunk in response.timeout(const Duration(seconds: 90))) {
+            if (_cancelDownloadRequested) {
+              throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+            }
             await output.writeFrom(chunk);
             received += chunk.length;
             final progress = totalBytes != null && totalBytes > 0
@@ -214,6 +227,11 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           return target;
         } catch (error) {
           lastError = error;
+          if (_cancelDownloadRequested) {
+            _status = 'أُلغي التنزيل؛ احتُفظ بالجزء غير المكتمل لاستئنافه لاحقًا.';
+            notifyListeners();
+            throw StateError('أُلغي تنزيل النموذج من المستخدم.');
+          }
           // A full-sized file with an invalid GGUF magic is corrupt, not a
           // resumable partial. Remove it so retries do not loop at EOF.
           if (await partial.exists() &&
@@ -231,16 +249,31 @@ class LocalGgufRuntimeService extends ChangeNotifier {
             await output?.close();
           } catch (_) {}
           client.close(force: true);
+          if (identical(_downloadClient, client)) _downloadClient = null;
         }
       }
       throw StateError('تعذر إكمال تنزيل GGUF بعد $maxAttempts محاولات: $lastError');
     } catch (error) {
-      _status = 'فشل تنزيل النموذج: $error';
+      _status = _cancelDownloadRequested
+          ? 'أُلغي تنزيل النموذج؛ يمكنك استئنافه لاحقًا.'
+          : 'فشل تنزيل النموذج: $error';
       rethrow;
     } finally {
       _busy = false;
+      _downloading = false;
+      _downloadClient?.close(force: true);
+      _downloadClient = null;
       notifyListeners();
     }
+  }
+
+  /// Stops the active HTTP transfer while preserving the resumable .part file.
+  Future<void> cancelDownload() async {
+    if (!_downloading) return;
+    _cancelDownloadRequested = true;
+    _status = 'جارٍ إيقاف التنزيل مع الاحتفاظ بالجزء المكتمل...';
+    _downloadClient?.close(force: true);
+    notifyListeners();
   }
 
   Future<File> importModel(String sourcePath) async {
