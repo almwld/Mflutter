@@ -263,9 +263,16 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       if (!await _isValidDefaultModel(file)) {
         throw StateError('لم يُعثر على ملف 3arabLM GGUF مكتمل وصالح في مساحة التطبيق.');
       }
-      await _controller?.dispose();
+      final previousController = _controller;
       _controller = null;
       _loaded = false;
+      _loadedPath = null;
+      try {
+        await previousController?.dispose();
+      } catch (_) {
+        // Continue with a fresh controller; the old native instance is no
+        // longer exposed to chat even if its cleanup reports an error.
+      }
       final controller = LlamaController();
       try {
         await controller.loadModel(
