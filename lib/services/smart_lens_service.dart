@@ -14,6 +14,7 @@ class SmartLensService {
   SmartLensService._();
   static final SmartLensService instance = SmartLensService._();
   static Future<void>? _arabicModelDownload;
+  static Future<List<_IndexedLensAyah>>? _indexedAyahs;
 
   Future<void> _ensureArabicOcrModel() async {
     final path = await FlutterTesseractOcr.getTessdataPath();
@@ -80,32 +81,65 @@ class SmartLensService {
 
   /// Heuristic matching against the canonical bundled Hafs corpus. Never
   /// generates or rewrites Quran text; results are suggestions for verification.
+  Future<List<_IndexedLensAyah>> _loadIndexedAyahs() {
+    final cached = _indexedAyahs;
+    if (cached != null) return cached;
+    final pending = _buildIndexedAyahs();
+    _indexedAyahs = pending;
+    return pending;
+  }
+
+  Future<List<_IndexedLensAyah>> _buildIndexedAyahs() async {
+    final ayahs = await QuranLoaderService.loadAllAyahs();
+    return List<_IndexedLensAyah>.unmodifiable(ayahs.map((ayah) {
+      final normalized = normalizeArabic(ayah.text);
+      final tokens = normalized.split(' ').where((word) => word.length > 1).toSet();
+      return _IndexedLensAyah(
+        surahName: ayah.surahName,
+        surahNumber: ayah.surahNumber,
+        ayahNumber: ayah.ayahNumber,
+        canonicalText: ayah.text,
+        normalizedText: normalized,
+        tokens: Set<String>.unmodifiable(tokens),
+      );
+    }));
+  }
+
   Future<List<QuranLensMatch>> matchQuranText(String recognizedText, {int limit = 3}) async {
+    if (limit <= 0) return const [];
     final query = normalizeArabic(recognizedText);
     final queryTokens = query.split(' ').where((word) => word.length > 1).toSet();
     if (queryTokens.length < 3) return const [];
-    final ayahs = await QuranLoaderService.loadAllAyahs();
+
+    // The 6,236-ayah corpus is normalized and tokenized once per process,
+    // rather than re-normalizing every verse for every camera/OCR result.
+    final ayahs = await _loadIndexedAyahs();
     final matches = <QuranLensMatch>[];
     for (final ayah in ayahs) {
-      final verse = normalizeArabic(ayah.text);
-      final verseTokens = verse.split(' ').where((word) => word.length > 1).toSet();
+      final verseTokens = ayah.tokens;
       if (verseTokens.isEmpty) continue;
       final overlap = queryTokens.intersection(verseTokens).length;
       final coverage = overlap / queryTokens.length;
       final dice = (2 * overlap) / (queryTokens.length + verseTokens.length);
-      final contains = query.length >= 12 && (verse.contains(query) || query.contains(verse));
+      final contains = query.length >= 12 &&
+          (ayah.normalizedText.contains(query) || query.contains(ayah.normalizedText));
       final score = contains ? 1.0 : (dice * 0.65 + coverage * 0.35);
       if (score >= 0.30) {
         matches.add(QuranLensMatch(
           surahName: ayah.surahName,
           surahNumber: ayah.surahNumber,
           ayahNumber: ayah.ayahNumber,
-          canonicalText: ayah.text,
+          canonicalText: ayah.canonicalText,
           score: score.clamp(0.0, 1.0).toDouble(),
         ));
       }
     }
-    matches.sort((a, b) => b.score.compareTo(a.score));
+    matches.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      final bySurah = a.surahNumber.compareTo(b.surahNumber);
+      return bySurah != 0 ? bySurah : a.ayahNumber.compareTo(b.ayahNumber);
+    });
     return matches.take(limit).toList(growable: false);
   }
 
@@ -151,6 +185,24 @@ class SmartLensService {
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim()
       .toLowerCase();
+}
+
+class _IndexedLensAyah {
+  const _IndexedLensAyah({
+    required this.surahName,
+    required this.surahNumber,
+    required this.ayahNumber,
+    required this.canonicalText,
+    required this.normalizedText,
+    required this.tokens,
+  });
+
+  final String surahName;
+  final int surahNumber;
+  final int ayahNumber;
+  final String canonicalText;
+  final String normalizedText;
+  final Set<String> tokens;
 }
 
 class QuranLensMatch {
