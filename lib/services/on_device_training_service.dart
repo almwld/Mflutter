@@ -47,6 +47,33 @@ class OnDeviceTrainingService {
     _progressController = controller;
 
     try {
+      if (verses.length < 6) {
+        throw const FormatException('يلزم توفير 6 عينات مصنفة على الأقل.');
+      }
+      final classCounts = <String, int>{};
+      for (var index = 0; index < verses.length; index++) {
+        final verse = verses[index];
+        final rawText = verse['text'];
+        if (rawText is! String || rawText.trim().length < 2) {
+          throw FormatException('نص العينة رقم ${index + 1} فارغ أو غير صالح.');
+        }
+        final label = verse['axis_type'];
+        if (label is! String || !const {'cosmic', 'tranquil', 'calculation'}.contains(label)) {
+          throw FormatException('تصنيف العينة رقم ${index + 1} غير مدعوم: $label.');
+        }
+        classCounts.update(label, (count) => count + 1, ifAbsent: () => 1);
+      }
+      if (classCounts.length < 2) {
+        throw const FormatException('لا يمكن تدريب المصنف على فئة واحدة فقط؛ يلزم فئتان على الأقل.');
+      }
+      final underrepresented = classCounts.entries
+          .where((entry) => entry.value < 2)
+          .map((entry) => entry.key)
+          .toList(growable: false);
+      if (underrepresented.isNotEmpty) {
+        throw FormatException('يلزم عينتان على الأقل لكل فئة مستخدمة: ${underrepresented.join(', ')}.');
+      }
+
       final xTrain = <List<double>>[];
       final yTrain = <int>[];
       for (var index = 0; index < verses.length; index++) {

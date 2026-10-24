@@ -8,7 +8,6 @@ import '../../services/agent_knowledge_service.dart';
 import '../../services/local_gguf_runtime_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
-import '../../services/on_device_training_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
@@ -16,7 +15,6 @@ import '../../services/quranic_search_engine.dart';
 /// Agents execute local tools and cite bundled sources; no remote model or
 /// simulated shell execution is presented as real inference.
 class AgentChatProvider extends ChangeNotifier {
-  final OnDeviceTrainingService _training = OnDeviceTrainingService();
   final AgentKnowledgeService _knowledge = AgentKnowledgeService.instance;
   final AgentMemoryService _memory = AgentMemoryService.instance;
 
@@ -373,20 +371,13 @@ class AgentChatProvider extends ChangeNotifier {
             'المصادر المسجلة: ${sources.isEmpty ? 'لا توجد مصادر موثقة' : sources.join(', ')}. '
             'هذا فحص اكتمال/مصدر، وليس حكمًا بصحة التفسير.';
       case 'tadrib':
-        final ayahs = await QuranLoaderService.loadAllAyahs();
-        await _training.startTraining(
-          verses: ayahs.map((a) => {'text': a.text, 'axis_type': a.axisType}).toList(),
-          epochs: 1,
-        );
-        final trainingStatus = _training.status;
-        if (trainingStatus.startsWith('فشل') ||
-            trainingStatus.startsWith('تعذر') ||
-            trainingStatus.startsWith('أُلغي')) {
-          return 'لم يكتمل التدريب. الحالة الفعلية: $trainingStatus';
-        }
-        return 'حالة التدريب المحلي: $trainingStatus '
-            '(العينات المتاحة: ${ayahs.length}). هذا مصنف صغير منفصل؛ '
-            'لا يُعد نموذجًا لغويًا توليديًا ولم تتغير أوزان Qwen/GGUF.';
+        // The canonical Quran corpus is source material, not a user-labelled
+        // supervised dataset. Never turn its metadata into training labels or
+        // report a training run from the agent console.
+        return 'لم يبدأ التدريب: لا يجوز تحويل نص المصحف تلقائيًا إلى بيانات تدريب مصنّفة. '
+            'افتح شاشة التدريب واستورد ملف JSON يحتوي على عينات مُعنونة يدويًا '
+            'بتصنيفات مدعومة ومتوازنة. التدريب المتاح يخص المصنّف المحلي الصغير فقط؛ '
+            'ولا يدرّب أوزان Qwen أو GGUF.';
       case 'muraqib':
         final task = _activeTask;
         return 'مراقبة التنفيذ: الحالة=${task?.status.name ?? 'غير متاحة'}؛ '
