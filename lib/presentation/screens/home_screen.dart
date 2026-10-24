@@ -19,6 +19,28 @@ import 'occult_explorer_screen.dart';
 import 'elements_screen.dart';
 import 'numbers_screen.dart';
 import 'zodiac_screen.dart';
+import 'quran_screen.dart';
+import 'abjad_screen.dart';
+import 'training_screen.dart';
+import 'miracles_screen.dart';
+import 'compare_screen.dart';
+import 'nucleus_screen.dart';
+import 'sovereign_hub_screen.dart';
+import 'cosmic_services_screen.dart';
+import 'ai_advanced_screen.dart';
+import 'personalization_screen.dart';
+import 'player_profile_screen.dart';
+import 'recitation_screen.dart';
+import 'help_screen.dart';
+import 'package:provider/provider.dart';
+import '../providers/abjad_provider.dart';
+import '../providers/training_provider.dart';
+import '../../providers/sovereign_chat_provider.dart';
+import 'community_screen.dart';
+import 'challenges_screen.dart';
+import 'leaderboard_screen.dart';
+import 'planets_screen.dart';
+import 'letters_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -218,7 +240,7 @@ class _MushafHome extends StatelessWidget {
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
-      ('التلاوة', Icons.graphic_eq_rounded, const DailyVerseScreen()),
+      ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
     ];
     return SizedBox(
       height: 105,
@@ -444,8 +466,29 @@ class _ToolCard extends StatelessWidget {
   }
 }
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
+
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _normalizeSearchText(String value) => value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي');
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +504,29 @@ class MoreScreen extends StatelessWidget {
       ('تتبع النظر', Icons.visibility_outlined, const GazeTrackingScreen()),
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
+      ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
+      ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
+      ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
+      ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
+      ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
+      ('النواة', Icons.psychology_rounded, ChangeNotifierProvider<SovereignChatProvider>(create: (_) => SovereignChatProvider(), child: const NucleusScreen())),
+      ('مركز السيادة', Icons.hub_rounded, const SovereignHubScreen()),
+      ('الخدمات الكونية', Icons.rocket_launch_rounded, const CosmicServicesScreen()),
+      ('الذكاء المتقدم', Icons.memory_rounded, const AIAdvancedScreen()),
+      ('التخصيص المتقدم', Icons.tune_rounded, const PersonalizationScreen()),
+      ('الملف الشخصي', Icons.person_outline_rounded, const PlayerProfileScreen()),
+      ('مشغل التلاوة', Icons.play_circle_outline_rounded, const RecitationScreen()),
+      ('المساعدة', Icons.help_outline_rounded, const HelpScreen()),
+      ('المجتمع', Icons.groups_rounded, const CommunityScreen()),
+      ('التحديات', Icons.flag_outlined, const ChallengesScreen()),
+      ('لوحة المتصدرين', Icons.leaderboard_rounded, const LeaderboardScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+      ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
+    final normalizedQuery = _normalizeSearchText(_query.trim());
+    final filteredItems = items
+        .where((item) => _normalizeSearchText(item.$1).contains(normalizedQuery))
+        .toList(growable: false);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -487,7 +552,59 @@ class MoreScreen extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 14),
-          ...items.map((item) => Padding(
+          TextField(
+            controller: _searchController,
+            textDirection: TextDirection.rtl,
+            textInputAction: TextInputAction.search,
+            onChanged: (value) => setState(() => _query = value),
+            decoration: InputDecoration(
+              hintText: 'ابحث عن أداة أو واجهة...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                      },
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surface,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              _query.isEmpty ? '${items.length} واجهة وأداة' : '${filteredItems.length} نتيجة',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(.65),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (filteredItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 12),
+              child: Column(
+                children: [
+                  Icon(Icons.search_off_rounded, size: 38, color: Theme.of(context).colorScheme.onSurface.withOpacity(.45)),
+                  const SizedBox(height: 10),
+                  const Text('لا توجد واجهة بهذا الاسم', textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ...filteredItems.map((item) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Material(
               color: Theme.of(context).colorScheme.surface,
