@@ -79,4 +79,60 @@ void main() {
       }
     });
   });
+  group('memory-aware context sizing', () {
+    test('uses a conservative context when RAM probing is unavailable', () {
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(freeRamBytes: 0),
+        1024,
+      );
+    });
+
+    test('reduces context on constrained devices', () {
+      const gib = 1024 * 1024 * 1024;
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(
+          freeRamBytes: 2 * gib,
+          requestedContextSize: 2048,
+        ),
+        512,
+      );
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(
+          freeRamBytes: 4 * gib,
+          requestedContextSize: 2048,
+        ),
+        1024,
+      );
+    });
+
+    test('preserves requested context when RAM headroom is high', () {
+      const gib = 1024 * 1024 * 1024;
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(
+          freeRamBytes: 6 * gib,
+          requestedContextSize: 3072,
+        ),
+        3072,
+      );
+    });
+
+    test('clamps requested context to supported bounds', () {
+      const gib = 1024 * 1024 * 1024;
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(
+          freeRamBytes: 6 * gib,
+          requestedContextSize: 100,
+        ),
+        512,
+      );
+      expect(
+        LocalGgufRuntimeService.recommendedContextSize(
+          freeRamBytes: 6 * gib,
+          requestedContextSize: 9000,
+        ),
+        4096,
+      );
+    });
+  });
+
 }
