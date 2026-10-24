@@ -84,9 +84,15 @@ class SmartLensService {
   Future<List<_IndexedLensAyah>> _loadIndexedAyahs() {
     final cached = _indexedAyahs;
     if (cached != null) return cached;
-    final pending = _buildIndexedAyahs();
-    _indexedAyahs = pending;
-    return pending;
+
+    late final Future<List<_IndexedLensAyah>> guarded;
+    guarded = _buildIndexedAyahs().catchError((Object error, StackTrace stackTrace) {
+      // A transient asset-load failure must not poison all later OCR scans.
+      if (identical(_indexedAyahs, guarded)) _indexedAyahs = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+    _indexedAyahs = guarded;
+    return guarded;
   }
 
   Future<List<_IndexedLensAyah>> _buildIndexedAyahs() async {
