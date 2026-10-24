@@ -15,7 +15,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   @override
   void initState() {
     super.initState();
-    DailyStreakService.recordActivity();
+    _loadStreak();
+  }
+
+  Future<void> _loadStreak() async {
+    await DailyStreakService.initialize();
+    await AchievementsService.refreshFromLocalActivity();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -53,7 +59,15 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           ...AchievementsService.achievements.map((a) => ListTile(
             leading: Text(a['icon'], style: TextStyle(fontSize: 24)),
             title: Text(a['title'], style: TextStyle(color: a['unlocked'] ? Colors.white : Colors.white38)),
-            subtitle: a['unlocked'] ? Text('✅ مكتمل', style: TextStyle(color: AppColors.success)) : LinearProgressIndicator(value: a['progress'], backgroundColor: AppColors.surface, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold)),
+            subtitle: a['unlocked']
+                ? const Text('مكتمل', style: TextStyle(color: AppColors.success))
+                : a['tracking'] != true
+                    ? const Text('قياس هذا الإنجاز غير موصول بعد', style: TextStyle(color: Colors.white38))
+                    : LinearProgressIndicator(
+                        value: (a['progress'] as num).toDouble(),
+                        backgroundColor: AppColors.surface,
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                      ),
             trailing: a['unlocked'] ? Icon(Icons.check_circle, color: AppColors.primaryGold) : null,
           )),
         ]))),
