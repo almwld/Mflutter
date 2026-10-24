@@ -19,4 +19,21 @@ void main() {
     expect(matches.first.ayahNumber, 1);
     expect(matches.first.score, greaterThanOrEqualTo(0.9));
   });
+
+  test('Quran lens returns no matches for a non-positive limit', () async {
+    expect(
+      await SmartLensService.instance.matchQuranText(
+        'بسم الله الرحمن الرحيم',
+        limit: 0,
+      ),
+      isEmpty,
+    );
+    expect(
+      await SmartLensService.instance.matchQuranText(
+        'بسم الله الرحمن الرحيم',
+        limit: -1,
+      ),
+      isEmpty,
+    );
+  });
 }
