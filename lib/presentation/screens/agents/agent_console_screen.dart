@@ -313,15 +313,35 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   }
 
   Future<void> _importModel() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['gguf'],
-      allowMultiple: false,
-      withData: false,
-    );
-    final path = picked == null || picked.files.isEmpty ? null : picked.files.first.path;
-    if (path == null) return;
-    await _run(() async { await _runtime.importModel(path); await _checkModel(); });
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['gguf'],
+        allowMultiple: false,
+        withData: false,
+      );
+      if (!mounted || picked == null || picked.files.isEmpty) return;
+
+      final path = picked.files.first.path;
+      if (path == null || path.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر الوصول إلى الملف المحدد. اختر ملف GGUF من مدير الملفات في الهاتف.'),
+          ),
+        );
+        return;
+      }
+
+      await _run(() async {
+        await _runtime.importModel(path);
+        await _checkModel();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر اختيار ملف النموذج من ذاكرة الهاتف: $error')),
+      );
+    }
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -343,7 +363,6 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   @override
   Widget build(BuildContext context) {
     final busy = _working || _runtime.isBusy || _runtime.isGenerating;
-    final progress = _runtime.downloadProgress;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 7),
       decoration: BoxDecoration(
@@ -373,31 +392,13 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
           children: [
             Align(alignment: Alignment.centerRight, child: Text(_runtime.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 11))),
-            if (progress != null && _runtime.isBusy) ...[
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: progress),
-              const SizedBox(height: 3),
-              Text('${(progress * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(color: Colors.white54, fontSize: 10)),
-            ],
             const SizedBox(height: 9),
             Wrap(spacing: 7, runSpacing: 7, children: [
               OutlinedButton.icon(
                 onPressed: busy || _runtime.isLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open_rounded, size: 17),
-                label: const Text('استيراد ملف GGUF'),
+                label: const Text('استيراد من ذاكرة الهاتف'),
               ),
-              OutlinedButton.icon(
-                onPressed: busy || _runtime.isLoaded ? null : () => _run(_runtime.downloadDefaultModel),
-                icon: const Icon(Icons.download_rounded, size: 17),
-                label: const Text('تنزيل 3arabLM'),
-              ),
-              if (_runtime.isDownloading)
-                OutlinedButton.icon(
-                  onPressed: () async => _runtime.cancelDownload(),
-                  icon: const Icon(Icons.cancel_outlined, size: 17),
-                  label: const Text('إلغاء التنزيل'),
-                ),
               FilledButton.icon(
                 onPressed: busy ? null : _runtime.isLoaded
                     ? () => _run(_runtime.unloadModel)
@@ -414,7 +415,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
             ]),
             const SizedBox(height: 6),
             const Text(
-              'يمكن استيراد أي ملف GGUF من الهاتف. لا يُعد النموذج جاهزًا حتى ينجح تحميله فعليًا، ويلزم توفر RAM ومساحة تخزين كافيتان.',
+              'اختر ملف .gguf موجودًا مسبقًا في ذاكرة الهاتف. يُنسخ إلى مساحة التطبيق الخاصة ولا يبدأ الاستدلال حتى ينجح تحميله فعليًا؛ يلزم توفر RAM ومساحة تخزين كافيتان.',
               style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.5),
             ),
           ],
