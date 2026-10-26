@@ -55,8 +55,8 @@ void main() {
       height: 800,
       confidence: .9,
     );
-    expect(point.x, isFinite);
-    expect(point.y, isFinite);
+    expect(point.x.isFinite, isTrue);
+    expect(point.y.isFinite, isTrue);
     expect(point.x, closeTo(500, .001));
     expect(point.y, closeTo(400, .001));
     expect(point.confidence, 0);
