@@ -5,21 +5,41 @@ class ReadingProgressService {
   static const _pageKey = 'quran.last_page';
   static const _pagesReadKey = 'quran.pages_read';
   static const _readingDaysKey = 'quran.reading_days';
+  static const int _firstPage = 1;
+  static const int _lastPage = 604;
 
   static Future<int> getLastPage({int fallback = 1}) async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_pageKey) ?? fallback;
+    return (prefs.getInt(_pageKey) ?? fallback)
+        .clamp(_firstPage, _lastPage)
+        .toInt();
   }
 
   static Future<void> saveLastPage(int page) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_pageKey, page.clamp(1, 604).toInt());
+    // Persist and count the same canonical page. Otherwise page 0 or 999
+    // could be saved as 1/604 while also inflating progress with an invalid ID.
+    final normalizedPage = page.clamp(_firstPage, _lastPage).toInt();
+    await prefs.setInt(_pageKey, normalizedPage);
 
-    final pages = prefs.getStringList(_pagesReadKey) ?? <String>[];
-    final value = page.toString();
-    if (!pages.contains(value)) {
-      pages.add(value);
-      await prefs.setStringList(_pagesReadKey, pages);
+    final pages = _readValidPages(
+      prefs.getStringList(_pagesReadKey) ?? const <String>[],
+    );
+    if (pages.add(normalizedPage)) {
+      final sorted = pages.toList()..sort();
+      await prefs.setStringList(
+        _pagesReadKey,
+        sorted.map((value) => value.toString()).toList(growable: false),
+      );
+    } else {
+      // Clean up legacy invalid entries and duplicates while preserving
+      // previously recorded valid pages.
+      final stored = prefs.getStringList(_pagesReadKey) ?? const <String>[];
+      final normalized = pages.toList()..sort();
+      final canonical = normalized.map((value) => value.toString()).toList();
+      if (!_sameStrings(stored, canonical)) {
+        await prefs.setStringList(_pagesReadKey, canonical);
+      }
     }
 
     final days = prefs.getStringList(_readingDaysKey) ?? <String>[];
@@ -32,13 +52,36 @@ class ReadingProgressService {
 
   static Future<double> getKhatmahProgress() async {
     final prefs = await SharedPreferences.getInstance();
-    final pages = prefs.getStringList(_pagesReadKey) ?? const <String>[];
-    return (pages.length / 604).clamp(0.0, 1.0);
+    final pages = _readValidPages(
+      prefs.getStringList(_pagesReadKey) ?? const <String>[],
+    );
+    return (pages.length / _lastPage).clamp(0.0, 1.0).toDouble();
   }
 
   static Future<int> getPagesRead() async {
     final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_pagesReadKey) ?? const <String>[]).length;
+    return _readValidPages(
+      prefs.getStringList(_pagesReadKey) ?? const <String>[],
+    ).length;
+  }
+
+  static Set<int> _readValidPages(List<String> values) {
+    final pages = <int>{};
+    for (final value in values) {
+      final page = int.tryParse(value);
+      if (page != null && page >= _firstPage && page <= _lastPage) {
+        pages.add(page);
+      }
+    }
+    return pages;
+  }
+
+  static bool _sameStrings(List<String> left, List<String> right) {
+    if (left.length != right.length) return false;
+    for (var i = 0; i < left.length; i++) {
+      if (left[i] != right[i]) return false;
+    }
+    return true;
   }
 
   static Future<int> getReadingDays() async {
@@ -59,6 +102,7 @@ class ReadingProgressService {
     return streak;
   }
 
+  /// Number of distinct reading days in the last seven calendar days.
   static Future<int> getPagesReadInLast7Days() async {
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
