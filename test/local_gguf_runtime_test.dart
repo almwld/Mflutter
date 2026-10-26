@@ -79,6 +79,39 @@ void main() {
       }
     });
   });
+
+  group('resumable download range validation', () {
+    test('parses a valid partial response and total length', () {
+      expect(
+        LocalGgufRuntimeService.parseContentRange('bytes 194-999/1000'),
+        (start: 194, total: 1000),
+      );
+    });
+
+    test('allows an unknown total while retaining the start offset', () {
+      expect(
+        LocalGgufRuntimeService.parseContentRange('bytes 194-999/*'),
+        (start: 194, total: null),
+      );
+    });
+
+    test('rejects malformed or internally inconsistent range headers', () {
+      for (final value in <String>[
+        'bytes nope-999/1000',
+        'bytes 900-899/1000',
+        'bytes 900-999/999',
+        'items 194-999/1000',
+        'bytes 194-999',
+      ]) {
+        expect(
+          LocalGgufRuntimeService.parseContentRange(value),
+          isNull,
+          reason: value,
+        );
+      }
+    });
+  });
+
   group('memory-aware context sizing', () {
     test('uses a conservative context when RAM probing is unavailable', () {
       expect(
