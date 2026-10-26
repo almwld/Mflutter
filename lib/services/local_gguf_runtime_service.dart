@@ -100,14 +100,12 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         final append = response.statusCode == HttpStatus.partialContent;
         if (append) {
           final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
-          final match = contentRange == null
-              ? null
-              : RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(contentRange);
-          if (offset == 0 || match == null || int.tryParse(match.group(1)!) != offset) {
+          final range = contentRange == null ? null : parseContentRange(contentRange);
+          if (offset == 0 || range == null || range.start != offset) {
             await response.drain<void>();
             throw HttpException('استجابة الاستئناف لا تطابق حجم الملف الجزئي؛ بقي الملف الجزئي محفوظًا.');
           }
-          if (match.group(3) != '*') expectedTotal = int.tryParse(match.group(3)!);
+          expectedTotal = range.total;
         } else {
           // If the server ignores Range, truncate and restart instead of
           // appending a second copy of the complete model.
@@ -119,7 +117,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         var received = offset;
         var lastUpdate = DateTime.fromMillisecondsSinceEpoch(0);
         try {
-          await for (final chunk in response) {
+          await for (final chunk in response.timeout(const Duration(seconds: 60))) {
             if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
             await output.writeFrom(chunk);
             received += chunk.length;
@@ -427,6 +425,21 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     if (freeRamBytes < 3 * gib) return 512;
     if (freeRamBytes < 5 * gib) return math.min(requested, 1024);
     return requested;
+  }
+
+
+  /// Parses and validates a server Content-Range header for resumable transfer.
+  @visibleForTesting
+  static ({int start, int? total})? parseContentRange(String value) {
+    final match = RegExp(r'^bytes (\\d+)-(\\d+)/(\\d+|\\*)$')
+        .firstMatch(value.trim());
+    if (match == null) return null;
+    final start = int.tryParse(match.group(1)!);
+    final end = int.tryParse(match.group(2)!);
+    final total = match.group(3) == '*' ? null : int.tryParse(match.group(3)!);
+    if (start == null || end == null || end < start) return null;
+    if (match.group(3) != '*' && (total == null || total <= end)) return null;
+    return (start: start, total: total);
   }
 
   /// Checks the fixed GGUF v2/v3 header before any large native allocation.
