@@ -44,6 +44,34 @@ void main() {
     expect(restored.isCalibrated, isFalse);
   });
 
+  test('non-finite live sensor frames do not poison gaze coordinates', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+
+    final point = service.map(
+      yawDegrees: double.nan,
+      pitchDegrees: 12,
+      width: 1000,
+      height: 800,
+      confidence: .9,
+    );
+    expect(point.x, isFinite);
+    expect(point.y, isFinite);
+    expect(point.x, closeTo(500, .001));
+    expect(point.y, closeTo(400, .001));
+    expect(point.confidence, 0);
+
+    final invalidSize = service.map(
+      yawDegrees: 0,
+      pitchDegrees: 0,
+      width: double.infinity,
+      height: 800,
+    );
+    expect(invalidSize.x, 0);
+    expect(invalidSize.y, 0);
+    expect(invalidSize.confidence, 0);
+  });
+
   test('degenerate sensor readings are rejected without saving calibration', () async {
     final service = GazeFusionService.instance;
     await service.clear();
