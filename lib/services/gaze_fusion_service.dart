@@ -55,6 +55,19 @@ class GazeFusionService {
     required double height,
     double confidence = 1.0,
   }) {
+    final validSize = width.isFinite && height.isFinite && width > 0 && height > 0;
+    final validSample = yawDegrees.isFinite &&
+        pitchDegrees.isFinite &&
+        confidence.isFinite;
+    if (!validSize || !validSample) {
+      // Ignore corrupt sensor frames without poisoning the EMA with NaN.
+      return GazeScreenPoint(
+        x: validSize ? _emaX * width : 0,
+        y: validSize ? _emaY * height : 0,
+        confidence: 0,
+      );
+    }
+
     final xRaw = isCalibrated ? (_yawScale * yawDegrees + _yawBias) : 0.5 + yawDegrees / 360.0;
     final yRaw = isCalibrated ? (_pitchScale * pitchDegrees + _pitchBias) : 0.5 - pitchDegrees / 360.0;
     final x = _emaX + _alpha * (xRaw.clamp(0.0, 1.0) - _emaX);
