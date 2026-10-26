@@ -291,6 +291,8 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   final _runtime = LocalGgufRuntimeService.instance;
   bool _hasModel = false;
   bool _working = false;
+  int _downloadReceivedBytes = 0;
+  int? _downloadTotalBytes;
 
   @override
   void initState() {
@@ -310,6 +312,25 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   Future<void> _checkModel() async {
     final valid = await _runtime.hasValidModel();
     if (mounted) setState(() => _hasModel = valid);
+  }
+
+  Future<void> _downloadRecommendedModel() async {
+    setState(() {
+      _downloadReceivedBytes = 0;
+      _downloadTotalBytes = null;
+    });
+    await _run(() async {
+      await _runtime.downloadRecommendedModel(
+        onProgress: (receivedBytes, totalBytes) {
+          if (!mounted) return;
+          setState(() {
+            _downloadReceivedBytes = receivedBytes;
+            _downloadTotalBytes = totalBytes;
+          });
+        },
+      );
+      await _checkModel();
+    });
   }
 
   Future<void> _importModel() async {
@@ -392,8 +413,30 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
           children: [
             Align(alignment: Alignment.centerRight, child: Text(_runtime.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 11))),
+            if (_runtime.isDownloading) ...[
+              const SizedBox(height: 9),
+              LinearProgressIndicator(
+                value: _downloadTotalBytes != null && _downloadTotalBytes! > 0
+                    ? (_downloadReceivedBytes / _downloadTotalBytes!).clamp(0.0, 1.0)
+                    : null,
+                minHeight: 5,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                _downloadTotalBytes != null && _downloadTotalBytes! > 0
+                    ? '${(_downloadReceivedBytes / (1024 * 1024)).toStringAsFixed(1)} / ${(_downloadTotalBytes! / (1024 * 1024)).toStringAsFixed(1)} MiB'
+                    : '${(_downloadReceivedBytes / (1024 * 1024)).toStringAsFixed(1)} MiB تم تنزيلها',
+                style: const TextStyle(color: Colors.white60, fontSize: 10),
+              ),
+            ],
             const SizedBox(height: 9),
             Wrap(spacing: 7, runSpacing: 7, children: [
+              if (!_hasModel && !_runtime.isLoaded)
+                OutlinedButton.icon(
+                  onPressed: busy ? null : _downloadRecommendedModel,
+                  icon: const Icon(Icons.download_rounded, size: 17),
+                  label: const Text('تنزيل النموذج الموصى به • 2.71 GB'),
+                ),
               OutlinedButton.icon(
                 onPressed: busy || _runtime.isLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open_rounded, size: 17),
@@ -406,6 +449,12 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
                 icon: Icon(_runtime.isLoaded ? Icons.stop_circle_outlined : Icons.play_arrow_rounded),
                 label: Text(_runtime.isLoaded ? 'إيقاف النموذج' : 'تحميل النموذج'),
               ),
+              if (_runtime.isDownloading)
+                OutlinedButton.icon(
+                  onPressed: _runtime.cancelDownload,
+                  icon: const Icon(Icons.cancel_outlined, size: 17),
+                  label: const Text('إيقاف التنزيل مع حفظ التقدم'),
+                ),
               if (_runtime.isGenerating)
                 OutlinedButton.icon(
                   onPressed: _working ? null : () => _run(_runtime.stopGeneration),
@@ -415,7 +464,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
             ]),
             const SizedBox(height: 6),
             const Text(
-              'اختر ملف .gguf موجودًا مسبقًا في ذاكرة الهاتف. يُنسخ إلى مساحة التطبيق الخاصة ولا يبدأ الاستدلال حتى ينجح تحميله فعليًا؛ يلزم توفر RAM ومساحة تخزين كافيتان.',
+              'يمكن تنزيل النموذج مباشرة مع استئناف الملف الجزئي عند انقطاع الاتصال، أو استيراد ملف .gguf موجود. يُحفظ الملف داخل مساحة التطبيق الخاصة، ولا يبدأ الاستدلال حتى ينجح تحميله في llama.cpp؛ يلزم توفر مساحة تخزين وذاكرة RAM كافيتان.',
               style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.5),
             ),
           ],
