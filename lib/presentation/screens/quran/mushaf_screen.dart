@@ -41,6 +41,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   late final AnimationController _livingGlow;
   late final TransformationController _mushafZoomController;
   bool _zoomMode = false;
+  bool _readerControlsVisible = true;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   static const _paper = Color(0xFFF8F1E4);
@@ -64,8 +65,18 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
+  Future<void> _toggleReaderControls() async {
+    final show = !_readerControlsVisible;
+    if (mounted) setState(() => _readerControlsVisible = show);
+    await SystemChrome.setEnabledSystemUIMode(
+      show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+    );
+  }
+
   @override
   void dispose() {
+    // Never leave system status/navigation bars hidden after exiting the reader.
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _livingPulse.dispose();
     _livingGlow.dispose();
     _mushafZoomController.dispose();
@@ -389,7 +400,10 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       key: _scaffoldKey,
       backgroundColor: pageBackground,
       body: SafeArea(
-        child: Stack(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _toggleReaderControls,
+          child: Stack(
           children: [
             const Positioned.fill(
               child: MushafNebula(),
@@ -521,18 +535,20 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                 ),
               ),
             ),
-            _topOverlay(),
-            Positioned(
-              top: 48,
-              right: 18,
-              child: _roundButton(
-                icon: Icons.palette_outlined,
-                onPressed: _showPageThemePicker,
+            if (_readerControlsVisible) _topOverlay(),
+            if (_readerControlsVisible)
+              Positioned(
+                top: 48,
+                right: 18,
+                child: _roundButton(
+                  icon: Icons.palette_outlined,
+                  onPressed: _showPageThemePicker,
+                ),
               ),
-            ),
-            _pageProgress(),
-            _bottomOverlay(),
+            if (_readerControlsVisible) _pageProgress(),
+            if (_readerControlsVisible) _bottomOverlay(),
           ],
+          ),
         ),
       ),
     );
