@@ -128,16 +128,19 @@ class GazeFusionService {
   }
 
   (double, double) _fitAxis(List<double> input, List<double> target) {
-    var sumX = 0.0, sumY = 0.0, sumXX = 0.0, sumXY = 0.0;
+    var sumX = 0.0, sumY = 0.0, sumXX = 0.0, sumYY = 0.0, sumXY = 0.0;
     for (var i = 0; i < input.length; i++) {
       sumX += input[i];
       sumY += target[i];
       sumXX += input[i] * input[i];
+      sumYY += target[i] * target[i];
       sumXY += input[i] * target[i];
     }
     final n = input.length.toDouble();
     final det = n * sumXX - sumX * sumX;
-    if (!det.isFinite || det.abs() < 1e-9) {
+    final targetDet = n * sumYY - sumY * sumY;
+    if (!det.isFinite || det.abs() < 1e-9 ||
+        !targetDet.isFinite || targetDet.abs() < 1e-9) {
       throw StateError(
         'المعايرة غير صالحة: حرّك الرأس بين أهداف مختلفة ثم أعد المحاولة.',
       );
