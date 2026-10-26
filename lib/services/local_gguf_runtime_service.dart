@@ -431,8 +431,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   /// Parses and validates a server Content-Range header for resumable transfer.
   @visibleForTesting
   static ({int start, int? total})? parseContentRange(String value) {
-    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])
-        .firstMatch(value.trim());
+    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$').firstMatch(value.trim());
     if (match == null) return null;
     final start = int.tryParse(match.group(1)!);
     final end = int.tryParse(match.group(2)!);
