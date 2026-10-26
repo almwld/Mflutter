@@ -73,8 +73,34 @@ class GazeFusionService {
     if (samples.length < 9) {
       throw StateError('تحتاج المعايرة إلى تسع نقاط على الأقل.');
     }
-    final yaw = _fitAxis(samples.map((s) => s.yawDegrees).toList(), samples.map((s) => s.targetX).toList());
-    final pitch = _fitAxis(samples.map((s) => s.pitchDegrees).toList(), samples.map((s) => s.targetY).toList());
+    for (final sample in samples) {
+      final values = <double>[
+        sample.yawDegrees,
+        sample.pitchDegrees,
+        sample.targetX,
+        sample.targetY,
+      ];
+      if (values.any((value) => !value.isFinite)) {
+        throw StateError('بيانات المعايرة تحتوي على قيمة غير صالحة.');
+      }
+      if (sample.targetX < 0 || sample.targetX > 1 ||
+          sample.targetY < 0 || sample.targetY > 1) {
+        throw StateError('إحداثيات أهداف المعايرة يجب أن تكون بين 0 و1.');
+      }
+    }
+
+    // Calculate both axes before mutating or persisting the current profile.
+    // Constant sensor readings cannot define a mapping and must not silently
+    // be accepted as a successful identity calibration.
+    final yaw = _fitAxis(
+      samples.map((s) => s.yawDegrees).toList(),
+      samples.map((s) => s.targetX).toList(),
+    );
+    final pitch = _fitAxis(
+      samples.map((s) => s.pitchDegrees).toList(),
+      samples.map((s) => s.targetY).toList(),
+    );
+
     _yawScale = yaw.$1;
     _yawBias = yaw.$2;
     _pitchScale = pitch.$1;
@@ -91,13 +117,24 @@ class GazeFusionService {
   (double, double) _fitAxis(List<double> input, List<double> target) {
     var sumX = 0.0, sumY = 0.0, sumXX = 0.0, sumXY = 0.0;
     for (var i = 0; i < input.length; i++) {
-      sumX += input[i]; sumY += target[i];
-      sumXX += input[i] * input[i]; sumXY += input[i] * target[i];
+      sumX += input[i];
+      sumY += target[i];
+      sumXX += input[i] * input[i];
+      sumXY += input[i] * target[i];
     }
     final n = input.length.toDouble();
     final det = n * sumXX - sumX * sumX;
-    if (det.abs() < 1e-9) return (1.0, 0.0);
-    return ((n * sumXY - sumX * sumY) / det, (sumXX * sumY - sumX * sumXY) / det);
+    if (!det.isFinite || det.abs() < 1e-9) {
+      throw StateError(
+        'المعايرة غير صالحة: حرّك الرأس بين أهداف مختلفة ثم أعد المحاولة.',
+      );
+    }
+    final scale = (n * sumXY - sumX * sumY) / det;
+    final bias = (sumXX * sumY - sumX * sumXY) / det;
+    if (!scale.isFinite || !bias.isFinite) {
+      throw StateError('تعذر حساب معاملات معايرة مستقرة.');
+    }
+    return (scale, bias);
   }
 }
 
