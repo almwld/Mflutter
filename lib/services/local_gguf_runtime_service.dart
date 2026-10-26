@@ -83,11 +83,26 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
         final response = await request.close().timeout(const Duration(seconds: 90));
         if (response.statusCode == HttpStatus.requestedRangeNotSatisfiable &&
-            offset > 0 && !retryFromStart) {
+            offset > 0) {
+          final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
+          final match = contentRange == null
+              ? null
+              : RegExp(r'^bytes [*]/([0-9]+)$').firstMatch(contentRange.trim());
+          final total = match == null ? null : int.tryParse(match.group(1)!);
           await response.drain<void>();
-          if (await partial.exists()) await partial.delete();
-          retryFromStart = true;
-          continue;
+          // Recover if the process stopped after the final byte arrived but
+          // before the partial file was atomically promoted to the model file.
+          if (total != null && offset == total && await _isValidGguf(partial)) {
+            await partial.rename(target.path);
+            await _selectModel(recommendedModelFileName);
+            _status = 'اكتمل تنزيل النموذج والتحقق الأولي منه.';
+            return target;
+          }
+          if (!retryFromStart) {
+            if (await partial.exists()) await partial.delete();
+            retryFromStart = true;
+            continue;
+          }
         }
         if (response.statusCode != HttpStatus.ok &&
             response.statusCode != HttpStatus.partialContent) {
@@ -115,6 +130,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
         final output = await partial.open(mode: append ? FileMode.append : FileMode.writeOnly);
         var received = offset;
+        onProgress?.call(received, expectedTotal);
         var lastUpdate = DateTime.fromMillisecondsSinceEpoch(0);
         try {
           await for (final chunk in response.timeout(const Duration(seconds: 60))) {
@@ -158,7 +174,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       }
     } catch (error) {
       _status = _downloadCancelled
-          ? 'أُوقف التنزيل؛ حُفظ الجزء المكتمل لاستئنافه لاحقًا.'
+          ? 'أُلغي التنزيل؛ حُفظ الجزء المكتمل لاستئنافه لاحقًا.'
           : 'تعذر تنزيل النموذج: $error';
       rethrow;
     } finally {
