@@ -86,6 +86,11 @@ void main() {
           (verse.ayahNumber == 227 || verse.ayahNumber == 229),
     );
     expect(target.length, 2);
+    expect(
+      results.map((verse) => '${verse.surahNumber}:${verse.ayahNumber}').toSet(),
+      <String>{'2:227', '2:229'},
+      reason: 'Verse text matches must take priority over the surah title.',
+    );
     for (final verse in target) {
       final expectedPage = MushafSource.pageForVerse(
         verse.surahNumber,
@@ -95,6 +100,12 @@ void main() {
       expect(verse.juzNumber, MushafSource.juzForPage(expectedPage));
       expect(verse.pageNumber, greaterThan(1));
     }
+  });
+
+  test('surah-title lookup is used only when verse text has no match', () async {
+    final results = await QuranService().search('الفاتحة', limit: 20);
+    expect(results, hasLength(7));
+    expect(results.every((verse) => verse.surahNumber == 1), isTrue);
   });
 
 
