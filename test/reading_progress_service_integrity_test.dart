@@ -48,6 +48,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('quran.last_page', -5);
     expect(await ReadingProgressService.getLastPage(), 1);
+    await prefs.remove('quran.last_page');
     expect(await ReadingProgressService.getLastPage(fallback: 999), 604);
 
     await ReadingProgressService.saveLastPage(0);
