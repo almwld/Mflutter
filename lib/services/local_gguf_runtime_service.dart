@@ -114,6 +114,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         }
 
         int? expectedTotal;
+        int? expectedResponseBytes;
         final append = response.statusCode == HttpStatus.partialContent;
         if (append) {
           final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
@@ -123,6 +124,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
             throw HttpException('استجابة الاستئناف لا تطابق حجم الملف الجزئي؛ بقي الملف الجزئي محفوظًا.');
           }
           expectedTotal = range.total;
+          expectedResponseBytes = range.end - range.start + 1;
+          if (response.contentLength >= 0 &&
+              response.contentLength != expectedResponseBytes) {
+            await response.drain<void>();
+            throw HttpException(
+              'طول استجابة الاستئناف لا يطابق ترويسة Content-Range؛ حُفظ الملف الجزئي.',
+            );
+          }
         } else {
           // If the server ignores Range, truncate and restart instead of
           // appending a second copy of the complete model.
@@ -132,6 +141,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
         final output = await partial.open(mode: append ? FileMode.append : FileMode.writeOnly);
         var received = offset;
+        var receivedThisResponse = 0;
         onProgress?.call(received, expectedTotal);
         var lastUpdate = DateTime.fromMillisecondsSinceEpoch(0);
         try {
@@ -139,6 +149,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
             if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
             await output.writeFrom(chunk);
             received += chunk.length;
+            receivedThisResponse += chunk.length;
             final now = DateTime.now();
             if (now.difference(lastUpdate) >= const Duration(milliseconds: 500)) {
               lastUpdate = now;
@@ -155,6 +166,12 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         }
 
         if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
+        if (expectedResponseBytes != null &&
+            receivedThisResponse != expectedResponseBytes) {
+          throw HttpException(
+            'استجابة الاستئناف غير مكتملة: وصل $receivedThisResponse بايت من أصل $expectedResponseBytes؛ أعد المحاولة لاستكمال التنزيل.',
+          );
+        }
         final actualLength = await partial.length();
         onProgress?.call(actualLength, expectedTotal);
         if (expectedTotal != null && actualLength != expectedTotal) {
@@ -447,8 +464,56 @@ class LocalGgufRuntimeService extends ChangeNotifier {
 
   /// Parses and validates a server Content-Range header for resumable transfer.
   @visibleForTesting
-  static ({int start, int? total})? parseContentRange(String value) {
-    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$')
+  static ({int start, int end, int? total})? parseContentRange(String value) {
+    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])
+
+  /// Checks the fixed GGUF v2/v3 header before any large native allocation.
+  /// This is an early structural check, not a substitute for llama.cpp loading
+  /// the complete model and validating its metadata/tensor payload.
+  @visibleForTesting
+  static bool isGgufHeaderValid(List<int> header, int fileLength) {
+    if (fileLength < 24 || header.length < 24) return false;
+    if (header[0] != 0x47 ||
+        header[1] != 0x47 ||
+        header[2] != 0x55 ||
+        header[3] != 0x46) {
+      return false;
+    }
+    final bytes = Uint8List.fromList(header.take(24).toList(growable: false));
+    final data = ByteData.sublistView(bytes);
+    final version = data.getUint32(4, Endian.little);
+    if (version != 2 && version != 3) return false;
+    final tensorCount = data.getUint64(8, Endian.little);
+    final metadataCount = data.getUint64(16, Endian.little);
+    return tensorCount > 0 &&
+        tensorCount <= 1000000 &&
+        metadataCount > 0 &&
+        metadataCount <= 100000;
+  }
+
+  Future<bool> _isValidGguf(File file) async {
+    try {
+      final length = await file.length();
+      if (!await file.exists() || length < _minimumGgufBytes) return false;
+      final handle = await file.open();
+      try {
+        final header = await handle.read(24);
+        return isGgufHeaderValid(header, length);
+      } finally {
+        await handle.close();
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _ensureAndroid() {
+    if (!Platform.isAndroid) {
+      throw UnsupportedError('محرك llama_flutter_android متاح على Android فقط.');
+    }
+  }
+}
+)
         .firstMatch(value.trim());
     if (match == null) return null;
     final start = int.tryParse(match.group(1)!);
@@ -456,7 +521,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     final total = match.group(3) == '*' ? null : int.tryParse(match.group(3)!);
     if (start == null || end == null || end < start) return null;
     if (match.group(3) != '*' && (total == null || total <= end)) return null;
-    return (start: start, total: total);
+    return (start: start, end: end, total: total);
   }
 
   /// Checks the fixed GGUF v2/v3 header before any large native allocation.
