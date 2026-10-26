@@ -343,7 +343,6 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   @override
   Widget build(BuildContext context) {
     final busy = _working || _runtime.isBusy || _runtime.isGenerating;
-    final progress = _runtime.downloadProgress;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 7),
       decoration: BoxDecoration(
@@ -373,13 +372,6 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
           children: [
             Align(alignment: Alignment.centerRight, child: Text(_runtime.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 11))),
-            if (progress != null && _runtime.isBusy) ...[
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: progress),
-              const SizedBox(height: 3),
-              Text('${(progress * 100).toStringAsFixed(1)}%',
-                  style: const TextStyle(color: Colors.white54, fontSize: 10)),
-            ],
             const SizedBox(height: 9),
             Wrap(spacing: 7, runSpacing: 7, children: [
               OutlinedButton.icon(
@@ -387,17 +379,6 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
                 icon: const Icon(Icons.file_open_rounded, size: 17),
                 label: const Text('استيراد ملف GGUF'),
               ),
-              OutlinedButton.icon(
-                onPressed: busy || _runtime.isLoaded ? null : () => _run(_runtime.downloadDefaultModel),
-                icon: const Icon(Icons.download_rounded, size: 17),
-                label: const Text('تنزيل 3arabLM'),
-              ),
-              if (_runtime.isDownloading)
-                OutlinedButton.icon(
-                  onPressed: () async => _runtime.cancelDownload(),
-                  icon: const Icon(Icons.cancel_outlined, size: 17),
-                  label: const Text('إلغاء التنزيل'),
-                ),
               FilledButton.icon(
                 onPressed: busy ? null : _runtime.isLoaded
                     ? () => _run(_runtime.unloadModel)
