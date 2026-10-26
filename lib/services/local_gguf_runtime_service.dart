@@ -101,6 +101,10 @@ class LocalGgufRuntimeService extends ChangeNotifier {
             retryFromStart = true;
             continue;
           }
+          throw HttpException(
+            'تعذر استئناف التنزيل بعد إعادة المحاولة؛ بقي الملف الجزئي محفوظًا.',
+            uri: Uri.parse(recommendedModelUrl),
+          );
         }
         if (response.statusCode != HttpStatus.ok &&
             response.statusCode != HttpStatus.partialContent) {
