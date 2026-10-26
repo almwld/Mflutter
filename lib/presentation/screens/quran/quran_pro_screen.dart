@@ -101,7 +101,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     });
   }
 
-  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'dotless', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
+  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'kufi', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
 
   TextStyle _textStyle() {
     return TextStyle(
@@ -124,7 +124,9 @@ class _QuranProScreenState extends State<QuranProScreen>
           ? 4
           : _mode == QuranDisplayMode.hieroglyphic
               ? 2.5
-              : 1.5,
+              : _mode == QuranDisplayMode.kufi
+                  ? 2.5
+                  : 1.5,
     );
   }
 
