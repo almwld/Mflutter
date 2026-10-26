@@ -29,10 +29,31 @@ class GazeFusionService {
 
   Future<void> load() async {
     final p = await SharedPreferences.getInstance();
-    _yawScale = p.getDouble('gaze_cal_yaw_scale') ?? 1.0;
-    _yawBias = p.getDouble('gaze_cal_yaw_bias') ?? 0.0;
-    _pitchScale = p.getDouble('gaze_cal_pitch_scale') ?? 1.0;
-    _pitchBias = p.getDouble('gaze_cal_pitch_bias') ?? 0.0;
+    final yawScale = p.getDouble('gaze_cal_yaw_scale') ?? 1.0;
+    final yawBias = p.getDouble('gaze_cal_yaw_bias') ?? 0.0;
+    final pitchScale = p.getDouble('gaze_cal_pitch_scale') ?? 1.0;
+    final pitchBias = p.getDouble('gaze_cal_pitch_bias') ?? 0.0;
+    if (![yawScale, yawBias, pitchScale, pitchBias].every((value) => value.isFinite)) {
+      _yawScale = 1.0;
+      _yawBias = 0.0;
+      _pitchScale = 1.0;
+      _pitchBias = 0.0;
+      _calibrated = false;
+      for (final key in [
+        'gaze_cal_yaw_scale',
+        'gaze_cal_yaw_bias',
+        'gaze_cal_pitch_scale',
+        'gaze_cal_pitch_bias',
+        'gaze_calibrated',
+      ]) {
+        await p.remove(key);
+      }
+      return;
+    }
+    _yawScale = yawScale;
+    _yawBias = yawBias;
+    _pitchScale = pitchScale;
+    _pitchBias = pitchBias;
     _calibrated = p.getBool('gaze_calibrated') ??
         (_yawScale != 1.0 || _yawBias != 0.0 || _pitchScale != 1.0 || _pitchBias != 0.0);
   }
@@ -70,6 +91,13 @@ class GazeFusionService {
 
     final xRaw = isCalibrated ? (_yawScale * yawDegrees + _yawBias) : 0.5 + yawDegrees / 360.0;
     final yRaw = isCalibrated ? (_pitchScale * pitchDegrees + _pitchBias) : 0.5 - pitchDegrees / 360.0;
+    if (!xRaw.isFinite || !yRaw.isFinite) {
+      return GazeScreenPoint(
+        x: _emaX * width,
+        y: _emaY * height,
+        confidence: 0,
+      );
+    }
     final x = _emaX + _alpha * (xRaw.clamp(0.0, 1.0) - _emaX);
     final y = _emaY + _alpha * (yRaw.clamp(0.0, 1.0) - _emaY);
     _emaX = x; _emaY = y;
