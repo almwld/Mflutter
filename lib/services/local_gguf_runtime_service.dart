@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:llama_flutter_android/llama_flutter_android.dart';
@@ -149,11 +151,29 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         // longer exposed to chat even if its cleanup reports an error.
       }
       final controller = LlamaController();
+      // A quantized 4B model can still exhaust RAM even when its GGUF header
+      // is valid. Probe available memory first and reduce KV-cache context on
+      // constrained phones. If probing is unavailable, use a conservative
+      // context rather than assuming the device has enough free memory.
+      var effectiveContextSize = recommendedContextSize(
+        freeRamBytes: 0,
+        requestedContextSize: contextSize,
+      );
       try {
+        try {
+          final gpuInfo = await controller.detectGpu();
+          effectiveContextSize = recommendedContextSize(
+            freeRamBytes: gpuInfo.freeRamBytes,
+            requestedContextSize: contextSize,
+          );
+        } catch (_) {
+          // Some devices/builds cannot report GPU/RAM details. CPU loading
+          // remains available with the conservative fallback context.
+        }
         await controller.loadModel(
           modelPath: file.path,
           threads: threads.clamp(1, 8).toInt(),
-          contextSize: contextSize.clamp(512, 4096).toInt(),
+          contextSize: effectiveContextSize,
           gpuLayers: 0,
         );
       } catch (_) {
@@ -166,7 +186,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       _controller = controller;
       _loadedPath = file.path;
       _loaded = true;
-      _status = 'تم تحميل النموذج محليًا؛ الاستدلال يعمل على الجهاز دون خادم.';
+      _status = 'تم تحميل النموذج محليًا؛ الاستدلال يعمل على الجهاز دون خادم. سياق الذاكرة: $effectiveContextSize رمز (تقدير RAM تقريبي).';
     } catch (error) {
       _status = 'فشل تحميل GGUF في محرك الاستدلال: $error';
       rethrow;
@@ -241,6 +261,22 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     } finally {
       notifyListeners();
     }
+  }
+
+  /// Chooses a conservative KV-cache context from available system RAM.
+  /// This is only a heuristic: free RAM can change and does not guarantee
+  /// that a large model will fit. The caller may request a smaller context.
+  @visibleForTesting
+  static int recommendedContextSize({
+    required int freeRamBytes,
+    int requestedContextSize = 2048,
+  }) {
+    final requested = requestedContextSize.clamp(512, 4096).toInt();
+    if (freeRamBytes <= 0) return math.min(requested, 1024);
+    const gib = 1024 * 1024 * 1024;
+    if (freeRamBytes < 3 * gib) return 512;
+    if (freeRamBytes < 5 * gib) return math.min(requested, 1024);
+    return requested;
   }
 
   /// Checks the fixed GGUF v2/v3 header before any large native allocation.
