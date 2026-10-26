@@ -432,6 +432,8 @@ class _TaskProgress extends StatelessWidget {
   Widget build(BuildContext context) {
     final done = task.steps.where((s) => s.status == StepStatus.done).length;
     final failed = task.steps.where((s) => s.status == StepStatus.failed).length;
+    final canControl = task.status == TaskStatus.running ||
+        task.status == TaskStatus.paused;
     return Container(
       margin: const EdgeInsets.fromLTRB(14, 0, 14, 7),
       padding: const EdgeInsets.all(10),
@@ -456,10 +458,20 @@ class _TaskProgress extends StatelessWidget {
           Text('$done/${task.steps.length} مكتملة${failed > 0 ? ' • $failed فاشلة' : ''}',
               style: const TextStyle(color: Colors.white54, fontSize: 10)),
           const Spacer(),
-          IconButton(visualDensity: VisualDensity.compact, onPressed: provider.pauseOrResume,
-              icon: Icon(provider.paused ? Icons.play_arrow : Icons.pause, color: AppColors.primaryGold, size: 19)),
-          IconButton(visualDensity: VisualDensity.compact, onPressed: provider.cancel,
-              icon: const Icon(Icons.stop_circle_outlined, color: Colors.redAccent, size: 19)),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: canControl ? provider.pauseOrResume : null,
+            tooltip: task.status == TaskStatus.paused ? 'استئناف المهمة' : 'إيقاف مؤقت',
+            icon: Icon(provider.paused ? Icons.play_arrow : Icons.pause,
+                color: canControl ? AppColors.primaryGold : Colors.white24, size: 19),
+          ),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            onPressed: canControl ? provider.cancel : null,
+            tooltip: 'إلغاء المهمة',
+            icon: Icon(Icons.stop_circle_outlined,
+                color: canControl ? Colors.redAccent : Colors.white24, size: 19),
+          ),
         ]),
       ]),
     );
