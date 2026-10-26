@@ -92,7 +92,13 @@ class ReadingProgressService {
   static Future<int> getCurrentStreak() async {
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
-    var cursor = DateTime.now();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    // Keep yesterday's streak alive until the user either reads today or
+    // misses a full calendar day, matching the persistent DailyStreakService.
+    var cursor = days.contains(_dateKey(today))
+        ? today
+        : today.subtract(const Duration(days: 1));
     var streak = 0;
 
     while (days.contains(_dateKey(cursor))) {
