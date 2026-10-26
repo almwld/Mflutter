@@ -72,6 +72,30 @@ void main() {
     expect(invalidSize.confidence, 0);
   });
 
+  test('corrupt persisted calibration is cleared before mapping', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('gaze_cal_yaw_scale', double.nan);
+    await prefs.setDouble('gaze_cal_yaw_bias', 0);
+    await prefs.setDouble('gaze_cal_pitch_scale', 1);
+    await prefs.setDouble('gaze_cal_pitch_bias', 0);
+    await prefs.setBool('gaze_calibrated', true);
+
+    await service.load();
+    expect(service.isCalibrated, isFalse);
+    expect(prefs.getBool('gaze_calibrated'), isNull);
+
+    final point = service.map(
+      yawDegrees: 10,
+      pitchDegrees: -10,
+      width: 400,
+      height: 800,
+    );
+    expect(point.x.isFinite, isTrue);
+    expect(point.y.isFinite, isTrue);
+  });
+
   test('degenerate sensor readings are rejected without saving calibration', () async {
     final service = GazeFusionService.instance;
     await service.clear();
