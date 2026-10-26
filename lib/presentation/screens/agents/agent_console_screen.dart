@@ -313,15 +313,35 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
   }
 
   Future<void> _importModel() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['gguf'],
-      allowMultiple: false,
-      withData: false,
-    );
-    final path = picked == null || picked.files.isEmpty ? null : picked.files.first.path;
-    if (path == null) return;
-    await _run(() async { await _runtime.importModel(path); await _checkModel(); });
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['gguf'],
+        allowMultiple: false,
+        withData: false,
+      );
+      if (!mounted || picked == null || picked.files.isEmpty) return;
+
+      final path = picked.files.first.path;
+      if (path == null || path.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تعذر الوصول إلى الملف المحدد. اختر ملف GGUF من مدير الملفات في الهاتف.'),
+          ),
+        );
+        return;
+      }
+
+      await _run(() async {
+        await _runtime.importModel(path);
+        await _checkModel();
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر اختيار ملف النموذج من ذاكرة الهاتف: $error')),
+      );
+    }
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -377,7 +397,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
               OutlinedButton.icon(
                 onPressed: busy || _runtime.isLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open_rounded, size: 17),
-                label: const Text('استيراد ملف GGUF'),
+                label: const Text('استيراد من ذاكرة الهاتف'),
               ),
               FilledButton.icon(
                 onPressed: busy ? null : _runtime.isLoaded
@@ -395,7 +415,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
             ]),
             const SizedBox(height: 6),
             const Text(
-              'يمكن استيراد أي ملف GGUF من الهاتف. لا يُعد النموذج جاهزًا حتى ينجح تحميله فعليًا، ويلزم توفر RAM ومساحة تخزين كافيتان.',
+              'اختر ملف .gguf موجودًا مسبقًا في ذاكرة الهاتف. يُنسخ إلى مساحة التطبيق الخاصة ولا يبدأ الاستدلال حتى ينجح تحميله فعليًا؛ يلزم توفر RAM ومساحة تخزين كافيتان.',
               style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.5),
             ),
           ],
