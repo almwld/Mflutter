@@ -44,6 +44,29 @@ void main() {
     );
   });
 
+  test('yesterday streak remains current until a full day is missed', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final today = DateTime.now();
+    String key(DateTime date) =>
+        '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dayBefore = today.subtract(const Duration(days: 2));
+
+    await prefs.setStringList(
+      'quran.reading_days',
+      <String>[key(yesterday), key(dayBefore)],
+    );
+    expect(await ReadingProgressService.getCurrentStreak(), 2);
+
+    await prefs.setStringList(
+      'quran.reading_days',
+      <String>[key(today), key(yesterday), key(dayBefore)],
+    );
+    expect(await ReadingProgressService.getCurrentStreak(), 3);
+  });
+
   test('out-of-range last-page values and fallbacks are clamped', () async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('quran.last_page', -5);
