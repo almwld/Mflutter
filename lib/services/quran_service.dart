@@ -144,12 +144,23 @@ class QuranService {
     if (needle.isEmpty || limit <= 0) return const <Verse>[];
 
     final ayahs = await QuranLoaderService.loadAllAyahs();
+
+    // Prefer actual verse-text matches. Matching the surah title in the same
+    // predicate used to return every ayah of a surah when only one or two
+    // verses contained the requested word (for example, "الطلاق").
+    final textMatches = ayahs
+        .where((ayah) => _matchesSearch(ayah.text, needle))
+        .toList(growable: false);
+    if (textMatches.isNotEmpty) {
+      return textMatches.take(limit).toList(growable: false);
+    }
+
+    // Preserve title-based navigation as a fallback for queries that do not
+    // occur in any verse text.
     return ayahs
-        .where((a) =>
-            _matchesSearch(a.text, needle) ||
-            _matchesSearch(a.surahName, needle))
+        .where((ayah) => _matchesSearch(ayah.surahName, needle))
         .take(limit)
-        .toList();
+        .toList(growable: false);
   }
 
   static const List<int> _verseCounts = [
