@@ -165,7 +165,12 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         }
         final actualLength = await partial.length();
         onProgress?.call(actualLength, expectedTotal);
-        if (expectedTotal != null && actualLength != expectedTotal) {
+        if (expectedTotal == null) {
+          throw HttpException(
+            'لم يؤكد الخادم الحجم الكامل للملف؛ حُفظ التنزيل الجزئي ولم يُعتمد كنموذج مكتمل.',
+          );
+        }
+        if (actualLength != expectedTotal) {
           throw HttpException(
             'التنزيل غير مكتمل: وصل $actualLength بايت من أصل $expectedTotal. أعد المحاولة لاستكماله.',
           );
