@@ -14,6 +14,11 @@ class ChatProvider extends ChangeNotifier {
   final OllamaService _localAi = OllamaService();
   final LocalGgufRuntimeService _gguf = LocalGgufRuntimeService.instance;
 
+  // Quran data is immutable for the lifetime of this provider. Keep one
+  // shared indexing future so consecutive messages do not reload and rebuild
+  // the 6,236-verse search index every time.
+  Future<void>? _quranIndexFuture;
+
   void _onGgufChanged() => notifyListeners();
 
   bool get hasActiveLocalModel => _gguf.isLoaded || _localAi.isRunning;
@@ -36,6 +41,33 @@ class ChatProvider extends ChangeNotifier {
     return _localAi.checkAvailability();
   }
 
+  Future<void> _ensureQuranIndex() {
+    final cached = _quranIndexFuture;
+    if (cached != null) return cached;
+
+    final build = _buildQuranIndex();
+    _quranIndexFuture = build;
+    return build.catchError((Object error) {
+      // Permit retry if reading or indexing failed; never cache a failed load.
+      if (identical(_quranIndexFuture, build)) {
+        _quranIndexFuture = null;
+      }
+      throw error;
+    });
+  }
+
+  Future<void> _buildQuranIndex() async {
+    final ayahs = await QuranLoaderService.loadAllAyahs();
+    QuranicSearchEngine.indexVerses(ayahs
+        .map((ayah) => <String, String>{
+              'id': ayah.id.toString(),
+              'surah': ayah.surahName,
+              'ayah': ayah.ayahNumber.toString(),
+              'text': ayah.text,
+            })
+        .toList(growable: false));
+  }
+
   Future<void> sendMessage(String text) async {
     final cleanText = text.trim();
     if (cleanText.isEmpty || _loading) return;
@@ -46,15 +78,7 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final ayahs = await QuranLoaderService.loadAllAyahs();
-      QuranicSearchEngine.indexVerses(ayahs
-          .map((ayah) => <String, String>{
-                'id': ayah.id.toString(),
-                'surah': ayah.surahName,
-                'ayah': ayah.ayahNumber.toString(),
-                'text': ayah.text,
-              })
-          .toList());
+      await _ensureQuranIndex();
       final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
       final evidence = hits.isEmpty
           ? 'لم يُعثر على تطابق نصي في assets/quran_full.json؛ لا تستخدم نصًا قرآنيًا غير موثق.'
