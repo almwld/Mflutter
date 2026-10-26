@@ -187,9 +187,14 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   void pauseOrResume() {
-    if (_activeTask == null) return;
+    final task = _activeTask;
+    if (task == null ||
+        (task.status != TaskStatus.running &&
+            task.status != TaskStatus.paused)) {
+      return;
+    }
     _paused = !_paused;
-    _activeTask = _activeTask!.copyWith(
+    _activeTask = task.copyWith(
       status: _paused ? TaskStatus.paused : TaskStatus.running,
     );
     notifyListeners();
@@ -206,6 +211,12 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   void cancel() {
+    final task = _activeTask;
+    if (task == null ||
+        (task.status != TaskStatus.running &&
+            task.status != TaskStatus.paused)) {
+      return;
+    }
     _cancelled = true;
     _executionGeneration++;
     _paused = false;
