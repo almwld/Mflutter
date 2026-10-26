@@ -72,7 +72,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.dotless:
         return TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
-        return TextTransformer.toDotless(text);
+        return TextTransformer.transform(text, 'kufi');
       case MushafVariantMode.hieroglyphic:
         return TextTransformer.toHieroglyphic(text);
     }
