@@ -44,6 +44,130 @@ void main() {
     expect(restored.isCalibrated, isFalse);
   });
 
+  test('non-finite live sensor frames do not poison gaze coordinates', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+
+    final point = service.map(
+      yawDegrees: double.nan,
+      pitchDegrees: 12,
+      width: 1000,
+      height: 800,
+      confidence: .9,
+    );
+    expect(point.x.isFinite, isTrue);
+    expect(point.y.isFinite, isTrue);
+    expect(point.x, closeTo(500, .001));
+    expect(point.y, closeTo(400, .001));
+    expect(point.confidence, 0);
+
+    final invalidSize = service.map(
+      yawDegrees: 0,
+      pitchDegrees: 0,
+      width: double.infinity,
+      height: 800,
+    );
+    expect(invalidSize.x, 0);
+    expect(invalidSize.y, 0);
+    expect(invalidSize.confidence, 0);
+  });
+
+  test('corrupt persisted calibration is cleared before mapping', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('gaze_cal_yaw_scale', double.nan);
+    await prefs.setDouble('gaze_cal_yaw_bias', 0);
+    await prefs.setDouble('gaze_cal_pitch_scale', 1);
+    await prefs.setDouble('gaze_cal_pitch_bias', 0);
+    await prefs.setBool('gaze_calibrated', true);
+
+    await service.load();
+    expect(service.isCalibrated, isFalse);
+    expect(prefs.getBool('gaze_calibrated'), isNull);
+
+    final point = service.map(
+      yawDegrees: 10,
+      pitchDegrees: -10,
+      width: 400,
+      height: 800,
+    );
+    expect(point.x.isFinite, isTrue);
+    expect(point.y.isFinite, isTrue);
+  });
+
+  test('degenerate sensor readings are rejected without saving calibration', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final samples = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: 0,
+        pitchDegrees: 0,
+        targetX: (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+
+    await expectLater(
+      service.fit(samples: samples),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('gaze_calibrated'), isNull);
+
+    final constantTargets = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: .5,
+        targetY: .5,
+      ),
+    );
+    await expectLater(
+      service.fit(samples: constantTargets),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+  });
+
+  test('non-finite sensor values and out-of-range targets are rejected', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final invalid = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: index == 0 ? double.nan : (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+
+    await expectLater(
+      service.fit(samples: invalid),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+
+    final outOfRange = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: index == 0 ? 1.5 : (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+    await expectLater(
+      service.fit(samples: outOfRange),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+  });
+
   test('dwell controller activates only after stable confident gaze', () {
     final dwell = GazeDwellController(
       dwellDuration: const Duration(milliseconds: 850),
