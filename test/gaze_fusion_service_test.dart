@@ -92,6 +92,21 @@ void main() {
     expect(service.isCalibrated, isFalse);
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('gaze_calibrated'), isNull);
+
+    final constantTargets = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: .5,
+        targetY: .5,
+      ),
+    );
+    await expectLater(
+      service.fit(samples: constantTargets),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
   });
 
   test('non-finite sensor values and out-of-range targets are rejected', () async {
