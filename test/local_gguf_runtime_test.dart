@@ -84,14 +84,14 @@ void main() {
     test('parses a valid partial response and total length', () {
       expect(
         LocalGgufRuntimeService.parseContentRange('bytes 194-999/1000'),
-        (start: 194, total: 1000),
+        (start: 194, end: 999, total: 1000),
       );
     });
 
     test('allows an unknown total while retaining the start offset', () {
       expect(
         LocalGgufRuntimeService.parseContentRange('bytes 194-999/*'),
-        (start: 194, total: null),
+        (start: 194, end: 999, total: null),
       );
     });
 
