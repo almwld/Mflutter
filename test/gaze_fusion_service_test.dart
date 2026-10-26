@@ -44,6 +44,63 @@ void main() {
     expect(restored.isCalibrated, isFalse);
   });
 
+  test('degenerate sensor readings are rejected without saving calibration', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final samples = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: 0,
+        pitchDegrees: 0,
+        targetX: (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+
+    await expectLater(
+      service.fit(samples: samples),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('gaze_calibrated'), isNull);
+  });
+
+  test('non-finite sensor values and out-of-range targets are rejected', () async {
+    final service = GazeFusionService.instance;
+    await service.clear();
+    final invalid = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: index == 0 ? double.nan : (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+
+    await expectLater(
+      service.fit(samples: invalid),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+
+    final outOfRange = List<GazeCalibrationSample>.generate(
+      9,
+      (index) => GazeCalibrationSample(
+        yawDegrees: index.toDouble(),
+        pitchDegrees: (index % 3).toDouble(),
+        targetX: index == 0 ? 1.5 : (index % 3) / 2,
+        targetY: (index ~/ 3) / 2,
+      ),
+    );
+    await expectLater(
+      service.fit(samples: outOfRange),
+      throwsA(isA<StateError>()),
+    );
+    expect(service.isCalibrated, isFalse);
+  });
+
   test('dwell controller activates only after stable confident gaze', () {
     final dwell = GazeDwellController(
       dwellDuration: const Duration(milliseconds: 850),
