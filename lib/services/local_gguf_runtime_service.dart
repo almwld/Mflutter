@@ -36,8 +36,6 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   String? get loadedPath => _loadedPath;
   bool get isDownloading => _downloading;
 
-  bool get isDownloading => _downloading;
-
   /// Downloads the recommended GGUF into app-private storage. Interrupted
   /// downloads remain as .part files and resume with an HTTP Range request.
   Future<File> downloadRecommendedModel({
@@ -443,67 +441,10 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     return requested;
   }
 
-
   /// Parses and validates a server Content-Range header for resumable transfer.
   @visibleForTesting
   static ({int start, int? total})? parseContentRange(String value) {
-    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$').firstMatch(value.trim());
-    if (match == null) return null;
-    final start = int.tryParse(match.group(1)!);
-    final end = int.tryParse(match.group(2)!);
-    final total = match.group(3) == '*' ? null : int.tryParse(match.group(3)!);
-    if (start == null || end == null || end < start) return null;
-    if (match.group(3) != '*' && (total == null || total <= end)) return null;
-    return (start: start, total: total);
-  }
-
-  /// Checks the fixed GGUF v2/v3 header before any large native allocation.
-  /// This is an early structural check, not a substitute for llama.cpp loading
-  /// the complete model and validating its metadata/tensor payload.
-  @visibleForTesting
-  static bool isGgufHeaderValid(List<int> header, int fileLength) {
-    if (fileLength < 24 || header.length < 24) return false;
-    if (header[0] != 0x47 ||
-        header[1] != 0x47 ||
-        header[2] != 0x55 ||
-        header[3] != 0x46) {
-      return false;
-    }
-    final bytes = Uint8List.fromList(header.take(24).toList(growable: false));
-    final data = ByteData.sublistView(bytes);
-    final version = data.getUint32(4, Endian.little);
-    if (version != 2 && version != 3) return false;
-    final tensorCount = data.getUint64(8, Endian.little);
-    final metadataCount = data.getUint64(16, Endian.little);
-    return tensorCount > 0 &&
-        tensorCount <= 1000000 &&
-        metadataCount > 0 &&
-        metadataCount <= 100000;
-  }
-
-  Future<bool> _isValidGguf(File file) async {
-    try {
-      final length = await file.length();
-      if (!await file.exists() || length < _minimumGgufBytes) return false;
-      final handle = await file.open();
-      try {
-        final header = await handle.read(24);
-        return isGgufHeaderValid(header, length);
-      } finally {
-        await handle.close();
-      }
-    } catch (_) {
-      return false;
-    }
-  }
-
-  void _ensureAndroid() {
-    if (!Platform.isAndroid) {
-      throw UnsupportedError('محرك llama_flutter_android متاح على Android فقط.');
-    }
-  }
-}
-)
+    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$')
         .firstMatch(value.trim());
     if (match == null) return null;
     final start = int.tryParse(match.group(1)!);
