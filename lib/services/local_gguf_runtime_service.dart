@@ -75,21 +75,16 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         var offset = await partial.exists() ? await partial.length() : 0;
         final request = await client.getUrl(Uri.parse(recommendedModelUrl));
         request.headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
-        if (offset > 0) {
-          request.headers.set(HttpHeaders.rangeHeader, 'bytes=$offset-');
-        }
+        if (offset > 0) request.headers.set(HttpHeaders.rangeHeader, 'bytes=$offset-');
 
         final response = await request.close().timeout(const Duration(seconds: 90));
-        if (response.statusCode == HttpStatus.requestedRangeNotSatisfiable &&
-            offset > 0) {
+        if (response.statusCode == HttpStatus.requestedRangeNotSatisfiable && offset > 0) {
           final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
           final match = contentRange == null
               ? null
               : RegExp(r'^bytes [*]/([0-9]+)$').firstMatch(contentRange.trim());
           final total = match == null ? null : int.tryParse(match.group(1)!);
           await response.drain<void>();
-          // Recover if the process stopped after the final byte arrived but
-          // before the partial file was atomically promoted to the model file.
           if (total != null && offset == total && await _isValidGguf(partial)) {
             await partial.rename(target.path);
             await _selectModel(recommendedModelFileName);
@@ -125,16 +120,13 @@ class LocalGgufRuntimeService extends ChangeNotifier {
           }
           expectedTotal = range.total;
           expectedResponseBytes = range.end - range.start + 1;
-          if (response.contentLength >= 0 &&
-              response.contentLength != expectedResponseBytes) {
+          if (response.contentLength >= 0 && response.contentLength != expectedResponseBytes) {
             await response.drain<void>();
             throw HttpException(
               'طول استجابة الاستئناف لا يطابق ترويسة Content-Range؛ حُفظ الملف الجزئي.',
             );
           }
         } else {
-          // If the server ignores Range, truncate and restart instead of
-          // appending a second copy of the complete model.
           offset = 0;
           if (response.contentLength >= 0) expectedTotal = response.contentLength;
         }
@@ -166,8 +158,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         }
 
         if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
-        if (expectedResponseBytes != null &&
-            receivedThisResponse != expectedResponseBytes) {
+        if (expectedResponseBytes != null && receivedThisResponse != expectedResponseBytes) {
           throw HttpException(
             'استجابة الاستئناف غير مكتملة: وصل $receivedThisResponse بايت من أصل $expectedResponseBytes؛ أعد المحاولة لاستكمال التنزيل.',
           );
@@ -465,55 +456,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   /// Parses and validates a server Content-Range header for resumable transfer.
   @visibleForTesting
   static ({int start, int end, int? total})? parseContentRange(String value) {
-    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])
-
-  /// Checks the fixed GGUF v2/v3 header before any large native allocation.
-  /// This is an early structural check, not a substitute for llama.cpp loading
-  /// the complete model and validating its metadata/tensor payload.
-  @visibleForTesting
-  static bool isGgufHeaderValid(List<int> header, int fileLength) {
-    if (fileLength < 24 || header.length < 24) return false;
-    if (header[0] != 0x47 ||
-        header[1] != 0x47 ||
-        header[2] != 0x55 ||
-        header[3] != 0x46) {
-      return false;
-    }
-    final bytes = Uint8List.fromList(header.take(24).toList(growable: false));
-    final data = ByteData.sublistView(bytes);
-    final version = data.getUint32(4, Endian.little);
-    if (version != 2 && version != 3) return false;
-    final tensorCount = data.getUint64(8, Endian.little);
-    final metadataCount = data.getUint64(16, Endian.little);
-    return tensorCount > 0 &&
-        tensorCount <= 1000000 &&
-        metadataCount > 0 &&
-        metadataCount <= 100000;
-  }
-
-  Future<bool> _isValidGguf(File file) async {
-    try {
-      final length = await file.length();
-      if (!await file.exists() || length < _minimumGgufBytes) return false;
-      final handle = await file.open();
-      try {
-        final header = await handle.read(24);
-        return isGgufHeaderValid(header, length);
-      } finally {
-        await handle.close();
-      }
-    } catch (_) {
-      return false;
-    }
-  }
-
-  void _ensureAndroid() {
-    if (!Platform.isAndroid) {
-      throw UnsupportedError('محرك llama_flutter_android متاح على Android فقط.');
-    }
-  }
-}
-)
+    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$')
         .firstMatch(value.trim());
     if (match == null) return null;
     final start = int.tryParse(match.group(1)!);
