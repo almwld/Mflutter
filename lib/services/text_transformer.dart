@@ -47,6 +47,10 @@ class TextTransformer {
         return toMusnad(text);
       case 'dotless':
         return toDotless(text);
+      case 'kufi':
+        // Kufic is a calligraphic style, not a character substitution.
+        // Preserve canonical Arabic text until a dedicated Kufic font exists.
+        return text;
       case 'hieroglyphic':
         return toHieroglyphic(text);
       default:
