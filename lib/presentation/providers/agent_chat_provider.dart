@@ -237,6 +237,19 @@ class AgentChatProvider extends ChangeNotifier {
     return copy;
   }
 
+  /// Parses only the numeric syntax; range validation happens against the
+  /// canonical local Quran index so an invalid reference gets an explicit error.
+  @visibleForTesting
+  static ({int surah, int ayah})? parseVerseReference(String query) {
+    final match = RegExp(r'^([0-9]{1,3}) *[:/] *([0-9]{1,3})$')
+        .firstMatch(query.trim());
+    if (match == null) return null;
+    final surah = int.tryParse(match.group(1)!);
+    final ayah = int.tryParse(match.group(2)!);
+    if (surah == null || ayah == null) return null;
+    return (surah: surah, ayah: ayah);
+  }
+
   List<AgentDefinition> _route(String query) {
     final result = <AgentDefinition>[];
     void add(String id) {
@@ -244,6 +257,13 @@ class AgentChatProvider extends ChangeNotifier {
       if (agent != null && !result.any((existing) => existing.id == id)) {
         result.add(agent);
       }
+    }
+
+    // A bare verse reference is a lookup request, not a text-search query.
+    if (parseVerseReference(query) != null) {
+      add('ayaat');
+      add('verifier');
+      return result;
     }
 
     add('planner');
@@ -322,6 +342,27 @@ class AgentChatProvider extends ChangeNotifier {
       case 'narrator':
         return _searchKnowledge(agent, query);
       case 'ayaat':
+        final reference = parseVerseReference(query);
+        if (reference != null) {
+          final surahNumber = reference.surah;
+          final ayahNumber = reference.ayah;
+          if (surahNumber < 1 || surahNumber > 114 || ayahNumber < 1) {
+            return 'مرجع الآية خارج النطاق الصحيح؛ استخدم رقم السورة من 1 إلى 114 ورقم آية موجبًا.';
+          }
+          final grouped = await QuranLoaderService.loadBySurah();
+          final candidates = grouped[surahNumber]
+                  ?.where((ayah) => ayah.ayahNumber == ayahNumber)
+                  .toList() ??
+              const [];
+          if (candidates.isEmpty) {
+            return 'لم يُعثر على الآية ' + surahNumber.toString() + ':' +
+                ayahNumber.toString() + ' في مصدر المصحف المحلي.';
+          }
+          final verse = candidates.first;
+          return 'الآية ' + surahNumber.toString() + ':' +
+              ayahNumber.toString() + ' (' + verse.surahName + '): ' +
+              verse.text + ' — المصدر: assets/quran_full.json';
+        }
         final hits = QuranicSearchEngine.search(query).take(8).toList();
         if (hits.isEmpty) {
           return 'لم يُعثر على تطابق نصي في فهرس القرآن المحلي؛ لم يتم إنشاء آية بديلة.';
