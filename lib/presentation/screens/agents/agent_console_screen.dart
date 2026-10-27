@@ -311,7 +311,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
     if (mounted) setState(() => _hasModel = valid);
   }
 
-  Future<void> _importModel() async {  Future<void> _importModel() async {
+  Future<void> _importModel() async {
     try {
       final picked = await FilePicker.platform.pickFiles(
         type: FileType.custom,
