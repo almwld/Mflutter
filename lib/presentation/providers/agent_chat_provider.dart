@@ -241,7 +241,7 @@ class AgentChatProvider extends ChangeNotifier {
   /// canonical local Quran index so an invalid reference gets an explicit error.
   @visibleForTesting
   static ({int surah, int ayah})? parseVerseReference(String query) {
-    final match = RegExp(r'^\\s*([0-9]{1,3})\\s*[:/]\\s*([0-9]{1,3})\\s*$')
+    final match = RegExp(r'^([0-9]{1,3}) *[:/] *([0-9]{1,3})$')
         .firstMatch(query.trim());
     if (match == null) return null;
     final surah = int.tryParse(match.group(1)!);
