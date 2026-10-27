@@ -385,7 +385,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
           title: const Text('النموذج المحلي GGUF',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           subtitle: Text(
-            _runtime.isLoaded ? 'محمّل • الاستدلال محلي' : _hasModel ? 'ملف مستورد • جاهز للتشغيل' : 'لا يوجد نموذج • استورد ملف GGUF محليًا',
+            _runtime.isLoaded ? 'محمّل • الاستدلال محلي' : _hasModel ? 'ملف مستورد • لم يُختبر بعد في محرك الاستدلال' : 'لا يوجد نموذج • استورد ملف GGUF محليًا',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
           ),
           children: [
