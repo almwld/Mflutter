@@ -15,6 +15,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   static final LocalGgufRuntimeService instance = LocalGgufRuntimeService._();
 
   static const _minimumGgufBytes = 1024 * 1024;
+  static const recommendedModelFileName = '3arabLM-4B-islamic-v2.Q4_K_M.gguf';
+  static const recommendedModelUrl =
+      'https://huggingface.co/mradermacher/3arabLM-4B-islamic-v2-GGUF/resolve/main/3arabLM-4B-islamic-v2.Q4_K_M.gguf';
 
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
@@ -22,12 +25,189 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   bool _generating = false;
   bool _loaded = false;
   String? _loadedPath;
+  bool _downloading = false;
+  bool _downloadCancelled = false;
+  HttpClient? _downloadClient;
 
   String get status => _status;
   bool get isBusy => _busy;
   bool get isGenerating => _generating;
   bool get isLoaded => _loaded;
   String? get loadedPath => _loadedPath;
+  bool get isDownloading => _downloading;
+
+  /// Downloads the recommended GGUF into app-private storage. Interrupted
+  /// downloads remain as .part files and resume with an HTTP Range request.
+  Future<File> downloadRecommendedModel({
+    void Function(int receivedBytes, int? totalBytes)? onProgress,
+  }) async {
+    _ensureAndroid();
+    if (_busy || _generating || _loaded) {
+      throw StateError('أوقف العملية الحالية وأفرغ النموذج قبل التنزيل.');
+    }
+    _busy = true;
+    _downloading = true;
+    _downloadCancelled = false;
+    _status = 'جارٍ تجهيز تنزيل النموذج المحلي...';
+    notifyListeners();
+
+    HttpClient? client;
+    try {
+      final directory = await _modelDirectory();
+      final target = File('${directory.path}/$recommendedModelFileName');
+      final partial = File('${target.path}.part');
+
+      if (await target.exists()) {
+        if (await _isValidGguf(target)) {
+          await _selectModel(recommendedModelFileName);
+          _status = 'النموذج موجود مسبقًا وتم تحديده: $recommendedModelFileName';
+          return target;
+        }
+        await target.delete();
+      }
+
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 45);
+      _downloadClient = client;
+      var retryFromStart = false;
+
+      while (true) {
+        if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
+        var offset = await partial.exists() ? await partial.length() : 0;
+        final request = await client.getUrl(Uri.parse(recommendedModelUrl));
+        request.headers.set(HttpHeaders.acceptEncodingHeader, 'identity');
+        if (offset > 0) request.headers.set(HttpHeaders.rangeHeader, 'bytes=$offset-');
+
+        final response = await request.close().timeout(const Duration(seconds: 90));
+        if (response.statusCode == HttpStatus.requestedRangeNotSatisfiable && offset > 0) {
+          final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
+          final match = contentRange == null
+              ? null
+              : RegExp(r'^bytes [*]/([0-9]+)$').firstMatch(contentRange.trim());
+          final total = match == null ? null : int.tryParse(match.group(1)!);
+          await response.drain<void>();
+          if (total != null && offset == total && await _isValidGguf(partial)) {
+            await partial.rename(target.path);
+            await _selectModel(recommendedModelFileName);
+            _status = 'اكتمل تنزيل النموذج والتحقق الأولي منه.';
+            return target;
+          }
+          if (!retryFromStart) {
+            if (await partial.exists()) await partial.delete();
+            retryFromStart = true;
+            continue;
+          }
+          throw HttpException(
+            'تعذر استئناف التنزيل بعد إعادة المحاولة؛ بقي الملف الجزئي محفوظًا.',
+            uri: Uri.parse(recommendedModelUrl),
+          );
+        }
+        if (response.statusCode != HttpStatus.ok &&
+            response.statusCode != HttpStatus.partialContent) {
+          final status = response.statusCode;
+          await response.drain<void>();
+          throw HttpException('خادم النموذج أعاد HTTP $status.', uri: Uri.parse(recommendedModelUrl));
+        }
+
+        int? expectedTotal;
+        int? expectedResponseBytes;
+        final append = response.statusCode == HttpStatus.partialContent;
+        if (append) {
+          final contentRange = response.headers.value(HttpHeaders.contentRangeHeader);
+          final range = contentRange == null ? null : parseContentRange(contentRange);
+          if (offset == 0 || range == null || range.start != offset) {
+            await response.drain<void>();
+            throw HttpException('استجابة الاستئناف لا تطابق حجم الملف الجزئي؛ بقي الملف الجزئي محفوظًا.');
+          }
+          expectedTotal = range.total;
+          expectedResponseBytes = range.end - range.start + 1;
+          if (response.contentLength >= 0 && response.contentLength != expectedResponseBytes) {
+            await response.drain<void>();
+            throw HttpException(
+              'طول استجابة الاستئناف لا يطابق ترويسة Content-Range؛ حُفظ الملف الجزئي.',
+            );
+          }
+        } else {
+          offset = 0;
+          if (response.contentLength >= 0) expectedTotal = response.contentLength;
+        }
+
+        final output = await partial.open(mode: append ? FileMode.append : FileMode.writeOnly);
+        var received = offset;
+        var receivedThisResponse = 0;
+        onProgress?.call(received, expectedTotal);
+        var lastUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+        try {
+          await for (final chunk in response.timeout(const Duration(seconds: 60))) {
+            if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
+            await output.writeFrom(chunk);
+            received += chunk.length;
+            receivedThisResponse += chunk.length;
+            final now = DateTime.now();
+            if (now.difference(lastUpdate) >= const Duration(milliseconds: 500)) {
+              lastUpdate = now;
+              onProgress?.call(received, expectedTotal);
+              _status = expectedTotal == null
+                  ? 'جارٍ تنزيل النموذج: ${(received / (1024 * 1024)).toStringAsFixed(1)} MiB'
+                  : 'جارٍ تنزيل النموذج: ${(received / (1024 * 1024)).toStringAsFixed(1)} / ${(expectedTotal / (1024 * 1024)).toStringAsFixed(1)} MiB';
+              notifyListeners();
+            }
+          }
+          await output.flush();
+        } finally {
+          await output.close();
+        }
+
+        if (_downloadCancelled) throw StateError('أُلغي تنزيل النموذج.');
+        if (expectedResponseBytes != null && receivedThisResponse != expectedResponseBytes) {
+          throw HttpException(
+            'استجابة الاستئناف غير مكتملة: وصل $receivedThisResponse بايت من أصل $expectedResponseBytes؛ أعد المحاولة لاستكمال التنزيل.',
+          );
+        }
+        final actualLength = await partial.length();
+        onProgress?.call(actualLength, expectedTotal);
+        if (expectedTotal == null) {
+          throw HttpException(
+            'لم يؤكد الخادم الحجم الكامل للملف؛ حُفظ التنزيل الجزئي ولم يُعتمد كنموذج مكتمل.',
+          );
+        }
+        if (actualLength != expectedTotal) {
+          throw HttpException(
+            'التنزيل غير مكتمل: وصل $actualLength بايت من أصل $expectedTotal. أعد المحاولة لاستكماله.',
+          );
+        }
+        if (!await _isValidGguf(partial)) {
+          throw const FormatException(
+            'انتهى التنزيل لكن ترويسة GGUF غير صالحة؛ لم يتم تفعيل الملف كنموذج.',
+          );
+        }
+
+        if (await target.exists()) await target.delete();
+        await partial.rename(target.path);
+        await _selectModel(recommendedModelFileName);
+        _status = 'اكتمل تنزيل النموذج والتحقق الأولي منه. حمّله لاختبار التوافق الفعلي مع llama.cpp.';
+        return target;
+      }
+    } catch (error) {
+      _status = _downloadCancelled
+          ? 'أُلغي التنزيل؛ حُفظ الجزء المكتمل لاستئنافه لاحقًا.'
+          : 'تعذر تنزيل النموذج: $error';
+      rethrow;
+    } finally {
+      client?.close(force: _downloadCancelled);
+      _downloadClient = null;
+      _downloading = false;
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Stops the network transfer without deleting the resumable partial file.
+  void cancelDownload() {
+    if (!_downloading) return;
+    _downloadCancelled = true;
+    _downloadClient?.close(force: true);
+  }
+
 
   Future<Directory> _modelDirectory() async {
     final support = await getApplicationSupportDirectory();
@@ -276,6 +456,20 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     if (freeRamBytes < 3 * gib) return 512;
     if (freeRamBytes < 5 * gib) return math.min(requested, 1024);
     return requested;
+  }
+
+  /// Parses and validates a server Content-Range header for resumable transfer.
+  @visibleForTesting
+  static ({int start, int end, int? total})? parseContentRange(String value) {
+    final match = RegExp(r'^bytes ([0-9]+)-([0-9]+)/([0-9]+|[*])$')
+        .firstMatch(value.trim());
+    if (match == null) return null;
+    final start = int.tryParse(match.group(1)!);
+    final end = int.tryParse(match.group(2)!);
+    final total = match.group(3) == '*' ? null : int.tryParse(match.group(3)!);
+    if (start == null || end == null || end < start) return null;
+    if (match.group(3) != '*' && (total == null || total <= end)) return null;
+    return (start: start, end: end, total: total);
   }
 
   /// Checks the fixed GGUF v2/v3 header before any large native allocation.
