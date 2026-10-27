@@ -392,7 +392,6 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
             Align(alignment: Alignment.centerRight, child: Text(_runtime.status,
                 style: const TextStyle(color: Colors.white70, fontSize: 11))),
             const SizedBox(height: 9),
-            Wrap(spacing: 7, runSpacing: 7, children: [            const SizedBox(height: 9),
             Wrap(spacing: 7, runSpacing: 7, children: [
               OutlinedButton.icon(
                 onPressed: busy || _runtime.isLoaded ? null : _importModel,
