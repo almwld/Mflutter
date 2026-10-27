@@ -26,7 +26,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   bool get isGenerating => _generating;
   bool get isLoaded => _loaded;
   String? get loadedPath => _loadedPath;
-  Future<Directory> _modelDirectory() async {  Future<Directory> _modelDirectory() async {
+  Future<Directory> _modelDirectory() async {
     final support = await getApplicationSupportDirectory();
     final directory = Directory('${support.path}/mudabbir_models');
     if (!await directory.exists()) await directory.create(recursive: true);
