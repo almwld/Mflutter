@@ -14,6 +14,17 @@ void main() {
       );
     });
 
+    test('parses Arabic-Indic and Persian digits used in Arabic input', () {
+      expect(
+        AgentChatProvider.parseVerseReference('٢:٢٥٥'),
+        (surah: 2, ayah: 255),
+      );
+      expect(
+        AgentChatProvider.parseVerseReference('۱۸/۱۰'),
+        (surah: 18, ayah: 10),
+      );
+    });
+
     test('preserves numeric values so the local index can report range errors', () {
       expect(
         AgentChatProvider.parseVerseReference('115:1'),

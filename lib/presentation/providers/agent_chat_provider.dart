@@ -241,8 +241,18 @@ class AgentChatProvider extends ChangeNotifier {
   /// canonical local Quran index so an invalid reference gets an explicit error.
   @visibleForTesting
   static ({int surah, int ayah})? parseVerseReference(String query) {
+    // Arabic-Indic (٠١٢) and Eastern Arabic/Persian (۰۱۲) digits are common
+    // in Arabic input; normalize only digits before strict syntax validation.
+    final normalized = query.trim().replaceAllMapped(
+      RegExp(r'[\u0660-\u0669\u06F0-\u06F9]'),
+      (match) {
+        final code = match.group(0)!.codeUnitAt(0);
+        final digit = code >= 0x06F0 ? code - 0x06F0 : code - 0x0660;
+        return String.fromCharCode(0x30 + digit);
+      },
+    );
     final match = RegExp(r'^([0-9]{1,3}) *[:/] *([0-9]{1,3})$')
-        .firstMatch(query.trim());
+        .firstMatch(normalized);
     if (match == null) return null;
     final surah = int.tryParse(match.group(1)!);
     final ayah = int.tryParse(match.group(2)!);
