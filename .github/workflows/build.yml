@@ -33,6 +33,14 @@ jobs:
           channel: stable
           cache: true
 
+      # llama_flutter_android compiles the on-device GGUF runtime with NDK r28c.
+      # Cache the SDK package so later builds do not repeatedly download/unpack ~GBs.
+      - name: Cache Android NDK r28c
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/android/sdk/ndk/28.2.13676358
+          key: ${{ runner.os }}-android-ndk-r28c-v1
+
       - name: Generate Android host project
         run: |
           flutter create --platforms=android --project-name mudabbir_al_asrar --org com.mudabbir .
@@ -49,9 +57,8 @@ jobs:
           text = text.replace("compileSdk = flutter.compileSdkVersion", "compileSdk = 36")
           gradle.write_text(text)
           text = gradle.read_text()
-          if 'ndkVersion = "27.0.12077973"' not in text:
-              text = text.replace("android {", 'android {\n    ndkVersion = "27.0.12077973"', 1)
-              gradle.write_text(text)
+          # Do not pin an older NDK here. The GGUF llama.cpp plugin declares
+          # its own required NDK version; the workflow caches that SDK package.
 
           settings = Path("android/settings.gradle.kts")
           if settings.exists():
