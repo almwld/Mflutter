@@ -417,7 +417,11 @@ class _FixedMushafLine extends StatelessWidget {
     final tokens = <String>[];
     for (final segment in line.segments) {
       if (segment.startsWith('﴿') && segment.endsWith('﴾') && segment.length > 2) {
-        tokens.add('۞' + segment.substring(1, segment.length - 1) + '۞');
+        // Keep the package's supported Quranic ayah-number delimiters.
+        // Replacing them with ۞ can render as empty squares on fonts that
+        // do not contain that ornamental Unicode glyph.
+        final marker = segment.substring(1, segment.length - 1);
+        tokens.add('﴿$marker﴾');
       } else {
         final converted = transform(segment);
         if (converted.isNotEmpty) tokens.add(converted);
