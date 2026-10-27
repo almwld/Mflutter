@@ -8,7 +8,7 @@ import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
 
-enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
+enum MushafVariantMode { musnad, dotless, dotlessPlain, kufi, hieroglyphic }
 
 class MushafVariantScreen extends StatefulWidget {
   const MushafVariantScreen({super.key, required this.initialPage});
@@ -70,6 +70,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.musnad:
         return TextTransformer.toMusnad(text);
       case MushafVariantMode.dotless:
+        return TextTransformer.toDotlessPreservingMarks(text);
+      case MushafVariantMode.dotlessPlain:
         return TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
         return TextTransformer.transform(text, 'kufi');
@@ -83,7 +85,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.musnad:
         return 'المسند';
       case MushafVariantMode.dotless:
-        return 'بدون نقاط';
+        return 'بدون نقاط مع التشكيل';
+      case MushafVariantMode.dotlessPlain:
+        return 'بدون نقاط أو تشكيل';
       case MushafVariantMode.kufi:
         return 'كوفي';
       case MushafVariantMode.hieroglyphic:
@@ -202,7 +206,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               const SizedBox(height: 8),
               for (final entry in [
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
-                (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
+                (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
+                (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
                 (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
@@ -277,6 +282,7 @@ class _VariantPage extends StatelessWidget {
       case MushafVariantMode.musnad:
         return 'Musnad';
       case MushafVariantMode.dotless:
+      case MushafVariantMode.dotlessPlain:
         return 'Amiri';
       case MushafVariantMode.kufi:
         return 'Amiri';
