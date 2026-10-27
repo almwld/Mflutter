@@ -1,5 +1,11 @@
 name: Mudabbir Build
 
+# Keep only the newest build for each PR or branch. Several sequential
+# commits should not consume runners building superseded versions in parallel.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [ main ]
