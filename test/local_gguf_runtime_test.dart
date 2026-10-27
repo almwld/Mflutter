@@ -112,6 +112,42 @@ void main() {
     });
   });
 
+  group('generation concurrency guard', () {
+    test('allows generation only with a loaded idle controller', () {
+      expect(
+        LocalGgufRuntimeService.canStartGeneration(
+          isLoaded: true,
+          hasController: true,
+          isBusy: false,
+          isGenerating: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('rejects missing model, missing controller, and lifecycle operations', () {
+      final cases = <Map<String, bool>>[
+        {'isLoaded': false, 'hasController': true, 'isBusy': false, 'isGenerating': false},
+        {'isLoaded': true, 'hasController': false, 'isBusy': false, 'isGenerating': false},
+        {'isLoaded': true, 'hasController': true, 'isBusy': true, 'isGenerating': false},
+        {'isLoaded': true, 'hasController': true, 'isBusy': false, 'isGenerating': true},
+        {'isLoaded': true, 'hasController': true, 'isBusy': true, 'isGenerating': true},
+      ];
+      for (final state in cases) {
+        expect(
+          LocalGgufRuntimeService.canStartGeneration(
+            isLoaded: state['isLoaded']!,
+            hasController: state['hasController']!,
+            isBusy: state['isBusy']!,
+            isGenerating: state['isGenerating']!,
+          ),
+          isFalse,
+          reason: '$state',
+        );
+      }
+    });
+  });
+
   group('memory-aware context sizing', () {
     test('uses a conservative context when RAM probing is unavailable', () {
       expect(

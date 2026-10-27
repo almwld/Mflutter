@@ -380,10 +380,21 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     required String evidence,
     int maxTokens = 512,
   }) async {
-    final controller = _controller;
-    if (!_loaded || controller == null) {
+    if (!canStartGeneration(
+      isLoaded: _loaded,
+      hasController: _controller != null,
+      isBusy: _busy,
+      isGenerating: _generating,
+    )) {
+      if (_busy) {
+        throw StateError('النموذج مشغول بعملية تحميل أو استيراد؛ لم يبدأ التوليد.');
+      }
+      if (_generating) {
+        throw StateError('يوجد توليد محلي جارٍ بالفعل؛ انتظر اكتماله أو أوقفه أولًا.');
+      }
       throw StateError('لا يوجد نموذج GGUF محمّل؛ لم يُنفّذ استدلال توليدي.');
     }
+    final controller = _controller!;
     final prompt = 'أنت مساعد عربي يعمل محليًا داخل تطبيق مُدَبِّر. '
         'أجب باللغة العربية. استخدم الأدلة المرفقة فقط للادعاءات المتعلقة بالقرآن. '
         'لا تخترع آيات أو مراجع أو أسماء مصادر. إذا لم تكف الأدلة فصرّح بذلك. '
@@ -441,6 +452,18 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Prevents simultaneous native generations and generation during model
+  /// lifecycle operations. This check runs synchronously before generation
+  /// marks the controller busy.
+  @visibleForTesting
+  static bool canStartGeneration({
+    required bool isLoaded,
+    required bool hasController,
+    required bool isBusy,
+    required bool isGenerating,
+  }) =>
+      isLoaded && hasController && !isBusy && !isGenerating;
 
   /// Chooses a conservative KV-cache context from available system RAM.
   /// This is only a heuristic: free RAM can change and does not guarantee
