@@ -1,7 +1,5 @@
 import 'dart:io';
 
-import 'dart:io';
-
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'quran_loader_service.dart';
 import 'external_asset_service.dart';
