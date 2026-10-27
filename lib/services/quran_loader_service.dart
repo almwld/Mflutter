@@ -125,10 +125,30 @@ class QuranLoaderService {
   ];
   static List<Ayah>? _cachedAyahs;
   static Map<int, List<Ayah>>? _cachedBySurah;
+  static Future<List<Ayah>>? _loadingAyahs;
+  static Future<Map<int, List<Ayah>>>? _loadingBySurah;
 
-  static Future<List<Ayah>> loadAllAyahs() async {
+  /// Shares one in-flight parse/validation across all concurrent callers.
+  /// Failed loads are not cached, so a later caller can retry.
+  static Future<List<Ayah>> loadAllAyahs() {
     final cached = _cachedAyahs;
-    if (cached != null) return cached;
+    if (cached != null) return Future<List<Ayah>>.value(cached);
+
+    final pending = _loadingAyahs;
+    if (pending != null) return pending;
+
+    final loading = _loadAllAyahs();
+    _loadingAyahs = loading;
+    return loading.then<List<Ayah>>(
+      (ayahs) => ayahs,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_loadingAyahs, loading)) _loadingAyahs = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+  }
+
+  static Future<List<Ayah>> _loadAllAyahs() async {
 
     final jsonStr = await rootBundle.loadString('assets/quran_full.json');
     final decoded = jsonDecode(jsonStr);
@@ -238,10 +258,26 @@ class QuranLoaderService {
     return _cachedAyahs!;
   }
 
-  static Future<Map<int, List<Ayah>>> loadBySurah() async {
+  /// Shares grouping work when multiple screens request surah groups together.
+  static Future<Map<int, List<Ayah>>> loadBySurah() {
     final cached = _cachedBySurah;
-    if (cached != null) return cached;
+    if (cached != null) return Future<Map<int, List<Ayah>>>.value(cached);
 
+    final pending = _loadingBySurah;
+    if (pending != null) return pending;
+
+    final loading = _loadBySurah();
+    _loadingBySurah = loading;
+    return loading.then<Map<int, List<Ayah>>>(
+      (groups) => groups,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_loadingBySurah, loading)) _loadingBySurah = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+  }
+
+  static Future<Map<int, List<Ayah>>> _loadBySurah() async {
     final ayahs = await loadAllAyahs();
     final grouped = <int, List<Ayah>>{};
     for (final ayah in ayahs) {
