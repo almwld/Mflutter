@@ -11,6 +11,10 @@ void main() {
       expect(TextTransformer.toDotless('بَتٌ'), 'ٮٮ');
     });
 
+    test('removes Quranic annotation marks as well as vowel marks', () {
+      expect(TextTransformer.toDotless('بۢت'), 'ٮٮ');
+    });
+
     test('does not mutate the source text', () {
       const source = 'بِسْمِ اللَّهِ';
       TextTransformer.toDotlessPreservingMarks(source);
