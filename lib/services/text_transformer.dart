@@ -31,14 +31,20 @@ class TextTransformer {
   static String toMusnad(String text) => _map(text, musnadMap);
   static String toHieroglyphic(String text) => _map(text, hieroglyphMap);
 
-  /// يحذف النقاط مع الإبقاء على هيكل الكلمة ومكانها في السطر.
-  static String toDotless(String text) {
+  /// يحذف النقاط وعلامات التشكيل، مع الحفاظ على النص الأصلي خارج طبقة العرض.
+  static String toDotless(String text) => _toDotless(text, removeMarks: true);
+
+  /// يحذف النقاط فقط ويُبقي التشكيل القرآني ظاهرًا.
+  static String toDotlessPreservingMarks(String text) =>
+      _toDotless(text, removeMarks: false);
+
+  static String _toDotless(String text, {required bool removeMarks}) {
     const replacements = {
       'ب': 'ٮ', 'ت': 'ٮ', 'ث': 'ٮ', 'ن': 'ں', 'ي': 'ى', 'ج': 'ح',
       'خ': 'ح', 'ذ': 'د', 'ز': 'ر', 'ش': 'س', 'ض': 'ص', 'ظ': 'ط',
       'غ': 'ع', 'ف': 'ڡ', 'ق': 'ٯ',
     };
-    return _map(text, replacements, removeMarks: true);
+    return _map(text, replacements, removeMarks: removeMarks);
   }
 
   static String transform(String text, String mode) {
