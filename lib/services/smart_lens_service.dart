@@ -1,19 +1,16 @@
 import 'dart:io';
 
-import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
-import 'package:google_mlkit_commons/google_mlkit_commons.dart';
-import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
-import 'package:google_mlkit_translation/google_mlkit_translation.dart';
+import 'dart:io';
 
+import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'quran_loader_service.dart';
 import 'external_asset_service.dart';
 
-/// Offline-first smart-lens services. Arabic OCR and Quran matching run locally
-/// after the Arabic Tesseract model has been downloaded once.
+/// Offline-first smart-lens services. OCR requires a user-imported Arabic model;
+/// this service never downloads model files.
 class SmartLensService {
   SmartLensService._();
   static final SmartLensService instance = SmartLensService._();
-  static Future<void>? _arabicModelDownload;
   static Future<List<_IndexedLensAyah>>? _indexedAyahs;
 
   Future<void> _ensureArabicOcrModel() async {
@@ -21,52 +18,15 @@ class SmartLensService {
     final model = File('$path/ara.traineddata');
     if (await model.exists() && await model.length() > 1000000) return;
 
-    // Optional model may be imported manually instead of downloaded at runtime.
     final imported = await ExternalAssetService.instance.findImportedFile('ara.traineddata');
-    if (imported != null && await imported.length() > 1000000) {
-      await model.parent.create(recursive: true);
-      await imported.copy(model.path);
-      return;
+    if (imported == null || await imported.length() <= 1000000) {
+      throw StateError(
+        'نموذج OCR العربي غير متوفر. استورد ara.traineddata من مساحة الوكلاء؛ '
+        'التطبيق لا ينزّل نماذج من الإنترنت.',
+      );
     }
-
-    final pending = _arabicModelDownload;
-    if (pending != null) {
-      await pending;
-      return;
-    }
-    final download = _downloadArabicModel(model);
-    _arabicModelDownload = download;
-    try {
-      await download;
-    } catch (_) {
-      _arabicModelDownload = null;
-      rethrow;
-    }
-  }
-
-  Future<void> _downloadArabicModel(File destination) async {
-    await destination.parent.create(recursive: true);
-    final temporary = File('${destination.path}.download');
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 25);
-    try {
-      final request = await client
-          .getUrl(Uri.parse('https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/ara.traineddata'))
-          .timeout(const Duration(seconds: 30));
-      final response = await request.close().timeout(const Duration(seconds: 60));
-      if (response.statusCode != HttpStatus.ok) {
-        throw HttpException('تعذر تنزيل نموذج OCR العربي (HTTP ${response.statusCode}).', uri: request.uri);
-      }
-      final sink = temporary.openWrite();
-      await response.pipe(sink).timeout(const Duration(minutes: 2));
-      if (!await temporary.exists() || await temporary.length() < 1000000) {
-        throw const FormatException('ملف نموذج OCR العربي غير مكتمل.');
-      }
-      if (await destination.exists()) await destination.delete();
-      await temporary.rename(destination.path);
-    } finally {
-      client.close(force: true);
-      if (await temporary.exists()) await temporary.delete();
-    }
+    await model.parent.create(recursive: true);
+    await imported.copy(model.path);
   }
 
   Future<String> extractArabicText(String imagePath) async {
@@ -149,37 +109,23 @@ class SmartLensService {
     return matches.take(limit).toList(growable: false);
   }
 
+  /// Disabled until the app can import a compatible model and run it locally.
+  /// Do not invoke Play-services model APIs that may fetch weights automatically.
   Future<List<ObjectLensLabel>> analyzeObjects(String imagePath) async {
-    final labeler = ImageLabeler(options: ImageLabelerOptions(confidenceThreshold: 0.45));
-    try {
-      final labels = await labeler.processImage(InputImage.fromFilePath(imagePath));
-      return labels.map((label) => ObjectLensLabel(
-        label: label.label,
-        confidence: label.confidence,
-      )).toList(growable: false);
-    } finally {
-      await labeler.close();
-    }
+    throw StateError(
+      'تحليل الأشياء متوقف مؤقتًا: استيراد نموذج ML Kit مباشرة غير مدعوم. '
+      'لن ينزّل التطبيق نموذجًا تلقائيًا.',
+    );
   }
 
-  /// Downloads Arabic and English translation models on first use, then
-  /// translates locally on device.
+  /// ML Kit translation weights are managed by Google Play services and cannot
+  /// be installed from a user-selected file through this API.
   Future<String> translateArabicToEnglish(String text) async {
     if (text.trim().isEmpty) throw ArgumentError('لا يوجد نص لترجمته.');
-    final manager = OnDeviceTranslatorModelManager();
-    const source = TranslateLanguage.arabic;
-    const target = TranslateLanguage.english;
-    for (final language in <TranslateLanguage>[source, target]) {
-      if (!await manager.isModelDownloaded(language.bcpCode)) {
-        await manager.downloadModel(language.bcpCode, isWifiRequired: false);
-      }
-    }
-    final translator = OnDeviceTranslator(sourceLanguage: source, targetLanguage: target);
-    try {
-      return await translator.translateText(text);
-    } finally {
-      await translator.close();
-    }
+    throw StateError(
+      'الترجمة الآلية غير مفعّلة لأن نموذجها غير مستورد محليًا. '
+      'استيراد نماذج ML Kit مباشرة غير مدعوم؛ لم يُنزّل أي نموذج.',
+    );
   }
 
   static String normalizeArabic(String value) => value
