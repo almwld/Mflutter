@@ -471,6 +471,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
             text: MushafSource.verse(surah, ayah),
             surahNumber: surah,
             ayahNumber: ayah,
+            surahName: getSurahNameArabic(surah),
           );
         } catch (error) {
           if (mounted) {
