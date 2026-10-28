@@ -58,6 +58,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     _pulseCtrl = AnimationController(
       vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _restoreDisplayMode();
+    _restoreReadingPreferences();
     _loadQuran();
   }
 
@@ -79,7 +80,9 @@ class _QuranProScreenState extends State<QuranProScreen>
         _hieroglyphicQuran = hieroglyphicQuran;
         _loading = false;
       });
-      _loadSurah(1);
+      final preferences = await SharedPreferences.getInstance();
+      final savedSurah = preferences.getInt('mudabbir_quran_pro_last_surah') ?? 1;
+      _loadSurah(savedSurah.clamp(1, 114));
     } catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -99,9 +102,36 @@ class _QuranProScreenState extends State<QuranProScreen>
       _currentVerses = verses is List ? List<dynamic>.from(verses) : <dynamic>[];
       _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
     });
+    SharedPreferences.getInstance().then((preferences) {
+      return preferences.setInt('mudabbir_quran_pro_last_surah', n);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) _scroll.jumpTo(0);
     });
+  }
+
+  Future<void> _restoreReadingPreferences() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _fontSize = (preferences.getDouble('mudabbir_quran_pro_font_size') ?? 22)
+          .clamp(14.0, 40.0).toDouble();
+      _showFrame = preferences.getBool('mudabbir_quran_pro_show_frame') ?? true;
+    });
+  }
+
+  Future<void> _changeFontSize(double delta) async {
+    final next = (_fontSize + delta).clamp(14.0, 40.0).toDouble();
+    setState(() => _fontSize = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setDouble('mudabbir_quran_pro_font_size', next);
+  }
+
+  Future<void> _toggleFrame() async {
+    final next = !_showFrame;
+    setState(() => _showFrame = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('mudabbir_quran_pro_show_frame', next);
   }
 
   Future<void> _restoreDisplayMode() async {
@@ -230,6 +260,12 @@ class _QuranProScreenState extends State<QuranProScreen>
       elevation: 0,
       actions: [
         IconButton(
+          tooltip: _showFrame ? 'إخفاء إطار الآيات' : 'إظهار إطار الآيات',
+          icon: Icon(_showFrame ? Icons.crop_square_rounded : Icons.crop_free_rounded,
+              color: _goldColor),
+          onPressed: _toggleFrame,
+        ),
+        IconButton(
             tooltip: _autoScroll ? 'إيقاف التمرير التلقائي' : 'تشغيل التمرير التلقائي',
             icon: Icon(_autoScroll ? Icons.pause : Icons.play_arrow,
                 color: _goldColor),
@@ -269,13 +305,15 @@ class _QuranProScreenState extends State<QuranProScreen>
             const SizedBox(width: 16),
             // أزرار التحكم
             IconButton(
+                tooltip: 'تصغير الخط',
                 icon: const Icon(Icons.remove, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(14, 40).toDouble())),
+                onPressed: () => _changeFontSize(-2)),
             Text('${_fontSize.toInt()}',
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
             IconButton(
+                tooltip: 'تكبير الخط',
                 icon: const Icon(Icons.add, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(14, 40).toDouble())),
+                onPressed: () => _changeFontSize(2)),
           ],
         ),
       ),
