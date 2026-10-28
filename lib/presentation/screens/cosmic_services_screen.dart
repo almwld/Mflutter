@@ -102,8 +102,14 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   }
 
   Future<void> _saveCapsule(String text, DateTime unlockDate) async {
+    final content = text.trim();
+    if (content.isEmpty) return;
+    if (content.length > 10000) {
+      if (mounted) setState(() => _error = 'رسالة الكبسولة طويلة جدًا؛ الحد الأقصى 10000 حرف.');
+      return;
+    }
     try {
-      await TimeCapsuleService.sealCapsule(text.trim(), unlockDate);
+      await TimeCapsuleService.sealCapsule(content, unlockDate);
       final updated = await TimeCapsuleService.getCapsules();
       if (!mounted) return;
       setState(() {
@@ -237,7 +243,17 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     final text = controller.text.trim();
     controller.dispose();
     if (shouldSave == true && text.isNotEmpty) {
-      await _saveCapsule(text, unlockDate);
+      // DatePicker returns midnight. Use the end of the selected local day so
+      // choosing today's date does not make the capsule immediately readable.
+      final unlockAt = DateTime(
+        unlockDate.year,
+        unlockDate.month,
+        unlockDate.day,
+        23,
+        59,
+        59,
+      );
+      await _saveCapsule(text, unlockAt);
     }
   }
 
