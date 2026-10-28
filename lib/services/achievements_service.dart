@@ -25,15 +25,24 @@ class AchievementsService {
       _achievements.where((item) => item['unlocked'] == true).length;
 
   static Future<void> refreshFromLocalActivity() async {
+    var streakReady = true;
     try {
       await DailyStreakService.initialize();
     } catch (_) {
+      streakReady = false;
       // Other local activity metrics remain useful if the streak store fails.
     }
     final summary = await const LocalActivitySummaryService().load();
-    _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
-    _setProgress('ten_verses', summary.bookmarkCount / 10);
-    _setProgress('daily_streak_3', DailyStreakService.streak / 3);
+    final unavailable = summary.warnings.join(' ');
+    if (!unavailable.contains('الصفحات المقروءة')) {
+      _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
+    }
+    if (!unavailable.contains('العلامات المحفوظة')) {
+      _setProgress('ten_verses', summary.bookmarkCount / 10);
+    }
+    if (streakReady) {
+      _setProgress('daily_streak_3', DailyStreakService.streak / 3);
+    }
 
     try {
       final preferences = await SharedPreferences.getInstance();
