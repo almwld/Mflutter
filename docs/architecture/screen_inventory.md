@@ -595,3 +595,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/agents/agent_console_screen.dart`: added an explicit retry action to the knowledge-readiness panel when local Quran/knowledge initialization fails. The retry invokes the existing provider/runtime path rather than creating a second service instance.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local journal resilience)
+
+- `lib/presentation/screens/cosmic_services_screen.dart`: malformed legacy journal JSON is isolated to its own record set so it does not prevent the other local services from loading; the screen surfaces a recovery warning. Dream-note saves now check the storage API's boolean result before reporting success.
+- No tests, analyzer, formatter, or APK build were run.
