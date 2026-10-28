@@ -738,3 +738,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/providers/training_provider.dart` exposes the underlying local model initialization error without replacing it with a fabricated success state. `lib/presentation/screens/training_screen.dart` displays that diagnostic next to the classifier status and retains the explicit retry action.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (streak metric source alignment)
+
+- `lib/services/achievements_service.dart` now derives the three-day streak achievement from `LocalActivitySummaryService`, which reads the same persisted reading-day ledger as the reading statistics. This removes the previous mismatch where the achievement depended on a separate streak store that was not necessarily updated by page navigation.
+- No tests, analyzer, formatter, or APK build were run.
