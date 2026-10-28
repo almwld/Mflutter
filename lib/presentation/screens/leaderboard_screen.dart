@@ -36,6 +36,8 @@ class LeaderboardScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              if (activity.warnings.isNotEmpty)
+                _activityWarning(activity.warnings),
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -80,6 +82,21 @@ class LeaderboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _activityWarning(List<String> warnings) => Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withOpacity(.35)),
+        ),
+        child: Text(
+          'بعض المؤشرات غير مكتملة:\n${warnings.join('\n')}',
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(color: Colors.orangeAccent, height: 1.5),
+        ),
+      );
 
   Widget _stat(String label, String value) {
     return Container(
