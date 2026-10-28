@@ -732,3 +732,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/reading_progress_service.dart` contained a truncated regular-expression line and duplicated method bodies inside `_readValidDays`, leaving the source syntactically malformed. The service was reconstructed with one valid implementation for bounded page positions, unique page/day sets, calendar-date validation, current streak, and seven-day reading counts. Future dates and impossible date strings are excluded.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local classifier diagnostics)
+
+- `lib/presentation/providers/training_provider.dart` exposes the underlying local model initialization error without replacing it with a fabricated success state. `lib/presentation/screens/training_screen.dart` displays that diagnostic next to the classifier status and retains the explicit retry action.
+- No tests, analyzer, formatter, or APK build were run.
