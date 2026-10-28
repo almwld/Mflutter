@@ -25,6 +25,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
       await Future.wait([
         AIPersonalityService.loadSavedPersonality(),
         SmartNotificationsService.loadPreferences(),
+        ContextMemoryService.loadSavedMemory(),
       ]);
       if (!mounted) return;
       setState(() { _loading = false; _loadError = null; });
