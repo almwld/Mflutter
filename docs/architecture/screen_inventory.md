@@ -750,3 +750,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/player_profile_screen.dart` now initializes local profile storage before rendering and exposes actual profile creation and switching backed by `MultiUserService`. The screen explains that these are device-local profiles, not authenticated accounts or cloud sync; storage failures are surfaced to the user.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Profile selection now uses the persisted active index rather than comparing profile names/timestamps, so duplicate names cannot cause the wrong row to appear selected.
