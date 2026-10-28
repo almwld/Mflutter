@@ -413,10 +413,30 @@ class _VariantPage extends StatelessWidget {
       future: MushafVariantLayoutService.page(page),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Center(
-            child: Text(
-              'بيانات تخطيط المصحف غير متوفرة بعد. أعد بناء التطبيق لتوليدها.',
-              textAlign: TextAlign.center,
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.menu_book_outlined,
+                    color: Colors.white54,
+                    size: 34,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'تعذر تحميل تخطيط هذه الصفحة. قد تكون بيانات الصفحة غير متاحة أو تالفة.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () => setState(() {}),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
             ),
           );
         }
