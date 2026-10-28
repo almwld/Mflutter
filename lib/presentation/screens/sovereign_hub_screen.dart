@@ -59,14 +59,12 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
             return;
           }
           try {
-            try {
-              final result = await IoTSanctuaryService.instance.discover();
-              if (!mounted) return;
-              setState(() => _status = 'تم اكتشاف أجهزة إنترنت الأشياء: ${result['devices'] ?? result.length}');
-            } catch (e) {
-              if (!mounted) return;
-              setState(() => _status = 'تعذر اكتشاف أجهزة إنترنت الأشياء: $e');
-            }
+            final result = await IoTSanctuaryService.instance.discover();
+            if (!mounted) return;
+            setState(() => _status = 'تم اكتشاف أجهزة إنترنت الأشياء: ${result['devices'] ?? result.length}');
+          } catch (e) {
+            if (!mounted) return;
+            setState(() => _status = 'تعذر اكتشاف أجهزة إنترنت الأشياء: $e');
           }
         }),
         if (_status.isNotEmpty) Container(margin: EdgeInsets.only(top: 16), padding: EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)), child: Text(_status, style: TextStyle(color: Colors.white70))),
