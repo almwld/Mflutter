@@ -855,3 +855,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `LocalEmbeddingsService` lexical normalization now strips extended Arabic/Quranic combining marks, matching the other knowledge-search surfaces without changing the source text displayed in results.
+
+
+- `DivineNamesScreen` search now strips the extended Arabic/Quranic annotation range. `ElementsScreen` presents the four classical elements as historical classifications and identifies “spirit” as an additional symbolic/philosophical idea rather than a fifth scientifically established element.
