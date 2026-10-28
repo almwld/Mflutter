@@ -633,3 +633,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/advanced_search_screen.dart`: reloading the local Quran index clears the previous “searched/no results” state along with stale results, so the refreshed screen no longer implies a search was performed when it was not.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Settings reset feedback now distinguishes an in-memory reset from a reset whose local persistence succeeded, avoiding a false success claim after storage errors.
