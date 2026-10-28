@@ -367,3 +367,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/quran_page_screen.dart`: missing or empty corrected surah data now displays an explicit local-source error rather than a blank reader. Font-size preference restoration/saving failures no longer escape as uncaught asynchronous errors; the screen preserves the in-session font size and reports persistence failure when relevant.
 - `lib/presentation/screens/ai_advanced_screen.dart`: the local Quran index now has a dedicated retry control after initialization failure.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local knowledge recovery)
+
+- `lib/presentation/screens/occult_explorer_screen.dart`: the local knowledge list can now retry loading its bundled dataset after an error instead of leaving the screen permanently stuck on an error card.
+- `lib/presentation/screens/quran_index_screen.dart`: failure to restore optional last-page metadata no longer prevents browsing the canonical surah/juz/hizb index.
+- No tests, analyzer, formatter, or APK build were run.
