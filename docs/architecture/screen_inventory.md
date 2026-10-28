@@ -825,3 +825,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Legacy capsule migration now isolates capacity/storage failures, still loads the already-migrated capsule list, surfaces a warning, and keeps the legacy source for an idempotent retry rather than blocking the entire services screen.
+
+
+- The searchable More directory now strips the extended Arabic combining-mark range as well as tatweel, aligning its Arabic query normalization with the Quran search surfaces.
