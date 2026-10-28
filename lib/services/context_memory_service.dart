@@ -8,9 +8,17 @@ class ContextMemoryService {
   static final Map<String, int> _topicFrequency = {};
   static final List<String> _recentQuestions = [];
   static Future<void> _writeQueue = Future<void>.value();
+  static Future<void>? _loadFuture;
   static bool _loaded = false;
 
-  static Future<void> loadSavedMemory() async {
+  static Future<void> loadSavedMemory() {
+    if (_loaded) return Future<void>.value();
+    return _loadFuture ??= _loadSavedMemoryOnce().whenComplete(() {
+      _loadFuture = null;
+    });
+  }
+
+  static Future<void> _loadSavedMemoryOnce() async {
     if (_loaded) return;
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_storageKey);
@@ -68,7 +76,9 @@ class ContextMemoryService {
           ? row['timestamp'] as DateTime
           : DateTime.tryParse(row['timestamp']?.toString() ?? '') ?? DateTime.now()).toIso8601String(),
     }).toList(growable: false);
-    _writeQueue = _writeQueue.then((_) async {
+    // A failed preference write must not permanently poison the serial queue;
+    // a later successful write should still be able to persist newer memory.
+    _writeQueue = _writeQueue.catchError((_) {}).then((_) async {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_storageKey, jsonEncode(snapshot));
     });
