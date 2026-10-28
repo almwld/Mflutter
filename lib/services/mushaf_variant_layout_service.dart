@@ -13,6 +13,7 @@ class MushafVariantLayoutService {
 
   static const assetPath = 'assets/mushaf_layout.json';
   static Map<String, dynamic>? _asset;
+  static final Map<int, Future<List<MushafVariantLine>>> _pageCache = {};
 
   static Future<void> ensureLoaded() async {
     if (_asset != null) return;
@@ -20,7 +21,22 @@ class MushafVariantLayoutService {
     _asset = jsonDecode(raw) as Map<String, dynamic>;
   }
 
-  static Future<List<MushafVariantLine>> page(int pageNumber) async {
+  static Future<List<MushafVariantLine>> page(int pageNumber) {
+    final cached = _pageCache[pageNumber];
+    if (cached != null) return cached;
+
+    final pending = _loadPage(pageNumber);
+    _pageCache[pageNumber] = pending;
+    return pending.catchError((Object error, StackTrace stackTrace) {
+      // Failed page loads are not pinned in cache; a later request can retry.
+      if (identical(_pageCache[pageNumber], pending)) {
+        _pageCache.remove(pageNumber);
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+  }
+
+  static Future<List<MushafVariantLine>> _loadPage(int pageNumber) async {
     await ensureLoaded();
     final pages = (_asset!['pages'] as Map).cast<String, dynamic>();
     final rawLines = (pages['$pageNumber'] as List?) ?? const [];
