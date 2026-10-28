@@ -660,3 +660,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Follow-up performance refinement: `QuranProScreen` now opens the canonical Quran immediately after its required asset loads and parses the optional script datasets in the background, so a slow variant parse does not delay ordinary reading.
+
+
+## UI continuation — 2026-10-29 (Mushaf theme persistence)
+
+- `lib/services/quran_page_theme_service.dart` now propagates rejected local writes rather than silently ignoring them. `lib/presentation/screens/quran/mushaf_screen.dart` restores the previous selected theme and reports the error if persistence fails, instead of closing the picker as though the change were saved.
+- No tests, analyzer, formatter, or APK build were run.
