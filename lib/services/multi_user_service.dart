@@ -10,9 +10,14 @@ class MultiUserService {
   static bool _initialized = false;
 
   static Map<String, dynamic> get activeProfile {
-    if (_profiles.isEmpty) return _defaultProfile();
-    final index = _activeProfile >= 0 && _activeProfile < _profiles.length ? _activeProfile : 0;
-    return _profiles[index];
+    if (_profiles.isEmpty) {
+      return Map<String, dynamic>.unmodifiable(_defaultProfile());
+    }
+    final index =
+        _activeProfile >= 0 && _activeProfile < _profiles.length
+            ? _activeProfile
+            : 0;
+    return Map<String, dynamic>.unmodifiable(_profiles[index]);
   }
 
   static List<Map<String, dynamic>> get profiles =>
