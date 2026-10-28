@@ -444,3 +444,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/advanced_search_screen.dart`: opening a search result now passes the exact surah and ayah to the canonical Mushaf in addition to the page, so the target verse can be highlighted and shared Quran context updated.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local activity data integrity)
+
+- `lib/services/local_activity_summary_service.dart`: fallback values remain available if a local metric store fails, but the summary now records explicit warnings instead of silently presenting fallback zeroes as complete data.
+- `lib/presentation/screens/community_screen.dart`, `challenges_screen.dart`, and `leaderboard_screen.dart`: render a visible partial-data warning when one or more local activity sources could not be read. The leaderboard remains explicitly local-only and does not fabricate community rankings.
+- No tests, analyzer, formatter, or APK build were run.
