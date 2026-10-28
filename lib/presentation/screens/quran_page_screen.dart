@@ -5,6 +5,7 @@ import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
 import '../../services/daily_streak_service.dart';
+import '../../services/nucleus_service.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -46,6 +47,18 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             : <dynamic>[];
         _loading = false;
       });
+      // Publish the actual selected Quran context to the shared nucleus.
+      if (_verses.isNotEmpty) {
+        final firstVerse = _verses.first;
+        final firstText = firstVerse is Map ? (firstVerse['text'] ?? '').toString() : '';
+        if (firstText.isNotEmpty) {
+          NucleusService().setQuranContext(
+            surahNumber: widget.surahNumber,
+            ayahNumber: 1,
+            verseText: firstText,
+          );
+        }
+      }
       // Count activity only when the requested surah contains real verse data.
       if (rawVerses is List && rawVerses.isNotEmpty) {
         try {
@@ -140,7 +153,14 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        QuranWaveText(
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => NucleusService().setQuranContext(
+                            surahNumber: widget.surahNumber,
+                            ayahNumber: ayahNum,
+                            verseText: text.toString(),
+                          ),
+                          child: QuranWaveText(
                           text: text,
                           style: TextStyle(
                             fontSize: _fontSize.toDouble(),
@@ -148,6 +168,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFFFFECB3),
                             height: 1.8,
+                          ),
                           ),
                         ),
                         const SizedBox(height: 12),

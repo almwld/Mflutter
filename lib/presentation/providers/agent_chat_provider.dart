@@ -507,13 +507,20 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     final evidence = results.join('\n\n');
+    final nucleus = NucleusService();
+    final verseContext = nucleus.currentVerseText;
+    final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+        ? evidence
+        : evidence + '\n\nالسياق المحدد في المصحف (' +
+            nucleus.currentSurahNumber.toString() + ':' +
+            nucleus.currentAyahNumber.toString() + '):\n' + verseContext;
     final sourceList = _knowledge.loadedSources.join(', ');
-    final runtime = NucleusService();
+    final runtime = nucleus;
     if (runtime.isModelLoaded) {
       try {
-        final boundedEvidence = evidence.length > 12000
-            ? '${evidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
-            : evidence;
+        final boundedEvidence = contextualEvidence.length > 12000
+            ? '${contextualEvidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
+            : contextualEvidence;
         final generated = await runtime.generateGroundedAnswer(
           question: task.userQuery,
           evidence: boundedEvidence,
