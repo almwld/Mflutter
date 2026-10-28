@@ -93,7 +93,7 @@ class QuranService {
         // Uthmani dagger alif represents an alif in common orthography.
         .replaceAll('ٰ', 'ا')
         .replaceAll(
-          RegExp(r'[ًٌٍَُِّْۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+          RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'),
           '',
         )
         .replaceAll('ـ', '')
@@ -109,7 +109,7 @@ class QuranService {
 
   static String _normalizeSearchToken(String value) => value
       .replaceAll(
-        RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'),
         '',
       )
       .replaceAll('ـ', '')
