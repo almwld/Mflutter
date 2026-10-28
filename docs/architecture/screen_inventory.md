@@ -904,3 +904,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Training prediction output now labels the softmax value as an uncalibrated score rather than calibrated confidence, avoiding overstating what the local classifier's numeric output establishes.
+
+
+- `TafsirGeneratorService` now documents at the service boundary that its small fixed text set is not a sourced tafsir database and must not be presented as quoted or verified exegesis.
