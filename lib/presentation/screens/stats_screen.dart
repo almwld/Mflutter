@@ -95,7 +95,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 crossAxisSpacing: 10,
                 childAspectRatio: 1.35,
                 children: [
-                  _statCard('الصفحات المقروءة', '$pagesRead / 604', Icons.menu_book),
+                  _statCard('صفحات تمت زيارتها', '$pagesRead / 604', Icons.menu_book),
                   _statCard('أيام القراءة آخر 7 أيام', '$readingDaysInLast7Days يوم', Icons.calendar_today),
                   _statCard('الاستمرار الحالي', '$streak يوم', Icons.local_fire_department),
                   _statCard('أيام القراءة', '$readingDays يوم', Icons.auto_awesome),
@@ -109,10 +109,8 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
               const SizedBox(height: 10),
               _infoCard(
-                title: 'الختمة الحالية',
-                value: progress >= 1
-                    ? 'اكتملت الختمة'
-                    : '${(progress * 100).toStringAsFixed(1)}٪ مكتملة',
+                title: 'تغطية صفحات المصحف',
+                value: '${(progress * 100).toStringAsFixed(1)}٪ من الصفحات المسجلة',
                 icon: Icons.track_changes,
               ),
             ],
@@ -138,7 +136,7 @@ class _StatsScreenState extends State<StatsScreen> {
               Icon(Icons.auto_stories, color: AppColors.primaryGold, size: 30),
               const Spacer(),
               Text(
-                'تقدم الختمة',
+                'تغطية الصفحات',
                 style: TextStyle(
                   color: AppColors.primaryGold,
                   fontSize: 20,
