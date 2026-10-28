@@ -375,13 +375,15 @@ class AgentChatProvider extends ChangeNotifier {
         }
         final hits = QuranicSearchEngine.search(query).take(8).toList();
         if (hits.isEmpty) {
-          return 'لم يُعثر على تطابق نصي في فهرس القرآن المحلي؛ لم يتم إنشاء آية بديلة.';
+          return 'لم يعثر البحث المحلي على شاهد قرآني مطابق؛ لا تُنشأ آية بديلة. '
+            'يمكن متابعة الإجابة العامة عن السؤال دون نسبة نص إلى القرآن.';
         }
         return hits.map((v) =>
             '${v['surah']} ${v['ayah']}: ${v['text']} — المصدر: assets/quran_full.json').join('\n');
       case 'siyaq':
         final hits = QuranicSearchEngine.search(query).take(4).toList();
-        if (hits.isEmpty) return 'لم يُعثر على موضع سياقي مطابق في فهرس القرآن المحلي.';
+        if (hits.isEmpty) return 'لم يعثر البحث المحلي على موضع سياقي مطابق؛ هذا لا يمنع معالجة السؤال العام، '
+            'ولا يجيز نسبة نص غير موثق إلى القرآن.';
         return hits.map((v) =>
             '${v['surah']} ${v['ayah']}: ${v['text']}').join('\n');
       case 'jummal':
