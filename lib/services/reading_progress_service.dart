@@ -23,9 +23,7 @@ class ReadingProgressService {
 
   static Future<void> saveLastPage(int page) {
     final normalizedPage = page.clamp(_firstPage, _lastPage).toInt();
-    // Serialize all reader writes, not just writes from one PageView instance.
-    // This prevents an older slow preference write from replacing a newer page
-    // when the user swipes quickly or switches between reader modes.
+    // Serialize reader writes so a delayed older write cannot replace a newer page.
     _saveQueue = _saveQueue
         .catchError((Object _) {})
         .then((_) => _savePageAndActivity(normalizedPage));
@@ -38,38 +36,24 @@ class ReadingProgressService {
       throw StateError('تعذر حفظ موضع القراءة محليًا.');
     }
 
-    final pages = _readValidPages(
-      prefs.getStringList(_pagesReadKey) ?? const <String>[],
-    );
-    if (pages.add(normalizedPage)) {
-      final sorted = pages.toList()..sort();
-      if (!await prefs.setStringList(
-        _pagesReadKey,
-        sorted.map((value) => value.toString()).toList(growable: false),
-      )) {
+    final storedPages = prefs.getStringList(_pagesReadKey) ?? const <String>[];
+    final pages = _readValidPages(storedPages);
+    pages.add(normalizedPage);
+    final sortedPages = pages.toList()..sort();
+    final canonicalPages = sortedPages.map((value) => value.toString()).toList();
+    if (!_sameStrings(storedPages, canonicalPages)) {
+      if (!await prefs.setStringList(_pagesReadKey, canonicalPages)) {
         throw StateError('تعذر تحديث صفحات القراءة المحفوظة.');
-      }
-    } else {
-      // Clean up legacy invalid entries and duplicates while preserving
-      // previously recorded valid pages.
-      final stored = prefs.getStringList(_pagesReadKey) ?? const <String>[];
-      final normalized = pages.toList()..sort();
-      final canonical = normalized.map((value) => value.toString()).toList();
-      if (!_sameStrings(stored, canonical)) {
-        if (!await prefs.setStringList(_pagesReadKey, canonical)) {
-          throw StateError('تعذر تصحيح سجل صفحات القراءة.');
-        }
       }
     }
 
     final storedDays =
         prefs.getStringList(_readingDaysKey) ?? const <String>[];
-    final days = _readValidDays(storedDays).toList()..sort();
-    final today = _dateKey(DateTime.now());
-    if (!days.contains(today)) days.add(today);
-    days.sort();
-    if (!_sameStrings(storedDays, days)) {
-      if (!await prefs.setStringList(_readingDaysKey, days)) {
+    final days = _readValidDays(storedDays);
+    days.add(_dateKey(DateTime.now()));
+    final sortedDays = days.toList()..sort();
+    if (!_sameStrings(storedDays, sortedDays)) {
+      if (!await prefs.setStringList(_readingDaysKey, sortedDays)) {
         throw StateError('تعذر حفظ يوم القراءة محليًا.');
       }
     }
@@ -106,68 +90,12 @@ class ReadingProgressService {
   static Set<String> _readValidDays(List<String> values) {
     final days = <String>{};
     for (final value in values) {
-      if (!RegExp(r'^\\d{4}-\\d{2}-\\d{2}
-
-  static Future<int> getReadingDays() async {
-    await _awaitPendingWrites();
-    final prefs = await SharedPreferences.getInstance();
-    // Count distinct dates so legacy duplicates cannot inflate the metric.
-    return _readValidDays(
-      prefs.getStringList(_readingDaysKey) ?? const <String>[],
-    ).length;
-  }
-
-  static Future<int> getCurrentStreak() async {
-    await _awaitPendingWrites();
-    final prefs = await SharedPreferences.getInstance();
-    final days = _readValidDays(
-      prefs.getStringList(_readingDaysKey) ?? const <String>[],
-    );
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    // Keep yesterday's streak alive until the user either reads today or
-    // misses a full calendar day, matching the persistent DailyStreakService.
-    var cursor = days.contains(_dateKey(today))
-        ? today
-        : today.subtract(const Duration(days: 1));
-    var streak = 0;
-
-    while (days.contains(_dateKey(cursor))) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
-  }
-
-  /// Number of distinct reading days in the last seven calendar days.
-  static Future<int> getReadingDaysInLast7Days() async {
-    await _awaitPendingWrites();
-    final prefs = await SharedPreferences.getInstance();
-    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    var count = 0;
-    for (var i = 0; i < 7; i++) {
-      if (days.contains(_dateKey(today.subtract(Duration(days: i))))) {
-        count++;
-      }
-    }
-    return count;
-  }
-
-  /// Compatibility alias retained for existing callers. The value is a count
-  /// of distinct reading days, not pages read.
-  @Deprecated('Use getReadingDaysInLast7Days; this returns days, not pages.')
-  static Future<int> getPagesReadInLast7Days() =>
-      getReadingDaysInLast7Days();
-
-  static String _dateKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-}
-).hasMatch(value)) continue;
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) continue;
       final parsed = DateTime.tryParse(value);
       if (parsed == null || _dateKey(parsed) != value) continue;
-      if (parsed.isAfter(DateTime.now())) continue;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      if (parsed.isAfter(today)) continue;
       days.add(value);
     }
     return days;
@@ -175,8 +103,8 @@ class ReadingProgressService {
 
   static bool _sameStrings(List<String> left, List<String> right) {
     if (left.length != right.length) return false;
-    for (var i = 0; i < left.length; i++) {
-      if (left[i] != right[i]) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
     }
     return true;
   }
@@ -184,7 +112,6 @@ class ReadingProgressService {
   static Future<int> getReadingDays() async {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    // Count distinct dates so legacy duplicates cannot inflate the metric.
     return _readValidDays(
       prefs.getStringList(_readingDaysKey) ?? const <String>[],
     ).length;
@@ -198,13 +125,10 @@ class ReadingProgressService {
     );
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    // Keep yesterday's streak alive until the user either reads today or
-    // misses a full calendar day, matching the persistent DailyStreakService.
     var cursor = days.contains(_dateKey(today))
         ? today
         : today.subtract(const Duration(days: 1));
     var streak = 0;
-
     while (days.contains(_dateKey(cursor))) {
       streak++;
       cursor = cursor.subtract(const Duration(days: 1));
@@ -216,12 +140,14 @@ class ReadingProgressService {
   static Future<int> getReadingDaysInLast7Days() async {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     var count = 0;
-    for (var i = 0; i < 7; i++) {
-      if (days.contains(_dateKey(today.subtract(Duration(days: i))))) {
+    for (var offset = 0; offset < 7; offset++) {
+      if (days.contains(_dateKey(today.subtract(Duration(days: offset))))) {
         count++;
       }
     }
@@ -235,5 +161,7 @@ class ReadingProgressService {
       getReadingDaysInLast7Days();
 
   static String _dateKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 }
