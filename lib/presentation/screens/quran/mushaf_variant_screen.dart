@@ -121,7 +121,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   @override
   void dispose() {
     // Restore the app's normal system bars when leaving Mushaf reading.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafVariantScreen: could not restore system bars on dispose: $error');
+    });
     _controller.dispose();
     super.dispose();
   }
