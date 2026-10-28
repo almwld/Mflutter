@@ -607,3 +607,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/time_capsule_service.dart`: capsule writes are serialized to prevent concurrent read-modify-write loss; the storage write result is checked; stored records are validated and bounded before being exposed to the UI.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (settings persistence resilience)
+
+- `lib/presentation/providers/theme_provider.dart`: preference loading now falls back to safe defaults with a retained error state, theme/font writes are serialized using state snapshots, and storage failures no longer escape as unhandled asynchronous errors.
+- `lib/presentation/screens/settings/settings_screen.dart`: displays the provider's local preference load/save error so an in-memory setting change is not mistaken for a successfully persisted preference.
+- No tests, analyzer, formatter, or APK build were run.
