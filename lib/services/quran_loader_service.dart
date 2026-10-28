@@ -182,7 +182,10 @@ class QuranLoaderService {
         ayahNumber: parsedAyah.ayahNumber,
         text: parsedAyah.text,
         isMakki: parsedAyah.isMakki,
-        juzNumber: MushafSource.juzForPage(pageNumber),
+        juzNumber: MushafSource.juzForVerse(
+          parsedAyah.surahNumber,
+          parsedAyah.ayahNumber,
+        ),
         pageNumber: pageNumber,
         jummal: parsedAyah.jummal,
         axisType: parsedAyah.axisType,
