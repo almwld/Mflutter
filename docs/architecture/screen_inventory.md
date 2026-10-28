@@ -874,3 +874,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `GreatVersesScreen` now passes the selected surah and ayah as well as the page to the Mushaf, so opening a featured verse targets its exact reference instead of only its containing page.
 - `TrainingScreen` displays all three required classifier labels, including zero counts for missing classes, so dataset deficiencies are visible before training.
+
+
+- `AbjadCalculatorScreen` now bounds input length and shows the value assigned to each recognized letter alongside the total, rounded mean, and half-total. This makes the arithmetic traceable instead of presenting only the final numbers.
