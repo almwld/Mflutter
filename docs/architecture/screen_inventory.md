@@ -627,3 +627,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `customize_screen.dart` also displays the shared theme provider's preference persistence warning, so failures are visible on the screen where palette/font/size changes are made.
+
+
+## UI continuation — 2026-10-29 (search reload state)
+
+- `lib/presentation/screens/advanced_search_screen.dart`: reloading the local Quran index clears the previous “searched/no results” state along with stale results, so the refreshed screen no longer implies a search was performed when it was not.
+- No tests, analyzer, formatter, or APK build were run.
