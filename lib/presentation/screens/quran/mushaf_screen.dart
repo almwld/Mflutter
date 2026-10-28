@@ -111,7 +111,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     }
     _restorePageTheme();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
-      debugPrint('MushafScreen: could not restore system bars on dispose: $error');
+      debugPrint('MushafScreen: could not set initial system bars: $error');
     });
   }
 
@@ -131,7 +131,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   @override
   void dispose() {
     // Never leave system status/navigation bars hidden after exiting the reader.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafScreen: could not restore system bars on dispose: $error');
+    });
     _livingPulse.dispose();
     _livingGlow.dispose();
     _mushafZoomController.dispose();
