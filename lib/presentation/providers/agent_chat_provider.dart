@@ -9,6 +9,7 @@ import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
 import '../../services/achievements_service.dart';
+import '../../utils/abjad_constants.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
@@ -804,17 +805,9 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   int _abjad(String text) {
-    const values = {
-      'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ب': 2, 'ج': 3, 'د': 4,
-      'ه': 5, 'ة': 5, 'و': 6, 'ز': 7, 'ح': 8, 'ط': 9, 'ي': 10,
-      'ى': 10, 'ك': 20, 'ل': 30, 'م': 40, 'ن': 50, 'س': 60,
-      'ع': 70, 'ف': 80, 'ص': 90, 'ق': 100, 'ر': 200, 'ش': 300,
-      'ت': 400, 'ث': 500, 'خ': 600, 'ذ': 700, 'ض': 800, 'ظ': 900,
-      'غ': 1000,
-    };
     var total = 0;
     for (final rune in text.runes) {
-      total += values[String.fromCharCode(rune)] ?? 0;
+      total += AbjadConstants.getValue(String.fromCharCode(rune));
     }
     return total;
   }
