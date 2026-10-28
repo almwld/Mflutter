@@ -95,8 +95,15 @@ class AbjadService {
 
   /// الحصول على اللون
   int _getColor(int value) {
-    final colors = [0xFF1A237E, 0xFF0D47A1, 0xFF1565C0, 0xFF1976D2, 0xFF1E88E5];
-    return colors[value % colors.length];
+    if (value < 1) return 0xFF808080;
+    const colors = [
+      0xFF1A237E,
+      0xFF0D47A1,
+      0xFF1565C0,
+      0xFF1976D2,
+      0xFF1E88E5,
+    ];
+    return colors[(value - 1) % colors.length];
   }
 
   /// تطبيع النص العربي
