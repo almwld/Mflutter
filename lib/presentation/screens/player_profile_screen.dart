@@ -33,18 +33,25 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   }
 
   Future<void> _saveLocalCheckpoint() async {
-    final saved = await CloudSyncService.sync();
-    if (!mounted) return;
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          saved
-              ? 'تم حفظ نقطة محلية على الجهاز؛ لا توجد مزامنة سحابية مهيأة.'
-              : CloudSyncService.status,
+    try {
+      final saved = await CloudSyncService.sync();
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            saved
+                ? 'تم حفظ نقطة محلية على الجهاز؛ لا توجد مزامنة سحابية مهيأة.'
+                : CloudSyncService.status,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حفظ نقطة الملف المحلية: $error')),
+      );
+    }
   }
 
   @override
