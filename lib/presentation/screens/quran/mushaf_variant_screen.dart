@@ -4,6 +4,7 @@ import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/mushaf_source.dart';
+import '../../../core/themes/font_manager.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
@@ -233,7 +234,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
                 (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
-                (MushafVariantMode.kufi, 'رَقّ — كوفي مصحفي مبكر', 'خط Raqq المصحفي؛ يتغير العرض فقط ويبقى نص المصدر محفوظًا'),
+                (MushafVariantMode.kufi, 'رَقّ — كوفي مصحفي مبكر', FontManager.isRaqqFontLoaded ? 'خط Raqq المصحفي؛ يتغير العرض فقط ويبقى نص المصدر محفوظًا' : 'تعذر تحميل الخط؛ سيُستخدم خط بديل دون تغيير نص المصدر'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
                 ListTile(
