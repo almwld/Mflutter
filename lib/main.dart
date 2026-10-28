@@ -6,6 +6,7 @@ import 'core/themes/app_theme.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'services/theme_service.dart';
+import 'services/nucleus_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -112,7 +113,9 @@ class MudabbirApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
+    return ChangeNotifierProvider<NucleusService>.value(
+      value: NucleusService(),
+      child: ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
       child: Consumer<ThemeProvider>(
         builder: (context, state, _) => MaterialApp(
@@ -134,6 +137,7 @@ class MudabbirApp extends StatelessWidget {
           darkTheme: _applyPreferences(AppTheme.darkTheme, state, dark: true),
           home: const SplashScreen(),
         ),
+      ),
       ),
     );
   }

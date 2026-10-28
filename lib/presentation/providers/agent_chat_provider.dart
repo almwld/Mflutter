@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/agent_task.dart';
 import '../../services/agent_knowledge_service.dart';
-import '../../services/local_gguf_runtime_service.dart';
+import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
 import '../../services/quran_loader_service.dart';
@@ -508,8 +508,8 @@ class AgentChatProvider extends ChangeNotifier {
 
     final evidence = results.join('\n\n');
     final sourceList = _knowledge.loadedSources.join(', ');
-    final runtime = LocalGgufRuntimeService.instance;
-    if (runtime.isLoaded) {
+    final runtime = NucleusService();
+    if (runtime.isModelLoaded) {
       try {
         final boundedEvidence = evidence.length > 12000
             ? '${evidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
