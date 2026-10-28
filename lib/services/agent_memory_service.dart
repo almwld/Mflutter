@@ -12,6 +12,7 @@ class AgentMemoryService {
   static const _vaultKey = 'mudabbir_super_agent_vault_v1';
 
   Future<List<Map<String, dynamic>>> recentRuns({int limit = 8}) async {
+    if (limit <= 0) return const <Map<String, dynamic>>[];
     final prefs = await SharedPreferences.getInstance();
     final rows = _decodeRows(prefs.getString(_historyKey));
     return rows.reversed.take(limit).toList(growable: false);
@@ -31,7 +32,9 @@ class AgentMemoryService {
       'savedAt': DateTime.now().toIso8601String(),
     });
     final bounded = rows.length > 20 ? rows.sublist(rows.length - 20) : rows;
-    await prefs.setString(_historyKey, jsonEncode(bounded));
+    if (!await prefs.setString(_historyKey, jsonEncode(bounded))) {
+      throw StateError('تعذر حفظ سجل تشغيل الوكلاء محليًا.');
+    }
   }
 
   Future<Map<String, dynamic>> saveVaultNote({
@@ -50,7 +53,9 @@ class AgentMemoryService {
     };
     rows.add(note);
     final bounded = rows.length > 50 ? rows.sublist(rows.length - 50) : rows;
-    await prefs.setString(_vaultKey, jsonEncode(bounded));
+    if (!await prefs.setString(_vaultKey, jsonEncode(bounded))) {
+      throw StateError('تعذر حفظ الملاحظة في دفتر المعرفة المحلي.');
+    }
 
     // Read back from persistent storage to verify that the note was saved.
     final readBack = _decodeRows(prefs.getString(_vaultKey));
@@ -113,6 +118,10 @@ class AgentMemoryService {
         (row) => Map<String, dynamic>.from(row),
       ).toList();
     } on FormatException {
+      return <Map<String, dynamic>>[];
+    } on TypeError {
+      return <Map<String, dynamic>>[];
+    } on ArgumentError {
       return <Map<String, dynamic>>[];
     }
   }
