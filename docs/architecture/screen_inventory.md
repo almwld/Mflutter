@@ -795,3 +795,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Legacy capsules without IDs now receive deterministic IDs derived from their content and unlock timestamp, so their delete controls continue to target the same record after a reload.
+
+
+- Local profile avatar values are trimmed and bounded before persistence, matching the validation already applied to profile names and numeric progress.
