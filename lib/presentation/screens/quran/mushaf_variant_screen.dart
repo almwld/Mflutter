@@ -204,6 +204,69 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     }
   }
 
+  int? _parsePageNumber(String raw) {
+    final normalized = raw.trim().replaceAllMapped(
+      RegExp(r'[٠-٩۰-۹]'),
+      (match) {
+        final code = match.group(0)!.codeUnitAt(0);
+        final digit = code >= 0x06F0 && code <= 0x06F9
+            ? code - 0x06F0
+            : code - 0x0660;
+        return String.fromCharCode(0x30 + digit);
+      },
+    );
+    final page = int.tryParse(normalized);
+    if (page == null || page < 1 || page > MushafSource.totalPages) return null;
+    return page;
+  }
+
+  void _showPagePicker() {
+    final input = TextEditingController(text: '$_page');
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('الانتقال إلى صفحة'),
+        content: TextField(
+          controller: input,
+          keyboardType: TextInputType.number,
+          textDirection: TextDirection.rtl,
+          decoration: const InputDecoration(hintText: '1 - 604'),
+          onSubmitted: (_) {
+            final page = _parsePageNumber(input.text);
+            if (page == null) {
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+              );
+              return;
+            }
+            Navigator.pop(dialogContext);
+            _jump(page);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final page = _parsePageNumber(input.text);
+              if (page == null) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext);
+              _jump(page);
+            },
+            child: const Text('انتقال'),
+          ),
+        ],
+      ),
+    ).whenComplete(input.dispose);
+  }
+
   Future<void> _jump(int page) async {
     final target = MushafSource.normalizePage(page);
     await _controller.animateToPage(
@@ -273,6 +336,11 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                   fontWeight: FontWeight.w800,
                 ),
               ),
+            ),
+            IconButton(
+              tooltip: 'الانتقال إلى صفحة',
+              icon: Icon(Icons.find_in_page_rounded, color: _headerInk),
+              onPressed: _showPagePicker,
             ),
             IconButton(
               tooltip: 'اختيار نمط العرض',
