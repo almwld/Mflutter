@@ -810,3 +810,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Advanced Quran search normalization now strips both Arabic combining diacritics and the extended Quranic annotation-mark range in addition to tatweel, while leaving displayed/canonical verse text untouched.
+
+
+- The shared `QuranService` search normalization now uses the same extended Arabic/Quranic combining-mark ranges as the advanced search screen, keeping single-token and phrase-search normalization consistent.
