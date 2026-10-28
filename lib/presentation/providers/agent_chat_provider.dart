@@ -76,6 +76,18 @@ class AgentChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears only the visible conversation/task. Persisted local memory runs
+  /// and vault notes are intentionally retained.
+  void clearConversation() {
+    final status = _activeTask?.status;
+    if (status == TaskStatus.running || status == TaskStatus.paused) return;
+    _activeTask = null;
+    _messages.clear();
+    _cancelled = false;
+    _paused = false;
+    notifyListeners();
+  }
+
   Future<void> executeTask(String query) async {
     final clean = query.trim();
     if (clean.isEmpty) return;
