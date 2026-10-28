@@ -32,6 +32,8 @@ class GeospatialInsightService extends ChangeNotifier {
   Future<void> stop() async {
     await _subscription?.cancel();
     _subscription = null;
+    _position = null;
+    notifyListeners();
   }
   String getTopography() => altitude > 1000 ? 'mountains' : altitude < 50 ? 'coastal' : 'plains';
   double distanceTo(double lat, double lon) => Geolocator.distanceBetween(latitude, longitude, lat, lon);
