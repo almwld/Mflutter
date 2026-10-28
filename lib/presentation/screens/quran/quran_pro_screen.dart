@@ -38,6 +38,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   double _fontSize = 22;
   bool _showFrame = true;
   bool _waveEnabled = true;
+  bool _chromeVisible = true;
   bool _autoScroll = false;
   Timer? _autoScrollTimer;
 
@@ -236,14 +237,18 @@ class _QuranProScreenState extends State<QuranProScreen>
 
     return Scaffold(
       backgroundColor: _bgColor,
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildModeBar(),
-          Expanded(child: _buildVerseList()),
-        ],
+      appBar: _chromeVisible ? _buildAppBar() : null,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onDoubleTap: () => setState(() => _chromeVisible = !_chromeVisible),
+        child: Column(
+          children: [
+            if (_chromeVisible) _buildModeBar(),
+            Expanded(child: _buildVerseList()),
+          ],
+        ),
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: _chromeVisible ? _buildBottomBar() : null,
     );
   }
 
