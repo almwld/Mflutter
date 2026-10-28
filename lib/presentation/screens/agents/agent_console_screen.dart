@@ -156,6 +156,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 sourceCount: provider.loadedKnowledgeSources.length,
                 initialized: provider.initialized,
                 initializationError: provider.initializationError,
+                modelLoaded: NucleusService().isModelLoaded,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
@@ -296,11 +297,13 @@ class _WorkspaceHero extends StatelessWidget {
   final int sourceCount;
   final bool initialized;
   final String? initializationError;
+  final bool modelLoaded;
   const _WorkspaceHero({
     required this.documentCount,
     required this.sourceCount,
     required this.initialized,
     required this.initializationError,
+    required this.modelLoaded,
   });
 
   @override
@@ -332,7 +335,9 @@ class _WorkspaceHero extends StatelessWidget {
                 initializationError != null
                     ? 'تعذر تهيئة المعرفة المحلية'
                     : initialized
-                        ? 'بحث محلي موثّق • النموذج التوليدي اختياري'
+                        ? modelLoaded
+                            ? 'نموذج GGUF محلي محمّل • البحث المحلي موثّق'
+                            : 'بحث محلي موثّق • حمّل نموذجًا من شاشة النواة للتوليد'
                         : 'تهيئة فهرس المعرفة المحلي…',
                 style: TextStyle(
                   color: initializationError != null
