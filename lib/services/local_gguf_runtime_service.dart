@@ -288,6 +288,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       _status = 'اكتمل الاستدلال المحلي.';
       return answer;
     } catch (error) {
+      // A stream timeout/error must not leave llama.cpp generating natively
+      // after the Dart state has released the generation lock. Stop the native
+      // controller before allowing another request to start.
+      try {
+        await controller.stop();
+      } catch (_) {
+        // Preserve the original generation error; stop is best-effort.
+      }
       _status = 'فشل الاستدلال المحلي: $error';
       rethrow;
     } finally {
@@ -297,7 +305,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   }
 
   Future<void> stopGeneration() async {
-    await _controller?.stop();
+    final controller = _controller;
+    if (controller == null || !_generating) return;
+    await controller.stop();
   }
 
   Future<void> unloadModel() async {
