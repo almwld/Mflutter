@@ -374,3 +374,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/occult_explorer_screen.dart`: the local knowledge list can now retry loading its bundled dataset after an error instead of leaving the screen permanently stuck on an error card.
 - `lib/presentation/screens/quran_index_screen.dart`: failure to restore optional last-page metadata no longer prevents browsing the canonical surah/juz/hizb index.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (calculation and achievement resilience)
+
+- `lib/presentation/screens/abjad_screen.dart`: a successful local Abjad calculation remains visible if optional achievement persistence fails; the failure is reported separately.
+- No tests, analyzer, formatter, or APK build were run.
