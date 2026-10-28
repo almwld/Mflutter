@@ -31,8 +31,24 @@ class _AgentConsoleView extends StatefulWidget {
 class _AgentConsoleViewState extends State<_AgentConsoleView> {
   final _controller = TextEditingController();
   final _agentSearchController = TextEditingController();
+  final NucleusService _nucleus = NucleusService();
+  late bool _modelLoaded;
   String _agentQuery = '';
   String _layer = 'الكل';
+
+  @override
+  void initState() {
+    super.initState();
+    _modelLoaded = _nucleus.isModelLoaded;
+    _nucleus.addListener(_onNucleusChanged);
+  }
+
+  void _onNucleusChanged() {
+    final loaded = _nucleus.isModelLoaded;
+    if (mounted && loaded != _modelLoaded) {
+      setState(() => _modelLoaded = loaded);
+    }
+  }
 
   Future<void> _importOptionalAssets() async {
     try {
@@ -51,6 +67,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
 
   @override
   void dispose() {
+    _nucleus.removeListener(_onNucleusChanged);
     _controller.dispose();
     _agentSearchController.dispose();
     super.dispose();
@@ -156,7 +173,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 sourceCount: provider.loadedKnowledgeSources.length,
                 initialized: provider.initialized,
                 initializationError: provider.initializationError,
-                modelLoaded: NucleusService().isModelLoaded,
+                modelLoaded: _modelLoaded,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
