@@ -74,11 +74,16 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
       return;
     }
 
-    final started = await _mesh.advertise(deviceName: 'مُدَبِّر');
-    if (!mounted) return;
-    setState(() => _status = started
-        ? 'هذا الجهاز قابل للاكتشاف الآن عبر Nearby Connections.'
-        : 'تعذر جعل الجهاز قابلًا للاكتشاف. تحقق من الأذونات ودعم الجهاز.');
+    try {
+      final started = await _mesh.advertise(deviceName: 'مُدَبِّر');
+      if (!mounted) return;
+      setState(() => _status = started
+          ? 'هذا الجهاز قابل للاكتشاف الآن عبر Nearby Connections.'
+          : 'تعذر جعل الجهاز قابلًا للاكتشاف. تحقق من الأذونات ودعم الجهاز.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = 'فشل بدء إعلان الجهاز القريب: $error');
+    }
   }
 
   Future<void> _discoverPeers() async {
