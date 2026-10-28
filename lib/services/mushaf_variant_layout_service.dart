@@ -64,6 +64,10 @@ class MushafVariantLayoutService {
     final pages = (_asset!['pages'] as Map).cast<String, dynamic>();
     final rawLines = (pages['$pageNumber'] as List?) ?? const [];
     final result = <MushafVariantLine>[];
+    // A verse contributes several words to a page. Split it once per page
+    // instead of repeatedly resolving and tokenizing the same verse for every
+    // word-location record.
+    final wordsByVerse = <String, List<String>>{};
 
     for (final raw in rawLines) {
       final map = (raw as Map).cast<String, dynamic>();
@@ -85,12 +89,15 @@ class MushafVariantLayoutService {
         final wordIndex = int.tryParse(parts[2]);
         if (surah == null || ayah == null || wordIndex == null) continue;
 
-        final verse = getVerse(surah, ayah, verseEndSymbol: false);
-        final verseWords = verse
-            .trim()
-            .split(RegExp(r'\s+'))
-            .where((part) => part.isNotEmpty)
-            .toList();
+        final reference = '$surah:$ayah';
+        final verseWords = wordsByVerse.putIfAbsent(
+          reference,
+          () => getVerse(surah, ayah, verseEndSymbol: false)
+              .trim()
+              .split(RegExp(r'\s+'))
+              .where((part) => part.isNotEmpty)
+              .toList(growable: false),
+        );
 
         if (kind == 'marker') {
           final marker = '﴿$ayah﴾';
