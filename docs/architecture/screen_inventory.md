@@ -861,3 +861,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `DailyVerseScreen` now guards an empty local corpus before computing the daily index, and bookmark reads/writes verify the currently displayed verse before changing its visual state. Rapidly advancing to another verse can no longer apply a stale bookmark result to the new verse.
+
+
+- `DivineNamesScreen` now displays an explicit empty-search state rather than an unexplained blank grid. Reading statistics also identify page coverage against the total Mushaf page count.
