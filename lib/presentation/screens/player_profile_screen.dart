@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/multi_user_service.dart';
 import '../../services/achievements_service.dart';
-import '../../services/daily_streak_service.dart';
+import '../../services/reading_progress_service.dart';
 import '../../services/cloud_sync_service.dart';
 
 class PlayerProfileScreen extends StatefulWidget {
@@ -12,6 +12,17 @@ class PlayerProfileScreen extends StatefulWidget {
 }
 
 class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
+  int _readingStreak = 0;
+  List<bool> _readingWeek = List<bool>.filled(7, false);
+
+  String get _streakEmoji {
+    if (_readingStreak >= 30) return '👑';
+    if (_readingStreak >= 14) return '💎';
+    if (_readingStreak >= 7) return '🔥';
+    if (_readingStreak >= 3) return '⭐';
+    return '🌱';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -25,10 +36,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     } catch (error) {
       errors.add('الملفات المحلية: $error');
     }
+    var readingStreak = 0;
+    var readingWeek = List<bool>.filled(7, false);
     try {
-      await DailyStreakService.initialize();
+      readingStreak = await ReadingProgressService.getCurrentStreak();
+      readingWeek = await ReadingProgressService.getReadingWeekHistory();
     } catch (error) {
-      errors.add('التتابع اليومي: $error');
+      errors.add('إحصاءات القراءة: $error');
     }
     try {
       await AchievementsService.refreshFromLocalActivity();
@@ -41,7 +55,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       errors.add('نقطة الحفظ المحلية: $error');
     }
     if (!mounted) return;
-    setState(() {});
+    setState(() {
+      _readingStreak = readingStreak;
+      _readingWeek = readingWeek;
+    });
     if (errors.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -260,11 +277,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         ]))),
         // التتابع اليومي
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(children: [
-          Text('${DailyStreakService.getStreakEmoji()} التتابع اليومي', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
+          Text('${_streakEmoji} التتابع اليومي', style: TextStyle(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.bold)),
           SizedBox(height: 12),
-          Text('${DailyStreakService.streak} يوم متتالي', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+          Text('${_readingStreak} يوم متتالي', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
           SizedBox(height: 8),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: DailyStreakService.weekHistory.map((active) => Container(width: 36, height: 36, decoration: BoxDecoration(shape: BoxShape.circle, color: active ? AppColors.primaryGold : AppColors.surface, border: Border.all(color: AppColors.primaryGold.withOpacity(0.3))), child: Center(child: Text(active ? '✓' : '', style: TextStyle(color: AppColors.primaryNavy))))).toList()),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: _readingWeek.map((active) => Container(width: 36, height: 36, decoration: BoxDecoration(shape: BoxShape.circle, color: active ? AppColors.primaryGold : AppColors.surface, border: Border.all(color: AppColors.primaryGold.withOpacity(0.3))), child: Center(child: Text(active ? '✓' : '', style: TextStyle(color: AppColors.primaryNavy))))).toList()),
         ]))),
         // الإنجازات
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
