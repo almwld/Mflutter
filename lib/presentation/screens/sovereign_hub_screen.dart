@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nearby_connections/nearby_connections.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../services/iot_sanctuary_service.dart';
@@ -14,6 +15,7 @@ class SovereignHubScreen extends StatefulWidget {
 class _SovereignHubScreenState extends State<SovereignHubScreen> {
   final P2PMeshService _mesh = P2PMeshService.instance;
   Map<String, String> _peers = {};
+  Map<String, ConnectionInfo> _pendingConnections = {};
   bool _scanning = false;
   String _status = '';
 
@@ -21,6 +23,8 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
   void initState() {
     super.initState();
     _peers = Map<String, String>.from(_mesh.peers);
+    _pendingConnections =
+        Map<String, ConnectionInfo>.from(_mesh.pendingConnections);
     _mesh.addListener(_onMeshChanged);
   }
 
@@ -32,7 +36,11 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
 
   void _onMeshChanged() {
     if (!mounted) return;
-    setState(() => _peers = Map<String, String>.from(_mesh.peers));
+    setState(() {
+      _peers = Map<String, String>.from(_mesh.peers);
+      _pendingConnections =
+          Map<String, ConnectionInfo>.from(_mesh.pendingConnections);
+    });
   }
 
   Future<void> _toggleDiscovery() async {
@@ -82,6 +90,22 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
           ? 'أُرسل طلب الاتصال إلى $deviceName؛ انتظر نتيجة الاتصال من الجهاز الآخر.'
           : 'تعذر إرسال طلب الاتصال إلى $deviceName.';
     });
+  }
+
+  Future<void> _acceptPeer(String endpointId, String name) async {
+    final accepted = await _mesh.acceptPendingConnection(endpointId);
+    if (!mounted) return;
+    setState(() => _status = accepted
+        ? 'تمت الموافقة محليًا على $name؛ يكتمل الاتصال بعد موافقة الطرف الآخر.'
+        : 'تعذر قبول طلب الاتصال من $name.');
+  }
+
+  Future<void> _rejectPeer(String endpointId, String name) async {
+    final rejected = await _mesh.rejectPendingConnection(endpointId);
+    if (!mounted) return;
+    setState(() => _status = rejected
+        ? 'تم رفض طلب الاتصال من $name.'
+        : 'تعذر رفض طلب الاتصال من $name.');
   }
 
   Future<void> _discoverIoT() async {
@@ -138,7 +162,77 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
                 style: TextStyle(color: Colors.white54),
               ),
             ),
-          ..._peers.entries.map(
+          if (_pendingConnections.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 12, 4, 8),
+              child: Text(
+                'طلبات اتصال بانتظار موافقتك',
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ..._pendingConnections.entries.map((entry) {
+              final info = entry.value;
+              return Card(
+                color: AppColors.surface,
+                margin: const EdgeInsets.only(bottom: 10),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        info.endpointName,
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      SelectableText(
+                        'رمز التحقق: ${info.authenticationToken}',
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          color: AppColors.primaryGold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'قارن الرمز مع الجهاز الآخر عبر قناة موثوقة قبل القبول.',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(color: Colors.white54, fontSize: 11),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _rejectPeer(entry.key, info.endpointName),
+                            icon: const Icon(Icons.close_rounded),
+                            label: const Text('رفض'),
+                          ),
+                          const Spacer(),
+                          FilledButton.icon(
+                            onPressed: () => _acceptPeer(entry.key, info.endpointName),
+                            icon: const Icon(Icons.check_rounded),
+                            label: const Text('قبول'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+          ..._peers.entries
+              .where((peer) => !_pendingConnections.containsKey(peer.key))
+              .map(
             (peer) => Card(
               color: AppColors.surface,
               margin: const EdgeInsets.only(bottom: 8),
