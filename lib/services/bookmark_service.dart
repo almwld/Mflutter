@@ -51,7 +51,9 @@ class BookmarkService {
     });
 
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(bookmarks));
+    if (!await prefs.setString(_key, jsonEncode(bookmarks))) {
+      throw StateError('تعذر حفظ العلامات المرجعية محليًا.');
+    }
   }
 
   static Future<void> removeBookmark(int surah, int ayah) =>
@@ -64,7 +66,9 @@ class BookmarkService {
           (item['ayah'] as num).toInt() == ayah,
     );
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode(bookmarks));
+    if (!await prefs.setString(_key, jsonEncode(bookmarks))) {
+      throw StateError('تعذر تحديث العلامات المرجعية محليًا.');
+    }
   }
 
   static Future<void> _enqueueWrite(Future<void> Function() operation) {
