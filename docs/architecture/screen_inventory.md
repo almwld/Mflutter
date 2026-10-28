@@ -318,3 +318,11 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/providers/agent_chat_provider.dart`: the independent verifier now distinguishes non-empty outputs from traceable source evidence. An output-only run is explicitly labeled as structurally complete, not verified.
 - Achievement persistence is now best-effort after task completion. A failure to update achievements is reported as a warning and does not rewrite an otherwise successful retrieval/inference task as failed.
 - Per instruction, tests, analysis, formatting, and APK builds remain unrun.
+
+
+## UI continuation — 2026-10-29 (agent selection and local training)
+
+- `lib/presentation/providers/agent_chat_provider.dart`: agent selection now resolves IDs through the registry, clears selection errors when the user returns to automatic routing, and rejects stale/unknown IDs instead of silently routing them to generic knowledge search.
+- `lib/presentation/screens/agents/agent_console_screen.dart`: displays an inline error when an invalid agent ID is rejected.
+- `lib/presentation/screens/training_screen.dart`: connected the labeled JSON dataset import to the existing on-device linear-classifier training service. The start action stays disabled until a dataset is loaded, indicates active training, supports the existing cooperative stop action, and reports the resulting service status. This remains classifier-only; it does not train or merge GGUF/Qwen weights and does not auto-label Quran text.
+- Tests, analyzer, formatter, and APK build were not run, per instruction.
