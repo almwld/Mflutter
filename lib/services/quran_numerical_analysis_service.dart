@@ -18,12 +18,11 @@ class QuranNumericalAnalysisService {
 
   Future<QuranWordAnalysis> analyzeAsset() async {
     final jsonText = await (_bundle ?? rootBundle).loadString(sourceAsset);
+    _validateCanonicalAssetJson(jsonText);
     return analyzeJson(jsonText);
   }
 
-  /// Parses the project's current data shape: { "surahNumber": [verse, ...] }.
-  /// Verse objects must contain a string `text` field to contribute to counts.
-  static QuranWordAnalysis analyzeJson(String jsonText) {
+  static void _validateCanonicalAssetJson(String jsonText) {
     final decoded = jsonDecode(jsonText);
     if (decoded is! Map) {
       throw const FormatException('يجب أن تكون بيانات القرآن كائن JSON.');
@@ -53,7 +52,15 @@ class QuranNumericalAnalysisService {
         }
       }
     }
+  }
 
+  /// Parses the project's current data shape: { "surahNumber": [verse, ...] }.
+  /// Verse objects must contain a string `text` field to contribute to counts.
+  static QuranWordAnalysis analyzeJson(String jsonText) {
+    final decoded = jsonDecode(jsonText);
+    if (decoded is! Map) {
+      throw const FormatException('يجب أن تكون بيانات القرآن كائن JSON.');
+    }
     final counts = <String, int>{};
     final locations = <String, List<QuranWordOccurrence>>{};
     var verseCount = 0;
