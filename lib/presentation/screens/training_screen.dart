@@ -88,8 +88,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
             ),
             Text(
               confidence == null
-                  ? 'درجة الثقة: غير متاحة'
-                  : 'درجة المصنف العددية: ${(confidence * 100).toStringAsFixed(1)}%',
+                  ? 'درجة softmax: غير متاحة'
+                  : 'درجة softmax غير المعايرة: ${(confidence * 100).toStringAsFixed(1)}%',
               style: const TextStyle(color: Colors.white70),
             ),
             Text(
