@@ -649,11 +649,11 @@ class AgentChatProvider extends ChangeNotifier {
     final evidence = results.join('\n\n');
     final nucleus = NucleusService();
     final verseContext = nucleus.currentVerseText;
-    final hasVerseContext =
-        verseContext != null && verseContext.trim().isNotEmpty;
-    final verseSource = hasVerseContext &&
-            nucleus.currentSurahNumber != null &&
-            nucleus.currentAyahNumber != null
+    final hasVerseContext = verseContext != null &&
+        verseContext.trim().isNotEmpty &&
+        nucleus.currentSurahNumber != null &&
+        nucleus.currentAyahNumber != null;
+    final verseSource = hasVerseContext
         ? 'القرآن الكريم ${nucleus.currentSurahNumber}:${nucleus.currentAyahNumber}'
         : null;
     final contextualEvidence = !hasVerseContext
