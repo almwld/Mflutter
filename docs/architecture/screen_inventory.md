@@ -496,3 +496,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/bookmark_service.dart`: bookmark insertion and restoration now validate verse references against the bundled QCF/Hafs source, rejecting positive-but-out-of-range ayah numbers that could otherwise crash page navigation from Favorites.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (camera lifecycle cleanup)
+
+- `lib/presentation/screens/device/gaze_tracking_screen.dart`: camera/detector release errors are isolated so one native resource cannot prevent cleanup of the other. Initialization now catches failures from pre-initialization cleanup and disposes partially initialized resources on failure or lifecycle cancellation.
+- No tests, analyzer, formatter, or APK build were run.
