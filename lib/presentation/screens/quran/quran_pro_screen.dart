@@ -10,7 +10,9 @@ import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
+import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
+import 'dart:ui' show FontFeature;
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
 
@@ -61,6 +63,14 @@ class _QuranProScreenState extends State<QuranProScreen> {
     _restoreDisplayMode();
     _restoreReadingPreferences();
     _loadQuran();
+    _loadQuranFonts();
+  }
+
+  Future<void> _loadQuranFonts() async {
+    await QuranFontsService.load();
+    FontManager.markRaqqFontLoaded(QuranFontsService.isRaqqLoaded);
+    FontManager.markRaqqSuraFontLoaded(QuranFontsService.isRaqqSuraLoaded);
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadQuran() async {
@@ -175,11 +185,15 @@ class _QuranProScreenState extends State<QuranProScreen> {
       case QuranDisplayMode.musnadAncient:
         return TextTransformer.toMusnad(text);
       case QuranDisplayMode.dotlessMarked:
-        return TextTransformer.toDotlessPreservingMarks(text);
+        return FontManager.isRaqqFontLoaded
+            ? text
+            : TextTransformer.toDotlessPreservingMarks(text);
       case QuranDisplayMode.dotless:
-        return TextTransformer.toDotless(text);
+        return FontManager.isRaqqFontLoaded
+            ? TextTransformer.removeArabicMarks(text)
+            : TextTransformer.toDotless(text);
       case QuranDisplayMode.kufi:
-        return TextTransformer.transform(text, 'kufi');
+        return text;
       case QuranDisplayMode.hieroglyphic:
         return TextTransformer.toHieroglyphic(text);
       case QuranDisplayMode.uthmaniGold:
@@ -194,9 +208,17 @@ class _QuranProScreenState extends State<QuranProScreen> {
           ? 'Musnad'
           : _mode == QuranDisplayMode.hieroglyphic
               ? 'NotoSansEgyptianHieroglyphs'
-              : _mode == QuranDisplayMode.kufi
+              : (_mode == QuranDisplayMode.kufi ||
+                      _mode == QuranDisplayMode.dotlessMarked ||
+                      _mode == QuranDisplayMode.dotless) &&
+                  FontManager.isRaqqFontLoaded
                   ? 'Raqq'
                   : 'Amiri',
+      fontFeatures: FontManager.isRaqqFontLoaded &&
+              (_mode == QuranDisplayMode.dotlessMarked ||
+                  _mode == QuranDisplayMode.dotless)
+          ? const [FontFeature.enable('ss01')]
+          : const [],
       fontWeight: FontWeight.bold,
       color: _mode == QuranDisplayMode.uthmaniGold
           ? const Color(0xFFFFD700)
@@ -409,8 +431,13 @@ class _QuranProScreenState extends State<QuranProScreen> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      title: Text(_surahName,
-          style: const TextStyle(color: _goldColor, fontFamily: 'Amiri')),
+      title: Text(
+        _surahName,
+        style: TextStyle(
+          color: _goldColor,
+          fontFamily: FontManager.isRaqqSuraFontLoaded ? 'RaqqSura' : 'Amiri',
+        ),
+      ),
       backgroundColor: const Color(0xFF1A237E),
       elevation: 0,
       actions: [
