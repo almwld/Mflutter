@@ -193,6 +193,12 @@ jobs:
       - name: Test Quran numerical analysis
         run: flutter test test/quran_numerical_analysis_service_test.dart
 
+      - name: Test bookmark route and navigation
+        run: flutter test test/quran_bookmarks_screen_test.dart test/more_screen_navigation_test.dart
+
+      - name: Test shared templates
+        run: flutter test test/mudabbir_templates_test.dart
+
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
 
