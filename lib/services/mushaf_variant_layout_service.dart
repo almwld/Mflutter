@@ -92,7 +92,15 @@ class MushafVariantLayoutService {
         final surah = int.tryParse(parts[0]);
         final ayah = int.tryParse(parts[1]);
         final wordIndex = int.tryParse(parts[2]);
-        if (surah == null || ayah == null || wordIndex == null) continue;
+        if (surah == null ||
+            ayah == null ||
+            wordIndex == null ||
+            surah < 1 ||
+            surah > 114 ||
+            ayah < 1 ||
+            wordIndex < 1) {
+          continue;
+        }
 
         final reference = '$surah:$ayah';
         final verseWords = wordsByVerse.putIfAbsent(
