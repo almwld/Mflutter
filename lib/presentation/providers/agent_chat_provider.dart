@@ -37,6 +37,25 @@ class AgentChatProvider extends ChangeNotifier {
 
   Future<void> initialize() async {
     if (_initialized) return;
+    final pending = _initializing;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+
+    final attempt = _initializeOnce();
+    _initializing = attempt;
+    try {
+      await attempt;
+    } catch (_) {
+      // Do not cache a failed initialization future; the next screen/task
+      // entry must be able to retry loading and indexing the local corpus.
+      if (identical(_initializing, attempt)) _initializing = null;
+      rethrow;
+    }
+  }
+
+  Future<void> _initializeOnce() async {
     final ayahs = await QuranLoaderService.loadAllAyahs();
     QuranicSearchEngine.indexVerses(ayahs
         .map((a) => {
@@ -45,9 +64,10 @@ class AgentChatProvider extends ChangeNotifier {
               'ayah': a.ayahNumber.toString(),
               'text': a.text,
             })
-        .toList());
+        .toList(growable: false));
     await _knowledge.initialize();
     _initialized = true;
+    _initializing = null;
     notifyListeners();
   }
 
