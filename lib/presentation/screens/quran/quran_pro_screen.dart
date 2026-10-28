@@ -137,14 +137,18 @@ class _QuranProScreenState extends State<QuranProScreen> {
   }
 
   Future<void> _restoreReadingPreferences() async {
-    final preferences = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _fontSize = (preferences.getDouble('mudabbir_quran_pro_font_size') ?? 22)
-          .clamp(14.0, 40.0).toDouble();
-      _showFrame = preferences.getBool('mudabbir_quran_pro_show_frame') ?? true;
-      _waveEnabled = preferences.getBool('mudabbir_quran_pro_wave_enabled') ?? true;
-    });
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _fontSize = (preferences.getDouble('mudabbir_quran_pro_font_size') ?? 22)
+            .clamp(14.0, 40.0).toDouble();
+        _showFrame = preferences.getBool('mudabbir_quran_pro_show_frame') ?? true;
+        _waveEnabled = preferences.getBool('mudabbir_quran_pro_wave_enabled') ?? true;
+      });
+    } catch (error) {
+      debugPrint('QuranProScreen: could not restore reading preferences: $error');
+    }
   }
 
   Future<void> _changeFontSize(double delta) async {
@@ -169,15 +173,19 @@ class _QuranProScreenState extends State<QuranProScreen> {
   }
 
   Future<void> _restoreDisplayMode() async {
-    final preferences = await SharedPreferences.getInstance();
-    final savedIndex = preferences.getInt('mudabbir_quran_pro_mode_v2');
-    if (savedIndex == null ||
-        savedIndex < 0 ||
-        savedIndex >= QuranDisplayMode.values.length ||
-        !mounted) {
-      return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedIndex = preferences.getInt('mudabbir_quran_pro_mode_v2');
+      if (savedIndex == null ||
+          savedIndex < 0 ||
+          savedIndex >= QuranDisplayMode.values.length ||
+          !mounted) {
+        return;
+      }
+      setState(() => _mode = QuranDisplayMode.values[savedIndex]);
+    } catch (error) {
+      debugPrint('QuranProScreen: could not restore display mode: $error');
     }
-    setState(() => _mode = QuranDisplayMode.values[savedIndex]);
   }
 
   Future<void> _setDisplayMode(QuranDisplayMode mode) async {
