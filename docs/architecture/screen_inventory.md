@@ -334,3 +334,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/cosmic_services_screen.dart`: time capsules selected for today's date unlock at the end of that local day instead of midnight; dream journal entries are limited to 5,000 characters and 200 retained entries; capsule content is limited to 10,000 characters before persistence.
 - `lib/services/time_capsule_service.dart`: enforces non-empty bounded capsule content and a 200-capsule local storage ceiling at the persistence boundary, including calls outside the screen.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (navigation and profile resilience)
+
+- `lib/presentation/screens/player_profile_screen.dart`: local checkpoint-save exceptions now produce a visible status message rather than an uncaught asynchronous failure.
+- `lib/presentation/screens/home_screen.dart`: removed a duplicated quick-action destination and exposed the dedicated letters screen from the quick-access row.
+- No tests, analyzer, formatter, or APK build were run.
