@@ -98,9 +98,10 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
   Future<void> _toggleBookmark() async {
     final verse = _current;
     if (verse == null || _saving) return;
+    final wasBookmarked = _isBookmarked;
     setState(() => _saving = true);
     try {
-      if (_isBookmarked) {
+      if (wasBookmarked) {
         await BookmarkService.removeBookmark(
           verse.surahNumber,
           verse.ayahNumber,
@@ -113,13 +114,23 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
         );
       }
       if (!mounted) return;
+      final current = _current;
+      final stillShowingSavedVerse =
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber;
       setState(() {
-        _isBookmarked = !_isBookmarked;
         _saving = false;
+        if (stillShowingSavedVerse) _isBookmarked = !wasBookmarked;
       });
+      if (!stillShowingSavedVerse) await _refreshBookmark();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_isBookmarked ? 'أُضيفت الآية إلى المفضلة' : 'أُزيلت الآية من المفضلة'),
+          content: Text(
+            wasBookmarked
+                ? 'أُزيلت الآية ${verse.surahNumber}:${verse.ayahNumber} من المفضلة'
+                : 'أُضيفت الآية ${verse.surahNumber}:${verse.ayahNumber} إلى المفضلة',
+          ),
         ),
       );
     } catch (error) {
