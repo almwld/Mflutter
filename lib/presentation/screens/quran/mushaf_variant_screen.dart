@@ -32,14 +32,12 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       ? const Color(0xFF241A12)
       : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
-  bool _systemBarsVisible = false;
   bool _chromeVisible = true;
 
   Future<void> _setImmersiveMode(bool immersive) async {
     await SystemChrome.setEnabledSystemUIMode(
       immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
     );
-    if (mounted) setState(() => _systemBarsVisible = !immersive);
   }
 
   Future<void> _toggleSystemBars() async {
