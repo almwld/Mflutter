@@ -335,7 +335,9 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     final occurrences = analysis.occurrencesFor(word);
     final verseReferences = occurrences
         .take(12)
-        .map((item) => '${item.surahNumber}:${item.ayahNumber}')
+        .map((item) => item.count > 1
+            ? '${item.surahNumber}:${item.ayahNumber} ×${item.count}'
+            : '${item.surahNumber}:${item.ayahNumber}')
         .join(' • ');
     return Card(
       key: ValueKey<String>('result-$word-$count'),
@@ -390,6 +392,8 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                 ],
               ),
             ),
+              ],
+            ),
             if (count > 0) ...[
               const SizedBox(height: 14),
               const Divider(color: Colors.white12),
@@ -411,7 +415,6 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                 style: const TextStyle(
                   color: Colors.white70,
                   height: 1.7,
-                  fontFeatures: [],
                 ),
               ),
               if (occurrences.length > 12)
