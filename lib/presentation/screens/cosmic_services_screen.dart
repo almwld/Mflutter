@@ -32,14 +32,23 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   Future<void> _loadLocalEntries() async {
     try {
       final preferences = await SharedPreferences.getInstance();
+      String? decodeWarning;
       List<Map<String, dynamic>> decode(String? raw) {
         if (raw == null || raw.trim().isEmpty) return [];
-        final value = jsonDecode(raw);
-        if (value is! List) return [];
-        return value
-            .whereType<Map>()
-            .map((row) => Map<String, dynamic>.from(row))
-            .toList(growable: true);
+        try {
+          final value = jsonDecode(raw);
+          if (value is! List) {
+            decodeWarning ??= 'أحد السجلات المحلية ليس قائمة صالحة.';
+            return [];
+          }
+          return value
+              .whereType<Map>()
+              .map((row) => Map<String, dynamic>.from(row))
+              .toList(growable: true);
+        } catch (error) {
+          decodeWarning ??= 'تعذر قراءة سجل محلي تالف: $error';
+          return [];
+        }
       }
 
       final dreams = decode(preferences.getString(_dreamsKey));
@@ -66,7 +75,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
         _dreams = dreams;
         _capsules = capsules;
         _loading = false;
-        _error = null;
+        _error = decodeWarning;
       });
     } catch (error) {
       if (!mounted) return;
