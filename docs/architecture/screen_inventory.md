@@ -469,3 +469,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/achievements_service.dart`: achievement progress is no longer reset from fallback zeros when the corresponding local pages/bookmarks store could not be read. Streak progress is refreshed only after the streak store initializes successfully.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `lib/presentation/screens/player_profile_screen.dart`: streak, achievement refresh, and local checkpoint restoration are now attempted independently so a failure in one subsystem does not prevent the others from loading.
