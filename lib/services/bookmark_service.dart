@@ -34,6 +34,9 @@ class BookmarkService {
     if (surah < 1 || surah > 114 || ayah < 1) {
       throw ArgumentError('مرجع الآية غير صالح: $surah:$ayah');
     }
+    if (text.trim().isEmpty) {
+      throw ArgumentError('لا يمكن حفظ علامة مرجعية دون نص آية.');
+    }
     return _enqueueWrite(() => _addBookmark(surah, ayah, text));
   }
 
