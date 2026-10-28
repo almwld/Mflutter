@@ -678,3 +678,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran_word_explorer_screen.dart`: each indexed word can open its exact verse in the canonical Mushaf; matching occurrences in the word-location sheet are also directly navigable, preserving the verse reference and page.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (knowledge exploration achievement)
+
+- `lib/presentation/screens/occult_explorer_screen.dart` now records a knowledge topic when its detail panel is opened. `lib/services/achievements_service.dart` labels the milestone as seven distinct knowledge topics rather than claiming seven scientific disciplines; progress comes from distinct saved topic identifiers.
+- No tests, analyzer, formatter, or APK build were run.
