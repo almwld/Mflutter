@@ -33,17 +33,12 @@ class AbjadService {
     // حساب الوسط (المجموع مقسوم على 2)
     totalWasat = (totalKabir / 2).round();
 
-    // تحديد العنصر
-    final element = _getElement(totalKabir);
-
-    // تحديد الكوكب
-    final planet = _getPlanet(totalKabir);
-
-    // تحديد البرج
-    final zodiac = _getZodiac(totalKabir);
-
-    // تحديد الاسم الإلهي
-    final divineName = _getDivineName(totalKabir);
+    // These are traditional symbolic mappings, not scientific measurements.
+    final hasLetters = letterResults.isNotEmpty;
+    final element = hasLetters ? _getElement(totalKabir) : 'غير محدد';
+    final planet = hasLetters ? _getPlanet(totalKabir) : 'غير محدد';
+    final zodiac = hasLetters ? _getZodiac(totalKabir) : 'غير محدد';
+    final divineName = hasLetters ? _getDivineName(totalKabir) : 'غير محدد';
 
     // حساب التذبذب (البعد عن المتوسط)
     final avgValue = letterResults.isEmpty ? 0 :
@@ -106,7 +101,8 @@ class AbjadService {
 
   /// الحصول على الاسم الإلهي
   String _getDivineName(int value) {
-    final index = (value - 1) % 99;
+    if (value < 1 || AbjadConstants.divineNames.isEmpty) return 'غير محدد';
+    final index = (value - 1) % AbjadConstants.divineNames.length;
     return AbjadConstants.divineNames[index];
   }
 
