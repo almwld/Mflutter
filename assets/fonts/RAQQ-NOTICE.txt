@@ -1,0 +1,8 @@
+Raqq — Early manuscript Kufic typeface
+
+Font: fonts/Raqq.ttf from https://github.com/aliftype/raqq
+Design purpose: revival of early Qur'anic manuscript Kufic associated with third-century AH manuscripts.
+License: GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later).
+The full license text is included in RAQQ-AGPL-3.0.txt.
+The font is bundled as base64 text in Raqq.ttf.base64 and decoded locally at application startup.
+The font changes presentation only; canonical Quran source text and verse references remain unchanged.
