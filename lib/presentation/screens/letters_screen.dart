@@ -60,6 +60,12 @@ class LettersScreen extends StatelessWidget {
               color: AppColors.gold,
             ),
           ),
+          const SizedBox(height: 5),
+          const Text(
+            'يعرض الجدول نظامًا أبجديًا تاريخيًا للحروف. القيم اصطلاحية ولا تثبت تنبؤات أو خصائص غيبية.',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.4),
+          ),
           const SizedBox(height: AppDimensions.paddingSmall),
           GridView.builder(
             shrinkWrap: true,
