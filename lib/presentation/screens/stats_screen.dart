@@ -24,7 +24,7 @@ class _StatsScreenState extends State<StatsScreen> {
         ReadingProgressService.getPagesRead(),
         ReadingProgressService.getCurrentStreak(),
         ReadingProgressService.getReadingDays(),
-        ReadingProgressService.getPagesReadInLast7Days(),
+        ReadingProgressService.getReadingDaysInLast7Days(),
       ]);
 
   void _retry() => setState(() => _statsFuture = _loadStats());
@@ -80,7 +80,7 @@ class _StatsScreenState extends State<StatsScreen> {
           final pagesRead = data[2] as int;
           final streak = data[3] as int;
           final readingDays = data[4] as int;
-          final pagesInLast7Days = data[5] as int;
+          final readingDaysInLast7Days = data[5] as int;
 
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -96,7 +96,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 childAspectRatio: 1.35,
                 children: [
                   _statCard('الصفحات المقروءة', '$pagesRead / 604', Icons.menu_book),
-                  _statCard('صفحات آخر 7 أيام', '$pagesInLast7Days صفحة', Icons.calendar_today),
+                  _statCard('أيام القراءة آخر 7 أيام', '$readingDaysInLast7Days يوم', Icons.calendar_today),
                   _statCard('الاستمرار الحالي', '$streak يوم', Icons.local_fire_department),
                   _statCard('أيام القراءة', '$readingDays يوم', Icons.auto_awesome),
                 ],
