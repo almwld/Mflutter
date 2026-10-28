@@ -253,3 +253,12 @@ These changes are code-level implementation notes only. No tests/builds were run
 - `AbjadConstants.divineNames` now contains 99 unique entries in a commonly circulated traditional list, without the prior malformed Unicode item or duplicate names. The UI provides 99 matching concise glosses and discloses that lists/orderings may vary.
 - `LettersScreen` now shows traditional Abjad numeric values rather than sequential Arabic alphabet indices and corrects the lunar/solar letter groups and the five qalqalah letters.
 - Symbolic number/planet/element mappings use consistent one-based indexing and reject non-positive inputs.
+
+### Additional correctness and lifecycle work
+- `StatsScreen` now reuses its local-statistics future and exposes retry on storage errors instead of remaining indefinitely on a spinner.
+- The canonical chat provider and agent-console provider guard notifications after disposal and stop active GGUF generation when their screen-owned execution is torn down.
+- `AdvancedTechScreen` only shows time-capsule contents after their unlock date, explicitly discloses plaintext local storage, reports audio errors, and requests permission before showing live coordinates/altitude. Geolocation clears cached coordinates when tracking stops or permission is unavailable.
+- The shared time-capsule service is used by both capsule entry points; old CosmicServicesScreen capsule records are migrated into the shared store.
+- The profile screen describes its checkpoint as local-only and restores its timestamp at startup; no remote cloud sync backend is claimed.
+- Abjad calculations now use the shared letter-value table; fake energy/frequency outputs are removed or set to zero, symbolic mappings are labeled as such, and the 99-name list is shared across the UI, service, and datasource.
+- P2P advertising/discovery now requests runtime permissions and requires explicit approval on both endpoints with authentication-token comparison.
