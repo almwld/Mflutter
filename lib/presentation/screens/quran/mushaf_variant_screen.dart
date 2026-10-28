@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/mushaf_source.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
@@ -50,11 +51,30 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     _controller = PageController(initialPage: _page - 1);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _restorePageTheme();
+    _restoreDisplayMode();
   }
 
   Future<void> _restorePageTheme() async {
     final theme = await QuranPageThemeService.load();
     if (mounted) setState(() => _pageTheme = theme);
+  }
+
+  Future<void> _restoreDisplayMode() async {
+    final preferences = await SharedPreferences.getInstance();
+    final savedIndex = preferences.getInt('mudabbir_mushaf_variant_mode');
+    if (savedIndex == null ||
+        savedIndex < 0 ||
+        savedIndex >= MushafVariantMode.values.length ||
+        !mounted) {
+      return;
+    }
+    setState(() => _mode = MushafVariantMode.values[savedIndex]);
+  }
+
+  Future<void> _setDisplayMode(MushafVariantMode mode) async {
+    setState(() => _mode = mode);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt('mudabbir_mushaf_variant_mode', mode.index);
   }
 
   @override
@@ -224,9 +244,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                   ),
                   title: Text(entry.$2, style: const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700)),
                   subtitle: Text(entry.$3, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11)),
-                  onTap: () {
-                    setState(() => _mode = entry.$1);
-                    Navigator.pop(sheetContext);
+                  onTap: () async {
+                    await _setDisplayMode(entry.$1);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
                   },
                 ),
             ],
