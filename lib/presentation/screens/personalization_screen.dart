@@ -97,15 +97,21 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                         Text(ContextMemoryService.getContextSummary(), textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70)),
                         const SizedBox(height: 6),
                         const Text('تُحفظ الأسئلة محليًا على الجهاز وتُستعاد عند فتح التطبيق؛ قد لا تُحفظ آخر إضافة إذا تعذرت الكتابة إلى التخزين.', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.white54, fontSize: 12)),
-                        if (ContextMemoryService.getRecentQuestions().isNotEmpty) ...[
+                        if (ContextMemoryService.getRecentExchanges(limit: 3).isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          const Text('الأسئلة الأخيرة', textDirection: TextDirection.rtl, style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-                          ...ContextMemoryService.getRecentQuestions().take(5).map((question) => ListTile(
-                            dense: true, contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.history, color: Colors.white54),
-                            title: Text(question, textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70)),
+                          const Text('أحدث المحادثات المحفوظة', textDirection: TextDirection.rtl, style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                          ...ContextMemoryService.getRecentExchanges(limit: 3).map((exchange) => Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppColors.background,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(exchange, textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70)),
+                            ),
                           )),
-                        ],
+                        ],,
                       ]),
                     ),
                     const SizedBox(height: 12),
