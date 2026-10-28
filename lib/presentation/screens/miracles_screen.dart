@@ -382,7 +382,7 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                   Text(
                     count == 0
                         ? 'لم تظهر الكلمة وفق قاعدة التطبيع المحددة.'
-                        : 'عدد مرات الظهور: $count',
+                        : 'عدد مرات الظهور: $count في ${occurrences.length} آية',
                     textDirection: TextDirection.rtl,
                     textAlign: TextAlign.right,
                     style: const TextStyle(
