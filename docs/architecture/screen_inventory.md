@@ -136,3 +136,20 @@ The presence of these tests does not itself prove that all tests pass on the cur
 - Do not claim model training when only inference is supported.
 - Do not modify Quran source text through AI generation.
 - Do not change workflow secrets or remove existing CI/build/artifact steps without a verified reason.
+
+
+## Implementation progress — first feature slice
+
+### Quran numerical analysis
+
+Implemented on the audit branch:
+
+- `lib/services/quran_numerical_analysis_service.dart` parses the bundled `assets/unified_quran.json` data and computes word counts from each verse's `text` field.
+- Counts use a documented normalization rule: remove Arabic diacritics and tatweel, normalize common alif forms, map alif maqsura to ya, and tokenize Arabic letters.
+- `lib/presentation/screens/miracles_screen.dart` now loads real local data, shows corpus totals, supports single-word exact normalized searches, and draws animated bars whose lengths reflect computed counts.
+- The former hard-coded numerical-claim cards were removed from this screen. The UI explicitly explains that literal counts depend on the normalization convention and do not, by themselves, establish a religious claim.
+- `test/quran_numerical_analysis_service_test.dart` covers corpus aggregation, word counts, and invalid/empty input.
+
+### Validation status
+
+The changes have been committed to the audit branch. CI and local Flutter commands have not yet been confirmed for this feature slice; do not treat the tests as passing until the workflow result is inspected.
