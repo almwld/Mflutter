@@ -94,7 +94,10 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     final updated = [entry, ..._dreams].take(200).toList(growable: false);
     try {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setString(_dreamsKey, jsonEncode(updated));
+      final saved = await preferences.setString(_dreamsKey, jsonEncode(updated));
+      if (!saved) {
+        throw StateError('رفض التخزين المحلي حفظ المذكرة.');
+      }
       if (!mounted) return;
       setState(() {
         _dreams = updated;
