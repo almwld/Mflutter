@@ -19,7 +19,7 @@ Future<void> _loadBundledKufiFont() async {
       'assets/fonts/NotoKufiArabic.ttf.base64',
     );
     final bytes = Uint8List.fromList(
-      base64Decode(encoded.replaceAll(RegExp(r'\\s+'), '')),
+      base64Decode(encoded.replaceAll(RegExp(r'\s+'), '')),
     );
     final loader = FontLoader('NotoKufiArabic')
       ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
