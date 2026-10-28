@@ -1,5 +1,6 @@
 import '../../../core/utils/abjad_calculator.dart';
 import '../../../utils/abjad_constants.dart';
+import '../../../utils/divine_names_descriptions.dart';
 import '../../../domain/entities/divine_name.dart';
 import '../../../core/constants/app_enums.dart';
 import '../../../domain/entities/science.dart';
@@ -33,8 +34,8 @@ class AbjadLocalDatasource {
       id: index + 1,
       arabicName: names[index],
       transliteration: '',
-      meaning: '',
-      description: '',
+      meaning: DivineNamesDescriptions.meanings[names[index]] ?? '',
+      description: DivineNamesDescriptions.meanings[names[index]] ?? '',
       type: DivineNameType.names,
       abjadValue: number,
       color: '#FFD700',
