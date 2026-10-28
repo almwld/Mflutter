@@ -45,7 +45,6 @@ class _QuranProScreenState extends State<QuranProScreen>
   // متحكمات
   final ScrollController _scroll = ScrollController();
   final Map<int, GlobalKey> _verseKeys = <int, GlobalKey>{};
-  late AnimationController _pulseCtrl;
 
   // الثوابت
   static const _bgColor = Color(0xFF0A0E27);
@@ -60,8 +59,6 @@ class _QuranProScreenState extends State<QuranProScreen>
   @override
   void initState() {
     super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
     _restoreDisplayMode();
     _restoreReadingPreferences();
     _loadQuran();
@@ -222,7 +219,6 @@ class _QuranProScreenState extends State<QuranProScreen>
   void dispose() {
     _autoScrollTimer?.cancel();
     _scroll.dispose();
-    _pulseCtrl.dispose();
     super.dispose();
   }
 
@@ -537,10 +533,7 @@ class _QuranProScreenState extends State<QuranProScreen>
         final num = i + 1;
 
         final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
-        return AnimatedBuilder(
-          animation: _pulseCtrl,
-          builder: (context, _) {
-            return Container(
+        return Container(
               key: verseKey,
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(16),
@@ -571,8 +564,6 @@ class _QuranProScreenState extends State<QuranProScreen>
                   _buildVerseNumber(num),
                 ],
               ),
-            );
-          },
         );
       },
     );
