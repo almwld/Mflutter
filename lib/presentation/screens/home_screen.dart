@@ -244,6 +244,7 @@ class _MushafHome extends StatelessWidget {
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
       ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
+      ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
     ];
     return SizedBox(
