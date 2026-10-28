@@ -532,9 +532,26 @@ class _QuranProScreenState extends State<QuranProScreen> {
         final verseNumber = i + 1;
         final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
 
-        return Container(
-          key: verseKey,
-          margin: const EdgeInsets.only(bottom: 8),
+        return GestureDetector(
+          onTap: () {
+            // Always send canonical source text to the local core, never a
+            // transformed Musnad/dotless/Kufic presentation string.
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
+            );
+          },
+          onLongPress: () async {
+            await Clipboard.setData(ClipboardData(text: text.toString()));
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تم نسخ الآية $verseNumber من سورة $_surahName')),
+            );
+          },
+          child: Container(
+            key: verseKey,
+            margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.03),
@@ -562,6 +579,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
               const SizedBox(height: 8),
               _buildVerseNumber(verseNumber),
             ],
+          ),
           ),
         );
       },
