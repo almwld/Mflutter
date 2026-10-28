@@ -23,22 +23,32 @@ class TextTransformer {
     'ه': '𓉔', 'ة': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ؤ': '𓅱', 'ئ': '𓇌',
   };
 
-  static const Set<int> _arabicMarkRunes = {
-    0x064B, 0x064C, 0x064D, 0x064E, 0x064F,
-    0x0650, 0x0651, 0x0652, 0x0670,
-  };
+  /// Arabic combining marks and Quranic annotation marks commonly found in
+  /// Uthmani text. This is used only by optional presentation transforms.
+  static bool _isArabicMark(int rune) =>
+      (rune >= 0x0610 && rune <= 0x061A) ||
+      (rune >= 0x064B && rune <= 0x065F) ||
+      rune == 0x0670 ||
+      (rune >= 0x06D6 && rune <= 0x06ED) ||
+      (rune >= 0x08D3 && rune <= 0x08FF);
 
   static String toMusnad(String text) => _map(text, musnadMap);
   static String toHieroglyphic(String text) => _map(text, hieroglyphMap);
 
-  /// يحذف النقاط مع الإبقاء على هيكل الكلمة ومكانها في السطر.
-  static String toDotless(String text) {
+  /// يحذف النقاط وعلامات التشكيل، مع الحفاظ على النص الأصلي خارج طبقة العرض.
+  static String toDotless(String text) => _toDotless(text, removeMarks: true);
+
+  /// يحذف النقاط فقط ويُبقي التشكيل القرآني ظاهرًا.
+  static String toDotlessPreservingMarks(String text) =>
+      _toDotless(text, removeMarks: false);
+
+  static String _toDotless(String text, {required bool removeMarks}) {
     const replacements = {
       'ب': 'ٮ', 'ت': 'ٮ', 'ث': 'ٮ', 'ن': 'ں', 'ي': 'ى', 'ج': 'ح',
       'خ': 'ح', 'ذ': 'د', 'ز': 'ر', 'ش': 'س', 'ض': 'ص', 'ظ': 'ط',
       'غ': 'ع', 'ف': 'ڡ', 'ق': 'ٯ',
     };
-    return _map(text, replacements, removeMarks: true);
+    return _map(text, replacements, removeMarks: removeMarks);
   }
 
   static String transform(String text, String mode) {
@@ -66,7 +76,7 @@ class TextTransformer {
     final buffer = StringBuffer();
     for (final rune in text.runes) {
       final c = String.fromCharCode(rune);
-      if (removeMarks && _arabicMarkRunes.contains(rune)) continue;
+      if (removeMarks && _isArabicMark(rune)) continue;
       buffer.write(map[c] ?? c);
     }
     return buffer.toString();

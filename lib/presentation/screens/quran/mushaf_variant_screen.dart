@@ -8,7 +8,7 @@ import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
 
-enum MushafVariantMode { musnad, dotless, kufi, hieroglyphic }
+enum MushafVariantMode { uthmani, musnad, dotless, dotlessPlain, kufi, hieroglyphic }
 
 class MushafVariantScreen extends StatefulWidget {
   const MushafVariantScreen({super.key, required this.initialPage});
@@ -21,7 +21,7 @@ class MushafVariantScreen extends StatefulWidget {
 class _MushafVariantScreenState extends State<MushafVariantScreen> {
   late final PageController _controller;
   int _page = 1;
-  MushafVariantMode _mode = MushafVariantMode.musnad;
+  MushafVariantMode _mode = MushafVariantMode.uthmani;
 
   static const _paper = Color(0xFFF8F1E4);
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
@@ -67,9 +67,13 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   String _transform(String text) {
     switch (_mode) {
+      case MushafVariantMode.uthmani:
+        return text;
       case MushafVariantMode.musnad:
         return TextTransformer.toMusnad(text);
       case MushafVariantMode.dotless:
+        return TextTransformer.toDotlessPreservingMarks(text);
+      case MushafVariantMode.dotlessPlain:
         return TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
         return TextTransformer.transform(text, 'kufi');
@@ -80,10 +84,14 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   String get _modeName {
     switch (_mode) {
+      case MushafVariantMode.uthmani:
+        return 'عثماني Unicode';
       case MushafVariantMode.musnad:
         return 'المسند';
       case MushafVariantMode.dotless:
-        return 'بدون نقاط';
+        return 'بدون نقاط مع التشكيل';
+      case MushafVariantMode.dotlessPlain:
+        return 'بدون نقاط أو تشكيل';
       case MushafVariantMode.kufi:
         return 'كوفي';
       case MushafVariantMode.hieroglyphic:
@@ -201,8 +209,10 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               ),
               const SizedBox(height: 8),
               for (final entry in [
+                (MushafVariantMode.uthmani, 'عثماني Unicode', 'عرض النص العربي مباشرة بخط Amiri كبديل عند تعذر عرض محارف QCF'),
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
-                (MushafVariantMode.dotless, 'بدون نقاط', 'إزالة نقاط الحروف مع الحفاظ على النص'),
+                (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
+                (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
                 (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
@@ -274,9 +284,12 @@ class _VariantPage extends StatelessWidget {
 
   String get _fontFamily {
     switch (mode) {
+      case MushafVariantMode.uthmani:
+        return 'Amiri';
       case MushafVariantMode.musnad:
         return 'Musnad';
       case MushafVariantMode.dotless:
+      case MushafVariantMode.dotlessPlain:
         return 'Amiri';
       case MushafVariantMode.kufi:
         return 'Amiri';
@@ -417,7 +430,11 @@ class _FixedMushafLine extends StatelessWidget {
     final tokens = <String>[];
     for (final segment in line.segments) {
       if (segment.startsWith('﴿') && segment.endsWith('﴾') && segment.length > 2) {
-        tokens.add('۞' + segment.substring(1, segment.length - 1) + '۞');
+        // Keep the package's supported Quranic ayah-number delimiters.
+        // Replacing them with ۞ can render as empty squares on fonts that
+        // do not contain that ornamental Unicode glyph.
+        final marker = segment.substring(1, segment.length - 1);
+        tokens.add('﴿$marker﴾');
       } else {
         final converted = transform(segment);
         if (converted.isNotEmpty) tokens.add(converted);

@@ -81,7 +81,7 @@ class ChatProvider extends ChangeNotifier {
       await _ensureQuranIndex();
       final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
       final evidence = hits.isEmpty
-          ? 'لم يُعثر على تطابق نصي في assets/quran_full.json؛ لا تستخدم نصًا قرآنيًا غير موثق.'
+          ? 'لم يعثر البحث المحلي على شاهد قرآني مطابق. أجب عن السؤال العام إن أمكن، ولا تقتبس آية أو تنسب نصًا إلى القرآن دون شاهد موثق.'
           : hits
               .map((verse) =>
                   '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
@@ -97,13 +97,15 @@ class ChatProvider extends ChangeNotifier {
       } else {
         generated = await _localAi.generate(
           'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
-          'أجب بالعربية الفصحى بدقة ووضوح. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة. '
+          'أجب عن السؤال مباشرة بالعربية الفصحى متى أمكن. عدم العثور على آية مطابقة ليس سببًا لرفض سؤال عام. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة، '
           'لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
           'المستخدم: $cleanText\n\nالأدلة المحلية:\n$evidence\n\nمُدَبِّر:',
         );
       }
-      final reply = '$generated\n\n'
-          'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
+      final evidenceNote = hits.isEmpty
+          ? 'ملاحظة: لم يُرفق استشهاد قرآني لأن البحث المحلي لم يجد تطابقًا؛ هذا لا يمنع الإجابة عن الأسئلة العامة.'
+          : 'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
+      final reply = '$generated\n\n$evidenceNote';
 
       _messages.add(ChatMessage(text: reply, isUser: false));
     } catch (e) {

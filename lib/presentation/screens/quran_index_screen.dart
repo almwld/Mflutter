@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
+import 'quran/mushaf_variant_screen.dart';
 
 /// الفهرس الحقيقي للمصحف المدني: 114 سورة مرتبطة بصفحات QCF/Hafs.
 class QuranIndexScreen extends StatefulWidget {
@@ -39,6 +40,18 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
         elevation: 0,
         title: const Text('فهرس المصحف',
           style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.bold, color: Colors.white)),
+        actions: [
+          IconButton(
+            tooltip: 'فتح عرض صفحات QCF الأصلي',
+            icon: const Icon(Icons.menu_book_rounded, color: _gold),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MushafScreen(initialPage: 1, restoreLastPage: false),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(children: [
         Padding(
@@ -108,7 +121,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
                 onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false))),
+                  builder: (_) => MushafVariantScreen(initialPage: page))),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(textDirection: TextDirection.rtl, children: [
@@ -159,7 +172,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
                       onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false),
+                        builder: (_) => MushafVariantScreen(initialPage: page),
                       )),
                       child: ListTile(
                         leading: CircleAvatar(
