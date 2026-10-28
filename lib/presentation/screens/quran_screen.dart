@@ -14,6 +14,7 @@ class _QuranScreenState extends State<QuranScreen> {
   Map<int, List<Ayah>> _bySurah = {};
   int _selectedSurah = 1;
   int _currentPage = 0;
+  final PageController _pageController = PageController();
   bool _loading = true;
   String? _loadError;
 
@@ -49,6 +50,12 @@ class _QuranScreenState extends State<QuranScreen> {
         _loadError = 'تعذر تحميل المصحف المحلي: $error';
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -99,10 +106,17 @@ class _QuranScreenState extends State<QuranScreen> {
           PopupMenuButton<int>(
             tooltip: 'اختيار السورة',
             icon: const Icon(Icons.list_rounded),
-            onSelected: (surah) => setState(() {
-              _selectedSurah = surah;
-              _currentPage = 0;
-            }),
+            onSelected: (surah) {
+              setState(() {
+                _selectedSurah = surah;
+                _currentPage = 0;
+              });
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted && _pageController.hasClients) {
+                  _pageController.jumpToPage(0);
+                }
+              });
+            },
             itemBuilder: (_) => surahs
                 .map((surah) => PopupMenuItem<int>(
                       value: surah,
@@ -119,6 +133,7 @@ class _QuranScreenState extends State<QuranScreen> {
           ? const Center(child: Text('لا توجد آيات في هذه السورة.'))
           : PageView.builder(
               key: ValueKey<int>(_selectedSurah),
+              controller: _pageController,
               itemCount: ayahs.length,
               onPageChanged: (page) => setState(() => _currentPage = page),
               itemBuilder: (_, index) => _buildVerseCard(ayahs[index]),
@@ -132,7 +147,7 @@ class _QuranScreenState extends State<QuranScreen> {
             children: [
               IconButton(
                 tooltip: 'الآية السابقة',
-                onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                onPressed: _currentPage > 0 ? () => _pageController.previousPage(duration: const Duration(milliseconds: 220), curve: Curves.easeOut) : null,
                 icon: const Icon(Icons.chevron_right_rounded),
               ),
               Text(
@@ -142,7 +157,7 @@ class _QuranScreenState extends State<QuranScreen> {
               ),
               IconButton(
                 tooltip: 'الآية التالية',
-                onPressed: _currentPage + 1 < ayahs.length ? () => setState(() => _currentPage++) : null,
+                onPressed: _currentPage + 1 < ayahs.length ? () => _pageController.nextPage(duration: const Duration(milliseconds: 220), curve: Curves.easeOut) : null,
                 icon: const Icon(Icons.chevron_left_rounded),
               ),
             ],
