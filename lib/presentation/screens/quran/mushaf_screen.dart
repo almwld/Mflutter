@@ -463,12 +463,20 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           }
         }
       } else if (action == 'copy') {
-        final text = MushafSource.verse(surah, ayah);
-        await Clipboard.setData(ClipboardData(text: text));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم نسخ نص الآية')),
-          );
+        try {
+          final text = MushafSource.verse(surah, ayah);
+          await Clipboard.setData(ClipboardData(text: text));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم نسخ نص الآية')),
+            );
+          }
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تعذر نسخ الآية: $error')),
+            );
+          }
         }
       } else if (action == 'share') {
         try {
