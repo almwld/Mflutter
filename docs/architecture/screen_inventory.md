@@ -278,3 +278,10 @@ These changes are code-level implementation notes only. No tests/builds were run
 ### Validation status for this continuation
 
 Per the user's current instruction, no tests, formatter, analyzer, or APK build were run. These changes are committed to the audit branch but remain unverified by compilation/runtime checks. Continue the screen-by-screen behavioral audit; do not mark the 23-screen specification complete based on the file mapping alone.
+
+
+### UI continuation — search recovery and capability disclosures
+
+- `lib/presentation/screens/advanced_search_screen.dart`: added explicit index-loading/error/retry states, query clearing, no-match feedback, and support for Arabic-Indic/Persian digits in verse references. Search normalizes text only for matching; the displayed Quran verse text remains unchanged. Added an explicit search action while typing.
+- `lib/presentation/screens/about_screen.dart`: removed unsupported numerical claims about neural networks/features and blanket claims that the complete application works offline. The page now describes the actual feature boundaries, notes that local-model availability depends on importing/loading a compatible GGUF model, and distinguishes local persistence from encryption or cloud synchronization.
+- Validation remains intentionally deferred: no tests, analyzer, formatter, or build were run in this continuation, per the user's instruction.
