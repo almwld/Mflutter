@@ -852,3 +852,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AIAdvancedScreen` clears stale results when rebuilding its Quran index and refuses to run a search when the latest index load failed, rather than silently searching an old in-memory index.
+
+
+- `LocalEmbeddingsService` lexical normalization now strips extended Arabic/Quranic combining marks, matching the other knowledge-search surfaces without changing the source text displayed in results.
