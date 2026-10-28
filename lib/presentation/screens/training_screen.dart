@@ -340,7 +340,9 @@ class LossChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (history.isEmpty || size.width <= 0 || size.height <= 0) return;
     final losses = history
-        .map((entry) => (entry['loss'] as num).toDouble())
+        .map((entry) => entry['loss'])
+        .whereType<num>()
+        .map((value) => value.toDouble())
         .where((value) => value.isFinite)
         .toList(growable: false);
     if (losses.isEmpty) return;
