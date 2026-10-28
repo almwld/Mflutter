@@ -40,6 +40,7 @@ class _QuranProScreenState extends State<QuranProScreen>
 
   // متحكمات
   final ScrollController _scroll = ScrollController();
+  final Map<int, GlobalKey> _verseKeys = <int, GlobalKey>{};
   late AnimationController _pulseCtrl;
 
   // الثوابت
@@ -101,6 +102,7 @@ class _QuranProScreenState extends State<QuranProScreen>
       _currentSurah = n;
       _currentVerses = verses is List ? List<dynamic>.from(verses) : <dynamic>[];
       _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
+      _verseKeys.clear();
     });
     SharedPreferences.getInstance().then((preferences) {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
@@ -226,6 +228,95 @@ class _QuranProScreenState extends State<QuranProScreen>
     );
   }
 
+  Future<void> _searchCurrentSurah() async {
+    if (_currentVerses.isEmpty) return;
+    final controller = TextEditingController();
+    var query = '';
+    final selectedIndex = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final normalized = query.trim();
+          final matches = <int>[];
+          for (var i = 0; i < _currentVerses.length; i++) {
+            final verse = _currentVerses[i];
+            final text = verse is Map ? (verse['text']?.toString() ?? '') : '';
+            final numberMatches = normalized.isNotEmpty &&
+                (i + 1).toString() == normalized;
+            if (normalized.isEmpty || text.contains(normalized) || numberMatches) {
+              matches.add(i);
+            }
+          }
+          return AlertDialog(
+            title: Text('البحث في سورة ${_surahName}'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textDirection: TextDirection.rtl,
+                    onChanged: (value) => setDialogState(() => query = value),
+                    decoration: const InputDecoration(
+                      hintText: 'اكتب كلمة أو رقم الآية',
+                      prefixIcon: Icon(Icons.search_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: matches.isEmpty
+                        ? const Center(child: Text('لا توجد آيات مطابقة'))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: matches.length.clamp(0, 80),
+                            itemBuilder: (_, row) {
+                              final index = matches[row];
+                              final verse = _currentVerses[index];
+                              final text = verse is Map
+                                  ? (verse['text']?.toString() ?? '')
+                                  : '';
+                              return ListTile(
+                                dense: true,
+                                title: Text('الآية ${index + 1}',
+                                    textDirection: TextDirection.rtl),
+                                subtitle: Text(text,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textDirection: TextDirection.rtl),
+                                onTap: () => Navigator.of(dialogContext).pop(index),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('إغلاق'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    controller.dispose();
+    if (selectedIndex == null || !mounted) return;
+    final key = _verseKeys[selectedIndex];
+    final targetContext = key?.currentContext;
+    if (targetContext != null) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+        alignment: 0.2,
+      );
+    }
+  }
+
   void _toggleAutoScroll() {
     if (_autoScroll) {
       _autoScrollTimer?.cancel();
@@ -264,6 +355,11 @@ class _QuranProScreenState extends State<QuranProScreen>
           icon: Icon(_showFrame ? Icons.crop_square_rounded : Icons.crop_free_rounded,
               color: _goldColor),
           onPressed: _toggleFrame,
+        ),
+        IconButton(
+          tooltip: 'البحث في السورة الحالية',
+          icon: const Icon(Icons.search_rounded, color: _goldColor),
+          onPressed: _searchCurrentSurah,
         ),
         IconButton(
             tooltip: _autoScroll ? 'إيقاف التمرير التلقائي' : 'تشغيل التمرير التلقائي',
@@ -366,10 +462,12 @@ class _QuranProScreenState extends State<QuranProScreen>
                 : _transform(text);
         final num = i + 1;
 
+        final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
         return AnimatedBuilder(
           animation: _pulseCtrl,
           builder: (context, _) {
             return Container(
+              key: verseKey,
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
