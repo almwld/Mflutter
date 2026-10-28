@@ -36,8 +36,9 @@ class MultiUserService {
       }
     }
     if (_profiles.isEmpty) {
-      _profiles = [_defaultProfile()];
-      await _persist();
+      final defaults = <Map<String, dynamic>>[_defaultProfile()];
+      await _persist(defaults);
+      _profiles = defaults;
     }
     final savedIndex = prefs.getInt('${_storageKey}_active') ?? 0;
     _activeProfile = savedIndex >= 0 && savedIndex < _profiles.length
@@ -48,14 +49,26 @@ class MultiUserService {
 
   static Future<void> addProfile(String name, String avatar) async {
     await initialize();
-    _profiles.add({
-      'name': name.trim().isEmpty ? 'ملف جديد' : name.trim(),
+    if (_profiles.length >= 20) {
+      throw StateError('بلغت الملفات المحلية الحد الأقصى (20).');
+    }
+    final normalizedName = name.trim();
+    final updated = _profiles
+        .map((profile) => Map<String, dynamic>.from(profile))
+        .toList();
+    updated.add({
+      'name': normalizedName.isEmpty
+          ? 'ملف جديد'
+          : (normalizedName.length > 60
+              ? normalizedName.substring(0, 60)
+              : normalizedName),
       'avatar': avatar,
       'level': 1,
       'xp': 0,
       'createdAt': DateTime.now().toIso8601String(),
     });
-    await _persist();
+    await _persist(updated);
+    _profiles = updated;
   }
 
   static Future<void> switchProfile(int index) async {
@@ -73,16 +86,25 @@ class MultiUserService {
   static Future<void> addXP(int amount) async {
     await initialize();
     if (amount <= 0) return;
-    final profile = _profiles[_activeProfile];
+    final updated = _profiles
+        .map((profile) => Map<String, dynamic>.from(profile))
+        .toList();
+    final profile = updated[_activeProfile];
     final xp = (profile['xp'] as num?)?.toInt() ?? 0;
-    profile['xp'] = xp + amount;
-    profile['level'] = ((xp + amount) / 250).floor() + 1;
-    await _persist();
+    final nextXp = xp + amount;
+    profile['xp'] = nextXp;
+    profile['level'] = (nextXp / 250).floor() + 1;
+    await _persist(updated);
+    _profiles = updated;
   }
 
-  static Future<void> _persist() async {
+  static Future<void> _persist([
+    List<Map<String, dynamic>>? profiles,
+  ]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(_profiles));
+    if (!await prefs.setString(_storageKey, jsonEncode(profiles ?? _profiles))) {
+      throw StateError('تعذر حفظ الملفات المحلية.');
+    }
   }
 
   static Map<String, dynamic> _defaultProfile() => {
