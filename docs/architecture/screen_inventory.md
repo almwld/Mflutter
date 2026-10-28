@@ -432,3 +432,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/services/on_device_training_service.dart`: the three supported supervised labels train a three-output classifier instead of a ten-output head with seven unused categories.
 - `lib/presentation/screens/training_screen.dart`: prediction results map indices 0–2 to the three supported labels and safely handle missing/non-finite confidence values.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (classifier initialization status)
+
+- `lib/presentation/providers/training_provider.dart` and `lib/presentation/screens/training_screen.dart`: the model checkpoint check now exposes an initialization state, avoids offering a duplicate retry while a check is in flight, and displays a distinct progress message.
+- No tests, analyzer, formatter, or APK build were run.
