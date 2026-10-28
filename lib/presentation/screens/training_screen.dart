@@ -59,6 +59,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
   }
 
   void _showPredictionDialog(BuildContext context, Map<String, dynamic> result) {
+    const classLabels = <int, String>{
+      0: 'كوني (cosmic)',
+      1: 'سكينة (tranquil)',
+      2: 'حسابي (calculation)',
+    };
+    final rawIndex = result['class_index'];
+    final classIndex = rawIndex is num ? rawIndex.toInt() : null;
+    final rawConfidence = result['confidence'];
+    final confidence = rawConfidence is num && rawConfidence.isFinite
+        ? rawConfidence.toDouble().clamp(0.0, 1.0).toDouble()
+        : null;
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -68,14 +79,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('فهرس الفئة الرقمي: ${result['class_index']}', style: const TextStyle(color: Colors.white)),
             Text(
-              'الدرجة العددية: ${((result['confidence'] as num).toDouble() * 100).toStringAsFixed(1)}%',
+              classIndex == null
+                  ? 'الفئة: غير معروفة'
+                  : 'الفئة: ${classLabels[classIndex] ?? 'فئة غير مدعومة'} (الفهرس $classIndex)',
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(color: Colors.white),
+            ),
+            Text(
+              confidence == null
+                  ? 'درجة الثقة: غير متاحة'
+                  : 'درجة المصنف العددية: ${(confidence * 100).toStringAsFixed(1)}%',
               style: const TextStyle(color: Colors.white70),
             ),
             Text(
               result['interpretation']?.toString() ??
-                  'مخرج رقمي تجريبي لا يحمل دلالة روحية أو تفسيرية مثبتة.',
+                  'مخرج مصنف رقمي محلي؛ لا يحمل دلالة روحية أو تفسيرية مثبتة.',
               textDirection: TextDirection.rtl,
               style: const TextStyle(color: Colors.white54, fontSize: 12),
             ),
