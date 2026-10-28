@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
+import '../../services/quran_loader_service.dart';
 import '../../services/daily_streak_service.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/bookmark_service.dart';
@@ -93,12 +94,42 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       });
     }
     try {
+      if (widget.surahNumber < 1 || widget.surahNumber > 114) {
+        throw ArgumentError.value(
+          widget.surahNumber,
+          'surahNumber',
+          'يجب أن يكون رقم السورة بين 1 و114.',
+        );
+      }
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
+      if (data is! Map) {
+        throw const FormatException('مصدر القرآن المحلي ليس كائن السور المتوقع.');
+      }
       final rawVerses = data[widget.surahNumber.toString()];
-      final correctedVerses = rawVerses is List
-          ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
-          : <dynamic>[];
+      final expectedCount =
+          QuranLoaderService.canonicalSurahAyahCounts[widget.surahNumber - 1];
+      if (rawVerses is! List || rawVerses.length != expectedCount) {
+        throw FormatException(
+          'بيانات السورة غير مكتملة: المتوقع $expectedCount آية، '
+          'والموجود ${rawVerses is List ? rawVerses.length : 0}.',
+        );
+      }
+      for (var index = 0; index < rawVerses.length; index++) {
+        final verse = rawVerses[index];
+        if (verse is! Map ||
+            verse['text'] is! String ||
+            (verse['text'] as String).trim().isEmpty) {
+          throw FormatException(
+            'نص الآية ${widget.surahNumber}:${index + 1} غير صالح.',
+          );
+        }
+      }
+      final correctedVerses =
+          QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses);
+      if (correctedVerses.length != expectedCount) {
+        throw FormatException('تغيّر عدد آيات السورة بعد تصحيح المصدر المحلي.');
+      }
       if (!mounted) return;
       setState(() {
         _verses = correctedVerses;
