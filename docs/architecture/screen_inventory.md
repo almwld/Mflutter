@@ -786,3 +786,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Follow-up source-integrity repair: `lib/services/daily_streak_service.dart` was reconstructed after a malformed date-pattern edit had split the method body. Date validation now uses canonical parse-and-round-trip checks without a fragile inline regex; the service retains serialized activity writes and shared reading-ledger synchronization.
+
+
+- The local dream journal now supports deleting an individual saved note through `DreamJournalService.removeDream`; the UI reloads persisted entries after deletion and reports storage failures rather than removing only the visible row.
