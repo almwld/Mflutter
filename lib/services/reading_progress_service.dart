@@ -9,7 +9,12 @@ class ReadingProgressService {
   static const int _lastPage = 604;
   static Future<void> _saveQueue = Future<void>.value();
 
+  static Future<void> _awaitPendingWrites() async {
+    await _saveQueue.catchError((Object _) {});
+  }
+
   static Future<int> getLastPage({int fallback = 1}) async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     return (prefs.getInt(_pageKey) ?? fallback)
         .clamp(_firstPage, _lastPage)
@@ -68,6 +73,7 @@ class ReadingProgressService {
   }
 
   static Future<double> getKhatmahProgress() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final pages = _readValidPages(
       prefs.getStringList(_pagesReadKey) ?? const <String>[],
@@ -76,6 +82,7 @@ class ReadingProgressService {
   }
 
   static Future<int> getPagesRead() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     return _readValidPages(
       prefs.getStringList(_pagesReadKey) ?? const <String>[],
@@ -102,11 +109,13 @@ class ReadingProgressService {
   }
 
   static Future<int> getReadingDays() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     return (prefs.getStringList(_readingDaysKey) ?? const <String>[]).length;
   }
 
   static Future<int> getCurrentStreak() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
     final now = DateTime.now();
@@ -127,6 +136,7 @@ class ReadingProgressService {
 
   /// Number of distinct reading days in the last seven calendar days.
   static Future<int> getPagesReadInLast7Days() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
     var count = 0;
