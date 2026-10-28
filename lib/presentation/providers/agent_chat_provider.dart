@@ -233,16 +233,10 @@ class AgentChatProvider extends ChangeNotifier {
       return;
     }
     _paused = !_paused;
-    final nextStepStatus = _paused ? StepStatus.paused : StepStatus.running;
-    final steps = task.steps.map((step) {
-      final shouldPause = _paused && step.status == StepStatus.running;
-      final shouldResume = !_paused && step.status == StepStatus.paused;
-      if (!shouldPause && !shouldResume) return step;
-      return step.copyWith(status: nextStepStatus);
-    }).toList(growable: false);
+    // This cooperative pause takes effect at the next step boundary; an
+    // already-running local lookup/inference is not falsely marked as stopped.
     _activeTask = task.copyWith(
       status: _paused ? TaskStatus.paused : TaskStatus.running,
-      steps: steps,
     );
     notifyListeners();
   }
