@@ -75,11 +75,49 @@ class DailyStreakService {
   static void _pruneOldDates([Set<String>? dates]) {
     final target = dates ?? _activeDates;
     final now = DateTime.now();
-    final cutoff = DateTime(now.year, now.month, now.day)
-        .subtract(const Duration(days: 365));
+    final today = DateTime(now.year, now.month, now.day);
+    final cutoff = today.subtract(const Duration(days: 365));
     target.removeWhere((key) {
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}
+
+  static void _recalculate() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    var cursor = _activeDates.contains(_dateKey(today))
+        ? today
+        : today.subtract(const Duration(days: 1));
+    var count = 0;
+    while (_activeDates.contains(_dateKey(cursor))) {
+      count++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    _streak = count;
+
+    for (var index = 0; index < 7; index++) {
+      final day = today.subtract(Duration(days: 6 - index));
+      _weekHistory[index] = _activeDates.contains(_dateKey(day));
+    }
+  }
+
+  static String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  static String getStreakEmoji() {
+    if (_streak >= 30) return '👑';
+    if (_streak >= 14) return '💎';
+    if (_streak >= 7) return '🔥';
+    if (_streak >= 3) return '⭐';
+    return '🌱';
+  }
+}
+).hasMatch(key)) return true;
       final parsed = DateTime.tryParse(key);
-      return parsed == null || parsed.isBefore(cutoff);
+      return parsed == null ||
+          _dateKey(parsed) != key ||
+          parsed.isBefore(cutoff) ||
+          parsed.isAfter(today);
     });
   }
 
