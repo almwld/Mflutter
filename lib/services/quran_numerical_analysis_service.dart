@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'quran_loader_service.dart';
+
 /// Reproducible word counts over the Quran text asset bundled with the app.
 ///
 /// This service reports literal counts under a documented normalization rule.
@@ -25,6 +27,31 @@ class QuranNumericalAnalysisService {
     final decoded = jsonDecode(jsonText);
     if (decoded is! Map) {
       throw const FormatException('يجب أن تكون بيانات القرآن كائن JSON.');
+    }
+    if (decoded.length != QuranLoaderService.canonicalSurahAyahCounts.length) {
+      throw FormatException(
+        'ملف التحليل لا يحتوي على السور الـ114 كاملة؛ الموجود ${decoded.length}.',
+      );
+    }
+    for (var surah = 1; surah <= 114; surah++) {
+      final verses = decoded[surah.toString()];
+      final expected = QuranLoaderService.canonicalSurahAyahCounts[surah - 1];
+      if (verses is! List || verses.length != expected) {
+        throw FormatException(
+          'عدد آيات السورة $surah في ملف التحليل غير مطابق للمصحف: '
+          'المتوقع $expected، والموجود ${verses is List ? verses.length : 0}.',
+        );
+      }
+      for (var index = 0; index < verses.length; index++) {
+        final verse = verses[index];
+        if (verse is! Map ||
+            verse['text'] is! String ||
+            (verse['text'] as String).trim().isEmpty) {
+          throw FormatException(
+            'نص الآية غير صالح في السورة $surah عند الموضع ${index + 1}.',
+          );
+        }
+      }
     }
 
     final counts = <String, int>{};
