@@ -326,3 +326,11 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/agents/agent_console_screen.dart`: displays an inline error when an invalid agent ID is rejected.
 - `lib/presentation/screens/training_screen.dart`: connected the labeled JSON dataset import to the existing on-device linear-classifier training service. The start action stays disabled until a dataset is loaded, indicates active training, supports the existing cooperative stop action, and reports the resulting service status. This remains classifier-only; it does not train or merge GGUF/Qwen weights and does not auto-label Quran text.
 - Tests, analyzer, formatter, and APK build were not run, per instruction.
+
+
+## UI continuation — 2026-10-29 (local services resilience)
+
+- `lib/presentation/screens/sovereign_hub_screen.dart`: peer connection, accept, and reject operations now catch service/plugin failures and expose them in the status panel rather than allowing uncaught asynchronous errors to escape the UI.
+- `lib/presentation/screens/cosmic_services_screen.dart`: time capsules selected for today's date unlock at the end of that local day instead of midnight; dream journal entries are limited to 5,000 characters and 200 retained entries; capsule content is limited to 10,000 characters before persistence.
+- `lib/services/time_capsule_service.dart`: enforces non-empty bounded capsule content and a 200-capsule local storage ceiling at the persistence boundary, including calls outside the screen.
+- No tests, analyzer, formatter, or APK build were run.
