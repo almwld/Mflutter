@@ -19,15 +19,29 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   }
 
   Future<void> _loadStreak() async {
+    final errors = <String>[];
     try {
       await DailyStreakService.initialize();
-      await AchievementsService.refreshFromLocalActivity();
-      await CloudSyncService.restore();
-      if (mounted) setState(() {});
     } catch (error) {
-      if (!mounted) return;
+      errors.add('التتابع اليومي: $error');
+    }
+    try {
+      await AchievementsService.refreshFromLocalActivity();
+    } catch (error) {
+      errors.add('الإنجازات: $error');
+    }
+    try {
+      await CloudSyncService.restore();
+    } catch (error) {
+      errors.add('نقطة الحفظ المحلية: $error');
+    }
+    if (!mounted) return;
+    setState(() {});
+    if (errors.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر تحميل بيانات الملف المحلي: $error')),
+        SnackBar(
+          content: Text('بعض بيانات الملف لم تُحمّل بالكامل: ${errors.join('؛ ')}'),
+        ),
       );
     }
   }
