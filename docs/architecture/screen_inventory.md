@@ -562,3 +562,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/multi_user_service.dart`: callers now receive an immutable snapshot of the active profile, preventing UI consumers from mutating in-memory profile data without going through the persistence-aware service methods.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- The comparison screen also distinguishes an empty local corpus from a malformed user reference, avoiding a misleading prompt to correct references when no verses were loaded.
