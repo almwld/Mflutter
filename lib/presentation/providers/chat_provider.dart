@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../services/ollama_service.dart';
@@ -18,8 +20,13 @@ class ChatProvider extends ChangeNotifier {
   // shared indexing future so consecutive messages do not reload and rebuild
   // the 6,236-verse search index every time.
   Future<void>? _quranIndexFuture;
+  bool _disposed = false;
 
-  void _onGgufChanged() => notifyListeners();
+  void _notifySafely() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _onGgufChanged() => _notifySafely();
 
   bool get hasActiveLocalModel => _core.isModelLoaded || _localAi.isRunning;
 
@@ -75,10 +82,11 @@ class ChatProvider extends ChangeNotifier {
     _messages.add(ChatMessage(text: cleanText, isUser: true));
     _loading = true;
     _error = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
       await _ensureQuranIndex();
+      if (_disposed) return;
       final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
       final evidence = hits.isEmpty
           ? 'لم يعثر البحث المحلي على شاهد قرآني مطابق. أجب عن السؤال العام إن أمكن، ولا تقتبس آية أو تنسب نصًا إلى القرآن دون شاهد موثق.'
@@ -112,6 +120,7 @@ class ChatProvider extends ChangeNotifier {
       final evidenceNote = hits.isEmpty
           ? 'ملاحظة: لم يُرفق استشهاد قرآني لأن البحث المحلي لم يجد تطابقًا؛ هذا لا يمنع الإجابة عن الأسئلة العامة.'
           : 'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
+      if (_disposed) return;
       final reply = '$generated\n\n$evidenceNote';
 
       _messages.add(ChatMessage(text: reply, isUser: false));
@@ -125,19 +134,21 @@ class ChatProvider extends ChangeNotifier {
       ));
     } finally {
       _loading = false;
-      notifyListeners();
+      _notifySafely();
     }
   }
 
   void clearChat() {
     _messages.clear();
     _error = null;
-    notifyListeners();
+    _notifySafely();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _core.removeListener(_onGgufChanged);
+    unawaited(_core.stopGeneration().catchError((_) {}));
     super.dispose();
   }
 }
