@@ -7,6 +7,7 @@ class ReadingProgressService {
   static const _readingDaysKey = 'quran.reading_days';
   static const int _firstPage = 1;
   static const int _lastPage = 604;
+  static Future<void> _saveQueue = Future<void>.value();
 
   static Future<int> getLastPage({int fallback = 1}) async {
     final prefs = await SharedPreferences.getInstance();
@@ -15,11 +16,17 @@ class ReadingProgressService {
         .toInt();
   }
 
-  static Future<void> saveLastPage(int page) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Persist and count the same canonical page. Otherwise page 0 or 999
-    // could be saved as 1/604 while also inflating progress with an invalid ID.
+  static Future<void> saveLastPage(int page) {
     final normalizedPage = page.clamp(_firstPage, _lastPage).toInt();
+    // Serialize all reader writes, not just writes from one PageView instance.
+    // This prevents an older slow preference write from replacing a newer page
+    // when the user swipes quickly or switches between reader modes.
+    _saveQueue = _saveQueue.then((_) => _savePageAndActivity(normalizedPage));
+    return _saveQueue;
+  }
+
+  static Future<void> _savePageAndActivity(int normalizedPage) async {
+    final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_pageKey, normalizedPage);
 
     final pages = _readValidPages(
