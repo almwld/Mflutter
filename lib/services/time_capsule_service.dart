@@ -16,6 +16,9 @@ class TimeCapsuleService {
     if (normalized.length > maxContentLength) {
       throw ArgumentError('يتجاوز محتوى الكبسولة الحد الأقصى البالغ 10000 حرف.');
     }
+    if (!unlockDate.isAfter(DateTime.now())) {
+      throw ArgumentError('يجب أن يكون موعد فتح الكبسولة في المستقبل.');
+    }
     return _enqueueWrite(() async {
       final prefs = await SharedPreferences.getInstance();
       final capsules = _read(prefs);
