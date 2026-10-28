@@ -556,3 +556,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/compare_screen.dart`: canonical Quran corpus loading now exposes a retry action and resets loading/error state before a retry, instead of leaving the comparison screen on an unrecoverable error message.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (profile state integrity)
+
+- `lib/services/multi_user_service.dart`: callers now receive an immutable snapshot of the active profile, preventing UI consumers from mutating in-memory profile data without going through the persistence-aware service methods.
+- No tests, analyzer, formatter, or APK build were run.
