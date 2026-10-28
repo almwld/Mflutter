@@ -514,3 +514,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran_page_screen.dart`: double-tap now synchronizes the reader chrome with Android immersive system-bar visibility, and system bars are restored on exit. Platform failures are handled without breaking the reader.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local profile persistence)
+
+- `lib/services/multi_user_service.dart`: the active local profile is restored from persisted preferences rather than always resetting to profile zero. Profile switching now updates in-memory state only after the active index is saved; adding profiles and awarding XP persist candidate state before publishing it, report storage failures, and bound the profile count/name length.
+- No tests, analyzer, formatter, or APK build were run.
