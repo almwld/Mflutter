@@ -71,6 +71,12 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   }
 
   Future<void> _loadSurah() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
@@ -202,8 +208,23 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
           : _loadError != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(_loadError!, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
-                  style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _loadError!,
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri'),
+                  ),
+                  const SizedBox(height: 14),
+                  OutlinedButton.icon(
+                    onPressed: _loadSurah,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('إعادة تحميل السورة'),
+                  ),
+                ],
+              ),
             ))
           : Container(
               decoration: const BoxDecoration(
