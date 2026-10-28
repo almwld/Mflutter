@@ -383,7 +383,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
             ),
           const SizedBox(height: 12),
           const Text(
-            'المذكرات والكبسولات محفوظة محليًا في تفضيلات التطبيق. حذف بيانات التطبيق قد يزيلها؛ لا تُرفع إلى خادم من هذه الشاشة.',
+            'المذكرات والكبسولات محفوظة محليًا في تفضيلات التطبيق. حذف بيانات التطبيق قد يزيلها؛ لا تُرفع إلى خادم من هذه الشاشة. تأجيل الكبسولة إخفاء داخل الواجهة وليس تشفيرًا أو قفلًا أمنيًا.',
             textDirection: TextDirection.rtl,
             style: TextStyle(color: Colors.white54, fontSize: 11, height: 1.5),
           ),
