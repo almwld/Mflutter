@@ -270,7 +270,7 @@ class _QuranProScreenState extends State<QuranProScreen>
                         ? const Center(child: Text('لا توجد آيات مطابقة'))
                         : ListView.builder(
                             shrinkWrap: true,
-                            itemCount: matches.length.clamp(0, 80),
+                            itemCount: matches.length.clamp(0, 80).toInt(),
                             itemBuilder: (_, row) {
                               final index = matches[row];
                               final verse = _currentVerses[index];
@@ -305,8 +305,22 @@ class _QuranProScreenState extends State<QuranProScreen>
     );
     controller.dispose();
     if (selectedIndex == null || !mounted) return;
-    final key = _verseKeys[selectedIndex];
-    final targetContext = key?.currentContext;
+    var targetContext = _verseKeys[selectedIndex]?.currentContext;
+    // ListView.builder creates off-screen rows lazily. Move near the target first
+    // so its keyed context exists even when the result is far down the surah.
+    if (targetContext == null && _scroll.hasClients) {
+      final position = _scroll.position;
+      final estimatedOffset = (selectedIndex * 180.0)
+          .clamp(0.0, position.maxScrollExtent).toDouble();
+      await _scroll.animateTo(
+        estimatedOffset,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      if (!mounted) return;
+      targetContext = _verseKeys[selectedIndex]?.currentContext;
+    }
     if (targetContext != null) {
       await Scrollable.ensureVisible(
         targetContext,
