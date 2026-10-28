@@ -114,17 +114,12 @@ class AbjadService {
 
   /// تطبيع النص العربي
   String _normalizeArabic(String text) {
+    // Normalize only variants with the same table value. Keep hamza and
+    // ta marbuta intact because their explicit Abjad values differ from
+    // unrelated letters in this table.
     return text
-        .replaceAll('أ', 'ا')
-        .replaceAll('إ', 'ا')
-        .replaceAll('آ', 'ا')
-        .replaceAll('ؤ', 'و')
-        .replaceAll('ئ', 'ي')
-        .replaceAll('ء', 'ي')
-        .replaceAll('ة', 'ه')
-        .replaceAll('ي', 'ي')
-        .replaceAll('ۧ', '')
-        .replaceAll('ۨ', '');
+        .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '');
   }
 }
 
