@@ -91,7 +91,19 @@ class _DivineNamesScreenState extends State<DivineNamesScreen> {
             ),
           ),
           Expanded(
-            child: GridView.builder(
+            child: names.isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'لا توجد أسماء مطابقة لعبارة البحث.',
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  )
+                : GridView.builder(
               padding: const EdgeInsets.all(10),
               itemCount: names.length,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
