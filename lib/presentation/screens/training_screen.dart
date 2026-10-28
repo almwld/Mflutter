@@ -41,31 +41,6 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
   }
 
-  Future<void> _startTraining(TrainingProvider provider) async {
-    final dataset = _dataset;
-    if (dataset == null) {
-      setState(() => _datasetError = 'استورد مجموعة بيانات JSON موسومة قبل بدء التدريب.');
-      return;
-    }
-    try {
-      await provider.trainOnVerses(dataset.samples, epochs: 50);
-      if (!mounted) return;
-      if (provider.status.startsWith('فشل التدريب') ||
-          provider.status.startsWith('تعذر التدريب') ||
-          provider.status.startsWith('أُلغي التدريب')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(provider.status)),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تعذر بدء التدريب: $error')),
-        );
-      }
-    }
-  }
-
   void _showPredictionDialog(BuildContext context, Map<String, dynamic> result) {
     showDialog<void>(
       context: context,
