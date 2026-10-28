@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../core/themes/font_manager.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/reading_progress_service.dart';
+import '../../../services/daily_streak_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
@@ -81,6 +83,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
         'mudabbir_mushaf_variant_last_page',
         normalizedPage,
       );
+      await ReadingProgressService.saveLastPage(normalizedPage);
+      await DailyStreakService.recordActivity();
     }).catchError((Object error) {
       debugPrint('MushafVariantScreen: could not save reading page: $error');
     });
