@@ -535,6 +535,15 @@ class _TaskProgress extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               )),
+          if (task.status == TaskStatus.failed ||
+              task.status == TaskStatus.cancelled)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: 'إعادة المحاولة',
+              onPressed: () => provider.executeTask(task.userQuery),
+              icon: const Icon(Icons.replay_rounded,
+                  color: AppColors.primaryGold, size: 18),
+            ),
           const Spacer(),
           IconButton(
             visualDensity: VisualDensity.compact,
