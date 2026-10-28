@@ -19,6 +19,22 @@ void main() {
     expect(result.countWord('علم'), 1);
   });
 
+  test('normalizes diacritics and common alif variants before counting', () {
+    final result = QuranNumericalAnalysisService.analyzeJson(jsonEncode({
+      '1': [
+        {'text': 'ٱللَّهِ'},
+        {'text': 'الله'},
+        {'text': 'أَللَّهُ'},
+      ],
+    }));
+
+    expect(result.countWord('الله'), 3);
+    expect(
+      QuranNumericalAnalysisService.tokenize('الرَّحْمَٰنُ'),
+      equals(<String>['الرحمن']),
+    );
+  });
+
   test('rejects JSON without any verse text', () {
     expect(
       () => QuranNumericalAnalysisService.analyzeJson('{"1": []}'),
