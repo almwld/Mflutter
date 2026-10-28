@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../services/text_transformer.dart';
 import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
@@ -13,6 +14,7 @@ import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/bookmark_service.dart';
+import '../../../services/achievements_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
 
@@ -451,6 +453,29 @@ class _QuranProScreenState extends State<QuranProScreen> {
     });
   }
 
+  Future<void> _shareSelectedAyah() async {
+    final ayah = _selectedAyah;
+    final text = _selectedAyahText;
+    if (ayah == null || text == null || text.isEmpty) return;
+
+    final shareText = '$text\n\nسورة $_surahName — الآية $ayah\n'
+        'من مُدَبِّر الأسرار العليا';
+    try {
+      final result = await Share.share(
+        shareText,
+        subject: 'آية من سورة $_surahName',
+      );
+      if (result.status == ShareResultStatus.success) {
+        await AchievementsService.recordVerseShared();
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذرت مشاركة الآية: $error')),
+      );
+    }
+  }
+
   Future<void> _bookmarkSelectedAyah() async {
     final ayah = _selectedAyah;
     final text = _selectedAyahText;
@@ -481,6 +506,13 @@ class _QuranProScreenState extends State<QuranProScreen> {
       backgroundColor: const Color(0xFF1A237E),
       elevation: 0,
       actions: [
+        IconButton(
+          tooltip: _selectedAyah == null
+              ? 'اختر آية أولًا لمشاركتها'
+              : 'مشاركة الآية المحددة',
+          icon: const Icon(Icons.share_outlined, color: _goldColor),
+          onPressed: _selectedAyah == null ? null : _shareSelectedAyah,
+        ),
         IconButton(
           tooltip: _selectedAyah == null
               ? 'اختر آية أولًا لحفظها'
