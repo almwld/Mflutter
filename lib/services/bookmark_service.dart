@@ -7,6 +7,13 @@ class BookmarkService {
   static Future<void> _writeQueue = Future<void>.value();
 
   static Future<List<Map<String, dynamic>>> getBookmarks() async {
+    // Public reads wait for pending mutations so a new bookmark is visible
+    // immediately when the user opens favorites after saving it.
+    await _writeQueue.catchError((Object _) {});
+    return _readBookmarks();
+  }
+
+  static Future<List<Map<String, dynamic>>> _readBookmarks() async {
     final prefs = await SharedPreferences.getInstance();
     final data = prefs.getString(_key);
     if (data == null || data.trim().isEmpty) return <Map<String, dynamic>>[];
@@ -41,7 +48,7 @@ class BookmarkService {
   }
 
   static Future<void> _addBookmark(int surah, int ayah, String text) async {
-    final bookmarks = await getBookmarks();
+    final bookmarks = await _readBookmarks();
     bookmarks.removeWhere(
       (item) => (item['surah'] as num).toInt() == surah &&
           (item['ayah'] as num).toInt() == ayah,
