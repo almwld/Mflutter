@@ -9,6 +9,7 @@ class MultiUserService {
   static int _activeProfile = 0;
   static bool _initialized = false;
   static Future<void>? _initializing;
+  static Future<void> _mutationQueue = Future<void>.value();
 
   static Map<String, dynamic> get activeProfile {
     if (_profiles.isEmpty) {
@@ -73,53 +74,68 @@ class MultiUserService {
 
   static Future<void> addProfile(String name, String avatar) async {
     await initialize();
-    if (_profiles.length >= 20) {
-      throw StateError('بلغت الملفات المحلية الحد الأقصى (20).');
-    }
-    final normalizedName = name.trim();
-    final updated = _profiles
-        .map((profile) => Map<String, dynamic>.from(profile))
-        .toList();
-    updated.add({
-      'name': normalizedName.isEmpty
-          ? 'ملف جديد'
-          : (normalizedName.length > 60
-              ? normalizedName.substring(0, 60)
-              : normalizedName),
-      'avatar': avatar,
-      'level': 1,
-      'xp': 0,
-      'createdAt': DateTime.now().toIso8601String(),
+    return _enqueueMutation(() async {
+      if (_profiles.length >= 20) {
+        throw StateError('بلغت الملفات المحلية الحد الأقصى (20).');
+      }
+      final normalizedName = name.trim();
+      final updated = _profiles
+          .map((profile) => Map<String, dynamic>.from(profile))
+          .toList();
+      updated.add({
+        'name': normalizedName.isEmpty
+            ? 'ملف جديد'
+            : (normalizedName.length > 60
+                ? normalizedName.substring(0, 60)
+                : normalizedName),
+        'avatar': avatar.length > 32 ? avatar.substring(0, 32) : avatar,
+        'level': 1,
+        'xp': 0,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
+      await _persist(updated);
+      _profiles = updated;
     });
-    await _persist(updated);
-    _profiles = updated;
   }
 
   static Future<void> switchProfile(int index) async {
     await initialize();
-    if (index < 0 || index >= _profiles.length) {
-      throw RangeError.index(index, _profiles);
-    }
-    final prefs = await SharedPreferences.getInstance();
-    if (!await prefs.setInt('${_storageKey}_active', index)) {
-      throw StateError('تعذر حفظ الملف النشط محليًا.');
-    }
-    _activeProfile = index;
+    return _enqueueMutation(() async {
+      if (index < 0 || index >= _profiles.length) {
+        throw RangeError.index(index, _profiles);
+      }
+      final prefs = await SharedPreferences.getInstance();
+      if (!await prefs.setInt('${_storageKey}_active', index)) {
+        throw StateError('تعذر حفظ الملف النشط محليًا.');
+      }
+      _activeProfile = index;
+    });
   }
 
   static Future<void> addXP(int amount) async {
     await initialize();
     if (amount <= 0) return;
-    final updated = _profiles
-        .map((profile) => Map<String, dynamic>.from(profile))
-        .toList();
-    final profile = updated[_activeProfile];
-    final xp = (profile['xp'] as num?)?.toInt() ?? 0;
-    final nextXp = xp + amount;
-    profile['xp'] = nextXp;
-    profile['level'] = (nextXp / 250).floor() + 1;
-    await _persist(updated);
-    _profiles = updated;
+    return _enqueueMutation(() async {
+      final updated = _profiles
+          .map((profile) => Map<String, dynamic>.from(profile))
+          .toList();
+      final profile = updated[_activeProfile];
+      final xp = (profile['xp'] as num?)?.toInt() ?? 0;
+      final nextXp = (xp + amount).clamp(0, 0x7fffffff);
+      profile['xp'] = nextXp;
+      profile['level'] = (nextXp / 250).floor() + 1;
+      await _persist(updated);
+      _profiles = updated;
+    });
+  }
+
+  static Future<void> _enqueueMutation(
+    Future<void> Function() operation,
+  ) {
+    _mutationQueue = _mutationQueue
+        .catchError((Object _) {})
+        .then((_) => operation());
+    return _mutationQueue;
   }
 
   static Future<void> _persist([
