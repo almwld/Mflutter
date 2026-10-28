@@ -55,8 +55,8 @@ class ElementsScreen extends StatelessWidget {
           ),
           _buildElementCard(
             'الروح',
-            'العنصر الخامس',
-            'تصنيف رمزي في بعض الموروثات؛ ليس عنصرًا علميًا مثبتًا',
+            'تصنيف إضافي في بعض الموروثات',
+            'مفهوم رمزي/فلسفي؛ ليس عنصرًا علميًا ضمن العناصر الأربعة',
             AppColors.gold,
             Icons.auto_awesome,
           ),
