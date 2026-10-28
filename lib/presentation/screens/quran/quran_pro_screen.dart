@@ -122,9 +122,11 @@ class _QuranProScreenState extends State<QuranProScreen> {
       _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
       _verseKeys.clear();
     });
-    SharedPreferences.getInstance().then((preferences) {
+    unawaited(SharedPreferences.getInstance().then((preferences) {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
-    });
+    }).catchError((error) {
+      debugPrint('QuranProScreen: could not save last surah: $error');
+    }));
     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     // A newly opened surah has no selected verse yet; do not leave the nucleus
     // pointed at the first verse or at a verse selected in a previous surah.
