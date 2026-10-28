@@ -121,7 +121,8 @@ class AbjadLocalDatasource {
 
   /// الحصول على اللون
   String getColor(int value) {
-    final color = (value % 7);
+    if (value < 1) return 'غير محدد';
+    final color = (value - 1) % 7;
     const colors = ['أحمر', 'أخضر', 'أزرق', 'أصفر', 'أبيض', 'أسود', 'ذهبي'];
     return colors[color];
   }
