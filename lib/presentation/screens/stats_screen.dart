@@ -110,7 +110,7 @@ class _StatsScreenState extends State<StatsScreen> {
               const SizedBox(height: 10),
               _infoCard(
                 title: 'تغطية صفحات المصحف',
-                value: '${(progress * 100).toStringAsFixed(1)}٪ من الصفحات المسجلة',
+                value: '${(progress * 100).toStringAsFixed(1)}٪ من إجمالي صفحات المصحف',
                 icon: Icons.track_changes,
               ),
             ],
