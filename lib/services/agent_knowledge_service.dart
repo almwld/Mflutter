@@ -42,6 +42,7 @@ class AgentKnowledgeService {
     _initializing = attempt;
     try {
       await attempt;
+      if (!isReady) throw StateError('Knowledge asset unavailable: ' + _knowledgeAsset);
     } catch (error, stackTrace) {
       // Do not pin a failed Future forever or leave a half-built index behind.
       _documents.clear();
