@@ -589,3 +589,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/sovereign_hub_screen.dart`: starting nearby-device advertising now catches plugin/permission exceptions and displays the failure in the hub status area instead of leaking an asynchronous UI error.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (agent console recovery)
+
+- `lib/presentation/screens/agents/agent_console_screen.dart`: added an explicit retry action to the knowledge-readiness panel when local Quran/knowledge initialization fails. The retry invokes the existing provider/runtime path rather than creating a second service instance.
+- No tests, analyzer, formatter, or APK build were run.
