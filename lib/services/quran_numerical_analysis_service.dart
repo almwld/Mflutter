@@ -40,7 +40,7 @@ class QuranNumericalAnalysisService {
           verses is! List) {
         continue;
       }
-      if (verses.isNotEmpty) surahCount++;
+      var countedSurah = false;
 
       for (var index = 0; index < verses.length; index++) {
         final verse = verses[index];
@@ -48,6 +48,10 @@ class QuranNumericalAnalysisService {
         final text = verse['text'];
         if (text is! String || text.trim().isEmpty) continue;
         verseCount++;
+        if (!countedSurah) {
+          surahCount++;
+          countedSurah = true;
+        }
 
         final verseCounts = <String, int>{};
         for (final token in tokenize(text)) {
