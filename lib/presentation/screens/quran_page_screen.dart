@@ -38,6 +38,21 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
     super.initState();
     _loadSurah();
     _restoreFontSize();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranPageScreen: could not set system bars: $error');
+    });
+  }
+
+  Future<void> _toggleChrome() async {
+    final showChrome = !_chromeVisible;
+    if (mounted) setState(() => _chromeVisible = showChrome);
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        showChrome ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+      );
+    } catch (error) {
+      debugPrint('QuranPageScreen: could not update system bars: $error');
+    }
   }
 
   Future<void> _restoreFontSize() async {
@@ -175,6 +190,9 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
 
   @override
   void dispose() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranPageScreen: could not restore system bars: $error');
+    });
     _scrollController.dispose();
     super.dispose();
   }
@@ -202,7 +220,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       ) : null,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onDoubleTap: () => setState(() => _chromeVisible = !_chromeVisible),
+        onDoubleTap: _toggleChrome,
         child: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _loadError != null
