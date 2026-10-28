@@ -208,6 +208,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                   icon: const Icon(Icons.clear),
                 ),
               ),
+              onChanged: (_) => setState(() {}),
               onSubmitted: _search,
             ),
           ),
