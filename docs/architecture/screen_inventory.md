@@ -883,3 +883,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `DailyVerseScreen` now derives its stable daily selection from UTC calendar days since a fixed epoch, cycling through the full local Quran corpus instead of repeating only the first ~365 entries each year.
+
+
+- The last-reading-position card in `StatsScreen` is now actionable and opens the Mushaf at the stored page without overriding it with the previous session's restored page.
