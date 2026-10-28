@@ -645,3 +645,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Theme preference loading now uses a revision guard so a slow startup read cannot overwrite palette/font changes made by the user before the read completes.
+
+
+## UI continuation — 2026-10-29 (profile initialization race)
+
+- `lib/services/multi_user_service.dart`: concurrent profile initialization requests now share one in-flight load, preventing competing default-profile writes or partially published active-profile state.
+- No tests, analyzer, formatter, or APK build were run.
