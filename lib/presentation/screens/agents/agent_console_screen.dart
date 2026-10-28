@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -76,6 +77,18 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
             ],
           ),
           actions: [
+            if (task != null)
+              IconButton(
+                tooltip: 'نسخ تقرير المهمة بصيغة JSON',
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: provider.exportJson()));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم نسخ تقرير المهمة JSON إلى الحافظة.')),
+                  );
+                },
+                icon: const Icon(Icons.data_object_rounded),
+              ),
             IconButton(
               tooltip: 'استيراد أصول OCR / ML Kit والنماذج المحلية',
               onPressed: _importOptionalAssets,
