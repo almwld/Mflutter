@@ -21,7 +21,9 @@ class ReadingProgressService {
     // Serialize all reader writes, not just writes from one PageView instance.
     // This prevents an older slow preference write from replacing a newer page
     // when the user swipes quickly or switches between reader modes.
-    _saveQueue = _saveQueue.then((_) => _savePageAndActivity(normalizedPage));
+    _saveQueue = _saveQueue
+        .catchError((Object _) {})
+        .then((_) => _savePageAndActivity(normalizedPage));
     return _saveQueue;
   }
 
