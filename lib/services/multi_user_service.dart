@@ -93,7 +93,9 @@ class MultiUserService {
             : (normalizedName.length > 60
                 ? normalizedName.substring(0, 60)
                 : normalizedName),
-        'avatar': avatar.length > 32 ? avatar.substring(0, 32) : avatar,
+        'avatar': avatar.trim().length > 32
+            ? avatar.trim().substring(0, 32)
+            : avatar.trim(),
         'level': 1,
         'xp': 0,
         'createdAt': DateTime.now().toIso8601String(),
