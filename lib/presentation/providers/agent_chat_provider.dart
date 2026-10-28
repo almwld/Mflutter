@@ -197,11 +197,18 @@ class AgentChatProvider extends ChangeNotifier {
       );
       _activeTask = task;
       _messages.add('مُدَبِّر: $answer');
-      await _memory.saveRun(
-        query: clean,
-        answer: answer,
-        sources: _sourcesFromTask(task),
-      );
+      try {
+        await _memory.saveRun(
+          query: clean,
+          answer: answer,
+          sources: _sourcesFromTask(task),
+        );
+      } catch (memoryError) {
+        // A persistence failure must not rewrite a successfully completed
+        // inference/retrieval task as failed. Surface the storage issue
+        // separately while preserving the actual result and task status.
+        _messages.add('تنبيه: اكتملت المهمة، لكن تعذر حفظ سجلها محليًا: $memoryError');
+      }
       notifyListeners();
     } catch (error) {
       // Cancellation wins over an initialization/generation error. A native
