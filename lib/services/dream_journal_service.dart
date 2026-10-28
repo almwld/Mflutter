@@ -71,7 +71,7 @@ class DreamJournalService {
           'createdAt': createdAt,
           'text': text,
           'emotions': emotions is String
-              ? emotions.substring(0, emotions.length.clamp(0, maxEmotionLength))
+              ? emotions.substring(0, emotions.length.clamp(0, maxEmotionLength).toInt())
               : '',
         });
       }
