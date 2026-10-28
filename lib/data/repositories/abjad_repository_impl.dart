@@ -29,7 +29,9 @@ class AbjadRepositoryImpl implements AbjadRepository {
       zodiac: all.kabir < 1 ? 'غير محدد' : all.zodiac.name,
       divineName: all.divineName,
       frequency: 0,
-      color: _colorValues[all.color] ?? 0xFF1A237E,
+      color: all.kabir < 1
+          ? 0xFF808080
+          : (_colorValues[all.color] ?? 0xFF1A237E),
     );
   }
 
