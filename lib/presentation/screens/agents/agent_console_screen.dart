@@ -442,6 +442,24 @@ class _TaskProgress extends StatelessWidget {
   final AgentTask task;
   final AgentChatProvider provider;
   const _TaskProgress({required this.task, required this.provider});
+
+  String _statusLabel(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 'بانتظار البدء';
+      case TaskStatus.running:
+        return 'قيد التنفيذ';
+      case TaskStatus.paused:
+        return 'متوقفة مؤقتًا';
+      case TaskStatus.completed:
+        return 'اكتملت';
+      case TaskStatus.failed:
+        return 'فشلت';
+      case TaskStatus.cancelled:
+        return 'أُلغيت';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final done = task.steps.where((s) => s.status == StepStatus.done).length;
@@ -471,6 +489,19 @@ class _TaskProgress extends StatelessWidget {
         Row(children: [
           Text('$done/${task.steps.length} مكتملة${failed > 0 ? ' • $failed فاشلة' : ''}',
               style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          const SizedBox(width: 8),
+          Text(_statusLabel(task.status),
+              style: TextStyle(
+                color: task.status == TaskStatus.failed
+                    ? Colors.redAccent
+                    : task.status == TaskStatus.completed
+                        ? Colors.greenAccent
+                        : task.status == TaskStatus.cancelled
+                            ? Colors.white38
+                            : AppColors.primaryGold,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              )),
           const Spacer(),
           IconButton(
             visualDensity: VisualDensity.compact,
