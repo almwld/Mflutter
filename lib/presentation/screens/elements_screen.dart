@@ -23,6 +23,8 @@ class ElementsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
+          _buildSymbolicDisclaimer(context),
+          const SizedBox(height: AppDimensions.paddingMedium),
           _buildElementCard(
             'النار',
             'العنصر الأول',
@@ -61,6 +63,27 @@ class ElementsScreen extends StatelessWidget {
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildRelationsSection(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSymbolicDisclaimer(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Text(
+        'المعاني المعروضة تمثل تصنيفات رمزية أو تاريخية. لا تثبت هذه الجداول خصائص علمية للعناصر أو الأعداد ولا تتنبأ بأحداث أو صفات الأشخاص.',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          color: colors.onSurface.withOpacity(.72),
+          height: 1.5,
+          fontSize: 12,
+        ),
       ),
     );
   }
