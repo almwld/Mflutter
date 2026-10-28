@@ -433,12 +433,20 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     ).then((action) async {
       if (!mounted) return;
       if (action == 'bookmark') {
-        final text = MushafSource.verse(surah, ayah);
-        await BookmarkService.addBookmark(surah, ayah, text);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حفظ الآية في العلامات المرجعية')),
-          );
+        try {
+          final text = MushafSource.verse(surah, ayah);
+          await BookmarkService.addBookmark(surah, ayah, text);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم حفظ الآية في العلامات المرجعية')),
+            );
+          }
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تعذر حفظ العلامة المرجعية: $error')),
+            );
+          }
         }
       } else if (action == 'copy') {
         final text = MushafSource.verse(surah, ayah);
