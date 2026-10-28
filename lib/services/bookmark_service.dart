@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getVerse;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BookmarkService {
@@ -28,9 +29,10 @@ class BookmarkService {
               item['surah'] is num &&
               item['ayah'] is num &&
               item['text'] is String &&
-              (item['surah'] as num).toInt() >= 1 &&
-              (item['surah'] as num).toInt() <= 114 &&
-              (item['ayah'] as num).toInt() >= 1 &&
+              _isValidVerseReference(
+                (item['surah'] as num).toInt(),
+                (item['ayah'] as num).toInt(),
+              ) &&
               (item['text'] as String).trim().isNotEmpty)
           .toList(growable: true);
     } on FormatException {
@@ -41,8 +43,17 @@ class BookmarkService {
     }
   }
 
+  static bool _isValidVerseReference(int surah, int ayah) {
+    if (surah < 1 || surah > 114 || ayah < 1) return false;
+    try {
+      return getVerse(surah, ayah, verseEndSymbol: false).trim().isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static Future<void> addBookmark(int surah, int ayah, String text) {
-    if (surah < 1 || surah > 114 || ayah < 1) {
+    if (!_isValidVerseReference(surah, ayah)) {
       throw ArgumentError('مرجع الآية غير صالح: $surah:$ayah');
     }
     if (text.trim().isEmpty) {
