@@ -12,7 +12,7 @@ class AchievementsService {
     {'id': 'ten_verses', 'title': 'حافظ الآيات', 'desc': 'حفظ 10 آيات في المفضلة', 'icon': '📚', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'استخدام التطبيق ليلاً', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': false},
     {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': false},
@@ -38,6 +38,9 @@ class AchievementsService {
     final completedInsights =
         preferences.getInt('mudabbir_completed_insights') ?? 0;
     _setProgress('ten_insights', completedInsights / 10);
+    final exploredSciences =
+        preferences.getStringList('mudabbir_explored_sciences') ?? const [];
+    _setProgress('seven_sciences', exploredSciences.toSet().length / 7);
   }
 
   /// Records a real completed calculation, persisting the event locally.
@@ -49,6 +52,26 @@ class AchievementsService {
       _setProgress('first_abjad', 1);
     } catch (_) {
       // A profile/achievement persistence issue must not block the calculator.
+    }
+  }
+
+  /// Counts distinct science topics whose detail view the user opened.
+  static Future<void> recordScienceExplored(String scienceId) async {
+    final normalizedId = scienceId.trim();
+    if (normalizedId.isEmpty) return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final explored = (preferences.getStringList('mudabbir_explored_sciences') ??
+              const <String>[])
+          .toSet();
+      explored.add(normalizedId);
+      await preferences.setStringList(
+        'mudabbir_explored_sciences',
+        explored.toList(growable: false),
+      );
+      _setProgress('seven_sciences', explored.length / 7);
+    } catch (_) {
+      // Science browsing remains available if achievement persistence fails.
     }
   }
 
