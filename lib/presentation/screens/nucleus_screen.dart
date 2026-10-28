@@ -252,9 +252,11 @@ class _NucleusScreenState extends State<NucleusScreen>
                 Text(
                   _core.isInitializing
                       ? 'جارٍ تجهيز النواة…'
-                      : (_core.isInitialized
-                          ? 'النواة مهيأة · ${_core.source}'
-                          : 'لم تكتمل التهيئة'),
+                      : (_core.error != null
+                          ? 'النواة تعمل بوضع احتياطي أو تحتاج إلى مراجعة'
+                          : (_core.isInitialized
+                              ? 'النواة مهيأة · ${_core.source}'
+                              : 'لم تكتمل التهيئة')),
                   textAlign: TextAlign.center,
                   textDirection: TextDirection.rtl,
                   style: const TextStyle(color: Colors.white70),
@@ -322,8 +324,38 @@ class _NucleusScreenState extends State<NucleusScreen>
               icon: const Icon(Icons.memory_rounded),
               label: const Text('إيقاف النموذج وتحرير الذاكرة'),
             ),
-          if (_core.error != null)
+          if (_core.error != null) ...[
             _status('تنبيه تشخيصي', 'تحتاج إلى مراجعة', _core.error!),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _working || _core.isInitializing
+                  ? null
+                  : () async {
+                      try {
+                        await _core.initialize();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                _core.error == null
+                                    ? 'اكتملت إعادة تهيئة النواة.'
+                                    : 'ما زالت هناك مشكلة في تهيئة بعض الخدمات.',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (error) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('تعذرت إعادة التهيئة: $error')),
+                          );
+                        }
+                      }
+                    },
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('إعادة محاولة تهيئة النواة'),
+            ),
+          ],
           const SizedBox(height: 22),
           _sectionTitle('خريطة سجل الوكلاء'),
           const SizedBox(height: 8),
