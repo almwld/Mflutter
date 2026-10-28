@@ -10,7 +10,7 @@ class TafsirGeneratorService {
   static String generate(String surahName, int ayahNumber) {
     final result = _tafsirDB['$surahName:$ayahNumber'];
     if (result == null) {
-      throw StateError('لا يوجد تفسير محلي موثق لهذه الآية في قاعدة البيانات الحالية.');
+      throw StateError('لا تتوفر ملخصات محلية لهذه الآية في قاعدة البيانات المحدودة.');
     }
     return result;
   }
