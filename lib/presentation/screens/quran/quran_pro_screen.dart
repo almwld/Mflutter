@@ -656,6 +656,18 @@ class _QuranProScreenState extends State<QuranProScreen> {
               verseText: text.toString(),
             );
           },
+          onDoubleTap: () {
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+              _chromeVisible = !_chromeVisible;
+            });
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
+            );
+          },
           onLongPress: () async {
             await Clipboard.setData(ClipboardData(text: text.toString()));
             if (!mounted) return;
