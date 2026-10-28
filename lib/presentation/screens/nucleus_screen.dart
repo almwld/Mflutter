@@ -21,6 +21,7 @@ class _NucleusScreenState extends State<NucleusScreen>
   final NucleusService _core = NucleusService();
   late final AnimationController _pulse;
   bool _working = false;
+  String _agentQuery = '';
   String? _selectedAgentId;
 
   @override
@@ -158,7 +159,15 @@ class _NucleusScreenState extends State<NucleusScreen>
   Widget build(BuildContext context) {
     final sciences = _core.getSciences();
     final agents = AgentRegistry.all;
-    final visibleAgents = agents.take(32).toList(growable: false);
+    final normalizedAgentQuery = _agentQuery.trim().toLowerCase();
+    final matchingAgents = agents.where((agent) {
+      if (normalizedAgentQuery.isEmpty) return true;
+      return agent.name.toLowerCase().contains(normalizedAgentQuery) ||
+          agent.id.toLowerCase().contains(normalizedAgentQuery) ||
+          agent.layer.toLowerCase().contains(normalizedAgentQuery) ||
+          agent.description.toLowerCase().contains(normalizedAgentQuery);
+    }).toList(growable: false);
+    final visibleAgents = matchingAgents.take(32).toList(growable: false);
     final selectedAgent = agents.isEmpty
         ? null
         : agents.firstWhere(
@@ -285,6 +294,34 @@ class _NucleusScreenState extends State<NucleusScreen>
             _status('تنبيه تشخيصي', 'تحتاج إلى مراجعة', _core.error!),
           const SizedBox(height: 22),
           _sectionTitle('خريطة سجل الوكلاء'),
+          const SizedBox(height: 8),
+          TextField(
+            onChanged: (value) => setState(() => _agentQuery = value),
+            textDirection: TextDirection.rtl,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'ابحث عن وكيل بالاسم أو المعرّف أو المجال',
+              hintStyle: const TextStyle(color: Colors.white54, fontSize: 13),
+              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.primaryGold),
+              suffixIcon: _agentQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح البحث',
+                      onPressed: () => setState(() => _agentQuery = ''),
+                      icon: const Icon(Icons.close_rounded, color: Colors.white70),
+                    ),
+              filled: true,
+              fillColor: AppColors.primaryNavy.withOpacity(.72),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: AppColors.primaryGold.withOpacity(.25)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: AppColors.primaryGold.withOpacity(.25)),
+              ),
+            ),
+          ),
           const SizedBox(height: 6),
           const Text(
             'العقد تمثل تعريفات موجودة في AgentRegistry. الخطوط تصل كل تعريف '
@@ -325,8 +362,8 @@ class _NucleusScreenState extends State<NucleusScreen>
           ),
           const SizedBox(height: 6),
           Text(
-            'يعرض الرسم ${visibleAgents.length} من ${agents.length} تعريفًا. '
-            'اختر عقدة أو استخدم القائمة لاختيار أي تعريف.',
+            'نتائج البحث: ${matchingAgents.length} من ${agents.length} تعريفًا؛ '
+            'يعرض الرسم حتى 32 عقدة. اختر عقدة أو استخدم القائمة لاختيار أي تعريف.',
             textDirection: TextDirection.rtl,
             style: const TextStyle(color: Colors.white54, fontSize: 12),
           ),
