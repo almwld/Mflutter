@@ -708,3 +708,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/context_memory_service.dart`: persisted conversation rows are validated and bounded when loaded, malformed legacy records no longer poison the memory index, and rejected local writes raise an explicit persistence error while the existing queue remains recoverable.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (profile mutation ordering)
+
+- `lib/services/multi_user_service.dart`: profile creation, switching, and XP updates now share a serial mutation queue. Concurrent UI actions no longer race through read-modify-write cycles and overwrite one another; avatar input is bounded and XP arithmetic is capped to the supported persisted range.
+- No tests, analyzer, formatter, or APK build were run.
