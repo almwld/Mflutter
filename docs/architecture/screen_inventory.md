@@ -858,3 +858,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `DivineNamesScreen` search now strips the extended Arabic/Quranic annotation range. `ElementsScreen` presents the four classical elements as historical classifications and identifies “spirit” as an additional symbolic/philosophical idea rather than a fifth scientifically established element.
+
+
+- `DailyVerseScreen` now guards an empty local corpus before computing the daily index, and bookmark reads/writes verify the currently displayed verse before changing its visual state. Rapidly advancing to another verse can no longer apply a stale bookmark result to the new verse.
