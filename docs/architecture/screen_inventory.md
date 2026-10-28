@@ -813,3 +813,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The shared `QuranService` search normalization now uses the same extended Arabic/Quranic combining-mark ranges as the advanced search screen, keeping single-token and phrase-search normalization consistent.
+
+
+- `QuranService.getSurahs()` now uses the canonical verse-count table from `QuranLoaderService` instead of maintaining a second hard-coded 114-entry list.
