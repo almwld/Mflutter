@@ -188,6 +188,9 @@ class AgentKnowledgeService {
     int limit = 6,
     bool includeScriptVariants = false,
   }) async {
+    if (limit <= 0 || query.trim().isEmpty) {
+      return const <AgentKnowledgeDocument>[];
+    }
     await initialize();
     if (includeScriptVariants) await _loadVariantsIfNeeded();
 
