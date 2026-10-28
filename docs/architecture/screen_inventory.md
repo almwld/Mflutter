@@ -756,3 +756,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `PlayerProfileScreen` now reads its streak and seven-day dots from the same canonical reading-progress ledger used by statistics and achievements, rather than a separate store that could remain empty while page reads were recorded.
+
+
+## UI continuation — 2026-10-29 (canonical Quran source immutability)
+
+- `lib/services/quran_service.dart` now checks all 114 surah keys and each canonical verse count, not only the aggregate 6,236 total. After source corrections, the cached Quran map, each surah list, and each verse record are exposed as immutable snapshots to prevent one screen from mutating shared scripture data.
+- No tests, analyzer, formatter, or APK build were run.
