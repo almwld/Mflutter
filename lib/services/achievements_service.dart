@@ -1,3 +1,5 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'daily_streak_service.dart';
 import 'local_activity_summary_service.dart';
 
@@ -8,7 +10,7 @@ class AchievementsService {
   static final List<Map<String, dynamic>> _achievements = <Map<String, dynamic>>[
     {'id': 'first_verse', 'title': 'أول صفحة', 'desc': 'فتح صفحة من المصحف', 'icon': '📖', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_verses', 'title': 'حافظ الآيات', 'desc': 'حفظ 10 آيات في المفضلة', 'icon': '📚', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': false},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': false},
@@ -28,6 +30,23 @@ class AchievementsService {
     _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
     _setProgress('ten_verses', summary.bookmarkCount / 10);
     _setProgress('daily_streak_3', DailyStreakService.streak / 3);
+
+    final preferences = await SharedPreferences.getInstance();
+    final abjadCalculations =
+        preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+    _setProgress('first_abjad', abjadCalculations > 0 ? 1 : 0);
+  }
+
+  /// Records a real completed calculation, persisting the event locally.
+  static Future<void> recordAbjadCalculation() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final previous = preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+      await preferences.setInt('mudabbir_abjad_calculations', previous + 1);
+      _setProgress('first_abjad', 1);
+    } catch (_) {
+      // A profile/achievement persistence issue must not block the calculator.
+    }
   }
 
   static void _setProgress(String id, double value) {
