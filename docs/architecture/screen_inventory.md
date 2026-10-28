@@ -463,3 +463,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `ReadingProgressService.getReadingDaysInLast7Days()` now derives the seven-day window from local calendar midnights, avoiding duration-based date drift around daylight-saving transitions.
+
+
+## UI continuation — 2026-10-29 (achievement persistence integrity)
+
+- `lib/services/achievements_service.dart`: achievement progress is no longer reset from fallback zeros when the corresponding local pages/bookmarks store could not be read. Streak progress is refreshed only after the streak store initializes successfully.
+- No tests, analyzer, formatter, or APK build were run.
