@@ -657,3 +657,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran/quran_pro_screen.dart`: loading the canonical Arabic Quran no longer depends on successful loading of the optional standalone Musnad and hieroglyphic datasets. Each optional dataset failure is disclosed, and the reader falls back to its local display transformation instead of blocking all Quran reading or rendering empty verses.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Follow-up performance refinement: `QuranProScreen` now opens the canonical Quran immediately after its required asset loads and parses the optional script datasets in the background, so a slow variant parse does not delay ordinary reading.
