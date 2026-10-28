@@ -118,15 +118,15 @@ The repository has tests covering, among other areas:
 
 The presence of these tests does not itself prove that all tests pass on the current working tree; CI status above refers only to the inspected GitHub Actions run.
 
-## Next implementation order
+## Current implementation priorities
 
-1. Complete a route/reachability map for `main.dart`, `SplashScreen`, `HomeScreen`, and `MainNavigation`.
-2. Establish an explicit mapping from the 23 target screens to existing files, including duplicates, partial implementations, and genuinely missing screens.
-3. Add shared design tokens and only the reusable templates justified by real screen needs.
-4. Replace unsupported fixed numerical claims with a transparent calculation/data model and tests.
-5. Improve the Nucleus graph using registry metadata and actual runtime state, without fabricating active agents.
-6. Improve Quran-page interactions while protecting source text.
-7. Run format, analyze, tests, and Android CI after each logical change group.
+1. Continue behavioral review of each reachable screen and route; the 23-target file mapping is established, but the mapping alone does not establish completion.
+2. Continue applying the shared design tokens and 12 presentation templates where they fit without replacing real feature logic.
+3. The numerical-claim screen has been converted to reproducible local word counts; retain the documented normalization limits.
+4. The Nucleus graph uses registry metadata and explicitly avoids claiming that registered agents are active processes.
+5. Continue improving Quran interactions while keeping canonical verse text immutable and applying script transformations only to presentation.
+6. Continue wiring existing local services to their screens, expose recoverable errors, and do not fabricate model, network, training, sensor, or community capabilities.
+7. During the current implementation phase, defer tests, formatting, analysis, and Android builds as explicitly requested; do not report them as run or passed.
 
 ## Scope guardrails
 
