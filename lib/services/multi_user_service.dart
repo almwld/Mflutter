@@ -8,6 +8,7 @@ class MultiUserService {
   static List<Map<String, dynamic>> _profiles = [];
   static int _activeProfile = 0;
   static bool _initialized = false;
+  static Future<void>? _initializing;
 
   static Map<String, dynamic> get activeProfile {
     if (_profiles.isEmpty) {
@@ -25,6 +26,21 @@ class MultiUserService {
 
   static Future<void> initialize() async {
     if (_initialized) return;
+    final pending = _initializing;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final attempt = _initializeOnce();
+    _initializing = attempt;
+    try {
+      await attempt;
+    } finally {
+      if (identical(_initializing, attempt)) _initializing = null;
+    }
+  }
+
+  static Future<void> _initializeOnce() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_storageKey);
     if (raw != null) {
