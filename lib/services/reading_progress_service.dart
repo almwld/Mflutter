@@ -111,7 +111,8 @@ class ReadingProgressService {
   static Future<int> getReadingDays() async {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_readingDaysKey) ?? const <String>[]).length;
+    // Count distinct dates so legacy duplicates cannot inflate the metric.
+    return (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet().length;
   }
 
   static Future<int> getCurrentStreak() async {
