@@ -243,7 +243,7 @@ class _MushafHome extends StatelessWidget {
       ('الفهرس', Icons.list_alt_rounded, const QuranIndexScreen()),
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
-      ('مستكشف كلمات القرآن', Icons.manage_search_rounded, const QuranWordExplorerScreen()),
+      ('الحروف', Icons.abc_rounded, const LettersScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
       ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
