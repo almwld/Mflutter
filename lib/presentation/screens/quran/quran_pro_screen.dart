@@ -15,6 +15,7 @@ import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/achievements_service.dart';
+import '../../../services/daily_streak_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
 
@@ -125,6 +126,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
     SharedPreferences.getInstance().then((preferences) {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
     });
+    unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     if (_currentVerses.isNotEmpty) {
       final firstVerse = _currentVerses.first;
       NucleusService().setQuranContext(
