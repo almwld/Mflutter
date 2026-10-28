@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
@@ -36,6 +37,21 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   void initState() {
     super.initState();
     _loadSurah();
+    _restoreFontSize();
+  }
+
+  Future<void> _restoreFontSize() async {
+    final preferences = await SharedPreferences.getInstance();
+    final saved = preferences.getInt('mudabbir_quran_page_font_size');
+    if (!mounted || saved == null) return;
+    setState(() => _fontSize = saved.clamp(16, 32).toInt());
+  }
+
+  Future<void> _changeFontSize(int delta) async {
+    final next = (_fontSize + delta).clamp(16, 32).toInt();
+    setState(() => _fontSize = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt('mudabbir_quran_page_font_size', next);
   }
 
   Future<void> _loadSurah() async {
@@ -150,11 +166,11 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.text_increase, color: AppColors.gold),
-            onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(16, 32).toInt()),
+            onPressed: () => _changeFontSize(2),
           ),
           IconButton(
             icon: const Icon(Icons.text_decrease, color: AppColors.gold),
-            onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(16, 32).toInt()),
+            onPressed: () => _changeFontSize(-2),
           ),
         ],
       ) : null,
