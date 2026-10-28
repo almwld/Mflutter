@@ -64,11 +64,16 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
   Future<void> _refreshBookmark() async {
     final verse = _current;
     if (verse == null) return;
-    final saved = await BookmarkService.isBookmarked(
-      verse.surahNumber,
-      verse.ayahNumber,
-    );
-    if (mounted) setState(() => _isBookmarked = saved);
+    try {
+      final saved = await BookmarkService.isBookmarked(
+        verse.surahNumber,
+        verse.ayahNumber,
+      );
+      if (mounted) setState(() => _isBookmarked = saved);
+    } catch (_) {
+      // Bookmark storage is optional for rendering the verse itself.
+      if (mounted) setState(() => _isBookmarked = false);
+    }
   }
 
   Future<void> _nextVerse() async {
