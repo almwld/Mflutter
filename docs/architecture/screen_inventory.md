@@ -901,3 +901,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranicSearchEngine` now resolves equal-score matches by original canonical corpus order, making local retrieval ordering deterministic rather than dependent on sort behavior for ties.
+
+
+- Training prediction output now labels the softmax value as an uncalibrated score rather than calibrated confidence, avoiding overstating what the local classifier's numeric output establishes.
