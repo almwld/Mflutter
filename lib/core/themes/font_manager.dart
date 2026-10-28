@@ -5,8 +5,11 @@ enum MudabbirFont { amiri, uthmani, musnad, kufi, hieroglyphic }
 
 class FontManager {
   static bool _raqqFontLoaded = false;
+  static bool _raqqSuraFontLoaded = false;
   static bool get isRaqqFontLoaded => _raqqFontLoaded;
+  static bool get isRaqqSuraFontLoaded => _raqqSuraFontLoaded;
   static void markRaqqFontLoaded(bool loaded) => _raqqFontLoaded = loaded;
+  static void markRaqqSuraFontLoaded(bool loaded) => _raqqSuraFontLoaded = loaded;
 
   static const Map<MudabbirFont, String> _fontFamilies = {
     MudabbirFont.amiri: 'Amiri',
