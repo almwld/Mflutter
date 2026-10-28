@@ -39,7 +39,10 @@ class MultiUserService {
       _profiles = [_defaultProfile()];
       await _persist();
     }
-    _activeProfile = 0;
+    final savedIndex = prefs.getInt('${_storageKey}_active') ?? 0;
+    _activeProfile = savedIndex >= 0 && savedIndex < _profiles.length
+        ? savedIndex
+        : 0;
     _initialized = true;
   }
 
@@ -60,9 +63,11 @@ class MultiUserService {
     if (index < 0 || index >= _profiles.length) {
       throw RangeError.index(index, _profiles);
     }
-    _activeProfile = index;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('${_storageKey}_active', index);
+    if (!await prefs.setInt('${_storageKey}_active', index)) {
+      throw StateError('تعذر حفظ الملف النشط محليًا.');
+    }
+    _activeProfile = index;
   }
 
   static Future<void> addXP(int amount) async {
