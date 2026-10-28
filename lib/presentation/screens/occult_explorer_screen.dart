@@ -71,6 +71,20 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'هذه المواد تعرض تاريخ الرموز والمعتقدات الثقافية، وليست حقائق علمية أو تنبؤات موثوقة. حساب الجُمّل عملية حسابية للحروف ولا يثبت صفات الأشخاص أو نتائج المستقبل.',
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurface.withOpacity(.72),
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _heading(context, 'حاسبة الجُمّل', Icons.calculate_outlined),
           const SizedBox(height: 8),
           Card(
