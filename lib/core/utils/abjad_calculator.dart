@@ -190,50 +190,50 @@ class AbjadCalculator {
 
   /// الحصول على العنصر
   static ElementType _getElement(int value) {
-    final remainder = value % 5;
-    switch (remainder) {
-      case 1:
-        return ElementType.fire;
-      case 2:
-        return ElementType.water;
-      case 3:
-        return ElementType.earth;
-      case 4:
-        return ElementType.air;
-      case 0:
-        return ElementType.spirit;
-      default:
-        return ElementType.spirit;
-    }
+    if (value < 1) return ElementType.unknown;
+    const order = [
+      ElementType.fire,
+      ElementType.water,
+      ElementType.earth,
+      ElementType.air,
+      ElementType.spirit,
+    ];
+    return order[(value - 1) % order.length];
   }
 
-  /// الحصول على الكوكب
+  /// الحصول على ارتباط الكوكب الرمزي وفق ترتيب الجدول المشترك.
   static PlanetType _getPlanet(int value) {
-    final remainder = value % 7;
-    switch (remainder) {
-      case 1:
-        return PlanetType.sun;
-      case 2:
-        return PlanetType.moon;
-      case 3:
-        return PlanetType.mars;
-      case 4:
-        return PlanetType.mercury;
-      case 5:
-        return PlanetType.venus;
-      case 6:
-        return PlanetType.jupiter;
-      case 0:
-        return PlanetType.saturn;
-      default:
-        return PlanetType.sun;
-    }
+    if (value < 1) return PlanetType.unknown;
+    const order = [
+      PlanetType.sun,
+      PlanetType.moon,
+      PlanetType.mars,
+      PlanetType.mercury,
+      PlanetType.jupiter,
+      PlanetType.venus,
+      PlanetType.saturn,
+    ];
+    return order[(value - 1) % order.length];
   }
 
-  /// الحصول على البرج
+  /// الحصول على ارتباط البرج الرمزي وفق ترتيب الجدول المشترك.
   static ZodiacType _getZodiac(int value) {
-    final remainder = value % 12;
-    return ZodiacType.values[remainder];
+    if (value < 1) return ZodiacType.unknown;
+    const order = [
+      ZodiacType.aries,
+      ZodiacType.taurus,
+      ZodiacType.gemini,
+      ZodiacType.cancer,
+      ZodiacType.leo,
+      ZodiacType.virgo,
+      ZodiacType.libra,
+      ZodiacType.scorpio,
+      ZodiacType.sagittarius,
+      ZodiacType.capricorn,
+      ZodiacType.aquarius,
+      ZodiacType.pisces,
+    ];
+    return order[(value - 1) % order.length];
   }
 
   /// اختيار اسم من القائمة بحسب ترتيب اصطلاحي؛ لا يحمل دلالة تنبؤية.
@@ -245,9 +245,10 @@ class AbjadCalculator {
 
   /// الحصول على اللون
   static String _getColor(int value) {
-    final remainder = value % 7;
+    if (value < 1) return 'غير محدد';
+    final index = (value - 1) % 7;
     const colors = ['أحمر', 'أخضر', 'أزرق', 'أصفر', 'أبيض', 'أسود', 'ذهبي'];
-    return colors[remainder];
+    return colors[index];
   }
 }
 
@@ -255,14 +256,14 @@ class AbjadCalculator {
 /// ElementType - نوع العنصر
 /// =============================================================================
 enum ElementType {
-  fire, water, earth, air, spirit
+  fire, water, earth, air, spirit, unknown
 }
 
 /// =============================================================================
 /// PlanetType - نوع الكوكب
 /// =============================================================================
 enum PlanetType {
-  sun, moon, mars, mercury, venus, jupiter, saturn
+  sun, moon, mars, mercury, venus, jupiter, saturn, unknown
 }
 
 /// =============================================================================
@@ -270,7 +271,7 @@ enum PlanetType {
 /// =============================================================================
 enum ZodiacType {
   aries, taurus, gemini, cancer, leo, virgo,
-  libra, scorpio, sagittarius, capricorn, aquarius, pisces
+  libra, scorpio, sagittarius, capricorn, aquarius, pisces, unknown
 }
 
 /// =============================================================================
