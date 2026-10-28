@@ -392,3 +392,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran/mushaf_variant_screen.dart`: added direct page navigation from the variant-reader header, including Arabic-Indic/Persian digit normalization and strict 1–604 validation. The user can now jump to a page without repeatedly swiping through the fixed-layout Mushaf.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (reader recovery actions)
+
+- `lib/presentation/screens/quran_page_screen.dart`: added an explicit retry action for missing/corrupt surah data and resets loading/error state before retrying.
+- `lib/presentation/screens/quran/mushaf_variant_screen.dart`: added a direct page-jump action with Arabic numeral support and range validation.
+- No tests, analyzer, formatter, or APK build were run.
