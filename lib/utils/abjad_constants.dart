@@ -232,24 +232,30 @@ class AbjadConstants {
     return total;
   }
 
-  /// تحويل الرقم إلى اسم إلهى
+  static int _indexForPositiveNumber(int number, int length) {
+    if (number < 1) {
+      throw ArgumentError.value(number, 'number', 'يجب أن يكون الرقم 1 أو أكبر.');
+    }
+    return (number - 1) % length;
+  }
+
+  /// تحويل الرقم الموجب إلى اسم من القائمة المتداولة (بفهرسة تبدأ من 1).
   static String getDivineNameByNumber(int number) {
-    final index = (number - 1) % 99;
-    return divineNames[index];
+    return divineNames[_indexForPositiveNumber(number, divineNames.length)];
   }
 
-  /// تحويل الرقم إلى عنصر
+  /// تحويل الرقم الموجب إلى عنصر رمزي (بفهرسة تبدأ من 1).
   static String getElementByNumber(int number) {
-    return elements[number % elements.length];
+    return elements[_indexForPositiveNumber(number, elements.length)];
   }
 
-  /// تحويل الرقم إلى كوكب
+  /// تحويل الرقم الموجب إلى كوكب رمزي (بفهرسة تبدأ من 1).
   static String getPlanetByNumber(int number) {
-    return planets[number % planets.length];
+    return planets[_indexForPositiveNumber(number, planets.length)];
   }
 
-  /// تحويل الرقم إلى برج
+  /// تحويل الرقم الموجب إلى برج رمزي (بفهرسة تبدأ من 1).
   static String getZodiacByNumber(int number) {
-    return zodiacSigns[number % zodiacSigns.length];
+    return zodiacSigns[_indexForPositiveNumber(number, zodiacSigns.length)];
   }
 }
