@@ -72,10 +72,20 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
         verse.surahNumber,
         verse.ayahNumber,
       );
-      if (mounted) setState(() => _isBookmarked = saved);
+      final current = _current;
+      if (mounted &&
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber) {
+        setState(() => _isBookmarked = saved);
+      }
     } catch (_) {
       // Bookmark storage is optional for rendering the verse itself.
-      if (mounted) setState(() => _isBookmarked = false);
+      final current = _current;
+      if (mounted &&
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber) {
+        setState(() => _isBookmarked = false);
+      }
     }
   }
 
