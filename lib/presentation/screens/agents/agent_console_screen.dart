@@ -573,7 +573,14 @@ class _StepCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final running = step.status == StepStatus.running;
     final failed = step.status == StepStatus.failed;
-    final color = failed ? Colors.redAccent : step.status == StepStatus.done ? Colors.greenAccent : AppColors.primaryGold;
+    final cancelled = step.status == StepStatus.cancelled;
+    final color = failed
+        ? Colors.redAccent
+        : step.status == StepStatus.done
+            ? Colors.greenAccent
+            : cancelled
+                ? Colors.white38
+                : AppColors.primaryGold;
     return Card(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 8),
@@ -584,8 +591,16 @@ class _StepCard extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         leading: running
             ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: color))
-            : Icon(failed ? Icons.error_outline_rounded : step.status == StepStatus.done
-                ? Icons.check_circle_outline_rounded : Icons.schedule_rounded, color: color),
+            : Icon(
+                failed
+                    ? Icons.error_outline_rounded
+                    : step.status == StepStatus.done
+                        ? Icons.check_circle_outline_rounded
+                        : cancelled
+                            ? Icons.cancel_outlined
+                            : Icons.schedule_rounded,
+                color: color,
+              ),
         title: Text('${step.number}. ${step.title}', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         subtitle: Text('${step.agentName} • ${step.subtitle}', maxLines: 2, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white54, fontSize: 11)),
