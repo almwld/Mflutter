@@ -13,12 +13,35 @@ class MushafVariantLayoutService {
 
   static const assetPath = 'assets/mushaf_layout.json';
   static Map<String, dynamic>? _asset;
+  static Future<void>? _loadingAsset;
   static final Map<int, Future<List<MushafVariantLine>>> _pageCache = {};
 
   static Future<void> ensureLoaded() async {
     if (_asset != null) return;
+    final pending = _loadingAsset;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+
+    final loading = _loadAsset();
+    _loadingAsset = loading;
+    try {
+      await loading;
+      if (identical(_loadingAsset, loading)) _loadingAsset = null;
+    } catch (_) {
+      if (identical(_loadingAsset, loading)) _loadingAsset = null;
+      rethrow;
+    }
+  }
+
+  static Future<void> _loadAsset() async {
     final raw = await rootBundle.loadString(assetPath);
-    _asset = jsonDecode(raw) as Map<String, dynamic>;
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException('مخطط تخطيط صفحات المصحف غير صالح.');
+    }
+    _asset = decoded.cast<String, dynamic>();
   }
 
   static Future<List<MushafVariantLine>> page(int pageNumber) {
