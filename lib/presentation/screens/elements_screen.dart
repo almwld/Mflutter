@@ -23,6 +23,20 @@ class ElementsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+            ),
+            child: Text(
+              'المعاني المعروضة تمثل تصنيفات رمزية أو تاريخية. لا تثبت هذه الجداول خصائص علمية للعناصر ولا تتنبأ بأحداث أو صفات الأشخاص.',
+              textDirection: TextDirection.rtl,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5),
+            ),
+          ),
+          const SizedBox(height: AppDimensions.paddingMedium),
           _buildElementCard(
             'النار',
             'العنصر الأول',
