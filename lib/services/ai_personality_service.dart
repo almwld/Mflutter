@@ -27,7 +27,17 @@ class AIPersonalityService {
   static void switchPersonality(String name) {
     if (!_personalities.containsKey(name)) return;
     _activePersonality = name;
-    unawaited(_persistPersonality(name));
+    // The in-memory choice applies immediately; persistence failures are
+    // isolated so they cannot become unhandled asynchronous errors.
+    unawaited(_persistPersonality(name).catchError((_) {}));
+  }
+
+  static Future<void> setPersonality(String name) async {
+    if (!_personalities.containsKey(name)) {
+      throw ArgumentError.value(name, 'name', 'شخصية غير معروفة');
+    }
+    await _persistPersonality(name);
+    _activePersonality = name;
   }
 
   static Future<void> _persistPersonality(String name) async {
