@@ -29,7 +29,22 @@ Future<void> _loadBundledKufiFont() async {
   } catch (_) {
     FontManager.markRaqqFontLoaded(false);
     // Keep the app usable if the optional display font cannot be loaded.
-    // The canonical Quran text remains unchanged; Flutter uses its fallback.
+  }
+
+  try {
+    final encoded = await rootBundle.loadString(
+      'assets/fonts/RaqqSura.ttf.base64',
+    );
+    final bytes = Uint8List.fromList(
+      base64Decode(encoded.replaceAll(RegExp(r'\\s+'), '')),
+    );
+    final loader = FontLoader('RaqqSura')
+      ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+    await loader.load();
+    FontManager.markRaqqSuraFontLoaded(true);
+  } catch (_) {
+    FontManager.markRaqqSuraFontLoaded(false);
+    // Surah titles retain their standard Amiri fallback if unavailable.
   }
 }
 
