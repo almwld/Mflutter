@@ -580,3 +580,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/multi_user_service.dart`: persisted local profile records are normalized on load, malformed name/avatar/level/XP/date fields receive safe defaults, and legacy profile lists are bounded to 20 entries so a damaged preference cannot crash the profile screen.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `QuranIndexScreen` now renders an explicit no-match state when the surah search returns zero results instead of an empty list area.
