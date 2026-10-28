@@ -50,9 +50,16 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
+    _persistCurrentPage(_page);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _restorePageTheme();
     _restoreDisplayMode();
+  }
+
+  Future<void> _persistCurrentPage(int page) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt('mudabbir_mushaf_variant_last_page',
+        MushafSource.normalizePage(page));
   }
 
   Future<void> _restorePageTheme() async {
@@ -148,7 +155,11 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               child: PageView.builder(
                 controller: _controller,
                 itemCount: MushafSource.totalPages,
-                onPageChanged: (index) => setState(() => _page = index + 1),
+                onPageChanged: (index) {
+                  final page = index + 1;
+                  setState(() => _page = page);
+                  _persistCurrentPage(page);
+                },
                 itemBuilder: (_, index) => _VariantPage(
                   page: index + 1,
                   mode: _mode,
