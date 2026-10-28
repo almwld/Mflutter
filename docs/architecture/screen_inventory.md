@@ -292,3 +292,12 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - Reading statistics now labels the seven-day value as pages read, matching the underlying `getPagesReadInLast7Days()` source rather than incorrectly describing it as days.
 - Recitation completion handling now refuses to advance when playback has been stopped by the user or is paused, reducing a race between player completion and user controls.
 - These changes were committed without running tests or builds, per the current execution instruction. They are not a substitute for runtime verification.
+
+
+## UI continuation — 2026-10-29 (chat continuity and preferences)
+
+- `lib/presentation/providers/chat_provider.dart`: chat prompts now consume the persisted assistant personality and include a bounded snapshot of recent questions as continuity hints; these hints are explicitly not treated as verified evidence. Successful local answers are saved to context memory.
+- `lib/services/context_memory_service.dart`: concurrent restoration is coalesced, failed writes no longer permanently poison the serial persistence queue, and saved question/answer sizes are bounded. Added a bounded recent-exchange summary for the personalization screen.
+- `lib/services/ai_personality_service.dart` and `lib/presentation/screens/personalization_screen.dart`: persisted personality selection can be awaited, preference loading is coalesced, and the UI text reflects the actual chat integration and local persistence behavior.
+- The personalization screen displays recent saved exchange summaries rather than only a list of questions.
+- Validation remains intentionally deferred: no tests, analyzer, formatter, or build were run in this continuation.
