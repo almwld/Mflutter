@@ -864,3 +864,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `DivineNamesScreen` now displays an explicit empty-search state rather than an unexplained blank grid. Reading statistics also identify page coverage against the total Mushaf page count.
+
+
+- `TrainingScreen` loss-chart rendering now skips non-numeric and non-finite persisted history entries instead of casting malformed local values during paint.
