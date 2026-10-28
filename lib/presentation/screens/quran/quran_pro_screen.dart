@@ -119,7 +119,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   Future<void> _setDisplayMode(QuranDisplayMode mode) async {
     setState(() => _mode = mode);
     final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt('mudabbir_quran_pro_mode', mode.index);
+    await preferences.setInt('mudabbir_quran_pro_mode_v2', mode.index);
   }
 
   String _transform(String text) {
