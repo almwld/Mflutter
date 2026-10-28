@@ -345,7 +345,21 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
         actions: [
           IconButton(
             tooltip: 'إعادة ضبط المعايرة',
-            onPressed: () async { await _fusion.clear(); if (mounted) setState(() => _point = null); },
+            onPressed: () async {
+              try {
+                await _fusion.clear();
+                if (!mounted) return;
+                setState(() => _point = null);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم حذف معايرة النظر المحفوظة.')),
+                );
+              } catch (error) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('تعذر حذف المعايرة: $error')),
+                );
+              }
+            },
             icon: const Icon(Icons.restart_alt_rounded),
           ),
         ],
