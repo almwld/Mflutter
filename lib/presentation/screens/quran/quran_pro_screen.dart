@@ -241,7 +241,7 @@ class _QuranProScreenState extends State<QuranProScreen>
             _modeButton('عثماني', QuranDisplayMode.uthmaniGold, '🕌'),
             _modeButton('المسند', QuranDisplayMode.musnadAncient, '𐩱'),
             _modeButton('بدون نقاط', QuranDisplayMode.dotless, 'ٮ'),
-            _modeButton('كوفي عربي', QuranDisplayMode.kufi, '│'),
+            _modeButton('رَقّ — كوفي مصحفي', QuranDisplayMode.kufi, '│'),
             _modeButton('هيلوغريفية', QuranDisplayMode.hieroglyphic, '𓂝'),
             const SizedBox(width: 16),
             // أزرار التحكم
