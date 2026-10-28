@@ -9,6 +9,7 @@ import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
+import '../../widgets/quran_wave_text.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
 
@@ -35,6 +36,7 @@ class _QuranProScreenState extends State<QuranProScreen>
   QuranDisplayMode _mode = QuranDisplayMode.uthmaniGold;
   double _fontSize = 22;
   bool _showFrame = true;
+  bool _waveEnabled = true;
   bool _autoScroll = false;
   Timer? _autoScrollTimer;
 
@@ -119,6 +121,7 @@ class _QuranProScreenState extends State<QuranProScreen>
       _fontSize = (preferences.getDouble('mudabbir_quran_pro_font_size') ?? 22)
           .clamp(14.0, 40.0).toDouble();
       _showFrame = preferences.getBool('mudabbir_quran_pro_show_frame') ?? true;
+      _waveEnabled = preferences.getBool('mudabbir_quran_pro_wave_enabled') ?? true;
     });
   }
 
@@ -134,6 +137,13 @@ class _QuranProScreenState extends State<QuranProScreen>
     setState(() => _showFrame = next);
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool('mudabbir_quran_pro_show_frame', next);
+  }
+
+  Future<void> _toggleWave() async {
+    final next = !_waveEnabled;
+    setState(() => _waveEnabled = next);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool('mudabbir_quran_pro_wave_enabled', next);
   }
 
   Future<void> _restoreDisplayMode() async {
@@ -371,6 +381,12 @@ class _QuranProScreenState extends State<QuranProScreen>
           onPressed: _toggleFrame,
         ),
         IconButton(
+          tooltip: _waveEnabled ? 'إيقاف حركة الكلمات' : 'تشغيل حركة الكلمات',
+          icon: Icon(_waveEnabled ? Icons.waves_rounded : Icons.motion_photos_off_rounded,
+              color: _goldColor),
+          onPressed: _toggleWave,
+        ),
+        IconButton(
           tooltip: 'البحث في السورة الحالية',
           icon: const Icon(Icons.search_rounded, color: _goldColor),
           onPressed: _searchCurrentSurah,
@@ -500,10 +516,13 @@ class _QuranProScreenState extends State<QuranProScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(transformed,
-                      style: _textStyle(),
-                      textAlign: TextAlign.justify,
-                      textDirection: TextDirection.rtl),
+                  QuranWaveText(
+                    text: transformed,
+                    importanceText: text.toString(),
+                    style: _textStyle(),
+                    enabled: _waveEnabled,
+                    textAlign: WrapAlignment.end,
+                  ),
                   const SizedBox(height: 8),
                   _buildVerseNumber(num),
                 ],
