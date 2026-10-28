@@ -26,7 +26,17 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       );
       return;
     }
-    context.read<AbjadProvider>().calculateAbjad(text);
+    final provider = context.read<AbjadProvider>();
+    provider.calculateAbjad(text);
+    if (provider.lastResult?.letterResults.isEmpty ?? true) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لم يُعثر على حروف لها قيمة في جدول أبجد؛ لم يُسجّل الحساب.'),
+        ),
+      );
+      return;
+    }
     try {
       await AchievementsService.recordAbjadCalculation();
     } catch (error) {
