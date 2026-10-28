@@ -41,17 +41,33 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   }
 
   Future<void> _restoreFontSize() async {
-    final preferences = await SharedPreferences.getInstance();
-    final saved = preferences.getInt('mudabbir_quran_page_font_size');
-    if (!mounted || saved == null) return;
-    setState(() => _fontSize = saved.clamp(16, 32).toInt());
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = preferences.getInt('mudabbir_quran_page_font_size');
+      if (!mounted || saved == null) return;
+      setState(() => _fontSize = saved.clamp(16, 32).toInt());
+    } catch (error) {
+      debugPrint('Could not restore Quran font size: $error');
+    }
   }
 
   Future<void> _changeFontSize(int delta) async {
     final next = (_fontSize + delta).clamp(16, 32).toInt();
     setState(() => _fontSize = next);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt('mudabbir_quran_page_font_size', next);
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await preferences.setInt('mudabbir_quran_page_font_size', next);
+      if (!saved && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تغير حجم الخط لهذه الجلسة، لكن تعذر حفظ التفضيل.')),
+        );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تغير حجم الخط لهذه الجلسة، لكن تعذر حفظ التفضيل: $error')),
+      );
+    }
   }
 
   Future<void> _loadSurah() async {
@@ -65,6 +81,9 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
             : <dynamic>[];
         _loading = false;
+        _loadError = rawVerses is List && rawVerses.isNotEmpty
+            ? null
+            : 'لم يُعثر على آيات للسورة المطلوبة داخل مصدر القرآن المحلي.';
       });
       await _loadBookmarksForCurrentSurah();
       // Publish the actual selected Quran context to the shared nucleus.
