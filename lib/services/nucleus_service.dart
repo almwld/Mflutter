@@ -100,7 +100,9 @@ class NucleusService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    // Allow retry after a fallback or knowledge-index failure. A fully healthy
+    // initialization remains idempotent.
+    if (_initialized && _error == null && _knowledgeReady) return;
     final pending = _initializing;
     if (pending != null) {
       await pending;
