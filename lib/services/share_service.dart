@@ -62,7 +62,7 @@ class ShareService {
 
     final jummal = verse['jummal'];
     if (jummal is num) lines.add('قيمة الجمل المسجلة: $jummal');
-    return lines.join('\\n');
+    return lines.join('\n');
   }
 
   static String formatDailyInsight(Map<String, String> insight) {
