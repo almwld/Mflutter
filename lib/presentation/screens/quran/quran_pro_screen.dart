@@ -151,25 +151,47 @@ class _QuranProScreenState extends State<QuranProScreen> {
     }
   }
 
+  Future<void> _persistReaderPreference(
+    Future<bool> Function(SharedPreferences preferences) write,
+    String setting,
+  ) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await write(preferences);
+      if (!saved) {
+        debugPrint('QuranProScreen: preference write was rejected: $setting');
+      }
+    } catch (error) {
+      // Keep the current reader controls usable even when persistence fails.
+      debugPrint('QuranProScreen: could not save $setting: $error');
+    }
+  }
+
   Future<void> _changeFontSize(double delta) async {
     final next = (_fontSize + delta).clamp(14.0, 40.0).toDouble();
     setState(() => _fontSize = next);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setDouble('mudabbir_quran_pro_font_size', next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setDouble('mudabbir_quran_pro_font_size', next),
+      'font size',
+    );
   }
 
   Future<void> _toggleFrame() async {
     final next = !_showFrame;
     setState(() => _showFrame = next);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setBool('mudabbir_quran_pro_show_frame', next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setBool('mudabbir_quran_pro_show_frame', next),
+      'verse frame',
+    );
   }
 
   Future<void> _toggleWave() async {
     final next = !_waveEnabled;
     setState(() => _waveEnabled = next);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setBool('mudabbir_quran_pro_wave_enabled', next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setBool('mudabbir_quran_pro_wave_enabled', next),
+      'word wave',
+    );
   }
 
   Future<void> _restoreDisplayMode() async {
@@ -190,8 +212,10 @@ class _QuranProScreenState extends State<QuranProScreen> {
 
   Future<void> _setDisplayMode(QuranDisplayMode mode) async {
     setState(() => _mode = mode);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt('mudabbir_quran_pro_mode_v2', mode.index);
+    await _persistReaderPreference(
+      (preferences) => preferences.setInt('mudabbir_quran_pro_mode_v2', mode.index),
+      'display mode',
+    );
   }
 
   String _transform(String text) {
