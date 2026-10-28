@@ -140,9 +140,11 @@ class ReadingProgressService {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     var count = 0;
     for (var i = 0; i < 7; i++) {
-      if (days.contains(_dateKey(DateTime.now().subtract(Duration(days: i))))) {
+      if (days.contains(_dateKey(today.subtract(Duration(days: i))))) {
         count++;
       }
     }
