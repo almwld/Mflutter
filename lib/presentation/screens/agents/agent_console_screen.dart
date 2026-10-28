@@ -276,6 +276,23 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                   ],
                 ),
               ),
+              if (provider.selectionError != null)
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 14, 8),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(.10),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(.35)),
+                    ),
+                    child: Text(
+                      provider.selectionError!,
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                    ),
+                  ),
+                ),
               if (task == null)
                 _QuickPrompts(onChoose: (value) {
                   _controller.text = value;
