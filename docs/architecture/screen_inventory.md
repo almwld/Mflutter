@@ -801,3 +801,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranPageScreen` now validates the selected surah number, canonical expected verse count, every source verse text, and the post-correction count before displaying it. An incomplete asset enters the existing retryable error state rather than being presented as a complete surah.
+
+
+- `QuranMultiModeScreen` now applies the same canonical per-surah count/text validation as the standard surah reader, verifies that correction preserves the verse count, and exposes retry when the local asset is missing or incomplete.
