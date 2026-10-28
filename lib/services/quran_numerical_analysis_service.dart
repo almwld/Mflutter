@@ -28,24 +28,40 @@ class QuranNumericalAnalysisService {
     }
 
     final counts = <String, int>{};
+    final locations = <String, List<QuranWordOccurrence>>{};
     var verseCount = 0;
     var wordCount = 0;
     var surahCount = 0;
 
     for (final entry in decoded.entries) {
+      final surahNumber = int.tryParse(entry.key.toString());
       final verses = entry.value;
-      if (verses is! List) continue;
+      if (surahNumber == null || surahNumber < 1 || surahNumber > 114 ||
+          verses is! List) {
+        continue;
+      }
       if (verses.isNotEmpty) surahCount++;
 
-      for (final verse in verses) {
+      for (var index = 0; index < verses.length; index++) {
+        final verse = verses[index];
         if (verse is! Map) continue;
         final text = verse['text'];
         if (text is! String || text.trim().isEmpty) continue;
         verseCount++;
 
+        final verseCounts = <String, int>{};
         for (final token in tokenize(text)) {
           counts.update(token, (count) => count + 1, ifAbsent: () => 1);
+          verseCounts.update(token, (count) => count + 1, ifAbsent: () => 1);
           wordCount++;
+        }
+        for (final occurrence in verseCounts.entries) {
+          locations.putIfAbsent(occurrence.key, () => <QuranWordOccurrence>[])
+              .add(QuranWordOccurrence(
+                surahNumber: surahNumber,
+                ayahNumber: index + 1,
+                count: occurrence.value,
+              ));
         }
       }
     }
@@ -58,6 +74,7 @@ class QuranNumericalAnalysisService {
 
     return QuranWordAnalysis._(
       counts: counts,
+      occurrences: locations,
       verseCount: verseCount,
       wordCount: wordCount,
       surahCount: surahCount,
@@ -91,16 +108,44 @@ class QuranNumericalAnalysisService {
   }
 }
 
+class QuranWordOccurrence {
+  const QuranWordOccurrence({
+    required this.surahNumber,
+    required this.ayahNumber,
+    required this.count,
+  });
+
+  final int surahNumber;
+  final int ayahNumber;
+  final int count;
+}
+
 class QuranWordAnalysis {
   QuranWordAnalysis._({
     required Map<String, int> counts,
+    required Map<String, List<QuranWordOccurrence>> occurrences,
     required this.verseCount,
     required this.wordCount,
     required this.surahCount,
     required this.source,
-  }) : wordCounts = Map<String, int>.unmodifiable(counts);
+  })  : wordCounts = Map<String, int>.unmodifiable(counts),
+        wordOccurrences = Map<String, List<QuranWordOccurrence>>.unmodifiable(
+          occurrences.map(
+            (word, items) => MapEntry(
+              word,
+              List<QuranWordOccurrence>.unmodifiable(items),
+            ),
+          ),
+        );
 
   final Map<String, int> wordCounts;
+  final Map<String, List<QuranWordOccurrence>> wordOccurrences;
+
+  List<QuranWordOccurrence> occurrencesFor(String input) {
+    final tokens = QuranNumericalAnalysisService.tokenize(input);
+    if (tokens.length != 1) return const <QuranWordOccurrence>[];
+    return wordOccurrences[tokens.single] ?? const <QuranWordOccurrence>[]; 
+  }
   final int verseCount;
   final int wordCount;
   final int surahCount;
