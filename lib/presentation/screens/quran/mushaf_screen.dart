@@ -426,6 +426,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       ),
       items: const [
         PopupMenuItem(value: 'bookmark', child: Text('حفظ الآية')),
+        PopupMenuItem(value: 'copy', child: Text('نسخ نص الآية')),
         PopupMenuItem(value: 'share', child: Text('مشاركة الآية')),
         PopupMenuItem(value: 'clear', child: Text('إلغاء التحديد')),
       ],
@@ -437,6 +438,14 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('تم حفظ الآية في العلامات المرجعية')),
+          );
+        }
+      } else if (action == 'copy') {
+        final text = MushafSource.verse(surah, ayah);
+        await Clipboard.setData(ClipboardData(text: text));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم نسخ نص الآية')),
           );
         }
       } else if (action == 'share') {
