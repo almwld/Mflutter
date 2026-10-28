@@ -64,7 +64,9 @@ class ContextMemoryService {
       final count = (_topicFrequency[removedTopic] ?? 1) - 1;
       if (count <= 0) { _topicFrequency.remove(removedTopic); } else { _topicFrequency[removedTopic] = count; }
     }
-    unawaited(_enqueuePersistence());
+    // Persistence is best-effort for the in-memory session; absorb this call's
+    // asynchronous error while keeping the queue recoverable on the next write.
+    unawaited(_enqueuePersistence().catchError((_) {}));
   }
 
   static Future<void> _enqueuePersistence() {
