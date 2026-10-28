@@ -21,6 +21,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   Future<void> _loadStreak() async {
     final errors = <String>[];
     try {
+      await MultiUserService.initialize();
+    } catch (error) {
+      errors.add('الملفات المحلية: $error');
+    }
+    try {
       await DailyStreakService.initialize();
     } catch (error) {
       errors.add('التتابع اليومي: $error');
@@ -42,6 +47,100 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         SnackBar(
           content: Text('بعض بيانات الملف لم تُحمّل بالكامل: ${errors.join('؛ ')}'),
         ),
+      );
+    }
+  }
+
+  Future<void> _addProfile() async {
+    final nameController = TextEditingController();
+    final avatarController = TextEditingController(text: '📖');
+    final formKey = GlobalKey<FormState>();
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('إنشاء ملف محلي'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                autofocus: true,
+                maxLength: 60,
+                decoration: const InputDecoration(labelText: 'اسم الملف'),
+                validator: (value) =>
+                    value == null || value.trim().isEmpty
+                        ? 'أدخل اسمًا للملف'
+                        : null,
+              ),
+              TextFormField(
+                controller: avatarController,
+                maxLength: 8,
+                decoration: const InputDecoration(
+                  labelText: 'رمز الملف (اختياري)',
+                  hintText: '📖',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(dialogContext, true);
+              }
+            },
+            child: const Text('إنشاء'),
+          ),
+        ],
+      ),
+    );
+    if (created != true) {
+      nameController.dispose();
+      avatarController.dispose();
+      return;
+    }
+    try {
+      await MultiUserService.addProfile(
+        nameController.text,
+        avatarController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ الملف المحلي الجديد.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر إنشاء الملف: $error')),
+      );
+    } finally {
+      nameController.dispose();
+      avatarController.dispose();
+    }
+  }
+
+  Future<void> _switchProfile(int index) async {
+    try {
+      await MultiUserService.switchProfile(index);
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم التبديل إلى ${MultiUserService.activeProfile['name']}.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تبديل الملف: $error')),
       );
     }
   }
@@ -93,9 +192,65 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           ),
         ],
       ),
-      body: ListView(padding: EdgeInsets.all(16), children: [
+      body: ListView(padding: const EdgeInsets.all(16), children: [
+        Card(
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  'الملفات المحلية',
+                  style: TextStyle(
+                    color: AppColors.primaryGold,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                for (var index = 0; index < MultiUserService.profiles.length; index++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Text(
+                      (MultiUserService.profiles[index]['avatar'] as String?) ?? '',
+                      style: const TextStyle(fontSize: 26),
+                    ),
+                    title: Text(
+                      (MultiUserService.profiles[index]['name'] as String?) ?? 'ملف محلي',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    subtitle: Text(
+                      'المستوى ${MultiUserService.profiles[index]['level']} • ${MultiUserService.profiles[index]['xp']} XP',
+                      style: const TextStyle(color: Colors.white54),
+                    ),
+                    trailing: (MultiUserService.profiles[index]['name'] == MultiUserService.activeProfile['name'] &&
+                            MultiUserService.profiles[index]['createdAt'] == MultiUserService.activeProfile['createdAt'])
+                        ? const Icon(Icons.check_circle, color: AppColors.primaryGold)
+                        : const Icon(Icons.radio_button_unchecked, color: Colors.white38),
+                    onTap: () => _switchProfile(index),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: MultiUserService.profiles.length >= 20 ? null : _addProfile,
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: const Text('إضافة ملف محلي'),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'هذه ملفات محلية على هذا الجهاز وليست حسابات تسجيل دخول أو مزامنة سحابية.',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
         // رأس الملف
-        Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(24), child: Column(children: [
+        Card(color: AppColors.surface, child: Padding(padding: const EdgeInsets.all(24), child: Column(children: [
           Text(profile['avatar'], style: TextStyle(fontSize: 64)),
           SizedBox(height: 12),
           Text(profile['name'], style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
