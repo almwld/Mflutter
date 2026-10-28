@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/text_transformer.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
@@ -55,6 +56,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     super.initState();
     _pulseCtrl = AnimationController(
       vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
+    _restoreDisplayMode();
     _loadQuran();
   }
 
@@ -99,6 +101,24 @@ class _QuranProScreenState extends State<QuranProScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) _scroll.jumpTo(0);
     });
+  }
+
+  Future<void> _restoreDisplayMode() async {
+    final preferences = await SharedPreferences.getInstance();
+    final savedIndex = preferences.getInt('mudabbir_quran_pro_mode');
+    if (savedIndex == null ||
+        savedIndex < 0 ||
+        savedIndex >= QuranDisplayMode.values.length ||
+        !mounted) {
+      return;
+    }
+    setState(() => _mode = QuranDisplayMode.values[savedIndex]);
+  }
+
+  Future<void> _setDisplayMode(QuranDisplayMode mode) async {
+    setState(() => _mode = mode);
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt('mudabbir_quran_pro_mode', mode.index);
   }
 
   String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'kufi', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
@@ -244,7 +264,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: GestureDetector(
-        onTap: () => setState(() => _mode = mode),
+        onTap: () => _setDisplayMode(mode),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
