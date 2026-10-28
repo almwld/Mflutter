@@ -886,3 +886,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The last-reading-position card in `StatsScreen` is now actionable and opens the Mushaf at the stored page without overriding it with the previous session's restored page.
+
+
+- `AIAdvancedScreen` now distinguishes unsupported GGUF/Qwen fine-tuning from the separate, available local linear-classifier training workflow, avoiding the impression that no local training path exists.
