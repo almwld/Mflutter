@@ -76,19 +76,29 @@ class AgentKnowledgeService {
   }
 
   Future<void> _loadJsonAsset(String path) async {
+    final before = _documents.length;
     try {
       final raw = await rootBundle.loadString(path);
       final decoded = jsonDecode(raw);
-      final before = _documents.length;
       _collect(decoded, path, path, 0);
       _loadedSources.add(path);
-      if (_documents.length < before) {
-        throw StateError('Invalid document count for $path');
-      }
     } on FlutterError {
       // Optional assets do not prevent the canonical corpus from loading.
+      _rollbackDocuments(before);
     } on FormatException {
       // Do not fabricate replacement data for malformed assets.
+      _rollbackDocuments(before);
+    } on TypeError {
+      // A malformed optional schema must not leave a partially indexed source.
+      _rollbackDocuments(before);
+    } on ArgumentError {
+      _rollbackDocuments(before);
+    }
+  }
+
+  void _rollbackDocuments(int lengthBeforeLoad) {
+    if (_documents.length > lengthBeforeLoad) {
+      _documents.removeRange(lengthBeforeLoad, _documents.length);
     }
   }
 
