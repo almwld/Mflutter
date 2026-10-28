@@ -26,6 +26,7 @@ class TrainingProvider extends ChangeNotifier {
   }
   List<Map<String, dynamic>> get history => _trainingService.history;
   bool get modelLoaded => _engine.isInitialized;
+  String? get modelInitializationError => _modelInitializationError;
 
   Future<void> initialize() async {
     if (_initialized) return;
