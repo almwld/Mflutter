@@ -154,7 +154,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
               _WorkspaceHero(
                 documentCount: provider.indexedDocumentCount,
                 sourceCount: provider.loadedKnowledgeSources.length,
-                initialized: provider.loadedKnowledgeSources.isNotEmpty,
+                initialized: provider.initialized,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
@@ -267,7 +267,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 child: _Transcript(
                   task: task,
                   messages: provider.messages,
-                  loadingKnowledge: provider.loadedKnowledgeSources.isEmpty,
+                  loadingKnowledge: !provider.initialized,
                 ),
               ),
               _Composer(
