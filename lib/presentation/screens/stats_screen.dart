@@ -80,7 +80,7 @@ class _StatsScreenState extends State<StatsScreen> {
           final pagesRead = data[2] as int;
           final streak = data[3] as int;
           final readingDays = data[4] as int;
-          final weekDays = data[5] as int;
+          final pagesInLast7Days = data[5] as int;
 
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -96,7 +96,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 childAspectRatio: 1.35,
                 children: [
                   _statCard('الصفحات المقروءة', '$pagesRead / 604', Icons.menu_book),
-                  _statCard('الورد الأسبوعي', '$weekDays أيام', Icons.calendar_today),
+                  _statCard('صفحات آخر 7 أيام', '$pagesInLast7Days صفحة', Icons.calendar_today),
                   _statCard('الاستمرار الحالي', '$streak يوم', Icons.local_fire_department),
                   _statCard('أيام القراءة', '$readingDays يوم', Icons.auto_awesome),
                 ],
@@ -152,7 +152,7 @@ class _StatsScreenState extends State<StatsScreen> {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               minHeight: 10,
-              value: progress,
+              value: progress.clamp(0.0, 1.0).toDouble(),
               backgroundColor: Colors.white12,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
             ),
