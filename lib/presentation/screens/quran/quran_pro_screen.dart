@@ -505,13 +505,6 @@ class _QuranProScreenState extends State<QuranProScreen> {
       actions: [
         IconButton(
           tooltip: _selectedAyah == null
-              ? 'اختر آية أولًا لمشاركتها'
-              : 'مشاركة الآية المحددة',
-          icon: const Icon(Icons.share_outlined, color: _goldColor),
-          onPressed: _selectedAyah == null ? null : _shareSelectedAyah,
-        ),
-        IconButton(
-          tooltip: _selectedAyah == null
               ? 'اختر آية أولًا لحفظها'
               : 'حفظ الآية المحددة في العلامات المرجعية',
           icon: const Icon(Icons.bookmark_add_outlined, color: _goldColor),
@@ -541,13 +534,29 @@ class _QuranProScreenState extends State<QuranProScreen> {
             onPressed: _toggleAutoScroll),
         PopupMenuButton<int>(
           icon: const Icon(Icons.list, color: _goldColor),
-          onSelected: _loadSurah,
-          itemBuilder: (_) => _surahs
-              .map((s) => PopupMenuItem(
-                  value: s['n'] as int,
-                  child: Text('${s['name']} (${s['n']})',
-                      style: const TextStyle(color: Colors.white))))
-              .toList(),
+          onSelected: (value) {
+            if (value == -1) {
+              _shareSelectedAyah();
+            } else {
+              _loadSurah(value);
+            }
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem<int>(
+              value: -1,
+              enabled: _selectedAyah != null,
+              child: const Text('مشاركة الآية المحددة'),
+            ),
+            ..._surahs.map(
+              (s) => PopupMenuItem<int>(
+                value: s['n'] as int,
+                child: Text(
+                  '${s['name']} (${s['n']})',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
