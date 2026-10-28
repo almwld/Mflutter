@@ -188,3 +188,8 @@ This is a file-to-target mapping, not a claim that every target has passed behav
 ### Navigation consolidation change
 
 `MainNavigation` no longer owns a separate four-tab shell. It delegates to `HomeScreen`, which is the entry destination after `SplashScreen`, and re-exports the existing `MoreScreen` symbol for legacy import compatibility. This removes the duplicate navigation implementation without deleting the HomeScreen tools directory.
+
+
+### Nucleus registry graph
+
+`NucleusScreen` now includes a custom-painted, tappable radial map sourced from `AgentRegistry.all`, a selector for all registered definitions, and a details panel for the selected entry. The radial spokes intentionally mean only “this definition belongs to the registry”; they do not claim runtime connections or active execution. The graph draws a bounded subset to keep rendering costs predictable, while the selector can reach the full registry.
