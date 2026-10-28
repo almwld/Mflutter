@@ -57,7 +57,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
     _persistCurrentPage(_page);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // The controls are visible initially, so keep Android system bars
+    // visible too; the double-tap toggle will switch both layers together.
+    _setImmersiveMode(false);
     _restorePageTheme();
     _restoreDisplayMode();
     _loadQuranFonts();
