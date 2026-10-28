@@ -30,13 +30,14 @@ class DailyStreakService {
       await attempt;
       _initialized = true;
     } finally {
-      _initializing = null;
+      if (identical(_initializing, attempt)) _initializing = null;
     }
   }
 
   static Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _activeDates = (prefs.getStringList(_activeDatesKey) ?? const <String>[]).toSet();
+    _activeDates =
+        (prefs.getStringList(_activeDatesKey) ?? const <String>[]).toSet();
     _pruneOldDates();
     _recalculate();
   }
@@ -57,15 +58,11 @@ class DailyStreakService {
     final today = _dateKey(DateTime.now());
     if (_activeDates.contains(today)) return;
 
-    // Persist a candidate snapshot before changing in-memory state. If storage
-    // fails, the same day's activity can be retried instead of being lost
-    // behind an already-added in-memory date.
     final nextDates = Set<String>.from(_activeDates)..add(today);
     _pruneOldDates(nextDates);
     final prefs = await SharedPreferences.getInstance();
     final sorted = nextDates.toList()..sort();
-    final saved = await prefs.setStringList(_activeDatesKey, sorted);
-    if (!saved) {
+    if (!await prefs.setStringList(_activeDatesKey, sorted)) {
       throw StateError('تعذر حفظ نشاط القراءة في التخزين المحلي.');
     }
     _activeDates = nextDates;
@@ -78,41 +75,6 @@ class DailyStreakService {
     final today = DateTime(now.year, now.month, now.day);
     final cutoff = today.subtract(const Duration(days: 365));
     target.removeWhere((key) {
-      if (!RegExp(r'^\d{4}-\d{2}-\d{2}
-
-  static void _recalculate() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    var cursor = _activeDates.contains(_dateKey(today))
-        ? today
-        : today.subtract(const Duration(days: 1));
-    var count = 0;
-    while (_activeDates.contains(_dateKey(cursor))) {
-      count++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    _streak = count;
-
-    for (var index = 0; index < 7; index++) {
-      final day = today.subtract(Duration(days: 6 - index));
-      _weekHistory[index] = _activeDates.contains(_dateKey(day));
-    }
-  }
-
-  static String _dateKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
-
-  static String getStreakEmoji() {
-    if (_streak >= 30) return '👑';
-    if (_streak >= 14) return '💎';
-    if (_streak >= 7) return '🔥';
-    if (_streak >= 3) return '⭐';
-    return '🌱';
-  }
-}
-).hasMatch(key)) return true;
       final parsed = DateTime.tryParse(key);
       return parsed == null ||
           _dateKey(parsed) != key ||
