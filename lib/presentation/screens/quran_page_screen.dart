@@ -75,15 +75,16 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
       final rawVerses = data[widget.surahNumber.toString()];
+      final correctedVerses = rawVerses is List
+          ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
+          : <dynamic>[];
       if (!mounted) return;
       setState(() {
-        _verses = rawVerses is List
-            ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
-            : <dynamic>[];
+        _verses = correctedVerses;
         _loading = false;
-        _loadError = rawVerses is List && rawVerses.isNotEmpty
+        _loadError = correctedVerses.isNotEmpty
             ? null
-            : 'لم يُعثر على آيات للسورة المطلوبة داخل مصدر القرآن المحلي.';
+            : 'لم يُعثر على آيات صالحة للسورة المطلوبة داخل مصدر القرآن المحلي.';
       });
       await _loadBookmarksForCurrentSurah();
       // Publish the actual selected Quran context to the shared nucleus.
