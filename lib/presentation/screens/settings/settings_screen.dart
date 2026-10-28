@@ -186,8 +186,18 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await context.read<ThemeProvider>().resetToDefaults();
+    final provider = context.read<ThemeProvider>();
+    await provider.resetToDefaults();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت استعادة إعدادات المظهر الافتراضية')));
+    final error = provider.persistenceError;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null
+              ? 'تمت استعادة إعدادات المظهر الافتراضية.'
+              : 'أُعيدت القيم داخل الجلسة، لكن تعذر تأكيد حفظها: $error',
+        ),
+      ),
+    );
   }
 }
