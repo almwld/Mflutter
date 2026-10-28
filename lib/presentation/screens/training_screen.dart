@@ -129,11 +129,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       const Text('حالة المصنف', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
                       const SizedBox(height: 8),
                       Text(
-                        provider.modelLoaded ? 'المصنف المحلي جاهز للاستدلال' : 'لا يوجد مصنف محمّل — استورد بيانات موسومة لبدء التدريب',
+                        provider.isInitializing
+                            ? 'جارٍ فحص النموذج المحلي...'
+                            : provider.modelLoaded
+                                ? 'المصنف المحلي جاهز للاستدلال'
+                                : 'لا يوجد مصنف محمّل — استورد بيانات موسومة لبدء التدريب',
                         style: const TextStyle(color: Colors.white),
                       ),
                       Text('الحالة: ${provider.status}', style: const TextStyle(color: Colors.white70)),
-                      if (!provider.modelLoaded && !provider.isTraining) ...[
+                      if (!provider.modelLoaded &&
+                          !provider.isTraining &&
+                          !provider.isInitializing) ...[
                         const SizedBox(height: 8),
                         Align(
                           alignment: AlignmentDirectional.centerStart,
