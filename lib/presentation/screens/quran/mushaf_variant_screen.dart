@@ -83,10 +83,17 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     // the most recently viewed page after rapid swipes.
     _pagePersistence = _pagePersistence.then((_) async {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setInt(
-        'mudabbir_mushaf_variant_last_page',
-        normalizedPage,
-      );
+      try {
+        final saved = await preferences.setInt(
+          'mudabbir_mushaf_variant_last_page',
+          normalizedPage,
+        );
+        if (!saved) {
+          debugPrint('MushafVariantScreen: variant page write was rejected.');
+        }
+      } catch (error) {
+        debugPrint('MushafVariantScreen: variant page save failed: $error');
+      }
       try {
         await ReadingProgressService.saveLastPage(normalizedPage);
       } catch (error) {
