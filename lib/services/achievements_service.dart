@@ -25,30 +25,38 @@ class AchievementsService {
       _achievements.where((item) => item['unlocked'] == true).length;
 
   static Future<void> refreshFromLocalActivity() async {
-    await DailyStreakService.initialize();
+    try {
+      await DailyStreakService.initialize();
+    } catch (_) {
+      // Other local activity metrics remain useful if the streak store fails.
+    }
     final summary = await const LocalActivitySummaryService().load();
     _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
     _setProgress('ten_verses', summary.bookmarkCount / 10);
     _setProgress('daily_streak_3', DailyStreakService.streak / 3);
 
-    final preferences = await SharedPreferences.getInstance();
-    final abjadCalculations =
-        preferences.getInt('mudabbir_abjad_calculations') ?? 0;
-    _setProgress('first_abjad', abjadCalculations > 0 ? 1 : 0);
-    final completedInsights =
-        preferences.getInt('mudabbir_completed_insights') ?? 0;
-    _setProgress('ten_insights', completedInsights / 10);
-    final exploredSciences =
-        preferences.getStringList('mudabbir_explored_sciences') ?? const [];
-    _setProgress('seven_sciences', exploredSciences.toSet().length / 7);
-    _setProgress(
-      'share_verse',
-      preferences.getBool('mudabbir_shared_verse') == true ? 1 : 0,
-    );
-    _setProgress(
-      'night_mode',
-      preferences.getBool('mudabbir_night_use') == true ? 1 : 0,
-    );
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final abjadCalculations =
+          preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+      _setProgress('first_abjad', abjadCalculations > 0 ? 1 : 0);
+      final completedInsights =
+          preferences.getInt('mudabbir_completed_insights') ?? 0;
+      _setProgress('ten_insights', completedInsights / 10);
+      final exploredSciences =
+          preferences.getStringList('mudabbir_explored_sciences') ?? const [];
+      _setProgress('seven_sciences', exploredSciences.toSet().length / 7);
+      _setProgress(
+        'share_verse',
+        preferences.getBool('mudabbir_shared_verse') == true ? 1 : 0,
+      );
+      _setProgress(
+        'night_mode',
+        preferences.getBool('mudabbir_night_use') == true ? 1 : 0,
+      );
+    } catch (_) {
+      // Keep previously loaded achievement state if preference reads fail.
+    }
   }
 
   /// Records app startup during the device's local night window (20:00–04:59).
