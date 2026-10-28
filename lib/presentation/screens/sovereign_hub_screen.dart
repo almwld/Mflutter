@@ -16,6 +16,7 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
   final P2PMeshService _mesh = P2PMeshService.instance;
   Map<String, String> _peers = {};
   Map<String, ConnectionInfo> _pendingConnections = {};
+  Set<String> _connectedPeers = <String>{};
   bool _scanning = false;
   String _status = '';
 
@@ -25,6 +26,7 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
     _peers = Map<String, String>.from(_mesh.peers);
     _pendingConnections =
         Map<String, ConnectionInfo>.from(_mesh.pendingConnections);
+    _connectedPeers = Set<String>.from(_mesh.connectedPeers);
     _mesh.addListener(_onMeshChanged);
   }
 
@@ -40,6 +42,7 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
       _peers = Map<String, String>.from(_mesh.peers);
       _pendingConnections =
           Map<String, ConnectionInfo>.from(_mesh.pendingConnections);
+      _connectedPeers = Set<String>.from(_mesh.connectedPeers);
     });
   }
 
@@ -278,12 +281,27 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
                 title: Text(peer.value,
                     style: const TextStyle(color: Colors.white)),
                 subtitle: Text(
-                  'معرّف الطرف: ${peer.key}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  _connectedPeers.contains(peer.key)
+                      ? 'متصل • معرّف الطرف: ${peer.key}'
+                      : 'معرّف الطرف: ${peer.key}',
+                  style: TextStyle(
+                    color: _connectedPeers.contains(peer.key)
+                        ? Colors.greenAccent
+                        : Colors.white54,
+                    fontSize: 11,
+                  ),
                 ),
-                trailing: const Icon(Icons.link_rounded,
-                    color: AppColors.primaryGold),
-                onTap: () => _connectPeer(peer.key, peer.value),
+                trailing: Icon(
+                  _connectedPeers.contains(peer.key)
+                      ? Icons.verified_rounded
+                      : Icons.link_rounded,
+                  color: _connectedPeers.contains(peer.key)
+                      ? Colors.greenAccent
+                      : AppColors.primaryGold,
+                ),
+                onTap: _connectedPeers.contains(peer.key)
+                    ? null
+                    : () => _connectPeer(peer.key, peer.value),
               ),
             ),
           ),
