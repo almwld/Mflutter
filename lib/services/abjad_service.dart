@@ -77,27 +77,18 @@ class AbjadService {
     return results;
   }
 
-  /// الحصول على العنصر
-  String _getElement(int value) {
-    final elements = ['النار', 'الماء', 'التراب', 'الهواء', 'الروح'];
-    return elements[value % elements.length];
-  }
+  /// ارتباطات رمزية وفق الجداول المشتركة، وليست نتائج علمية.
+  String _getElement(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getElementByNumber(value);
 
-  /// الحصول على الكوكب
-  String _getPlanet(int value) {
-    final planets = ['الشمس', 'القمر', 'المريخ', 'عطارد', 'المشتري', 'الزهرة', 'زحل'];
-    return planets[value % planets.length];
-  }
+  String _getPlanet(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getPlanetByNumber(value);
 
-  /// الحصول على البرج
-  String _getZodiac(int value) {
-    final zodiacs = [
-      'الحمل', 'الثور', 'الجوزاء', 'السرطان',
-      'الأسد', 'العذراء', 'الميزان', 'العقرب',
-      'القوس', 'الجدي', 'الدلو', 'الحوت'
-    ];
-    return zodiacs[value % zodiacs.length];
-  }
+  String _getZodiac(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getZodiacByNumber(value);
 
   /// الحصول على الاسم الإلهي
   String _getDivineName(int value) {
