@@ -42,8 +42,22 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   void dispose() {
     _abjad.dispose();
     _search.dispose();
-    unawaited(AudioSynthesisService.stop());
+    unawaited(AudioSynthesisService.stop().catchError((Object error) {
+      debugPrint('Could not stop local audio during dispose: $error');
+    }));
     super.dispose();
+  }
+
+  Future<void> _stopAudio() async {
+    try {
+      await AudioSynthesisService.stop();
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر إيقاف الصوت: $error')),
+      );
+    }
   }
 
   void _calculate() => setState(() => _result = AbjadExtendedService.calculate(_abjad.text));
@@ -74,7 +88,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
         actions: [
           IconButton(
             tooltip: 'إيقاف الصوت',
-            onPressed: () async { await AudioSynthesisService.stop(); if (mounted) setState(() {}); },
+            onPressed: _stopAudio,
             icon: const Icon(Icons.stop_circle_outlined),
           ),
         ],
@@ -153,7 +167,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
                 _soundButton('تركيز · 14 Hz', () => _play(AudioSynthesisService.playFocus)),
                 _soundButton('تأمل · 4 Hz', () => _play(AudioSynthesisService.playDeepMeditation)),
                 OutlinedButton.icon(
-                  onPressed: _busy ? null : () async { await AudioSynthesisService.stop(); if (mounted) setState(() {}); },
+                  onPressed: _busy ? null : _stopAudio,
                   icon: const Icon(Icons.stop_rounded), label: const Text('إيقاف'),
                 ),
               ]),
