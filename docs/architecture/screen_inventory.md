@@ -780,3 +780,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Time-capsule migration now uses a dedicated legacy-import path that retains previously saved capsules whose unlock date has already passed, while the normal creation path still requires a future unlock date. Migration remains idempotent and preserves the old key if import fails.
+
+
+- `DailyStreakService` now prunes malformed date strings, timestamps that are not canonical calendar-day keys, future activity, and records older than its retention window before calculating streaks.
