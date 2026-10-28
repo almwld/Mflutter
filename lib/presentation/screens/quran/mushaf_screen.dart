@@ -494,7 +494,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       body: SafeArea(
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
-          onTap: _toggleReaderControls,
+          onDoubleTap: _toggleReaderControls,
           child: Stack(
           children: [
             const Positioned.fill(
@@ -632,6 +632,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       ayahNumber: ayah,
                       verseText: MushafSource.verse(surah, ayah),
                     );
+                    // The QCF page view owns verse double taps, so toggle
+                    // immersive controls here as well as on blank page space.
+                    unawaited(_toggleReaderControls());
                   },
                   onLongPressStart: (surah, ayah, details) {
                     _saveAyahCoordinate(surah, ayah, details.globalPosition);
