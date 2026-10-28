@@ -66,8 +66,15 @@ class MushafVariantLayoutService {
 
   static Future<List<MushafVariantLine>> _loadPage(int pageNumber) async {
     await ensureLoaded();
-    final pages = (_asset!['pages'] as Map).cast<String, dynamic>();
-    final rawLines = (pages['$pageNumber'] as List?) ?? const [];
+    final rawPages = _asset!['pages'];
+    if (rawPages is! Map) {
+      throw const FormatException('ملف تخطيط المصحف لا يحتوي جدول الصفحات.');
+    }
+    final pages = rawPages.cast<String, dynamic>();
+    final rawLines = pages['$pageNumber'];
+    if (rawLines is! List || rawLines.isEmpty) {
+      throw FormatException('لا توجد بيانات تخطيط صالحة للصفحة $pageNumber.');
+    }
     final result = <MushafVariantLine>[];
     // A verse contributes several words to a page. Split it once per page
     // instead of repeatedly resolving and tokenizing the same verse for every
