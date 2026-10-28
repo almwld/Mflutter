@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "name": "Mudabbir Visual Core",
+  "locale": "ar",
+  "mode": "offline_first",
+  "model_runtime": {
+    "provider": "LocalGgufRuntimeService",
+    "engine": "llama.cpp",
+    "automatic_model_download": false,
+    "require_successful_native_load_before_inference": true,
+    "default_context_size": 1024,
+    "cpu_threads_default": 4
+  },
+  "orchestration": {
+    "registry_source": "lib/services/agent_registry.dart",
+    "agent_count_is_derived_from_registry": true,
+    "agents_are_logical_roles_not_separate_models": true,
+    "max_retries": 3,
+    "require_evidence_for_quran_claims": true
+  },
+  "context": {
+    "quran_reference": null,
+    "verse_text": null,
+    "visual_energy": 0,
+    "visual_energy_semantics": "ui_derived_only_not_a_biological_or_spiritual_measurement"
+  },
+  "models": {
+    "local_gguf": {
+      "enabled": true,
+      "runtime": "llama.cpp"
+    },
+    "embeddings": {
+      "enabled": true,
+      "runtime": "local_search_index"
+    },
+    "training": {
+      "enabled": false,
+      "reason": "No runnable local training pipeline is configured by this nucleus manifest."
+    }
+  },
+  "ui": {
+    "theme": "dark",
+    "language": "ar",
+    "fontScale": 1
+  },
+  "sciences": [
+    {
+      "id": "quran",
+      "name": "القرآن",
+      "available": true
+    },
+    {
+      "id": "language",
+      "name": "اللغة",
+      "available": true
+    },
+    {
+      "id": "abjad",
+      "name": "حساب الجُمّل",
+      "available": true
+    },
+    {
+      "id": "search",
+      "name": "البحث المحلي",
+      "available": true
+    },
+    {
+      "id": "audio",
+      "name": "الصوت",
+      "available": "feature_dependent"
+    },
+    {
+      "id": "sensors",
+      "name": "المستشعرات",
+      "available": "permission_and_hardware_dependent"
+    }
+  ],
+  "colors": {
+    "primary": 4280294006,
+    "gold": 4294950912,
+    "surface": 4279046698,
+    "onSurface": 4292927965
+  }
+}
