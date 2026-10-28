@@ -44,6 +44,13 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
+      if (ayahs.isEmpty) {
+        setState(() {
+          _indexing = false;
+          _indexError = 'مصدر القرآن المحلي لم يُرجع أي آية؛ لا يمكن تجهيز فهرس البحث.';
+        });
+        return;
+      }
 
       final searchDocs = ayahs
           .map((ayah) => <String, String>{
