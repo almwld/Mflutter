@@ -29,6 +29,12 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
   }
 
   Future<void> _initialize() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       _bySurah = await QuranLoaderService.loadBySurah();
       await _loadVerse();
@@ -104,8 +110,23 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(_error!, textAlign: TextAlign.center,
-                        style: TextStyle(color: colors.error)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(color: colors.error),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _initialize,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('إعادة تحميل فهرس الكلمات'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : ListView(
