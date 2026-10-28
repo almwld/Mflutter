@@ -190,6 +190,9 @@ jobs:
         run: flutter test test/nucleus_service_test.dart
 
 
+      - name: Test Quran numerical analysis
+        run: flutter test test/quran_numerical_analysis_service_test.dart
+
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
 
