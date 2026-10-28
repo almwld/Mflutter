@@ -405,3 +405,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/splash_screen.dart`: home navigation no longer waits indefinitely for local knowledge indexing. After an eight-second startup budget, the app opens with a clear message while the shared nucleus initialization continues and can still report readiness/failure to listeners.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (Mushaf navigation race)
+
+- `lib/presentation/screens/quran/mushaf_screen.dart`: explicit page jumps now mark the reader as user-navigated before starting the animation, preventing a delayed last-page restore from overriding the user's chosen destination.
+- No tests, analyzer, formatter, or APK build were run.
