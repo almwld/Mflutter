@@ -12,7 +12,7 @@ class AchievementsService {
     {'id': 'ten_verses', 'title': 'حافظ الآيات', 'desc': 'حفظ 10 آيات في المفضلة', 'icon': '📚', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'seven_sciences', 'title': 'مستكشف المعرفة', 'desc': 'فتح تفاصيل ٧ موضوعات معرفية مميزة', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'فتح التطبيق بين 20:00 و04:59 بالتوقيت المحلي', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': true},
