@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/local_activity_summary_service.dart';
 
-class LeaderboardScreen extends StatelessWidget {
+class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
+
+  @override
+  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends State<LeaderboardScreen> {
+  late Future<LocalActivitySummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = const LocalActivitySummaryService().load();
+  }
+
+  void _retry() {
+    setState(() => _summaryFuture = const LocalActivitySummaryService().load());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +32,7 @@ class LeaderboardScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryNavy,
       ),
       body: FutureBuilder<LocalActivitySummary>(
-        future: const LocalActivitySummaryService().load(),
+        future: _summaryFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
