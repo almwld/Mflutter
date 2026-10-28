@@ -27,7 +27,11 @@ class BookmarkService {
           .where((item) =>
               item['surah'] is num &&
               item['ayah'] is num &&
-              item['text'] is String)
+              item['text'] is String &&
+              (item['surah'] as num).toInt() >= 1 &&
+              (item['surah'] as num).toInt() <= 114 &&
+              (item['ayah'] as num).toInt() >= 1 &&
+              (item['text'] as String).trim().isNotEmpty)
           .toList(growable: true);
     } on FormatException {
       // A corrupted preference must not crash the Quran reader.
