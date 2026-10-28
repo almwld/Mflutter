@@ -4,6 +4,7 @@ import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quran_word_index_service.dart';
 import '../../services/mushaf_source.dart';
+import 'quran/mushaf_screen.dart';
 
 /// Interactive, data-derived word and letter coordinates for the Hafs Mushaf.
 class QuranWordExplorerScreen extends StatefulWidget {
@@ -66,6 +67,19 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
         _error = 'تعذر تحميل مواضع الآية: ' + error.toString();
       });
     }
+  }
+
+  void _openVerse(int surah, int ayah, int page) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: surah,
+          initialAyah: ayah,
+          restoreLastPage: false,
+        ),
+      ),
+    );
   }
 
   Future<void> _move(int delta) async {
@@ -217,6 +231,18 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                       textDirection: TextDirection.rtl,
                                       style: theme.textTheme.bodySmall),
                                   Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: FilledButton.icon(
+                                      onPressed: () => _openVerse(
+                                        word.surahNumber,
+                                        word.ayahNumber,
+                                        word.pageNumber,
+                                      ),
+                                      icon: const Icon(Icons.menu_book_rounded),
+                                      label: const Text('فتح الآية في المصحف'),
+                                    ),
+                                  ),
+                                  Align(
                                     alignment: Alignment.centerLeft,
                                     child: TextButton.icon(
                                       onPressed: () async {
@@ -242,6 +268,15 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                                         ' • صفحة ' + match.pageNumber.toString() +
                                                         ' • جزء ' + match.juzNumber.toString(),
                                                         textDirection: TextDirection.rtl),
+                                                    trailing: const Icon(Icons.open_in_new_rounded),
+                                                    onTap: () {
+                                                      Navigator.pop(context);
+                                                      _openVerse(
+                                                        match.surahNumber,
+                                                        match.ayahNumber,
+                                                        match.pageNumber,
+                                                      );
+                                                    },
                                                   ),
                                               ],
                                             ),
