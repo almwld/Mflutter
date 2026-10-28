@@ -28,6 +28,22 @@ class AgentChatProvider extends ChangeNotifier {
   String? _initializationError;
   String? _selectedAgent;
 
+  bool _disposed = false;
+
+  void _notifySafely() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _cancelled = true;
+    _paused = false;
+    _executionGeneration++;
+    unawaited(NucleusService().stopGeneration());
+    super.dispose();
+  }
+
   AgentTask? get activeTask => _activeTask;
   List<String> get messages => List.unmodifiable(_messages);
   bool get paused => _paused;
@@ -80,13 +96,13 @@ class AgentChatProvider extends ChangeNotifier {
       _initializationError = error.toString();
     } finally {
       _initializing = null;
-      notifyListeners();
+      _notifySafely();
     }
   }
 
   void selectAgent(String? id) {
     _selectedAgent = id;
-    notifyListeners();
+    _notifySafely();
   }
 
   /// Clears only the visible conversation/task. Persisted local memory runs
@@ -98,7 +114,7 @@ class AgentChatProvider extends ChangeNotifier {
     _messages.clear();
     _cancelled = false;
     _paused = false;
-    notifyListeners();
+    _notifySafely();
   }
 
   Future<void> executeTask(String query) async {
@@ -129,7 +145,7 @@ class AgentChatProvider extends ChangeNotifier {
     );
     _activeTask = task;
     _messages.add('المستخدم: $clean');
-    notifyListeners();
+    _notifySafely();
 
     try {
       await initialize();
@@ -158,7 +174,7 @@ class AgentChatProvider extends ChangeNotifier {
         );
         task = task.copyWith(steps: _replaceStep(task.steps, i, step));
         _activeTask = task;
-        notifyListeners();
+        _notifySafely();
 
         try {
           final result = await _executeWithRetries(agents[i], clean, generation: generation);
@@ -171,7 +187,7 @@ class AgentChatProvider extends ChangeNotifier {
           );
           task = task.copyWith(steps: _replaceStep(task.steps, i, step));
           _activeTask = task;
-          notifyListeners();
+          _notifySafely();
         } catch (error) {
           // The runtime may throw when stopGeneration interrupts native
           // inference. Preserve cancellation instead of marking this step as
@@ -195,7 +211,7 @@ class AgentChatProvider extends ChangeNotifier {
             error: error.toString(),
           );
           _activeTask = task;
-          notifyListeners();
+          _notifySafely();
           return;
         }
       }
@@ -227,7 +243,7 @@ class AgentChatProvider extends ChangeNotifier {
         // separately while preserving the actual result and task status.
         _messages.add('تنبيه: اكتملت المهمة، لكن تعذر حفظ سجلها محليًا: $memoryError');
       }
-      notifyListeners();
+      _notifySafely();
     } catch (error) {
       // Cancellation wins over an initialization/generation error. A native
       // stop can surface as an exception; it must not turn a cancelled task
@@ -239,7 +255,7 @@ class AgentChatProvider extends ChangeNotifier {
       task = task.copyWith(status: TaskStatus.failed, error: error.toString());
       _activeTask = task;
       _messages.add('تعذر إكمال المهمة: $error');
-      notifyListeners();
+      _notifySafely();
     }
   }
 
@@ -256,7 +272,7 @@ class AgentChatProvider extends ChangeNotifier {
     _activeTask = task.copyWith(
       status: _paused ? TaskStatus.paused : TaskStatus.running,
     );
-    notifyListeners();
+    _notifySafely();
   }
 
   bool _isCancelledFor(int generation) =>
@@ -285,7 +301,7 @@ class AgentChatProvider extends ChangeNotifier {
       steps: steps,
       completedAt: now,
     );
-    notifyListeners();
+    _notifySafely();
   }
 
   void cancel() {
