@@ -672,3 +672,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranWordExplorerScreen` now offers a retry action when local word/letter index loading fails and resets the loading/error state before retrying.
+
+
+## UI continuation — 2026-10-29 (word/letter explorer navigation)
+
+- `lib/presentation/screens/quran_word_explorer_screen.dart`: each indexed word can open its exact verse in the canonical Mushaf; matching occurrences in the word-location sheet are also directly navigable, preserving the verse reference and page.
+- No tests, analyzer, formatter, or APK build were run.
