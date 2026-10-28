@@ -40,7 +40,7 @@ class AgentChatProvider extends ChangeNotifier {
     _cancelled = true;
     _paused = false;
     _executionGeneration++;
-    unawaited(NucleusService().stopGeneration());
+    unawaited(NucleusService().stopGeneration().catchError((_) {}));
     super.dispose();
   }
 
