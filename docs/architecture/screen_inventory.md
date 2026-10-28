@@ -526,3 +526,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/ai_advanced_screen.dart`: local TF-IDF search results are now actionable and open the exact verse in the canonical Mushaf with verse context/highlight, rather than leaving results as read-only snippets.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (classifier dataset correctness)
+
+- `lib/services/labeled_training_dataset_service.dart` and `lib/services/on_device_training_service.dart`: dataset validation now requires at least two samples for each of the classifier's three output classes (`cosmic`, `tranquil`, `calculation`). A dataset missing one class can no longer silently train a three-output classifier without examples for that output.
+- No tests, analyzer, formatter, or APK build were run.
