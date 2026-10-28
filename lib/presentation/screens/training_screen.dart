@@ -118,7 +118,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       const Text('حالة المصنف', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
                       const SizedBox(height: 8),
                       Text(
-                        provider.modelLoaded ? 'المصنف المحلي جاهز للاستدلال' : 'لا يوجد مصنف محمّل',
+                        provider.modelLoaded ? 'المصنف المحلي جاهز للاستدلال' : 'لا يوجد مصنف محمّل — التدريب متوقف مؤقتًا',
                         style: const TextStyle(color: Colors.white),
                       ),
                       Text('الحالة: ${provider.status}', style: const TextStyle(color: Colors.white70)),
@@ -150,6 +150,12 @@ class _TrainingScreenState extends State<TrainingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       const Text('مجموعة البيانات الموسومة', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'تم تعطيل بدء التدريب مؤقتًا لأن مسار المصنف الجاهز للتشغيل غير متوفر. لم يعد الزر يوحي بأن التدريب سيعمل قبل تجهيز المحرك.',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(color: Colors.orangeAccent),
+                      ),
                       const SizedBox(height: 8),
                       const Text(
                         'استورد ملف JSON يحتوي على قائمة عينات، وكل عينة تتضمن text و axis_type. التصنيفات المقبولة: cosmic و tranquil و calculation. يلزم 6 عينات على الأقل وعينتان لكل فئة مستخدمة.',
@@ -182,11 +188,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: provider.isTraining || dataset == null
-                              ? null
-                              : () => _startTraining(provider),
+                          onPressed: null,
                           icon: const Icon(Icons.play_arrow),
-                          label: const Text('بدء تدريب المصنف'),
+                          label: const Text('التدريب متوقف مؤقتًا'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
                             foregroundColor: AppColors.primaryNavy,
