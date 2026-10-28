@@ -69,7 +69,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
 
   static String _normalize(String word) {
     return word
-        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
         .replaceAll(RegExp(r'[۞۩،؛؟!.:﴿﴾()\[\]«»"“”]'), '')
         .trim();
   }
