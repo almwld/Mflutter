@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../services/time_capsule_service.dart';
+import '../../services/dream_journal_service.dart';
 import 'device/gaze_tracking_screen.dart';
 
 class CosmicServicesScreen extends StatefulWidget {
@@ -15,7 +16,6 @@ class CosmicServicesScreen extends StatefulWidget {
 }
 
 class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
-  static const _dreamsKey = 'mudabbir_cosmic_dream_journal_v1';
   static const _legacyCapsulesKey = 'mudabbir_cosmic_time_capsules_v1';
 
   List<Map<String, dynamic>> _dreams = [];
@@ -51,7 +51,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
         }
       }
 
-      final dreams = decode(preferences.getString(_dreamsKey));
+      final dreams = await DreamJournalService.getDreams();
       var capsules = await TimeCapsuleService.getCapsules();
       final legacyCapsules = decode(preferences.getString(_legacyCapsulesKey));
       if (legacyCapsules.isNotEmpty) {
@@ -93,20 +93,9 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
       if (mounted) setState(() => _error = 'المذكرة طويلة جدًا؛ الحد الأقصى 5000 حرف.');
       return;
     }
-    final entry = <String, dynamic>{
-      'id': DateTime.now().microsecondsSinceEpoch.toString(),
-      'createdAt': DateTime.now().toIso8601String(),
-      'text': content,
-    };
-    // Keep local preferences bounded so a long-running journal cannot grow
-    // without limit and eventually make every save fail.
-    final updated = [entry, ..._dreams].take(200).toList(growable: false);
     try {
-      final preferences = await SharedPreferences.getInstance();
-      final saved = await preferences.setString(_dreamsKey, jsonEncode(updated));
-      if (!saved) {
-        throw StateError('رفض التخزين المحلي حفظ المذكرة.');
-      }
+      await DreamJournalService.addDream(content);
+      final updated = await DreamJournalService.getDreams();
       if (!mounted) return;
       setState(() {
         _dreams = updated;
