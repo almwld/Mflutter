@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class BookmarkService {
   static const _key = 'bookmarks';
+  static const int _maxBookmarks = 500;
   static Future<void> _writeQueue = Future<void>.value();
 
   static Future<List<Map<String, dynamic>>> getBookmarks() async {
@@ -34,6 +35,7 @@ class BookmarkService {
                 (item['ayah'] as num).toInt(),
               ) &&
               (item['text'] as String).trim().isNotEmpty)
+          .take(_maxBookmarks)
           .toList(growable: true);
     } on FormatException {
       // A corrupted preference must not crash the Quran reader.
@@ -68,7 +70,17 @@ class BookmarkService {
       (item) => (item['surah'] as num).toInt() == surah &&
           (item['ayah'] as num).toInt() == ayah,
     );
-    final preview = text.length > 100 ? text.substring(0, 100) : text;
+    if (bookmarks.length >= _maxBookmarks) {
+      throw StateError(
+        'بلغت العلامات المرجعية الحد الأقصى ($_maxBookmarks). احذف علامة قبل إضافة أخرى.',
+      );
+    }
+    // Store a canonical verse snippet from the bundled Quran source instead
+    // of trusting caller-provided display text as scripture.
+    final canonicalText = getVerse(surah, ayah, verseEndSymbol: false).trim();
+    final preview = canonicalText.length > 100
+        ? canonicalText.substring(0, 100)
+        : canonicalText;
     bookmarks.insert(0, {
       'surah': surah,
       'ayah': ayah,
