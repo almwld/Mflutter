@@ -31,7 +31,6 @@ class ThemeProvider extends ChangeNotifier {
       // Do not let a slow initial read overwrite a preference the user changed
       // while the settings provider was loading.
       if (_stateRevision != revisionAtStart) {
-        _persistenceError = null;
         return;
       }
       final savedMode = prefs.getString('theme.mode');
