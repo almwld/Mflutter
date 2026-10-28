@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/reading_progress_service.dart';
+import '../../services/mushaf_source.dart';
+import 'quran/mushaf_screen.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
@@ -106,6 +108,16 @@ class _StatsScreenState extends State<StatsScreen> {
                 title: 'آخر موضع قراءة',
                 value: 'صفحة $lastPage',
                 icon: Icons.bookmark_outline,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MushafScreen(
+                        initialPage: lastPage,
+                        restoreLastPage: false,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               _infoCard(
@@ -215,27 +227,39 @@ class _StatsScreenState extends State<StatsScreen> {
     required String title,
     required String value,
     required IconData icon,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primaryGold),
-          const SizedBox(width: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: AppColors.primaryGold,
-              fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: onTap == null
+              ? null
+              : Border.all(color: AppColors.primaryGold.withOpacity(.22)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primaryGold),
+            const SizedBox(width: 12),
+            Text(
+              value,
+              style: TextStyle(
+                color: AppColors.primaryGold,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const Spacer(),
-          Text(title, style: const TextStyle(color: Colors.white70)),
-        ],
+            const Spacer(),
+            Text(title, style: const TextStyle(color: Colors.white70)),
+            if (onTap != null) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.primaryGold),
+            ],
+          ],
+        ),
       ),
     );
   }
