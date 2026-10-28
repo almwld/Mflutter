@@ -103,7 +103,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     } else {
       // Explicit destinations (bookmark/search/index) are genuine reading
       // activity even when the PageView starts directly on that page.
-      unawaited(ReadingProgressService.saveLastPage(page));
+      unawaited(ReadingProgressService.saveLastPage(page).catchError((error) {
+        debugPrint('MushafScreen: could not save initial page: $error');
+      }));
       unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     }
     _restorePageTheme();
@@ -208,7 +210,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     if (!mounted) return;
     // Opening the restored page is real local reading activity even when it
     // matches the PageController's initial index and emits no page-change event.
-    unawaited(ReadingProgressService.saveLastPage(last));
+    unawaited(ReadingProgressService.saveLastPage(last).catchError((error) {
+      debugPrint('MushafScreen: could not save restored page: $error');
+    }));
     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     if (last == _currentPage.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -593,7 +597,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     if (_zoomMode) {
                       _mushafZoomController.value = Matrix4.identity();
                     }
-                    ReadingProgressService.saveLastPage(page);
+                    unawaited(ReadingProgressService.saveLastPage(page).catchError((error) {
+                      debugPrint('MushafScreen: could not save current page: $error');
+                    }));
                     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
                     if (page != previousPage) {
                       // The prior verse no longer belongs to the visible page;
