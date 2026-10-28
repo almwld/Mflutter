@@ -28,6 +28,7 @@ class AgentChatProvider extends ChangeNotifier {
   bool _initialized = false;
   String? _initializationError;
   String? _selectedAgent;
+  String? _selectionError;
   String? _activeTaskVerseSource;
 
   bool _disposed = false;
@@ -52,6 +53,7 @@ class AgentChatProvider extends ChangeNotifier {
   bool get initialized => _initialized;
   String? get initializationError => _initializationError;
   String? get selectedAgent => _selectedAgent;
+  String? get selectionError => _selectionError;
   int get agentCount => AgentRegistry.all.length;
   int get indexedDocumentCount => _knowledge.documentCount;
   List<String> get loadedKnowledgeSources => _knowledge.loadedSources;
@@ -102,8 +104,23 @@ class AgentChatProvider extends ChangeNotifier {
     }
   }
 
+  /// Selects only registered agents. Invalid/stale IDs never silently fall
+  /// through to the generic knowledge-search handler.
   void selectAgent(String? id) {
-    _selectedAgent = id;
+    if (id == null) {
+      _selectedAgent = null;
+      _selectionError = null;
+      _notifySafely();
+      return;
+    }
+    final agent = AgentRegistry.byId(id);
+    if (agent == null) {
+      _selectionError = 'تعذر اختيار الوكيل؛ المعرّف «$id» غير مسجل.';
+      _notifySafely();
+      return;
+    }
+    _selectedAgent = agent.id;
+    _selectionError = null;
     _notifySafely();
   }
 
