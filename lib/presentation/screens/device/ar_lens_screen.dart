@@ -203,26 +203,6 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
     }
   }
 
-  Future<void> _translateText() async {
-    final text = _recognizedText;
-    if (text == null || text.trim().isEmpty || _processing) return;
-    setState(() {
-      _processing = true;
-      _analysisError = null;
-      _translatedText = null;
-    });
-    try {
-      final translated = await SmartLensService.instance.translateArabicToEnglish(text);
-      if (mounted) setState(() => _translatedText = translated);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _analysisError = 'تعذرت الترجمة على الجهاز. تنزيل نموذجي العربية والإنجليزية يحتاج اتصالًا أوليًا بالإنترنت. التفاصيل: $e');
-      }
-    } finally {
-      if (mounted) setState(() => _processing = false);
-    }
-  }
-
   void _retake() {
     setState(() {
       _capturedPath = null;
