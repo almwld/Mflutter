@@ -14,10 +14,21 @@ class GeospatialInsightService extends ChangeNotifier {
   double get longitude => _position?.longitude ?? 0;
 
   Future<bool> start() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return false;
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      _position = null;
+      notifyListeners();
+      return false;
+    }
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return false;
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      _position = null;
+      notifyListeners();
+      return false;
+    }
     _position = await Geolocator.getCurrentPosition();
     notifyListeners();
     await _subscription?.cancel();
