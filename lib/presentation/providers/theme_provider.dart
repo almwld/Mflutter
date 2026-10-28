@@ -125,7 +125,9 @@ class ThemeProvider extends ChangeNotifier {
     _persistQueue = operation;
     try {
       await operation;
+      final hadError = _persistenceError != null;
       _persistenceError = null;
+      if (hadError) notifyListeners();
     } catch (error) {
       _persistenceError = 'تعذر حفظ تفضيلات المظهر: $error';
       debugPrint('ThemeProvider: preference save failed: $error');
