@@ -27,7 +27,16 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       return;
     }
     context.read<AbjadProvider>().calculateAbjad(text);
-    await AchievementsService.recordAbjadCalculation();
+    try {
+      await AchievementsService.recordAbjadCalculation();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم الحساب، لكن تعذر تحديث سجل الإنجازات المحلي: $error'),
+        ),
+      );
+    }
   }
 
   @override
