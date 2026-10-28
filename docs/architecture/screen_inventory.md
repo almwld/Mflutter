@@ -411,3 +411,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran/mushaf_screen.dart`: explicit page jumps now mark the reader as user-navigated before starting the animation, preventing a delayed last-page restore from overriding the user's chosen destination.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (fixed-layout Quran page integrity)
+
+- `lib/services/mushaf_variant_layout_service.dart`: missing/empty page metadata now raises a recoverable data error instead of silently rendering a page of blank line slots. The existing screen error state can offer a retry and does not misrepresent absent layout as a valid page.
+- No tests, analyzer, formatter, or APK build were run.
