@@ -17,6 +17,22 @@ class CustomizeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          if (state.persistenceError != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.errorContainer.withOpacity(.35),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.error.withOpacity(.4)),
+              ),
+              child: Text(
+                state.persistenceError!,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: colors.error, height: 1.4),
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           Text(
             'ألوان التطبيق',
             textDirection: TextDirection.rtl,
