@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import '../services/ollama_service.dart';
-import '../services/local_gguf_runtime_service.dart';
+import '../services/nucleus_service.dart';
 
 class SovereignChatProvider extends ChangeNotifier {
   SovereignChatProvider() {
-    _gguf.addListener(_onRuntimeChanged);
+    _core.addListener(_onRuntimeChanged);
   }
 
   final OllamaService _localAi = OllamaService();
-  final LocalGgufRuntimeService _gguf = LocalGgufRuntimeService.instance;
+  final NucleusService _core = NucleusService();
 
   void _onRuntimeChanged() => notifyListeners();
 
-  bool get hasActiveLocalModel => _gguf.isLoaded || _localAi.isRunning;
+  bool get hasActiveLocalModel => _core.isModelLoaded || _localAi.isRunning;
 
   bool _isLoading = false;
   String _insight = '';
@@ -38,8 +38,8 @@ class SovereignChatProvider extends ChangeNotifier {
           'البيئة: $topography\n'
           'الرنين العددي: $abjad\n\n'
           'السؤال: ${query.trim()}';
-      if (_gguf.isLoaded) {
-        _insight = await _gguf.generateGroundedAnswer(
+      if (_core.isModelLoaded) {
+        _insight = await _core.generateGroundedAnswer(
           question: prompt,
           evidence: 'لم يتم إرفاق آيات قرآنية أو مصادر خارجية بهذه الشاشة؛ '
               'لا تنسب أقوالًا إلى القرآن أو مصادر غير متاحة.',
@@ -58,7 +58,7 @@ class SovereignChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _gguf.removeListener(_onRuntimeChanged);
+    _core.removeListener(_onRuntimeChanged);
     super.dispose();
   }
 }

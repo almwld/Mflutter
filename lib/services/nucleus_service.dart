@@ -45,6 +45,11 @@ class NucleusService extends ChangeNotifier {
   String? get error => _error;
   bool get isModelLoaded => _runtime.isLoaded;
   bool get isModelBusy => _runtime.isBusy;
+  // Compatibility aliases keep existing UI consumers on the central gateway.
+  bool get isLoaded => isModelLoaded;
+  bool get isBusy => isModelBusy;
+  String get status => modelStatus;
+  Future<bool> hasValidModel() => _runtime.hasValidModel();
   bool get isGenerating => _runtime.isGenerating;
   String get modelStatus => _runtime.status;
   String? get loadedModelPath => _runtime.loadedPath;
