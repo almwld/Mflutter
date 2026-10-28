@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AIPersonalityService {
   static const _storageKey = 'mudabbir_active_personality_v1';
   static String _activePersonality = 'mudabbir';
+  static bool _loaded = false;
+  static Future<void>? _loadFuture;
   static final Map<String, Map<String, String>> _personalities = {
     'mudabbir': {'name': 'مُدَبِّر', 'style': 'بليغ وعميق', 'greeting': 'السلام عليكم، أنا مُدَبِّر. كيف يمكنني مساعدتك في رحلة التدبر؟', 'tone': 'formal'},
     'sage': {'name': 'الحكيم', 'style': 'موجز وحكيم', 'greeting': 'بسم الله. ما الذي تبحث عنه اليوم؟', 'tone': 'concise'},
@@ -14,10 +16,20 @@ class AIPersonalityService {
   static String get activePersonality => _activePersonality;
   static List<String> get personalityNames => _personalities.keys.toList(growable: false);
 
-  static Future<void> loadSavedPersonality() async {
+  static Future<void> loadSavedPersonality() {
+    if (_loaded) return Future<void>.value();
+    return _loadFuture ??= _loadSavedPersonalityOnce().whenComplete(() {
+      _loadFuture = null;
+    });
+  }
+
+  static Future<void> _loadSavedPersonalityOnce() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_storageKey);
-    if (saved != null && _personalities.containsKey(saved)) _activePersonality = saved;
+    if (saved != null && _personalities.containsKey(saved)) {
+      _activePersonality = saved;
+    }
+    _loaded = true;
   }
 
   static Map<String, String> getPersonalityConfig(String name) =>
