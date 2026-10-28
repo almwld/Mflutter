@@ -76,18 +76,18 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
         targetSurah >= 1 &&
         targetSurah <= 114 &&
         targetAyah >= 1) {
-      _highlights = [
-        HighlightVerse(
-          surah: targetSurah,
-          verseNumber: targetAyah,
-          page: page,
-          color: _quranGoldLight,
-        ),
-      ];
-      _startLivingEffects();
       try {
         final verseText = MushafSource.verse(targetSurah, targetAyah);
         if (verseText.trim().isNotEmpty) {
+          _highlights = [
+            HighlightVerse(
+              surah: targetSurah,
+              verseNumber: targetAyah,
+              page: page,
+              color: _quranGoldLight,
+            ),
+          ];
+          _startLivingEffects();
           NucleusService().setQuranContext(
             surahNumber: targetSurah,
             ayahNumber: targetAyah,
