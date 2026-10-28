@@ -97,11 +97,13 @@ class AbjadService {
   int _getColor(int value) {
     if (value < 1) return 0xFF808080;
     const colors = [
-      0xFF1A237E,
-      0xFF0D47A1,
-      0xFF1565C0,
-      0xFF1976D2,
+      0xFFE53935,
+      0xFF43A047,
       0xFF1E88E5,
+      0xFFFDD835,
+      0xFFF5F5F5,
+      0xFF212121,
+      0xFFFFC107,
     ];
     return colors[(value - 1) % colors.length];
   }
