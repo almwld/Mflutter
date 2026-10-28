@@ -309,3 +309,12 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - Initialization now fails explicitly when the required knowledge asset was not actually loaded, rather than silently returning with an unusable index. The nucleus can report this as a degraded knowledge state and retry initialization.
 - Chat context now includes a bounded snapshot of recent saved exchanges (question plus a short answer summary), not just prior questions. This context is treated as conversational continuity, not verified evidence.
 - No tests, analyzer, formatter, or build were run, per the current instruction.
+
+
+## UI continuation — 2026-10-29 (agent registry and evidence verdicts)
+
+- `lib/services/agent_registry.dart`: normalized the tilawa agent ID and exposed read-only layer grouping helpers so agent screens can group definitions consistently.
+- `lib/services/agent_knowledge_service.dart`: required knowledge initialization now rejects an empty index as well as a missing required source; retry remains possible after failure.
+- `lib/presentation/providers/agent_chat_provider.dart`: the independent verifier now distinguishes non-empty outputs from traceable source evidence. An output-only run is explicitly labeled as structurally complete, not verified.
+- Achievement persistence is now best-effort after task completion. A failure to update achievements is reported as a warning and does not rewrite an otherwise successful retrieval/inference task as failed.
+- Per instruction, tests, analysis, formatting, and APK builds remain unrun.
