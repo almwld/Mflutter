@@ -23,29 +23,52 @@ class QuranService {
     final quran = QuranSourceCorrections.correctQuranMap(
       Map<String, dynamic>.from(decoded),
     );
+    if (quran.length != 114) {
+      throw FormatException(
+        'يجب أن يحتوي unified_quran.json على 114 سورة بالضبط؛ الموجود ${quran.length}.',
+      );
+    }
     var verseCount = 0;
     for (var surah = 1; surah <= 114; surah++) {
       final verses = quran['$surah'];
-      if (verses is! List || verses.isEmpty) {
-        throw FormatException('بيانات السورة $surah مفقودة أو فارغة في unified_quran.json');
+      final expectedCount = QuranLoaderService.canonicalSurahAyahCounts[surah - 1];
+      if (verses is! List || verses.length != expectedCount) {
+        throw FormatException(
+          'عدد آيات السورة $surah غير مطابق للمصحف: المتوقع $expectedCount، '
+          'والموجود ${verses is List ? verses.length : 0}.',
+        );
       }
       for (var index = 0; index < verses.length; index++) {
         final verse = verses[index];
-        if (verse is! Map || verse['text'] is! String || (verse['text'] as String).trim().isEmpty) {
-          throw FormatException('نص الآية $surah:${index + 1} مفقود أو غير صالح');
+        if (verse is! Map ||
+            verse['text'] is! String ||
+            (verse['text'] as String).trim().isEmpty) {
+          throw FormatException(
+            'نص الآية $surah:${index + 1} مفقود أو غير صالح',
+          );
         }
         verseCount++;
       }
     }
 
-    if (verseCount != 6236) {
+    if (verseCount != QuranLoaderService.expectedAyahCount) {
       throw FormatException(
-        'عدد الآيات في unified_quran.json غير صحيح: المتوقع 6236، والموجود $verseCount',
+        'عدد الآيات في unified_quran.json غير صحيح: المتوقع '
+        '${QuranLoaderService.expectedAyahCount}، والموجود $verseCount',
       );
     }
 
-    _cachedQuran = quran;
-    return quran;
+    _cachedQuran = Map<String, dynamic>.unmodifiable({
+      for (var surah = 1; surah <= 114; surah++)
+        '$surah': List<Map<String, dynamic>>.unmodifiable(
+          (quran['$surah'] as List).map(
+            (verse) => Map<String, dynamic>.unmodifiable(
+              Map<String, dynamic>.from(verse as Map),
+            ),
+          ),
+        ),
+    });
+    return _cachedQuran!;
   }
 
   /// Normalizes common Arabic orthographic variants without relying on a
