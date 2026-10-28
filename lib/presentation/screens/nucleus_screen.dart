@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../widgets/common/mudabbir_glass_panel.dart';
 import '../../services/agent_registry.dart';
+import '../../services/agent_knowledge_service.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/achievements_service.dart';
 
@@ -191,13 +192,13 @@ class _NucleusScreenState extends State<NucleusScreen>
   Widget build(BuildContext context) {
     final sciences = _core.getSciences();
     final agents = AgentRegistry.all;
-    final normalizedAgentQuery = _agentQuery.trim().toLowerCase();
+    final normalizedAgentQuery = AgentKnowledgeService.normalize(_agentQuery);
     final matchingAgents = agents.where((agent) {
       if (normalizedAgentQuery.isEmpty) return true;
-      return agent.name.toLowerCase().contains(normalizedAgentQuery) ||
-          agent.id.toLowerCase().contains(normalizedAgentQuery) ||
-          agent.layer.toLowerCase().contains(normalizedAgentQuery) ||
-          agent.description.toLowerCase().contains(normalizedAgentQuery);
+      final searchable = AgentKnowledgeService.normalize(
+        '${agent.name} ${agent.id} ${agent.layer} ${agent.description}',
+      );
+      return searchable.contains(normalizedAgentQuery);
     }).toList(growable: false);
     final visibleAgents = matchingAgents.take(32).toList(growable: false);
     final selectedAgent = agents.isEmpty
