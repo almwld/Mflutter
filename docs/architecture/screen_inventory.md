@@ -460,3 +460,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Additional correction in `lib/services/reading_progress_service.dart`: total reading days are now counted as distinct dates so duplicate legacy preference entries cannot inflate the summary.
+
+
+- `ReadingProgressService.getReadingDaysInLast7Days()` now derives the seven-day window from local calendar midnights, avoiding duration-based date drift around daylight-saving transitions.
