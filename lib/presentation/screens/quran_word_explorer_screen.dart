@@ -257,7 +257,15 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                               children: [
                                                 Text('مواضع الكلمة: ' + word.text,
                                                     style: theme.textTheme.titleMedium),
-                                                for (final match in matches)
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  matches.length > 100
+                                                      ? 'عدد المواضع: ${matches.length} • يعرض أول 100 موضع لتخفيف الحمل.'
+                                                      : 'عدد المواضع: ${matches.length}',
+                                                  textDirection: TextDirection.rtl,
+                                                  style: theme.textTheme.bodySmall,
+                                                ),
+                                                for (final match in matches.take(100))
                                                   ListTile(
                                                     title: Text('سورة ' +
                                                         match.surahNumber.toString() +
@@ -284,7 +292,7 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                         );
                                       },
                                       icon: const Icon(Icons.manage_search),
-                                      label: const Text('عرض جميع مواضع الكلمة'),
+                                      label: const Text('عرض مواضع الكلمة'),
                                     ),
                                   ),
                                 ],
