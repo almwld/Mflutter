@@ -217,6 +217,17 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                             ayahNumber: ayahNum,
                             verseText: text.toString(),
                           ),
+                          onLongPress: () async {
+                            await Clipboard.setData(
+                              ClipboardData(text: text.toString()),
+                            );
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('تم نسخ الآية $ayahNum من سورة ${widget.surahName}'),
+                              ),
+                            );
+                          },
                           child: QuranWaveText(
                           text: text,
                           style: TextStyle(
