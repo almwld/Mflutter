@@ -684,3 +684,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/occult_explorer_screen.dart` now records a knowledge topic when its detail panel is opened. `lib/services/achievements_service.dart` labels the milestone as seven distinct knowledge topics rather than claiming seven scientific disciplines; progress comes from distinct saved topic identifiers.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- The word-location sheet now caps eager result rendering at 100 occurrences and reports the total number of matches, preventing common words from creating thousands of widgets at once.
