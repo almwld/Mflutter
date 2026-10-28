@@ -548,7 +548,9 @@ class _TaskProgress extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: canControl ? provider.pauseOrResume : null,
-            tooltip: task.status == TaskStatus.paused ? 'استئناف المهمة' : 'إيقاف مؤقت',
+            tooltip: task.status == TaskStatus.paused
+                ? 'استئناف المهمة'
+                : 'إيقاف مؤقت بعد الخطوة الحالية',
             icon: Icon(provider.paused ? Icons.play_arrow : Icons.pause,
                 color: canControl ? AppColors.primaryGold : Colors.white24, size: 19),
           ),
