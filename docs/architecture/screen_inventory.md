@@ -472,3 +472,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `lib/presentation/screens/player_profile_screen.dart`: streak, achievement refresh, and local checkpoint restoration are now attempted independently so a failure in one subsystem does not prevent the others from loading.
+
+
+## UI continuation — 2026-10-29 (advanced search concurrency)
+
+- `lib/presentation/screens/advanced_search_screen.dart`: generation tokens now prevent an older overlapping search or index load from overwriting a newer request. Clearing the query cancels the relevance of any pending search result, and empty-query handling clears the active searching state.
+- No tests, analyzer, formatter, or APK build were run.
