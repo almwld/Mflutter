@@ -14,7 +14,7 @@ class ShareService {
     final surahLabel = surahName == null || surahName.trim().isEmpty
         ? 'رقم $surahNumber'
         : surahName;
-    final payload = '$text\\n\\nسورة $surahLabel — الآية $ayahNumber\\n'
+    final payload = '$text\n\nسورة $surahLabel — الآية $ayahNumber\n'
         'من مُدَبِّر الأسرار العليا';
     final result = await Share.share(
       payload,
