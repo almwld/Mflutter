@@ -9,6 +9,7 @@ import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
+import '../../../services/nucleus_service.dart';
 import '../../widgets/quran_wave_text.dart';
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
@@ -109,6 +110,14 @@ class _QuranProScreenState extends State<QuranProScreen>
     SharedPreferences.getInstance().then((preferences) {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
     });
+    if (_currentVerses.isNotEmpty) {
+      final firstVerse = _currentVerses.first;
+      NucleusService().setQuranContext(
+        surahNumber: n,
+        ayahNumber: 1,
+        verseText: firstVerse is Map ? firstVerse['text']?.toString() : null,
+      );
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) _scroll.jumpTo(0);
     });
@@ -315,6 +324,12 @@ class _QuranProScreenState extends State<QuranProScreen>
     );
     controller.dispose();
     if (selectedIndex == null || !mounted) return;
+    final selectedVerse = _currentVerses[selectedIndex];
+    NucleusService().setQuranContext(
+      surahNumber: _currentSurah,
+      ayahNumber: selectedIndex + 1,
+      verseText: selectedVerse is Map ? selectedVerse['text']?.toString() : null,
+    );
     var targetContext = _verseKeys[selectedIndex]?.currentContext;
     // ListView.builder creates off-screen rows lazily. Move near the target first
     // so its keyed context exists even when the result is far down the surah.
