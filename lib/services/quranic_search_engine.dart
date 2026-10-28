@@ -9,6 +9,7 @@ class QuranicSearchEngine {
   static String normalize(String value) => value
       .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
       .replaceAll(RegExp(r'[﴿﴾.,،؛:!?؟]'), ' ')
