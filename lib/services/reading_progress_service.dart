@@ -135,7 +135,7 @@ class ReadingProgressService {
   }
 
   /// Number of distinct reading days in the last seven calendar days.
-  static Future<int> getPagesReadInLast7Days() async {
+  static Future<int> getReadingDaysInLast7Days() async {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
@@ -147,6 +147,12 @@ class ReadingProgressService {
     }
     return count;
   }
+
+  /// Compatibility alias retained for existing callers. The value is a count
+  /// of distinct reading days, not pages read.
+  @Deprecated('Use getReadingDaysInLast7Days; this returns days, not pages.')
+  static Future<int> getPagesReadInLast7Days() =>
+      getReadingDaysInLast7Days();
 
   static String _dateKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
