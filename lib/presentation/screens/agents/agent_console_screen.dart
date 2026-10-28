@@ -159,7 +159,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 14),
               child: Center(
-                child: Text('${AgentRegistry.all.length} وكيل',
+                child: Text('${AgentRegistry.all.length} تعريف وكيل',
                     style: const TextStyle(color: AppColors.primaryGold)),
               ),
             ),
@@ -277,6 +277,18 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                child: Text(
+                  'الأسماء المعروضة تعريفات مسجلة في الدليل؛ ظهور الاسم لا يعني أن لكل وكيل نموذجًا مستقلًا أو خدمة منفصلة. التنفيذ يعتمد على الأدوات والمصادر المحلية المتاحة وحالة النموذج.',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(.58),
+                    fontSize: 11,
+                    height: 1.45,
+                  ),
+                ),
+              ),
               if (provider.selectionError != null)
                 Padding(
                   padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 14, 8),
@@ -374,8 +386,8 @@ class _WorkspaceHero extends StatelessWidget {
                     ? 'تعذر تهيئة المعرفة المحلية'
                     : initialized
                         ? modelLoaded
-                            ? 'نموذج GGUF محلي محمّل • البحث المحلي موثّق'
-                            : 'بحث محلي موثّق • حمّل نموذجًا من شاشة النواة للتوليد'
+                            ? 'نموذج GGUF محلي محمّل • التوليد المحلي مهيأ'
+                            : 'فهرس المعرفة المحلي جاهز • حمّل نموذجًا من شاشة النواة للتوليد'
                         : 'تهيئة فهرس المعرفة المحلي…',
                 style: TextStyle(
                   color: initializationError != null
