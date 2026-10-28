@@ -880,3 +880,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `GreatVersesScreen` now treats an empty Quran index as a recoverable load error instead of rendering a list of unavailable featured references.
+
+
+- `DailyVerseScreen` now derives its stable daily selection from UTC calendar days since a fixed epoch, cycling through the full local Quran corpus instead of repeating only the first ~365 entries each year.
