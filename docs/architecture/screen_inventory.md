@@ -574,3 +574,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AIAdvancedScreen` now reports an empty local Quran corpus as an indexing failure and exposes the existing retry action rather than presenting a ready-but-empty search index.
+
+
+## UI continuation — 2026-10-29 (profile recovery)
+
+- `lib/services/multi_user_service.dart`: persisted local profile records are normalized on load, malformed name/avatar/level/XP/date fields receive safe defaults, and legacy profile lists are bounded to 20 entries so a damaged preference cannot crash the profile screen.
+- No tests, analyzer, formatter, or APK build were run.
