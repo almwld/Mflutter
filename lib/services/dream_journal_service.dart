@@ -38,6 +38,24 @@ class DreamJournalService {
     });
   }
 
+  static Future<void> removeDream(String id) {
+    final normalizedId = id.trim();
+    if (normalizedId.isEmpty) {
+      throw ArgumentError('معرّف المذكرة غير صالح.');
+    }
+    return _enqueueWrite(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final entries = await _readEntries();
+      final updated = entries
+          .where((entry) => entry['id'] != normalizedId)
+          .toList(growable: false);
+      if (updated.length == entries.length) return;
+      if (!await prefs.setString(storageKey, jsonEncode(updated))) {
+        throw StateError('تعذر حذف المذكرة من التخزين المحلي.');
+      }
+    });
+  }
+
   static Future<List<Map<String, dynamic>>> getDreams() async {
     await _writeQueue.catchError((Object _) {});
     return _readEntries();
