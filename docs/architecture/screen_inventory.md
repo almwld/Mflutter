@@ -783,3 +783,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `DailyStreakService` now prunes malformed date strings, timestamps that are not canonical calendar-day keys, future activity, and records older than its retention window before calculating streaks.
+
+
+- Follow-up source-integrity repair: `lib/services/daily_streak_service.dart` was reconstructed after a malformed date-pattern edit had split the method body. Date validation now uses canonical parse-and-round-trip checks without a fragile inline regex; the service retains serialized activity writes and shared reading-ledger synchronization.
