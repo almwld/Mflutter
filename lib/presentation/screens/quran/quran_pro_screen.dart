@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../services/text_transformer.dart';
 import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
@@ -14,8 +13,8 @@ import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/bookmark_service.dart';
-import '../../../services/achievements_service.dart';
 import '../../../services/daily_streak_service.dart';
+import '../../../services/share_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
 
@@ -455,16 +454,13 @@ class _QuranProScreenState extends State<QuranProScreen> {
     final text = _selectedAyahText;
     if (ayah == null || text == null || text.isEmpty) return;
 
-    final shareText = '$text\n\nسورة $_surahName — الآية $ayah\n'
-        'من مُدَبِّر الأسرار العليا';
     try {
-      final result = await Share.share(
-        shareText,
-        subject: 'آية من سورة $_surahName',
+      await ShareService.shareVerse(
+        text: text,
+        surahNumber: _currentSurah,
+        ayahNumber: ayah,
+        surahName: _surahName,
       );
-      if (result.status == ShareResultStatus.success) {
-        await AchievementsService.recordVerseShared();
-      }
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
