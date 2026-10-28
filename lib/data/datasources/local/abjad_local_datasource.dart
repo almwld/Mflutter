@@ -16,7 +16,19 @@ class AbjadLocalDatasource {
 
   DivineName _divineName(int number) {
     final names = AbjadConstants.divineNames;
-    final index = number <= 0 ? 0 : (number - 1) % names.length;
+    if (number < 1 || names.isEmpty) {
+      return const DivineName(
+        id: 0,
+        arabicName: 'غير محدد',
+        transliteration: '',
+        meaning: '',
+        description: 'رقم خارج نطاق القائمة.',
+        type: DivineNameType.names,
+        abjadValue: 0,
+        color: '#808080',
+      );
+    }
+    final index = (number - 1) % names.length;
     return DivineName(
       id: index + 1,
       arabicName: names[index],
