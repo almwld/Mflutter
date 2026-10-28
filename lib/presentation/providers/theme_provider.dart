@@ -9,6 +9,7 @@ class ThemeProvider extends ChangeNotifier {
   double _fontSize = 20;
   String _selectedTheme = 'default';
   String? _persistenceError;
+  int _stateRevision = 0;
   Future<void> _persistQueue = Future<void>.value();
 
   ThemeMode get themeMode => _themeMode;
@@ -24,8 +25,15 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> _load() async {
+    final revisionAtStart = _stateRevision;
     try {
       final prefs = await SharedPreferences.getInstance();
+      // Do not let a slow initial read overwrite a preference the user changed
+      // while the settings provider was loading.
+      if (_stateRevision != revisionAtStart) {
+        _persistenceError = null;
+        return;
+      }
       final savedMode = prefs.getString('theme.mode');
       _themeMode = switch (savedMode) {
         'light' => ThemeMode.light,
@@ -62,6 +70,7 @@ class ThemeProvider extends ChangeNotifier {
         _themeMode == mode) {
       return;
     }
+    _stateRevision++;
     _themeMode = mode;
     _persist();
     notifyListeners();
@@ -71,6 +80,7 @@ class ThemeProvider extends ChangeNotifier {
     if (!ThemeService.themeNames.contains(name) || _selectedTheme == name) {
       return;
     }
+    _stateRevision++;
     _selectedTheme = name;
     _persist();
     notifyListeners();
@@ -79,6 +89,7 @@ class ThemeProvider extends ChangeNotifier {
   void setFont(String font) {
     if (font != 'Amiri' && font != 'Musnad') return;
     if (_fontFamily == font) return;
+    _stateRevision++;
     _fontFamily = font;
     _persist();
     notifyListeners();
@@ -87,12 +98,14 @@ class ThemeProvider extends ChangeNotifier {
   void setFontSize(double size) {
     final next = size.clamp(14, 36).toDouble();
     if (_fontSize == next) return;
+    _stateRevision++;
     _fontSize = next;
     _persist();
     notifyListeners();
   }
 
   Future<void> resetToDefaults() async {
+    _stateRevision++;
     _themeMode = ThemeMode.dark;
     _fontFamily = 'Amiri';
     _fontSize = 20;
