@@ -898,3 +898,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The shared `QuranicSearchEngine` now strips the same extended Arabic/Quranic mark range as the other local search services, improving query consistency across agent retrieval and Quran search without altering stored verses.
+
+
+- `QuranicSearchEngine` now resolves equal-score matches by original canonical corpus order, making local retrieval ordering deterministic rather than dependent on sort behavior for ties.
