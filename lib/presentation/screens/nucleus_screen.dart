@@ -8,6 +8,7 @@ import '../../core/themes/mudabbir_design_tokens.dart';
 import '../widgets/common/mudabbir_glass_panel.dart';
 import '../../services/agent_registry.dart';
 import '../../services/nucleus_service.dart';
+import '../../services/achievements_service.dart';
 
 class NucleusScreen extends StatefulWidget {
   const NucleusScreen({super.key});
@@ -155,6 +156,35 @@ class _NucleusScreenState extends State<NucleusScreen>
     _agentSearchController.dispose();
     _pulse.dispose();
     super.dispose();
+  }
+
+  Future<void> _showScienceDetails(Map<String, dynamic> science) async {
+    final name = (science['name'] ?? science['title'] ?? science['id'] ?? 'مجال علمي')
+        .toString();
+    final description = (science['description'] ?? science['summary'] ?? '')
+        .toString()
+        .trim();
+    final id = (science['id'] ?? name).toString();
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(name, textDirection: TextDirection.rtl),
+        content: Text(
+          description.isEmpty
+              ? 'هذا المجال مسجل ضمن بيانات النواة المحلية، لكن لا يتوفر له وصف تفصيلي في البيانات الحالية.'
+              : description,
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+    await AchievementsService.recordScienceExplored(id);
   }
 
   @override
@@ -418,7 +448,9 @@ class _NucleusScreenState extends State<NucleusScreen>
             runSpacing: 8,
             children: sciences
                 .map(
-                  (item) => Chip(
+                  (item) => ActionChip(
+                    onPressed: () => _showScienceDetails(item),
+                    avatar: const Icon(Icons.science_outlined, size: 16),
                     label: Text(
                       (item['name'] ?? item['id'] ?? 'مجال').toString(),
                     ),
