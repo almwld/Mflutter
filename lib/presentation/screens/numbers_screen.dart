@@ -36,19 +36,7 @@ class NumbersScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppDimensions.paddingMedium),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-            ),
-            child: Text(
-              'المعاني المعروضة رمزية أو تاريخية. لا تثبت الجداول خصائص علمية للأعداد ولا تتنبأ بأحداث أو صفات الأشخاص.',
-              textDirection: TextDirection.rtl,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.5),
-            ),
-          ),
+          _buildSymbolicDisclaimer(context),
           const SizedBox(height: AppDimensions.paddingMedium),
           _buildNumbersChart(numbers),
           const SizedBox(height: AppDimensions.paddingLarge),
@@ -56,6 +44,27 @@ class NumbersScreen extends StatelessWidget {
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildSacredNumbersSection(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSymbolicDisclaimer(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Text(
+        'المعاني المعروضة تمثل تصنيفات رمزية أو تاريخية. لا تثبت هذه الجداول خصائص علمية للعناصر أو الأعداد ولا تتنبأ بأحداث أو صفات الأشخاص.',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          color: colors.onSurface.withOpacity(.72),
+          height: 1.5,
+          fontSize: 12,
+        ),
       ),
     );
   }
