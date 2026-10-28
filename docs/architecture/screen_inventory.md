@@ -849,3 +849,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Opening a knowledge-domain detail in `NucleusScreen` remains successful even if the optional local achievement write fails; the screen now reports the persistence failure instead of leaving an unhandled asynchronous error.
+
+
+- `AIAdvancedScreen` clears stale results when rebuilding its Quran index and refuses to run a search when the latest index load failed, rather than silently searching an old in-memory index.
