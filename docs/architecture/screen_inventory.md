@@ -910,3 +910,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The agent-console Abjad handler now uses `AbjadConstants`, the same table as `AbjadCalculatorScreen`, removing a duplicate mapping that disagreed on values such as ta marbuta and could produce different totals for the same text.
+
+
+- `AgentKnowledgeService.normalize` now normalizes hamza-on-waw/yaa consistently with the Quran search index and local lexical retrieval, reducing mismatches between the same Arabic query across knowledge sources.
