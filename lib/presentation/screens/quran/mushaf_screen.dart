@@ -85,6 +85,18 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
         ),
       ];
       _startLivingEffects();
+      try {
+        final verseText = MushafSource.verse(targetSurah, targetAyah);
+        if (verseText.trim().isNotEmpty) {
+          NucleusService().setQuranContext(
+            surahNumber: targetSurah,
+            ayahNumber: targetAyah,
+            verseText: verseText,
+          );
+        }
+      } catch (_) {
+        // A stale bookmark must not prevent the Mushaf reader from opening.
+      }
     }
 
     if (widget.restoreLastPage) _restoreLastPage();
