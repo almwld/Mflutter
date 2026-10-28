@@ -765,3 +765,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranService.loadQuran()` now shares a single in-flight parse/validation across concurrent screens and clears the failed in-flight future so a later retry can recover from asset-read or validation errors.
+
+
+- `ReadingProgressService.recordReadingDay()` now records a calendar-day event without fabricating a page number, and `DailyStreakService` synchronizes activity into that canonical ledger. Surah-based reading, profile streaks, statistics, and achievements can therefore share real day activity even when a reader does not track a page position.
