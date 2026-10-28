@@ -113,6 +113,7 @@ class OnDeviceTrainingService {
         xTrain: xTrain,
         yTrain: yTrain,
         epochs: epochs,
+        classCount: 3,
         learningRate: 0.002,
         shouldCancel: () => _cancelRequested,
         onProgress: (loss, epoch) {
