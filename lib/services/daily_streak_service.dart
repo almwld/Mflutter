@@ -10,6 +10,7 @@ class DailyStreakService {
   static Set<String> _activeDates = <String>{};
   static bool _initialized = false;
   static Future<void>? _initializing;
+  static Future<void> _activityQueue = Future<void>.value();
 
   static int get streak => _streak;
   static List<bool> get weekHistory => List<bool>.unmodifiable(_weekHistory);
@@ -39,7 +40,14 @@ class DailyStreakService {
   }
 
   /// Record at most one activity per local calendar day.
-  static Future<void> recordActivity() async {
+  static Future<void> recordActivity() {
+    _activityQueue = _activityQueue
+        .catchError((Object _) {})
+        .then((_) => _recordActivity());
+    return _activityQueue;
+  }
+
+  static Future<void> _recordActivity() async {
     await initialize();
     final today = _dateKey(DateTime.now());
     if (_activeDates.contains(today)) return;
