@@ -243,7 +243,7 @@ class _NucleusScreenState extends State<NucleusScreen>
                 return GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapDown: (details) {
-                    final index = _AgentRegistryPainter.hitTest(
+                    final index = _AgentRegistryPainter.findTappedNode(
                       details.localPosition,
                       size,
                       visibleAgents,
@@ -462,7 +462,7 @@ class _AgentRegistryPainter extends CustomPainter {
     );
   }
 
-  static int? hitTest(
+  static int? findTappedNode(
     Offset point,
     Size size,
     List<AgentDefinition> agents,
