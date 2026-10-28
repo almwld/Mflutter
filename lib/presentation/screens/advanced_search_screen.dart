@@ -20,6 +20,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   bool _searching = false;
   String? _error;
   bool _hasSearched = false;
+  int _searchGeneration = 0;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -34,26 +36,32 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
+    ++_searchGeneration;
     if (mounted) {
       setState(() {
         _loadingIndex = true;
+        _searching = false;
         _error = null;
+        _results = const [];
       });
     }
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _ayahs = ayahs;
         _loadingIndex = false;
+        _searching = false;
+        _error = ayahs.isEmpty
+            ? 'مصدر القرآن لم يُرجع أي آية؛ تحقق من ملف المصدر.'
+            : null;
       });
-      if (ayahs.isEmpty) {
-        setState(() => _error = 'مصدر القرآن لم يُرجع أي آية؛ تحقق من ملف المصدر.');
-      }
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _loadingIndex = false;
+        _searching = false;
         _error = 'تعذر تحميل فهرس القرآن: $error';
       });
     }
@@ -88,10 +96,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       .trim();
 
   Future<void> _search(String raw) async {
+    final generation = ++_searchGeneration;
     final query = raw.trim();
     if (query.isEmpty) {
       setState(() {
         _results = const [];
+        _searching = false;
         _hasSearched = false;
         _error = 'أدخل كلمة أو نصًا أو مرجعًا مثل 2:255 للبحث.';
       });
@@ -141,13 +151,13 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
         }
       }
 
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _results = hits;
         _searching = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _searching = false;
         _error = 'تعذر تنفيذ البحث: $error';
@@ -201,8 +211,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
                   tooltip: 'مسح البحث',
                   onPressed: () {
                     _controller.clear();
+                    ++_searchGeneration;
                     setState(() {
                       _results = const [];
+                      _searching = false;
                       _hasSearched = false;
                       _error = null;
                     });
