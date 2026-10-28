@@ -762,3 +762,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/quran_service.dart` now checks all 114 surah keys and each canonical verse count, not only the aggregate 6,236 total. After source corrections, the cached Quran map, each surah list, and each verse record are exposed as immutable snapshots to prevent one screen from mutating shared scripture data.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `QuranService.loadQuran()` now shares a single in-flight parse/validation across concurrent screens and clears the failed in-flight future so a later retry can recover from asset-read or validation errors.
