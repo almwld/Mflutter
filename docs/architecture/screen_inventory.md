@@ -669,3 +669,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranProScreen` now retains canonical-load failures as an explicit recoverable UI state with a retry action instead of showing a snackbar over an empty reader.
+
+
+- `QuranWordExplorerScreen` now offers a retry action when local word/letter index loading fails and resets the loading/error state before retrying.
