@@ -562,6 +562,22 @@ class _TaskProgress extends StatelessWidget {
                 color: canControl ? Colors.redAccent : Colors.white24, size: 19),
           ),
         ]),
+        if (task.error != null && task.error!.trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SelectableText(
+                'تفاصيل الخطأ: ${task.error}',
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
       ]),
     );
   }
