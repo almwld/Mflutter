@@ -152,7 +152,7 @@ Implemented on the audit branch:
 
 ### Validation status
 
-The changes have been committed to the audit branch. CI and local Flutter commands have not yet been confirmed for this feature slice; do not treat the tests as passing until the workflow result is inspected.
+The initial implementation slice passed GitHub Actions analysis, nucleus core tests, Quran numerical-analysis tests, Android split-APK build, and upload of arm64-v8a, armeabi-v7a, and x86_64 artifacts. Bookmark and template coverage is added in the next change group and must be checked by the next workflow run.
 
 
 ## Target-screen mapping (verified filename-level mapping)
