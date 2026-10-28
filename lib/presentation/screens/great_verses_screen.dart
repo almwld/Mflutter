@@ -43,6 +43,9 @@ class _GreatVersesScreenState extends State<GreatVersesScreen> {
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
+      if (ayahs.isEmpty) {
+        throw StateError('فهرس القرآن المحلي لا يحتوي على آيات.');
+      }
       setState(() {
         _ayahByReference = <String, Ayah>{
           for (final ayah in ayahs)
