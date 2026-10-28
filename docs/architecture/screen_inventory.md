@@ -690,3 +690,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranProScreen` now rejects an empty/missing Fatiha verse list as invalid canonical data and routes the failure to its retryable error state rather than opening a blank reader.
+
+
+## UI continuation — 2026-10-29 (numerical analysis corpus validation)
+
+- `lib/services/quran_numerical_analysis_service.dart`: numerical word-count analysis now validates that the local source contains all 114 surahs with canonical verse counts and non-empty text for every verse before publishing statistics. A partial/corrupt corpus fails explicitly rather than yielding plausible-looking partial counts.
+- No tests, analyzer, formatter, or APK build were run.
