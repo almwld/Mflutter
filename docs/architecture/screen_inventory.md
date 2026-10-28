@@ -538,3 +538,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/miracles_screen.dart`: counted word occurrences are now displayed as tappable reference chips that open the exact surah/ayah in the canonical Mushaf. The displayed counts remain literal, normalized local text counts and are not presented as proof of a theological claim.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (profile checkpoint transparency)
+
+- `lib/services/cloud_sync_service.dart` and `lib/presentation/screens/player_profile_screen.dart`: corrected the misleading “local checkpoint saved” message. The current service records only a timestamp; it does not snapshot app data or synchronize it. The UI now says so explicitly, and a failed SharedPreferences write no longer reports success.
+- No tests, analyzer, formatter, or APK build were run.
