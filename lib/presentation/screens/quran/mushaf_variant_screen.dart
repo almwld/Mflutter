@@ -8,7 +8,7 @@ import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
 
-enum MushafVariantMode { musnad, dotless, dotlessPlain, kufi, hieroglyphic }
+enum MushafVariantMode { uthmani, musnad, dotless, dotlessPlain, kufi, hieroglyphic }
 
 class MushafVariantScreen extends StatefulWidget {
   const MushafVariantScreen({super.key, required this.initialPage});
@@ -21,7 +21,7 @@ class MushafVariantScreen extends StatefulWidget {
 class _MushafVariantScreenState extends State<MushafVariantScreen> {
   late final PageController _controller;
   int _page = 1;
-  MushafVariantMode _mode = MushafVariantMode.musnad;
+  MushafVariantMode _mode = MushafVariantMode.uthmani;
 
   static const _paper = Color(0xFFF8F1E4);
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
@@ -67,6 +67,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   String _transform(String text) {
     switch (_mode) {
+      case MushafVariantMode.uthmani:
+        return text;
       case MushafVariantMode.musnad:
         return TextTransformer.toMusnad(text);
       case MushafVariantMode.dotless:
@@ -82,6 +84,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
 
   String get _modeName {
     switch (_mode) {
+      case MushafVariantMode.uthmani:
+        return 'عثماني Unicode';
       case MushafVariantMode.musnad:
         return 'المسند';
       case MushafVariantMode.dotless:
@@ -205,6 +209,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               ),
               const SizedBox(height: 8),
               for (final entry in [
+                (MushafVariantMode.uthmani, 'عثماني Unicode', 'عرض النص العربي مباشرة بخط Amiri كبديل عند تعذر عرض محارف QCF'),
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
                 (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
@@ -279,6 +284,8 @@ class _VariantPage extends StatelessWidget {
 
   String get _fontFamily {
     switch (mode) {
+      case MushafVariantMode.uthmani:
+        return 'Amiri';
       case MushafVariantMode.musnad:
         return 'Musnad';
       case MushafVariantMode.dotless:
