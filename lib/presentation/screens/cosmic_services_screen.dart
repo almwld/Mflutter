@@ -55,6 +55,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
       var capsules = await TimeCapsuleService.getCapsules();
       final legacyCapsules = decode(preferences.getString(_legacyCapsulesKey));
       if (legacyCapsules.isNotEmpty) {
+        var migrationComplete = true;
         for (final legacy in legacyCapsules) {
           final text = (legacy['text'] ?? '').toString().trim();
           final rawUnlock = (legacy['unlockAt'] ?? '').toString();
@@ -65,10 +66,21 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
               DateTime.tryParse((capsule['unlockDate'] ?? '').toString()) ==
                   unlock);
           if (!alreadyExists) {
-            await TimeCapsuleService.importLegacyCapsule(text, unlock);
+            try {
+              await TimeCapsuleService.importLegacyCapsule(text, unlock);
+            } catch (error) {
+              decodeWarning ??=
+                  'بقيت بعض الكبسولات القديمة دون ترحيل: $error';
+              migrationComplete = false;
+              break;
+            }
           }
         }
-        await preferences.remove(_legacyCapsulesKey);
+        // Keep the legacy source when capacity or storage errors prevent a
+        // complete migration; imported entries are deduplicated on retry.
+        if (migrationComplete) {
+          await preferences.remove(_legacyCapsulesKey);
+        }
         capsules = await TimeCapsuleService.getCapsules();
       }
       if (!mounted) return;
