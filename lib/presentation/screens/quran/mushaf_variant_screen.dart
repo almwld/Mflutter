@@ -87,8 +87,16 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
         'mudabbir_mushaf_variant_last_page',
         normalizedPage,
       );
-      await ReadingProgressService.saveLastPage(normalizedPage);
-      await DailyStreakService.recordActivity();
+      try {
+        await ReadingProgressService.saveLastPage(normalizedPage);
+      } catch (error) {
+        debugPrint('MushafVariantScreen: shared progress save failed: $error');
+      }
+      try {
+        await DailyStreakService.recordActivity();
+      } catch (error) {
+        debugPrint('MushafVariantScreen: streak activity save failed: $error');
+      }
     }).catchError((Object error) {
       debugPrint('MushafVariantScreen: could not save reading page: $error');
     });
