@@ -225,8 +225,27 @@ class AgentChatProvider extends ChangeNotifier {
 
   void _markCancelledIfCurrent(AgentTask task) {
     // An older async run must never overwrite the currently selected task.
-    if (_activeTask?.id != task.id) return;
-    _activeTask = task.copyWith(status: TaskStatus.cancelled);
+    // Use the latest provider snapshot, not the caller's stale local copy, so
+    // cancellation cannot discard completed steps or leave a running step
+    // visually stuck after the task has already been cancelled.
+    final current = _activeTask;
+    if (current == null || current.id != task.id) return;
+    final now = DateTime.now();
+    final steps = current.steps.map((step) {
+      if (step.status != StepStatus.running &&
+          step.status != StepStatus.paused) {
+        return step;
+      }
+      return step.copyWith(
+        status: StepStatus.cancelled,
+        completedAt: now,
+      );
+    }).toList(growable: false);
+    _activeTask = current.copyWith(
+      status: TaskStatus.cancelled,
+      steps: steps,
+      completedAt: now,
+    );
     notifyListeners();
   }
 
