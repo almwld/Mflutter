@@ -161,6 +161,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       MaterialPageRoute(
         builder: (_) => MushafScreen(
           initialPage: page,
+          initialSurah: ayah.surahNumber,
+          initialAyah: ayah.ayahNumber,
           restoreLastPage: false,
         ),
       ),
