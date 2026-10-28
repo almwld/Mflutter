@@ -14,6 +14,7 @@ import '../../widgets/quran/living_ayah_painter.dart';
 import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/achievements_service.dart';
+import '../../../services/nucleus_service.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -384,6 +385,11 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       ];
     });
     _startLivingEffects();
+    NucleusService().setQuranContext(
+      surahNumber: surah,
+      ayahNumber: ayah,
+      verseText: MushafSource.verse(surah, ayah),
+    );
 
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final local = overlay.globalToLocal(position);
@@ -571,6 +577,11 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       ];
                     });
                     _startLivingEffects();
+                    NucleusService().setQuranContext(
+                      surahNumber: surah,
+                      ayahNumber: ayah,
+                      verseText: MushafSource.verse(surah, ayah),
+                    );
                   },
                   onLongPressStart: (surah, ayah, details) {
                     _saveAyahCoordinate(surah, ayah, details.globalPosition);
