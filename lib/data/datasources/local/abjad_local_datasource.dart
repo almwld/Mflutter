@@ -1,4 +1,5 @@
 import '../../../core/utils/abjad_calculator.dart';
+import '../../../utils/abjad_constants.dart';
 import '../../../domain/entities/divine_name.dart';
 import '../../../core/constants/app_enums.dart';
 import '../../../domain/entities/science.dart';
@@ -14,7 +15,7 @@ class AbjadLocalDatasource {
   // ═══════════════════════════════════════════════════════════════════════════
 
   DivineName _divineName(int number) {
-    final names = DivineNames.arabicNames;
+    final names = AbjadConstants.divineNames;
     final index = number <= 0 ? 0 : (number - 1) % names.length;
     return DivineName(
       id: index + 1,
@@ -29,7 +30,7 @@ class AbjadLocalDatasource {
   }
 
   Future<List<DivineName>> getAllDivineNames() async =>
-      List.generate(DivineNames.arabicNames.length, (i) => _divineName(i + 1));
+      List.generate(AbjadConstants.divineNames.length, (i) => _divineName(i + 1));
 
   Future<DivineName> getDivineName(int number) async => _divineName(number);
 
@@ -87,34 +88,24 @@ class AbjadLocalDatasource {
   }
 
   /// الحصول على العنصر
-  String getElement(int value) {
-    final element = (value % 5);
-    const elements = ['روح', 'نار', 'ماء', 'تراب', 'هواء'];
-    return elements[element];
-  }
+  String getElement(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getElementByNumber(value);
 
-  /// الحصول على الكوكب
-  String getPlanet(int value) {
-    final planet = (value % 7);
-    const planets = ['زُحل', 'شمس', 'قمر', 'مريخ', 'عطارد', 'زُهرة', 'مشتري'];
-    return planets[planet];
-  }
+  /// الحصول على ارتباط الكوكب الرمزي حسب الجدول التقليدي.
+  String getPlanet(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getPlanetByNumber(value);
 
-  /// الحصول على البرج
-  String getZodiac(int value) {
-    final zodiac = (value % 12);
-    const zodiacs = [
-      'الحمل', 'الثور', 'الجوزاء', 'السرطان', 'الأسد', 'العذراء',
-      'الميزان', 'العقرب', 'القوس', 'الجدي', 'الدلو', 'الحوت',
-    ];
-    return zodiacs[zodiac];
-  }
+  /// الحصول على ارتباط البرج الرمزي حسب الجدول التقليدي.
+  String getZodiac(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getZodiacByNumber(value);
 
-  /// الحصول على الاسم الإلهي
-  String getDivineNameValue(int value) {
-    final index = value % DivineNames.arabicNames.length;
-    return DivineNames.arabicNames[index];
-  }
+  /// الحصول على اسم من القائمة الشائعة بفهرسة تبدأ من 1.
+  String getDivineNameValue(int value) => value < 1
+      ? 'غير محدد'
+      : AbjadConstants.getDivineNameByNumber(value);
 
   /// الحصول على اللون
   String getColor(int value) {
