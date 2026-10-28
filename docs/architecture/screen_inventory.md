@@ -687,3 +687,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The word-location sheet now caps eager result rendering at 100 occurrences and reports the total number of matches, preventing common words from creating thousands of widgets at once.
+
+
+- `QuranProScreen` now rejects an empty/missing Fatiha verse list as invalid canonical data and routes the failure to its retryable error state rather than opening a blank reader.
