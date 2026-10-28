@@ -154,8 +154,17 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                       label: Text(_indexing ? 'جارٍ تجهيز الفهرس...' : 'بحث محلي'),
                     ),
                   ),
-                  if (_indexError != null)
+                  if (_indexError != null) ...[
                     _MessagePanel(message: _indexError!, isError: true),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _indexing ? null : _loadQuranIndex,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: const Text('إعادة تحميل فهرس القرآن'),
+                      ),
+                    ),
+                  ],
                   if (_searchError != null)
                     _MessagePanel(message: _searchError!, isError: false),
                   if (!_indexing && _indexError == null)
