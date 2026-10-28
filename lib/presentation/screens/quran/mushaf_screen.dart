@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../../services/bookmark_service.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../services/reading_progress_service.dart';
@@ -13,8 +12,8 @@ import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
 import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
-import '../../../services/achievements_service.dart';
 import '../../../services/nucleus_service.dart';
+import '../../../services/share_service.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -457,17 +456,12 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           );
         }
       } else if (action == 'share') {
-        final text = MushafSource.verse(surah, ayah);
-        final shareText = '$text\\n\\nسورة $surah — الآية $ayah\\n'
-            'من مُدَبِّر الأسرار العليا';
         try {
-          final result = await Share.share(
-            shareText,
-            subject: 'آية من القرآن الكريم',
+          await ShareService.shareVerse(
+            text: MushafSource.verse(surah, ayah),
+            surahNumber: surah,
+            ayahNumber: ayah,
           );
-          if (result.status == ShareResultStatus.success) {
-            await AchievementsService.recordVerseShared();
-          }
         } catch (error) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
