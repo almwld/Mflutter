@@ -42,19 +42,26 @@ class DailyStreakService {
   static Future<void> recordActivity() async {
     await initialize();
     final today = _dateKey(DateTime.now());
-    if (!_activeDates.add(today)) return;
-    _pruneOldDates();
+    if (_activeDates.contains(today)) return;
+
+    // Persist a candidate snapshot before changing in-memory state. If storage
+    // fails, the same day's activity can be retried instead of being lost
+    // behind an already-added in-memory date.
+    final nextDates = Set<String>.from(_activeDates)..add(today);
+    _pruneOldDates(nextDates);
     final prefs = await SharedPreferences.getInstance();
-    final sorted = _activeDates.toList()..sort();
+    final sorted = nextDates.toList()..sort();
     await prefs.setStringList(_activeDatesKey, sorted);
+    _activeDates = nextDates;
     _recalculate();
   }
 
-  static void _pruneOldDates() {
+  static void _pruneOldDates([Set<String>? dates]) {
+    final target = dates ?? _activeDates;
     final now = DateTime.now();
     final cutoff = DateTime(now.year, now.month, now.day)
         .subtract(const Duration(days: 365));
-    _activeDates.removeWhere((key) {
+    target.removeWhere((key) {
       final parsed = DateTime.tryParse(key);
       return parsed == null || parsed.isBefore(cutoff);
     });
