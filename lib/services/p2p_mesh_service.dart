@@ -169,6 +169,15 @@ class P2PMeshService extends ChangeNotifier {
     }
   }
 
+  Future<void> stopAdvertising() async {
+    try {
+      await _nearby.stopAdvertising();
+    } finally {
+      _advertising = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> stop() async {
     try {
       await _nearby.stopAdvertising();
