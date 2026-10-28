@@ -244,6 +244,22 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     );
   }
 
+  int? _parsePageNumber(String raw) {
+    final normalized = raw.trim().replaceAllMapped(
+      RegExp(r'[٠-٩۰-۹]'),
+      (match) {
+        final code = match.group(0)!.codeUnitAt(0);
+        final digit = code >= 0x06F0 && code <= 0x06F9
+            ? code - 0x06F0
+            : code - 0x0660;
+        return String.fromCharCode(0x30 + digit);
+      },
+    );
+    final page = int.tryParse(normalized);
+    if (page == null || page < 1 || page > MushafSource.totalPages) return null;
+    return page;
+  }
+
   void _showPagePicker() {
     final controller = TextEditingController(text: '${_currentPage.value}');
     showDialog<void>(
@@ -256,11 +272,15 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           textDirection: TextDirection.rtl,
           decoration: const InputDecoration(hintText: '1 - 604'),
           onSubmitted: (_) {
-            final value = int.tryParse(controller.text);
-            if (value != null) {
-              Navigator.pop(context);
-              _goToPage(value);
+            final value = _parsePageNumber(controller.text);
+            if (value == null) {
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+              );
+              return;
             }
+            Navigator.pop(context);
+            _goToPage(value);
           },
         ),
         actions: [
@@ -270,9 +290,15 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           ),
           FilledButton(
             onPressed: () {
-              final value = int.tryParse(controller.text);
+              final value = _parsePageNumber(controller.text);
+              if (value == null) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+                );
+                return;
+              }
               Navigator.pop(context);
-              if (value != null) _goToPage(value);
+              _goToPage(value);
             },
             child: const Text('انتقال'),
           ),
