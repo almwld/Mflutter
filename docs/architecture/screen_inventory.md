@@ -532,3 +532,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/labeled_training_dataset_service.dart` and `lib/services/on_device_training_service.dart`: dataset validation now requires at least two samples for each of the classifier's three output classes (`cosmic`, `tranquil`, `calculation`). A dataset missing one class can no longer silently train a three-output classifier without examples for that output.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (numerical occurrence navigation)
+
+- `lib/presentation/screens/miracles_screen.dart`: counted word occurrences are now displayed as tappable reference chips that open the exact surah/ayah in the canonical Mushaf. The displayed counts remain literal, normalized local text counts and are not presented as proof of a theological claim.
+- No tests, analyzer, formatter, or APK build were run.
