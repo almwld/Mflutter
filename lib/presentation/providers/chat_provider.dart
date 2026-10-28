@@ -87,11 +87,18 @@ class ChatProvider extends ChangeNotifier {
                   '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
               .join('\n');
 
+      final verseContext = _core.currentVerseText;
+      final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+          ? evidence
+          : evidence + '\nالسياق المحدد في المصحف (' +
+              _core.currentSurahNumber.toString() + ':' +
+              _core.currentAyahNumber.toString() + '): ' + verseContext;
+
       final String generated;
       if (_core.isModelLoaded) {
         generated = await _core.generateGroundedAnswer(
           question: cleanText,
-          evidence: evidence,
+          evidence: contextualEvidence,
           maxTokens: 512,
         );
       } else {
@@ -99,7 +106,7 @@ class ChatProvider extends ChangeNotifier {
           'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
           'أجب عن السؤال مباشرة بالعربية الفصحى متى أمكن. عدم العثور على آية مطابقة ليس سببًا لرفض سؤال عام. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة، '
           'لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
-          'المستخدم: $cleanText\n\nالأدلة المحلية:\n$evidence\n\nمُدَبِّر:',
+          'المستخدم: $cleanText\n\nالأدلة المحلية:\n$contextualEvidence\n\nمُدَبِّر:',
         );
       }
       final evidenceNote = hits.isEmpty

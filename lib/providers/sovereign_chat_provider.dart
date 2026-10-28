@@ -39,10 +39,14 @@ class SovereignChatProvider extends ChangeNotifier {
           'الرنين العددي: $abjad\n\n'
           'السؤال: ${query.trim()}';
       if (_core.isModelLoaded) {
+        final verseContext = _core.currentVerseText;
+        final evidence = verseContext == null || verseContext.trim().isEmpty
+            ? 'لم يتم إرفاق آيات قرآنية أو مصادر خارجية بهذه الشاشة؛ لا تنسب أقوالًا إلى القرآن أو مصادر غير متاحة.'
+            : 'السياق المحدد في المصحف (' + _core.currentSurahNumber.toString() + ':' +
+                _core.currentAyahNumber.toString() + '): ' + verseContext;
         _insight = await _core.generateGroundedAnswer(
           question: prompt,
-          evidence: 'لم يتم إرفاق آيات قرآنية أو مصادر خارجية بهذه الشاشة؛ '
-              'لا تنسب أقوالًا إلى القرآن أو مصادر غير متاحة.',
+          evidence: evidence,
           maxTokens: 384,
         );
       } else {
