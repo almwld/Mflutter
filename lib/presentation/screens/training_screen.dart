@@ -194,7 +194,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'استورد ملف JSON يحتوي على قائمة عينات، وكل عينة تتضمن text و axis_type. التصنيفات المقبولة: cosmic و tranquil و calculation. يلزم 6 عينات على الأقل وعينتان لكل فئة مستخدمة.',
+                        'استورد ملف JSON يحتوي على قائمة عينات، وكل عينة تتضمن text و axis_type. التصنيفات المقبولة: cosmic و tranquil و calculation. يلزم 6 عينات على الأقل، مع عينتين أو أكثر لكل فئة من الفئات الثلاث كلها: cosmic و tranquil و calculation.',
                         textDirection: TextDirection.rtl,
                         style: TextStyle(color: Colors.white70),
                       ),
