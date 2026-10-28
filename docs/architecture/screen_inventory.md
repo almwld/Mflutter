@@ -768,3 +768,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `ReadingProgressService.recordReadingDay()` now records a calendar-day event without fabricating a page number, and `DailyStreakService` synchronizes activity into that canonical ledger. Surah-based reading, profile streaks, statistics, and achievements can therefore share real day activity even when a reader does not track a page position.
+
+
+## UI continuation — 2026-10-29 (shared dream journal integration)
+
+- `lib/services/dream_journal_service.dart` and `lib/presentation/screens/cosmic_services_screen.dart` now share one schema and storage key for the local dream journal. The screen delegates loading and writes to the service; records remain bounded and validated, and no guessed Quran verse or dream interpretation is attached.
+- No tests, analyzer, formatter, or APK build were run.
