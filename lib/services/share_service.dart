@@ -11,6 +11,12 @@ class ShareService {
     required int ayahNumber,
     String? surahName,
   }) async {
+    if (text.trim().isEmpty ||
+        surahNumber < 1 ||
+        surahNumber > 114 ||
+        ayahNumber < 1) {
+      throw ArgumentError('لا يمكن مشاركة آية دون نص أو مرجع صالح.');
+    }
     final surahLabel = surahName == null || surahName.trim().isEmpty
         ? 'رقم $surahNumber'
         : surahName;
