@@ -697,15 +697,29 @@ class AgentChatProvider extends ChangeNotifier {
     return 'نتائج مسترجعة بواسطة ${agent.name} من الأصول المضمّنة:\n\n$output';
   }
 
-  List<StepDetail> _detailsFor(AgentDefinition agent, String result) => [
-        StepDetail('الوكيل', agent.name),
-        StepDetail('الطبقة', agent.layer),
-        StepDetail('المحاولات', '${_attemptsByAgent[agent.id] ?? 1} من 3'),
-        StepDetail('الأصول المحمّلة', _knowledge.loadedSources.length.toString()),
-        StepDetail('المصادر', _sourcesFromText(result).join(', ').isEmpty
-            ? 'لا يوجد مصدر مذكور في هذه النتيجة'
-            : _sourcesFromText(result).join(', ')),
-      ];
+  List<StepDetail> _detailsFor(AgentDefinition agent, String result) {
+    const explicitHandlers = <String>{
+      'muwajjih', 'planner', 'safety', 'researcher', 'retriever',
+      'tafsir', 'rabet', 'tibyan', 'tadabbur', 'overthinker',
+      'critic', 'narrator', 'ayaat', 'siyaq', 'jummal', 'adadi',
+      'memory', 'loop_engineering', 'verifier', 'damj', 'obsidian',
+    };
+    return [
+      StepDetail('الوكيل', agent.name),
+      StepDetail('الطبقة', agent.layer),
+      StepDetail(
+        'مسار التنفيذ',
+        explicitHandlers.contains(agent.id)
+            ? 'معالج مسجل لهذا المعرّف'
+            : 'استرجاع عام من المعرفة المحلية؛ لا توجد معالجة تخصصية مستقلة لهذا المعرّف بعد',
+      ),
+      StepDetail('المحاولات', '${_attemptsByAgent[agent.id] ?? 1} من 3'),
+      StepDetail('الأصول المحمّلة', _knowledge.loadedSources.length.toString()),
+      StepDetail('المصادر', _sourcesFromText(result).join(', ').isEmpty
+          ? 'لا يوجد مصدر مذكور في هذه النتيجة'
+          : _sourcesFromText(result).join(', ')),
+    ];
+  }
 
   Future<String> _composeAnswer(
     AgentTask task, {
