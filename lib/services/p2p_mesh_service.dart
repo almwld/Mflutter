@@ -32,7 +32,11 @@ class P2PMeshService extends ChangeNotifier {
       _advertising = ok;
       notifyListeners();
       return ok;
-    } catch (_) { return false; }
+    } catch (_) {
+      _advertising = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> discover({String serviceId='com.mudabbir.alasrar.mesh'}) async {
@@ -52,7 +56,11 @@ class P2PMeshService extends ChangeNotifier {
       _discovering = ok;
       notifyListeners();
       return ok;
-    } catch (_) { return false; }
+    } catch (_) {
+      _discovering = false;
+      notifyListeners();
+      return false;
+    }
   }
 
   Future<bool> connect(String endpointId) async {
