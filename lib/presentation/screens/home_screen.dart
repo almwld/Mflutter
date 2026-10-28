@@ -20,6 +20,8 @@ import 'elements_screen.dart';
 import 'numbers_screen.dart';
 import 'zodiac_screen.dart';
 import 'quran_screen.dart';
+import 'quran_page_screen.dart';
+import 'surah_index_screen.dart';
 import 'abjad_screen.dart';
 import 'training_screen.dart';
 import 'miracles_screen.dart';
@@ -35,7 +37,6 @@ import 'help_screen.dart';
 import 'package:provider/provider.dart';
 import '../providers/abjad_provider.dart';
 import '../providers/training_provider.dart';
-import '../../providers/sovereign_chat_provider.dart';
 import 'community_screen.dart';
 import 'challenges_screen.dart';
 import 'leaderboard_screen.dart';
@@ -505,11 +506,13 @@ class _MoreScreenState extends State<MoreScreen> {
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
       ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
+      ('فهرس السور', Icons.list_alt_rounded, const SurahIndexScreen()),
+      ('صفحة المصحف', Icons.menu_book_outlined, const QuranPageScreen(surahNumber: 1, surahName: 'الفاتحة')),
       ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
       ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
       ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
-      ('النواة', Icons.psychology_rounded, ChangeNotifierProvider<SovereignChatProvider>(create: (_) => SovereignChatProvider(), child: const NucleusScreen())),
+      ('النواة', Icons.psychology_rounded, const NucleusScreen()),
       ('مركز السيادة', Icons.hub_rounded, const SovereignHubScreen()),
       ('الخدمات الكونية', Icons.rocket_launch_rounded, const CosmicServicesScreen()),
       ('الذكاء المتقدم', Icons.memory_rounded, const AIAdvancedScreen()),
