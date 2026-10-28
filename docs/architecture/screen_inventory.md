@@ -245,3 +245,6 @@ Per the user's explicit instruction, tests and builds were not run for these fol
 - `PlayerProfileScreen` labels the current checkpoint action as local-only because `CloudSyncService` persists a timestamp in SharedPreferences and does not have a remote backend configured.
 
 These changes are code-level implementation notes only. No tests/builds were run for this continuation.
+
+### Symbolic knowledge screens
+- Planetary, zodiac, elemental, number-symbolism, Abjad, and occult screens now explicitly identify their correspondences as historical/cultural/conventional systems rather than scientifically validated causal claims or predictions.
