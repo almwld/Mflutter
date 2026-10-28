@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../utils/abjad_constants.dart';
 
-class DivineNamesScreen extends StatelessWidget {
+class DivineNamesScreen extends StatefulWidget {
   const DivineNamesScreen({super.key});
+
+  @override
+  State<DivineNamesScreen> createState() => _DivineNamesScreenState();
 
   static const Map<String, String> _descriptions = {
     'الله': 'المعبود بحق',
@@ -107,10 +110,31 @@ class DivineNamesScreen extends StatelessWidget {
     'الرشيد': 'الهادي إلى الرشد',
     'الصبور': 'لا يعجل بالعقوبة',
   };
+}
+
+class _DivineNamesScreenState extends State<DivineNamesScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  String _normalize(String value) => value
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .trim();
 
   @override
   Widget build(BuildContext context) {
-    final names = AbjadConstants.divineNames;
+    final query = _normalize(_searchController.text);
+    final names = AbjadConstants.divineNames
+        .where((name) => query.isEmpty || _normalize(name).contains(query))
+        .toList(growable: false);
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
@@ -135,6 +159,33 @@ class DivineNamesScreen extends StatelessWidget {
               'تعرض الشاشة قائمة شائعة من الأسماء الحسنى؛ قد تختلف بعض القوائم في ترتيب بعض الأسماء أو عدّها. المعاني مختصرة للتعريف وليست تفسيرًا جامعًا.',
               textDirection: TextDirection.rtl,
               style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.5),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+            child: TextField(
+              controller: _searchController,
+              textDirection: TextDirection.rtl,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن اسم...',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'مسح البحث',
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                filled: true,
+                fillColor: AppColors.surface,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
             ),
           ),
           Expanded(
@@ -177,7 +228,7 @@ class DivineNamesScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          _descriptions[name] ?? 'اسم في القائمة المتداولة',
+                          DivineNamesScreen._descriptions[name] ?? 'اسم في القائمة المتداولة',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
