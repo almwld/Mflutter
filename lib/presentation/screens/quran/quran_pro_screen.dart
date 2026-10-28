@@ -9,7 +9,7 @@ import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
 
-enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
+enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
 
 /// 📖 شاشة القرآن الاحترافية — 5 أنماط عرض
 class QuranProScreen extends StatefulWidget {
@@ -105,7 +105,7 @@ class _QuranProScreenState extends State<QuranProScreen>
 
   Future<void> _restoreDisplayMode() async {
     final preferences = await SharedPreferences.getInstance();
-    final savedIndex = preferences.getInt('mudabbir_quran_pro_mode');
+    final savedIndex = preferences.getInt('mudabbir_quran_pro_mode_v2');
     if (savedIndex == null ||
         savedIndex < 0 ||
         savedIndex >= QuranDisplayMode.values.length ||
@@ -121,7 +121,22 @@ class _QuranProScreenState extends State<QuranProScreen>
     await preferences.setInt('mudabbir_quran_pro_mode', mode.index);
   }
 
-  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'kufi', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
+  String _transform(String text) {
+    switch (_mode) {
+      case QuranDisplayMode.musnadAncient:
+        return TextTransformer.toMusnad(text);
+      case QuranDisplayMode.dotlessMarked:
+        return TextTransformer.toDotlessPreservingMarks(text);
+      case QuranDisplayMode.dotless:
+        return TextTransformer.toDotless(text);
+      case QuranDisplayMode.kufi:
+        return TextTransformer.transform(text, 'kufi');
+      case QuranDisplayMode.hieroglyphic:
+        return TextTransformer.toHieroglyphic(text);
+      case QuranDisplayMode.uthmaniGold:
+        return text;
+    }
+  }
 
   TextStyle _textStyle() {
     return TextStyle(
@@ -240,7 +255,8 @@ class _QuranProScreenState extends State<QuranProScreen>
           children: [
             _modeButton('عثماني', QuranDisplayMode.uthmaniGold, '🕌'),
             _modeButton('المسند', QuranDisplayMode.musnadAncient, '𐩱'),
-            _modeButton('بدون نقاط', QuranDisplayMode.dotless, 'ٮ'),
+            _modeButton('بلا نقاط + تشكيل', QuranDisplayMode.dotlessMarked, 'ٮِ'),
+            _modeButton('بلا نقاط/تشكيل', QuranDisplayMode.dotless, 'ٮ'),
             _modeButton('رَقّ — كوفي مصحفي', QuranDisplayMode.kufi, '│'),
             _modeButton('هيلوغريفية', QuranDisplayMode.hieroglyphic, '𓂝'),
             const SizedBox(width: 16),
