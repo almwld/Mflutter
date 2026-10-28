@@ -59,14 +59,27 @@ class GazeFusionService {
   }
 
   Future<void> clear() async {
-    _yawScale = 1.0; _yawBias = 0.0;
-    _pitchScale = 1.0; _pitchBias = 0.0;
-    _emaX = 0.5; _emaY = 0.5; _calibrated = false;
     final p = await SharedPreferences.getInstance();
-    for (final k in [
-      'gaze_cal_yaw_scale','gaze_cal_yaw_bias',
-      'gaze_cal_pitch_scale','gaze_cal_pitch_bias','gaze_calibrated',
-    ]) { await p.remove(k); }
+    var allRemoved = true;
+    for (final key in [
+      'gaze_cal_yaw_scale',
+      'gaze_cal_yaw_bias',
+      'gaze_cal_pitch_scale',
+      'gaze_cal_pitch_bias',
+      'gaze_calibrated',
+    ]) {
+      if (!await p.remove(key)) allRemoved = false;
+    }
+    if (!allRemoved) {
+      throw StateError('تعذر حذف جميع معاملات المعايرة المحفوظة.');
+    }
+    _yawScale = 1.0;
+    _yawBias = 0.0;
+    _pitchScale = 1.0;
+    _pitchBias = 0.0;
+    _emaX = 0.5;
+    _emaY = 0.5;
+    _calibrated = false;
   }
 
   GazeScreenPoint map({
