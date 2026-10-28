@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class BookmarkService {
   static const _key = 'bookmarks';
+  static Future<void> _writeQueue = Future<void>.value();
 
   static Future<List<Map<String, dynamic>>> getBookmarks() async {
     final prefs = await SharedPreferences.getInstance();
@@ -29,11 +30,14 @@ class BookmarkService {
     }
   }
 
-  static Future<void> addBookmark(int surah, int ayah, String text) async {
+  static Future<void> addBookmark(int surah, int ayah, String text) {
     if (surah < 1 || surah > 114 || ayah < 1) {
       throw ArgumentError('مرجع الآية غير صالح: $surah:$ayah');
     }
+    return _enqueueWrite(() => _addBookmark(surah, ayah, text));
+  }
 
+  static Future<void> _addBookmark(int surah, int ayah, String text) async {
     final bookmarks = await getBookmarks();
     bookmarks.removeWhere(
       (item) => (item['surah'] as num).toInt() == surah &&
@@ -50,7 +54,10 @@ class BookmarkService {
     await prefs.setString(_key, jsonEncode(bookmarks));
   }
 
-  static Future<void> removeBookmark(int surah, int ayah) async {
+  static Future<void> removeBookmark(int surah, int ayah) =>
+      _enqueueWrite(() => _removeBookmark(surah, ayah));
+
+  static Future<void> _removeBookmark(int surah, int ayah) async {
     final bookmarks = await getBookmarks();
     bookmarks.removeWhere(
       (item) => (item['surah'] as num).toInt() == surah &&
@@ -58,6 +65,13 @@ class BookmarkService {
     );
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, jsonEncode(bookmarks));
+  }
+
+  static Future<void> _enqueueWrite(Future<void> Function() operation) {
+    _writeQueue = _writeQueue
+        .catchError((Object _) {})
+        .then((_) => operation());
+    return _writeQueue;
   }
 
   static Future<bool> isBookmarked(int surah, int ayah) async {
