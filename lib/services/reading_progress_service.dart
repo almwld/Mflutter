@@ -154,6 +154,24 @@ class ReadingProgressService {
     return count;
   }
 
+  static Future<List<bool>> getReadingWeekHistory() async {
+    await _awaitPendingWrites();
+    final prefs = await SharedPreferences.getInstance();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return List<bool>.unmodifiable(
+      List<bool>.generate(
+        7,
+        (index) => days.contains(
+          _dateKey(today.subtract(Duration(days: 6 - index))),
+        ),
+      ),
+    );
+  }
+
   /// Compatibility alias retained for existing callers. The value is a count
   /// of distinct reading days, not pages read.
   @Deprecated('Use getReadingDaysInLast7Days; this returns days, not pages.')
