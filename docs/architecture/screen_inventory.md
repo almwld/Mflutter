@@ -399,3 +399,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/quran_page_screen.dart`: added an explicit retry action for missing/corrupt surah data and resets loading/error state before retrying.
 - `lib/presentation/screens/quran/mushaf_variant_screen.dart`: added a direct page-jump action with Arabic numeral support and range validation.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (startup responsiveness)
+
+- `lib/presentation/screens/splash_screen.dart`: home navigation no longer waits indefinitely for local knowledge indexing. After an eight-second startup budget, the app opens with a clear message while the shared nucleus initialization continues and can still report readiness/failure to listeners.
+- No tests, analyzer, formatter, or APK build were run.
