@@ -12,6 +12,7 @@ import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
+import '../../../services/bookmark_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
 
@@ -32,6 +33,8 @@ class _QuranProScreenState extends State<QuranProScreen> {
   Map<String, List<Map<String, dynamic>>>? _hieroglyphicQuran;
   List<dynamic> _currentVerses = [];
   int _currentSurah = 1;
+  int? _selectedAyah;
+  String? _selectedAyahText;
   String _surahName = 'الفاتحة';
   bool _loading = true;
 
@@ -430,6 +433,24 @@ class _QuranProScreenState extends State<QuranProScreen> {
     });
   }
 
+  Future<void> _bookmarkSelectedAyah() async {
+    final ayah = _selectedAyah;
+    final text = _selectedAyahText;
+    if (ayah == null || text == null || text.isEmpty) return;
+    try {
+      await BookmarkService.addBookmark(_currentSurah, ayah, text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم حفظ الآية $_surahName $ayah في العلامات المرجعية')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حفظ العلامة المرجعية: $error')),
+      );
+    }
+  }
+
   AppBar _buildAppBar() {
     return AppBar(
       title: Text(
@@ -442,6 +463,13 @@ class _QuranProScreenState extends State<QuranProScreen> {
       backgroundColor: const Color(0xFF1A237E),
       elevation: 0,
       actions: [
+        IconButton(
+          tooltip: _selectedAyah == null
+              ? 'اختر آية أولًا لحفظها'
+              : 'حفظ الآية المحددة في العلامات المرجعية',
+          icon: const Icon(Icons.bookmark_add_outlined, color: _goldColor),
+          onPressed: _selectedAyah == null ? null : _bookmarkSelectedAyah,
+        ),
         IconButton(
           tooltip: _showFrame ? 'إخفاء إطار الآيات' : 'إظهار إطار الآيات',
           icon: Icon(_showFrame ? Icons.crop_square_rounded : Icons.crop_free_rounded,
@@ -563,6 +591,10 @@ class _QuranProScreenState extends State<QuranProScreen> {
 
         return GestureDetector(
           onTap: () {
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+            });
             // Always send canonical source text to the local core, never a
             // transformed Musnad/dotless/Kufic presentation string.
             NucleusService().setQuranContext(
