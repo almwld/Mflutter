@@ -1,7 +1,9 @@
 import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
-class GeospatialInsightService {
+class GeospatialInsightService extends ChangeNotifier {
   GeospatialInsightService._();
   static final instance = GeospatialInsightService._();
   Position? _position;
@@ -17,13 +19,20 @@ class GeospatialInsightService {
     if (permission == LocationPermission.denied) permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) return false;
     _position = await Geolocator.getCurrentPosition();
+    notifyListeners();
     await _subscription?.cancel();
     _subscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10),
-    ).listen((value) => _position = value);
+    ).listen((value) {
+      _position = value;
+      notifyListeners();
+    });
     return true;
   }
-  Future<void> stop() async { await _subscription?.cancel(); _subscription = null; }
+  Future<void> stop() async {
+    await _subscription?.cancel();
+    _subscription = null;
+  }
   String getTopography() => altitude > 1000 ? 'mountains' : altitude < 50 ? 'coastal' : 'plains';
   double distanceTo(double lat, double lon) => Geolocator.distanceBetween(latitude, longitude, lat, lon);
 }
