@@ -8,7 +8,7 @@ class FontManager {
     MudabbirFont.amiri: 'Amiri',
     MudabbirFont.uthmani: 'Amiri',       // نستخدم Amiri بدل Uthmani
     MudabbirFont.musnad: 'Musnad',
-    MudabbirFont.kufi: 'NotoKufiArabic',
+    MudabbirFont.kufi: 'Raqq',
     MudabbirFont.hieroglyphic: 'NotoSansEgyptianHieroglyphs',
   };
 
