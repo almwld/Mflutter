@@ -720,3 +720,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/bookmark_service.dart`: bookmark storage is capped at 500 entries, and saved verse previews are now sourced from the bundled Quran verse lookup rather than trusting caller-provided display text. Duplicate references remain replaceable at the limit.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (achievement event concurrency)
+
+- `lib/services/achievements_service.dart`: Abjad calculations, distinct knowledge-topic visits, and completed insight counters now serialize their local read-modify-write events to avoid dropped increments or overwritten topic sets during rapid/concurrent UI actions.
+- No tests, analyzer, formatter, or APK build were run.
