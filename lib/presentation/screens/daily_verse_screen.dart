@@ -37,10 +37,14 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
       if (verses.isEmpty) {
         throw StateError('فهرس القرآن المحلي لا يحتوي على آيات.');
       }
-      final now = DateTime.now();
+      final nowUtc = DateTime.now().toUtc();
       // Use UTC calendar-day arithmetic from a fixed epoch so the choice is
       // stable across time zones and cycles through the full corpus over time.
-      final todayUtc = DateTime.utc(now.year, now.month, now.day);
+      final todayUtc = DateTime.utc(
+        nowUtc.year,
+        nowUtc.month,
+        nowUtc.day,
+      );
       final epochUtc = DateTime.utc(2000, 1, 1);
       final dayNumber = todayUtc.difference(epochUtc).inDays;
       final index = ((dayNumber % verses.length) + verses.length) % verses.length;
