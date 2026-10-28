@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/text_transformer.dart';
+import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
@@ -257,7 +258,11 @@ class _QuranProScreenState extends State<QuranProScreen>
             _modeButton('المسند', QuranDisplayMode.musnadAncient, '𐩱'),
             _modeButton('بلا نقاط + تشكيل', QuranDisplayMode.dotlessMarked, 'ٮِ'),
             _modeButton('بلا نقاط/تشكيل', QuranDisplayMode.dotless, 'ٮ'),
-            _modeButton('رَقّ — كوفي مصحفي', QuranDisplayMode.kufi, '│'),
+            _modeButton(
+              FontManager.isRaqqFontLoaded ? 'رَقّ — كوفي مصحفي' : 'رَقّ — خط بديل',
+              QuranDisplayMode.kufi,
+              '│',
+            ),
             _modeButton('هيلوغريفية', QuranDisplayMode.hieroglyphic, '𓂝'),
             const SizedBox(width: 16),
             // أزرار التحكم
