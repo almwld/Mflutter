@@ -55,7 +55,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         SnackBar(
           content: Text(
             saved
-                ? 'تم حفظ نقطة محلية على الجهاز؛ لا توجد مزامنة سحابية مهيأة.'
+                ? 'تم تسجيل وقت الحفظ فقط؛ لم تُنسخ بيانات التطبيق ولا توجد مزامنة سحابية مهيأة.'
                 : CloudSyncService.status,
           ),
         ),
@@ -63,7 +63,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر حفظ نقطة الملف المحلية: $error')),
+        SnackBar(content: Text('تعذر تسجيل وقت الحفظ المحلي: $error')),
       );
     }
   }
@@ -82,7 +82,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         backgroundColor: AppColors.primaryNavy,
         actions: [
           IconButton(
-            tooltip: 'حفظ نقطة محلية',
+            tooltip: 'تسجيل وقت الحفظ المحلي',
             icon: Icon(
               Icons.save_outlined,
               color: CloudSyncService.isSyncing
@@ -142,12 +142,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   : Colors.white54,
             ),
             title: const Text(
-              'نقطة حفظ محلية',
+              'علامة وقت الحفظ المحلي',
               style: TextStyle(color: Colors.white),
             ),
             subtitle: Text(
               CloudSyncService.lastSync != null
-                  ? 'آخر حفظ محلي: ${CloudSyncService.lastSync.toString().substring(0, 16)} • ${CloudSyncService.status}'
+                  ? 'آخر علامة وقت: ${CloudSyncService.lastSync.toString().substring(0, 16)} • ${CloudSyncService.status}'
                   : CloudSyncService.status,
               style: const TextStyle(color: Colors.white54),
             ),
