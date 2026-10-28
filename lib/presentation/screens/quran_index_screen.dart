@@ -39,6 +39,25 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
     await _restoreLastVariantPage();
   }
 
+  String _normalizeArabicSearch(String value) => value
+      .replaceAllMapped(
+        RegExp(r'[٠-٩۰-۹]'),
+        (match) {
+          final code = match.group(0)!.codeUnitAt(0);
+          final digit = code >= 0x06F0 && code <= 0x06F9
+              ? code - 0x06F0
+              : code - 0x0660;
+          return String.fromCharCode(0x30 + digit);
+        },
+      )
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
   static const _background = Color(0xFF0B0D12);
   static const _surface = Color(0xFF15181F);
   static const _gold = Color(0xFFD8B65A);
@@ -49,10 +68,10 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _query.trim();
+    final query = _normalizeArabicSearch(_query);
     final items = List<int>.generate(MushafSource.totalSurahs, (i) => i + 1)
         .where((number) => query.isEmpty ||
-            getSurahNameArabic(number).contains(query) ||
+            _normalizeArabicSearch(getSurahNameArabic(number)).contains(query) ||
             '$number'.contains(query))
         .toList();
 
