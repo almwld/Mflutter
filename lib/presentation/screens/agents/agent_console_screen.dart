@@ -10,6 +10,7 @@ import '../../../services/agent_knowledge_service.dart';
 import '../../../services/nucleus_service.dart';
 import '../../providers/agent_chat_provider.dart';
 import '../../../services/external_asset_service.dart';
+import '../nucleus_screen.dart';
 
 class AgentConsoleScreen extends StatelessWidget {
   const AgentConsoleScreen({super.key});
@@ -363,6 +364,23 @@ class _WorkspaceHero extends StatelessWidget {
                   fontSize: 11,
                 ),
               ),
+              if (initialized && !modelLoaded && initializationError == null)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NucleusScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.memory_rounded, size: 16),
+                    label: const Text('فتح النواة وتحميل نموذج محلي'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryGold,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
+                ),
               if (initializationError != null) ...[
                 const SizedBox(height: 4),
                 Text(
