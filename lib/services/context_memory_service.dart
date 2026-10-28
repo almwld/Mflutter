@@ -54,9 +54,17 @@ class ContextMemoryService {
   }
 
   static void remember(String question, String response, String topic) {
-    _memory.add({'question': question, 'response': response, 'topic': topic, 'timestamp': DateTime.now()});
-    _topicFrequency[topic] = (_topicFrequency[topic] ?? 0) + 1;
-    _recentQuestions.add(question);
+    final savedQuestion = question.length > 500 ? question.substring(0, 500) : question;
+    final savedResponse = response.length > 3000 ? response.substring(0, 3000) : response;
+    final savedTopic = topic.length > 80 ? topic.substring(0, 80) : topic;
+    _memory.add({
+      'question': savedQuestion,
+      'response': savedResponse,
+      'topic': savedTopic,
+      'timestamp': DateTime.now(),
+    });
+    _topicFrequency[savedTopic] = (_topicFrequency[savedTopic] ?? 0) + 1;
+    _recentQuestions.add(savedQuestion);
     if (_recentQuestions.length > 20) _recentQuestions.removeAt(0);
     while (_memory.length > 100) {
       final removed = _memory.removeAt(0);
