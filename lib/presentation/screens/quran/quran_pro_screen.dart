@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show FontFeature;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
@@ -12,7 +13,6 @@ import '../../../services/quran_source_corrections.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran_wave_text.dart';
-import 'dart:ui' show FontFeature;
 
 enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
 
