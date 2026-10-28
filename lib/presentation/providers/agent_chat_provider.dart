@@ -323,7 +323,10 @@ class AgentChatProvider extends ChangeNotifier {
         add(id);
       }
     }
-    if (RegExp(r'جمل|عدد|حساب|قيمه').hasMatch(normalized)) add('jummal');
+    if (RegExp(r'جمل|ابجد').hasMatch(normalized)) add('jummal');
+    if (RegExp(r'عدد|تكرار|مره|كم|احصاء|كلمه').hasMatch(normalized)) {
+      add('adadi');
+    }
     if (RegExp(r'ذاكرة|سابق|تذكر|ملاحظة|دفتر').hasMatch(normalized)) add('memory');
     add('overthinker');
     add('loop_engineering');
@@ -421,6 +424,34 @@ class AgentChatProvider extends ChangeNotifier {
             'ولا يجيز نسبة نص غير موثق إلى القرآن.';
         return hits.map((v) =>
             '${v['surah']} ${v['ayah']}: ${v['text']}').join('\n');
+      case 'adadi':
+        final normalizedQuery = QuranicSearchEngine.normalize(query);
+        final frequencies = QuranicSearchEngine.getWordFrequency();
+        const ignoredTerms = <String>{
+          'كم', 'مره', 'عدد', 'تكرار', 'احصاء', 'احصائي', 'كلمه', 'كلمات',
+          'القران', 'في', 'من', 'عن', 'هو', 'هي', 'ما', 'ورد', 'وردت',
+          'مرات', 'احسب', 'احص', 'لي', 'هل', 'كل', 'الذي', 'التي',
+        };
+        final candidates = normalizedQuery
+            .split(' ')
+            .where((term) => term.length >= 2 && !ignoredTerms.contains(term))
+            .toSet();
+        final matched = candidates
+            .where(frequencies.containsKey)
+            .toList(growable: false);
+        if (matched.isEmpty) {
+          return 'لم أجد كلمة محددة قابلة للعدّ الحرفي في السؤال. '
+              'حدّد الكلمة المطلوبة، مثل: كم مرة وردت كلمة الله في القرآن؟ '
+              'لا يُقدَّم إجمالي كلمات المصحف من فهرس التكرار الجزئي.';
+        }
+        matched.sort((a, b) => a.compareTo(b));
+        final lines = matched.map((word) =>
+            '$word: ${frequencies[word]} تكرارًا في فهرس الكلمات المحلي');
+        return 'إحصاء حرفي للكلمات المطابقة بعد تطبيع البحث العربي '
+            '(إزالة التشكيل وتوحيد بعض صور الألف/الياء/التاء المربوطة):\\n'
+            '${lines.join('\\n')}\\n'
+            'المصدر: فهرس الآيات المحلي المبني من assets/quran_full.json. '
+            'هذا عدّ نصي وفق قواعد التطبيع المذكورة، وليس استنتاجًا تفسيريًا.';
       case 'jummal':
         return 'حساب أبجد للنص المدخل = ${_abjad(query)}. '
             'هذا حساب حرفي وفق جدول أبجد المضمّن، وليس استنتاجًا غيبيًا.';
