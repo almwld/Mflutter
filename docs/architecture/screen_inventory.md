@@ -424,3 +424,11 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/providers/training_provider.dart`: concurrent model initialization requests are coalesced; a missing or invalid starter checkpoint remains non-blocking for supervised training and can be explicitly retried later.
 - `lib/presentation/screens/training_screen.dart`: added a retry action for local classifier checkpoint loading, separate from the dataset-driven training action.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (classifier output consistency)
+
+- `lib/python/mudabbir_python_engine.dart`: the linear sparse classifier now supports a validated output-class count while preserving the default ten-class compatibility path for existing callers/checkpoints.
+- `lib/services/on_device_training_service.dart`: the three supported supervised labels train a three-output classifier instead of a ten-output head with seven unused categories.
+- `lib/presentation/screens/training_screen.dart`: prediction results map indices 0–2 to the three supported labels and safely handle missing/non-finite confidence values.
+- No tests, analyzer, formatter, or APK build were run.
