@@ -19,6 +19,7 @@ class NucleusScreen extends StatefulWidget {
 class _NucleusScreenState extends State<NucleusScreen>
     with SingleTickerProviderStateMixin {
   final NucleusService _core = NucleusService();
+  final TextEditingController _agentSearchController = TextEditingController();
   late final AnimationController _pulse;
   bool _working = false;
   String _agentQuery = '';
@@ -151,6 +152,7 @@ class _NucleusScreenState extends State<NucleusScreen>
   @override
   void dispose() {
     _core.removeListener(_refresh);
+    _agentSearchController.dispose();
     _pulse.dispose();
     super.dispose();
   }
@@ -296,6 +298,7 @@ class _NucleusScreenState extends State<NucleusScreen>
           _sectionTitle('خريطة سجل الوكلاء'),
           const SizedBox(height: 8),
           TextField(
+            controller: _agentSearchController,
             onChanged: (value) => setState(() => _agentQuery = value),
             textDirection: TextDirection.rtl,
             style: const TextStyle(color: Colors.white),
@@ -307,7 +310,10 @@ class _NucleusScreenState extends State<NucleusScreen>
                   ? null
                   : IconButton(
                       tooltip: 'مسح البحث',
-                      onPressed: () => setState(() => _agentQuery = ''),
+                      onPressed: () {
+                        _agentSearchController.clear();
+                        setState(() => _agentQuery = '');
+                      },
                       icon: const Icon(Icons.close_rounded, color: Colors.white70),
                     ),
               filled: true,
