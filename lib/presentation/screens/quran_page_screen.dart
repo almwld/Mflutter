@@ -28,6 +28,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   bool _loading = true;
   String? _loadError;
   int _fontSize = 22;
+  bool _chromeVisible = true;
   Set<int> _bookmarkedAyahs = <int>{};
   final ScrollController _scrollController = ScrollController();
 
@@ -140,7 +141,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
-      appBar: AppBar(
+      appBar: _chromeVisible ? AppBar(
         title: Text(
           widget.surahName,
           style: const TextStyle(color: AppColors.gold, fontFamily: 'Amiri'),
@@ -156,8 +157,11 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(16, 32).toInt()),
           ),
         ],
-      ),
-      body: _loading
+      ) : null,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onDoubleTap: () => setState(() => _chromeVisible = !_chromeVisible),
+        child: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _loadError != null
           ? Center(child: Padding(
@@ -274,6 +278,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                 },
               ),
             ),
+      ),
     );
   }
 }
