@@ -152,8 +152,16 @@ class _RecitationScreenState extends State<RecitationScreen> {
   }
 
   Future<void> _playNextAyah() async {
+    // A completion event can arrive close to a user stop/pause action. Do not
+    // advance the playlist after playback has been cancelled or paused.
     final index = _currentIndex;
-    if (index == null || !mounted) return;
+    if (index == null ||
+        !mounted ||
+        _stoppedByUser ||
+        !_playing ||
+        _paused) {
+      return;
+    }
     if (_currentAyah >= _surahs[index].ayahs) {
       setState(() { _playing = false; _paused = false; _loading = false; });
       return;
