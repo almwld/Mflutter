@@ -651,3 +651,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/multi_user_service.dart`: concurrent profile initialization requests now share one in-flight load, preventing competing default-profile writes or partially published active-profile state.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (optional Quran script assets)
+
+- `lib/presentation/screens/quran/quran_pro_screen.dart`: loading the canonical Arabic Quran no longer depends on successful loading of the optional standalone Musnad and hieroglyphic datasets. Each optional dataset failure is disclosed, and the reader falls back to its local display transformation instead of blocking all Quran reading or rendering empty verses.
+- No tests, analyzer, formatter, or APK build were run.
