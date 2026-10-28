@@ -6,6 +6,7 @@ import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
 import '../../services/daily_streak_service.dart';
 import '../../services/nucleus_service.dart';
+import '../../services/bookmark_service.dart';
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
 class QuranPageScreen extends StatefulWidget {
@@ -27,6 +28,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   bool _loading = true;
   String? _loadError;
   int _fontSize = 22;
+  Set<int> _bookmarkedAyahs = <int>{};
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -47,6 +49,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             : <dynamic>[];
         _loading = false;
       });
+      await _loadBookmarksForCurrentSurah();
       // Publish the actual selected Quran context to the shared nucleus.
       if (_verses.isNotEmpty) {
         final firstVerse = _verses.first;
@@ -74,6 +77,56 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         _loadError = 'تعذر تحميل بيانات المصحف المحلية: $e';
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _loadBookmarksForCurrentSurah() async {
+    try {
+      final saved = await BookmarkService.getBookmarks();
+      if (!mounted) return;
+      setState(() {
+        _bookmarkedAyahs = saved
+            .where((item) => (item['surah'] as num).toInt() == widget.surahNumber)
+            .map((item) => (item['ayah'] as num).toInt())
+            .toSet();
+      });
+    } catch (error) {
+      debugPrint('Could not load Quran bookmarks: $error');
+    }
+  }
+
+  Future<void> _toggleBookmark(int ayahNumber, String verseText) async {
+    final alreadySaved = _bookmarkedAyahs.contains(ayahNumber);
+    try {
+      if (alreadySaved) {
+        await BookmarkService.removeBookmark(widget.surahNumber, ayahNumber);
+      } else {
+        await BookmarkService.addBookmark(
+          widget.surahNumber,
+          ayahNumber,
+          verseText,
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        if (alreadySaved) {
+          _bookmarkedAyahs.remove(ayahNumber);
+        } else {
+          _bookmarkedAyahs.add(ayahNumber);
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            alreadySaved ? 'تمت إزالة العلامة المحفوظة' : 'تم حفظ الآية في علامات المصحف',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تحديث العلامة: $error')),
+      );
     }
   }
 
@@ -172,23 +225,48 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 6),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.gold, Color(0xFFB8860B)],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              tooltip: _bookmarkedAyahs.contains(ayahNum)
+                                  ? 'إزالة العلامة المحفوظة'
+                                  : 'حفظ الآية',
+                              onPressed: () => _toggleBookmark(
+                                ayahNum,
+                                text.toString(),
+                              ),
+                              icon: Icon(
+                                _bookmarkedAyahs.contains(ayahNum)
+                                    ? Icons.bookmark_rounded
+                                    : Icons.bookmark_add_outlined,
+                                color: AppColors.gold,
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '﴿$ayahNum﴾',
-                            style: const TextStyle(
-                              color: AppColors.primaryNavy,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    AppColors.gold,
+                                    Color(0xFFB8860B),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '﴿$ayahNum﴾',
+                                style: const TextStyle(
+                                  color: AppColors.primaryNavy,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
