@@ -35,6 +35,12 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   Future<void> _loadCorpus() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
@@ -116,7 +122,23 @@ class _CompareScreenState extends State<CompareScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null && _ayahs.isEmpty
-              ? _message(_error!, isError: true)
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _message(_error!, isError: true),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _loadCorpus,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('إعادة تحميل مصدر القرآن'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
