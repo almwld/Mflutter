@@ -5,6 +5,7 @@ import 'chat/chat_screen.dart';
 import 'advanced_search_screen.dart';
 import 'quran_word_explorer_screen.dart';
 import 'favorites_screen.dart';
+import 'quran_bookmarks_screen.dart';
 import 'great_verses_screen.dart';
 import 'stats_screen.dart';
 import 'agents/agents_screen.dart';
@@ -241,6 +242,7 @@ class _MushafHome extends StatelessWidget {
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
+      ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
     ];
     return SizedBox(

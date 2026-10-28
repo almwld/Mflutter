@@ -100,7 +100,7 @@ The current tree contains these screen-like files:
 
 ### 6. The target bookmark screen is not obvious in the filename inventory
 
-No file named `quran_bookmarks_screen.dart` appears in the inspected candidate list. Before creating a new screen, inspect existing favorites/bookmark/progress services to avoid duplicate storage and overlapping functionality.
+A dedicated `quran_bookmarks_screen.dart` adapter now reuses `FavoritesScreen` and the existing `BookmarkService`; it does not create a second bookmark store.
 
 ## Existing validation assets
 
@@ -166,7 +166,7 @@ The changes have been committed to the audit branch. CI and local Flutter comman
 | 5 | SurahIndexScreen | `lib/presentation/screens/surah_index_screen.dart` |
 | 6 | QuranPageScreen | `lib/presentation/screens/quran_page_screen.dart` |
 | 7 | RecitationScreen | `lib/presentation/screens/recitation_screen.dart` |
-| 8 | QuranBookmarksScreen | No dedicated file found in the inspected filename inventory; `FavoritesScreen` exists but must not be assumed equivalent without reviewing its data model |
+| 8 | QuranBookmarksScreen | `lib/presentation/screens/quran_bookmarks_screen.dart`; presentation adapter over the existing `FavoritesScreen` and `BookmarkService`, so bookmark persistence is shared rather than duplicated |
 | 9 | AbjadScreen | `lib/presentation/screens/abjad_screen.dart` |
 | 10 | MiraclesScreen | `lib/presentation/screens/miracles_screen.dart`; now backed by local, reproducible word-count calculations |
 | 11 | StatsScreen | `lib/presentation/screens/stats_screen.dart` |
@@ -183,7 +183,7 @@ The changes have been committed to the audit branch. CI and local Flutter comman
 | 22 | HelpScreen | `lib/presentation/screens/help_screen.dart` |
 | 23 | AboutScreen | `lib/presentation/screens/about_screen.dart` |
 
-This is a file-to-target mapping, not a claim that every target has passed behavioral testing. The dedicated Quran bookmarks screen remains an explicit gap until the existing favorites/bookmark storage is inspected.
+This is a file-to-target mapping, not a claim that every target has passed behavioral testing. The dedicated Quran bookmarks route now reuses the existing bookmark storage and is listed in the More screen; behavior is covered by the More screen navigation test.
 
 ### Navigation consolidation change
 

@@ -6,7 +6,9 @@ import 'quran/mushaf_screen.dart';
 
 /// قائمة العلامات المحفوظة، مع فتح الآية في صفحة المصحف الصحيحة.
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  final String title;
+
+  const FavoritesScreen({super.key, this.title = 'المفضلة'});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -76,7 +78,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('المفضلة'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             tooltip: 'تحديث المفضلة',
