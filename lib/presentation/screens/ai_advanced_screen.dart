@@ -5,6 +5,8 @@ import '../../services/local_embeddings_service.dart';
 import '../../services/tafsir_generator_service.dart';
 import '../../services/quranic_search_engine.dart';
 import '../../services/quran_loader_service.dart';
+import '../../services/mushaf_source.dart';
+import 'quran/mushaf_screen.dart';
 
 class AIAdvancedScreen extends StatefulWidget {
   const AIAdvancedScreen({super.key});
@@ -64,6 +66,31 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
         _indexError = 'تعذر تجهيز فهرس القرآن المحلي: $error';
       });
     }
+  }
+
+  void _openResult(LocalSearchResult result) {
+    final parts = result.id.split(':');
+    if (parts.length != 2) {
+      setState(() => _searchError = 'تعذر فتح النتيجة: مرجع الآية غير صالح.');
+      return;
+    }
+    final surah = int.tryParse(parts[0]);
+    final ayah = int.tryParse(parts[1]);
+    if (surah == null || ayah == null || surah < 1 || surah > 114 || ayah < 1) {
+      setState(() => _searchError = 'تعذر فتح النتيجة: مرجع الآية غير صالح.');
+      return;
+    }
+    final page = MushafSource.pageForVerse(surah, ayah);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: surah,
+          initialAyah: ayah,
+          restoreLastPage: false,
+        ),
+      ),
+    );
   }
 
   void _search() {
@@ -188,6 +215,8 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                         textDirection: TextDirection.rtl,
                         style: const TextStyle(color: AppColors.primaryGold, fontSize: 12),
                       ),
+                      onTap: () => _openResult(result),
+                      trailing: const Icon(Icons.open_in_new_rounded, color: AppColors.primaryGold),
                     ),
                   ),
                 ],
