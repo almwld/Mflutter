@@ -583,3 +583,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranIndexScreen` now renders an explicit no-match state when the surah search returns zero results instead of an empty list area.
+
+
+## UI continuation — 2026-10-29 (P2P advertising failure path)
+
+- `lib/presentation/screens/sovereign_hub_screen.dart`: starting nearby-device advertising now catches plugin/permission exceptions and displays the failure in the hub status area instead of leaking an asynchronous UI error.
+- No tests, analyzer, formatter, or APK build were run.
