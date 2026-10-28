@@ -85,39 +85,20 @@ class _QuranProScreenState extends State<QuranProScreen> {
 
   Future<void> _loadQuran() async {
     try {
-      // The canonical Arabic Quran asset is required; experimental script
-      // datasets are optional and must never block ordinary Quran reading.
+      // Only the canonical Arabic Quran asset is required to open the reader.
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final decoded = jsonDecode(jsonStr);
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('صيغة بيانات المصحف غير صحيحة');
-      }
-
-      Map<String, List<Map<String, dynamic>>>? musnadQuran;
-      Map<String, List<Map<String, dynamic>>>? hieroglyphicQuran;
-      final variantWarnings = <String>[];
-      try {
-        musnadQuran = await MusnadQuranService.load();
-      } catch (error) {
-        variantWarnings.add('بيانات المسند غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
-        debugPrint('QuranProScreen: Musnad dataset unavailable: $error');
-      }
-      try {
-        hieroglyphicQuran = await HieroglyphicQuranService.load();
-      } catch (error) {
-        variantWarnings.add('بيانات الهيروغليفي غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
-        debugPrint('QuranProScreen: hieroglyphic dataset unavailable: $error');
       }
       if (!mounted) return;
       setState(() {
         _quran = QuranSourceCorrections.correctQuranMap(
           Map<String, dynamic>.from(decoded),
         );
-        _musnadQuran = musnadQuran;
-        _hieroglyphicQuran = hieroglyphicQuran;
-        _variantWarning = variantWarnings.isEmpty ? null : variantWarnings.join(' ');
         _loading = false;
       });
+
       try {
         final preferences = await SharedPreferences.getInstance();
         final savedSurah =
@@ -127,6 +108,10 @@ class _QuranProScreenState extends State<QuranProScreen> {
         debugPrint('QuranProScreen: could not restore last surah: $error');
         _loadSurah(1);
       }
+
+      // Optional experimental scripts load after canonical reading is usable.
+      // The reader remains responsive while these separate datasets are parsed.
+      unawaited(_loadOptionalScriptDatasets());
     } catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -134,6 +119,30 @@ class _QuranProScreenState extends State<QuranProScreen> {
         SnackBar(content: Text('تعذر تحميل بيانات المصحف: $error')),
       );
     }
+  }
+
+  Future<void> _loadOptionalScriptDatasets() async {
+    Map<String, List<Map<String, dynamic>>>? musnadQuran;
+    Map<String, List<Map<String, dynamic>>>? hieroglyphicQuran;
+    final warnings = <String>[];
+    try {
+      musnadQuran = await MusnadQuranService.load();
+    } catch (error) {
+      warnings.add('بيانات المسند غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+      debugPrint('QuranProScreen: Musnad dataset unavailable: $error');
+    }
+    try {
+      hieroglyphicQuran = await HieroglyphicQuranService.load();
+    } catch (error) {
+      warnings.add('بيانات الهيروغليفي غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+      debugPrint('QuranProScreen: hieroglyphic dataset unavailable: $error');
+    }
+    if (!mounted) return;
+    setState(() {
+      _musnadQuran = musnadQuran;
+      _hieroglyphicQuran = hieroglyphicQuran;
+      _variantWarning = warnings.isEmpty ? null : warnings.join(' ');
+    });
   }
 
   void _loadSurah(int n) {
