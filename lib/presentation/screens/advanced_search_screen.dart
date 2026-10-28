@@ -88,7 +88,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
   }
 
   String _normalize(String value) => _normalizeDigits(value)
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'),
+        '',
+      )
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
