@@ -615,9 +615,12 @@ class AgentChatProvider extends ChangeNotifier {
             const <AgentStep>[];
         final withResults = prior.where((step) => (step.result ?? '').trim().isNotEmpty).length;
         final sources = _sourcesFromSteps(prior);
+        final verificationVerdict = sources.isEmpty
+            ? 'الحكم: اكتمال شكلي فقط؛ لا توجد إحالات مصدرية يمكن تتبعها.'
+            : 'الحكم: توجد إحالات مصدرية تحتاج مراجعة مقابل الأصول.';
         return 'التحقق المستقل: ${withResults} خطوة سابقة لديها مخرجات غير فارغة؛ '
             'المصادر المسجلة: ${sources.isEmpty ? 'لا توجد مصادر موثقة' : sources.join(', ')}. '
-            'هذا فحص اكتمال/مصدر، وليس حكمًا بصحة التفسير.';
+            '$verificationVerdict هذا فحص اكتمال ومصدر، وليس تصديقًا تلقائيًا على صحة الاستنتاج أو التفسير.';
       case 'tadrib':
         // The canonical Quran corpus is source material, not a user-labelled
         // supervised dataset. Never turn its metadata into training labels or
