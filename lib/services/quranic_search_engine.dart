@@ -69,8 +69,16 @@ class QuranicSearchEngine {
       }
     }
 
+    final sourceOrder = <String, int>{
+      for (var index = 0; index < _indexedVerses.length; index++)
+        '${_indexedVerses[index]['surah'] ?? ''}:${_indexedVerses[index]['ayah'] ?? ''}': index,
+    };
     final ids = scores.keys.toList()
-      ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
+      ..sort((a, b) {
+        final byScore = scores[b]!.compareTo(scores[a]!);
+        if (byScore != 0) return byScore;
+        return (sourceOrder[a] ?? 0).compareTo(sourceOrder[b] ?? 0);
+      });
     return ids.map((id) => versesById[id]!).toList(growable: false);
   }
 
