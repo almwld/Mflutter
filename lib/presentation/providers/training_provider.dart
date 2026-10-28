@@ -8,12 +8,15 @@ class TrainingProvider extends ChangeNotifier {
   final _engine = MudabbirPythonEngine();
   StreamSubscription<Map<String, dynamic>>? _subscription;
   bool _initialized = false;
+  bool _isInitializing = false;
   Future<void>? _initializing;
   String? _modelInitializationError;
 
   bool get isTraining => _trainingService.isTraining;
+  bool get isInitializing => _isInitializing;
   double get progress => _trainingService.progress;
   String get status {
+    if (_isInitializing) return 'جارٍ فحص أوزان المصنف المحلي...';
     if (_modelInitializationError != null &&
         !_engine.isInitialized &&
         _trainingService.status == 'جاهز') {
@@ -41,6 +44,8 @@ class TrainingProvider extends ChangeNotifier {
   }
 
   Future<void> _initializeOnce() async {
+    _isInitializing = true;
+    notifyListeners();
     try {
       await _engine.initialize();
       _modelInitializationError = null;
@@ -50,6 +55,7 @@ class TrainingProvider extends ChangeNotifier {
       _modelInitializationError = error.toString();
     } finally {
       _initialized = true;
+      _isInitializing = false;
       notifyListeners();
     }
   }
