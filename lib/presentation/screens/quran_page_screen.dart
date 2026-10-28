@@ -106,7 +106,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
         }
       }
       // Count activity only when the requested surah contains real verse data.
-      if (rawVerses is List && rawVerses.isNotEmpty) {
+      if (correctedVerses.isNotEmpty) {
         try {
           await DailyStreakService.recordActivity();
         } catch (error) {
