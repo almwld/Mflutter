@@ -66,6 +66,9 @@ class _QuranProScreenState extends State<QuranProScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranProScreen: could not set initial system bars: $error');
+    });
     _restoreDisplayMode();
     _restoreReadingPreferences();
     _loadQuran();
@@ -278,6 +281,9 @@ class _QuranProScreenState extends State<QuranProScreen> {
   void dispose() {
     _autoScrollTimer?.cancel();
     _scroll.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranProScreen: could not restore system bars on dispose: $error');
+    });
     super.dispose();
   }
 
@@ -295,7 +301,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
       appBar: _chromeVisible ? _buildAppBar() : null,
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
-        onDoubleTap: () => setState(() => _chromeVisible = !_chromeVisible),
+        onDoubleTap: _toggleChrome,
         child: Column(
           children: [
             if (_chromeVisible) _buildModeBar(),
@@ -503,6 +509,18 @@ class _QuranProScreenState extends State<QuranProScreen> {
     }
   }
 
+  Future<void> _toggleChrome() async {
+    final show = !_chromeVisible;
+    if (mounted) setState(() => _chromeVisible = show);
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+      );
+    } catch (error) {
+      debugPrint('QuranProScreen: could not toggle system bars: $error');
+    }
+  }
+
   Future<void> _bookmarkSelectedAyah() async {
     final ayah = _selectedAyah;
     final text = _selectedAyahText;
@@ -694,13 +712,13 @@ class _QuranProScreenState extends State<QuranProScreen> {
             setState(() {
               _selectedAyah = verseNumber;
               _selectedAyahText = text.toString();
-              _chromeVisible = !_chromeVisible;
             });
             NucleusService().setQuranContext(
               surahNumber: _currentSurah,
               ayahNumber: verseNumber,
               verseText: text.toString(),
             );
+            unawaited(_toggleChrome());
           },
           onLongPress: () async {
             setState(() {
