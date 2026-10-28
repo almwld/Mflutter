@@ -205,3 +205,35 @@ Added `MudabbirDesignTokens` for the cosmic palette, spacing, and motion duratio
 ### Shared templates
 
 Added 12 reusable layout primitives in `lib/presentation/templates/mudabbir_templates.dart`: Dashboard, Reader, Chat, Library, Analytics, Graph, Player, Settings, Search, Profile, Lab, and Service Hub. They compose presentation only; feature screens retain ownership of state and services. `MiraclesScreen` now uses `AnalyticsTemplate`, and a widget smoke test covers all 12 templates.
+
+## Continued implementation — 2026-10-28
+
+This section records follow-up work added after the initial audit. It describes code changes only; it is not a statement that the application has been built or behaviorally validated.
+
+### Quran reader
+- QuranPro search compares normalized text while preserving the canonical verse string; it handles diacritics, Quranic annotation marks, tatweel, common alef/hamza variants, ta marbuta/alef maqsura, and Arabic/Persian digits.
+- Selecting a verse updates the existing `NucleusService` context with original source text. Long-press copies that original text rather than transformed display glyphs.
+- Double tap toggles reading chrome in QuranPro, the canonical surah reader, and the fixed-layout variant reader.
+- The canonical surah reader persists its selected font size locally.
+- Removed an unused repeating ticker that rebuilt every QuranPro verse row without changing its appearance.
+
+### Fixed-layout Mushaf performance
+- Parsed page layouts are cached by page number.
+- Concurrent page requests share a single in-flight layout-asset load; a failed load is not permanently cached.
+- Verse word tokenization is cached within each page parse so multiple word-location records from the same verse do not repeatedly resolve and split the same verse text.
+
+### Agent execution and recovery
+- Explicit agent selection constrains the route to planning/safety, the selected specialist, and critic/verifier steps instead of silently running the full default pipeline.
+- Concurrent screen initialization and task submission share one in-flight Quran/knowledge initialization.
+- A deterministic local word-frequency agent reports exact normalized token counts only when a specific indexed word is found. It discloses normalization and does not claim a partial index is the total Quran word count.
+- Cancellation has an explicit step status and preserves the latest task snapshot. Pause is described as cooperative and takes effect at a step boundary; the UI does not claim that an in-progress native inference was suspended.
+- Failed/cancelled tasks can be retried, task JSON can be copied from the console, and the visible conversation can be cleared without deleting persisted memory runs or vault notes.
+- A history persistence error after successful task completion is reported separately and does not rewrite the completed task as failed.
+
+### Navigation follow-up
+- Removed a duplicate Quran-bookmarks quick action.
+- Added Quran bookmarks to the searchable More directory and normalized Arabic variants during its search.
+- The Quran index search now normalizes Arabic/Persian digits and common Arabic orthographic variants.
+
+### Validation policy for this continuation
+Per the user's explicit instruction, tests and builds were not run for these follow-up changes. Do not infer buildability, runtime correctness, or release readiness from the existence of commits alone.
