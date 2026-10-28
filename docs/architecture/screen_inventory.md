@@ -895,3 +895,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Daily-verse rotation now derives the date from the actual UTC instant before day arithmetic, making the same calendar-day selection independent of the device time zone.
+
+
+- The shared `QuranicSearchEngine` now strips the same extended Arabic/Quranic mark range as the other local search services, improving query consistency across agent retrieval and Quran search without altering stored verses.
