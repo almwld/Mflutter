@@ -287,7 +287,8 @@ class AgentChatProvider extends ChangeNotifier {
     if (current == null || current.id != task.id) return;
     final now = DateTime.now();
     final steps = current.steps.map((step) {
-      if (step.status != StepStatus.running &&
+      if (step.status != StepStatus.pending &&
+          step.status != StepStatus.running &&
           step.status != StepStatus.paused) {
         return step;
       }
