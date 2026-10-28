@@ -167,7 +167,7 @@ class ElementsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'الروابط بين العناصر',
+            'روابط تصورية في بعض الموروثات',
             style: TextStyle(
               fontFamily: 'Amiri',
               fontSize: 20,
@@ -176,11 +176,17 @@ class ElementsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.paddingSmall),
+          const Text(
+            'تختلف هذه العلاقات باختلاف النظام التراثي، وهي ليست نموذجًا علميًا حديثًا.',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5),
+          ),
+          const SizedBox(height: AppDimensions.paddingSmall),
           _buildRelationRow('النار', 'تجفف', 'الماء'),
           _buildRelationRow('الماء', 'يُطفئ', 'النار'),
           _buildRelationRow('التراب', 'يُحيط', 'الماء'),
           _buildRelationRow('الهواء', 'يُحيط', 'النار'),
-          _buildRelationRow('الروح', 'يُحيي', 'everything'),
+          _buildRelationRow('الروح', 'يُرمز بها إلى', 'الحياة'),
         ],
       ),
     );
