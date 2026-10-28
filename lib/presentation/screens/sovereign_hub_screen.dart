@@ -106,29 +106,44 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
 
   Future<void> _connectPeer(String endpointId, String deviceName) async {
     setState(() => _status = 'جار إرسال طلب الاتصال إلى $deviceName…');
-    final accepted = await _mesh.connect(endpointId);
-    if (!mounted) return;
-    setState(() {
-      _status = accepted
-          ? 'أُرسل طلب الاتصال إلى $deviceName؛ انتظر نتيجة الاتصال من الجهاز الآخر.'
-          : 'تعذر إرسال طلب الاتصال إلى $deviceName.';
-    });
+    try {
+      final accepted = await _mesh.connect(endpointId);
+      if (!mounted) return;
+      setState(() {
+        _status = accepted
+            ? 'أُرسل طلب الاتصال إلى $deviceName؛ انتظر نتيجة الاتصال من الجهاز الآخر.'
+            : 'تعذر إرسال طلب الاتصال إلى $deviceName.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = 'فشل طلب الاتصال إلى $deviceName: $error');
+    }
   }
 
   Future<void> _acceptPeer(String endpointId, String name) async {
-    final accepted = await _mesh.acceptPendingConnection(endpointId);
-    if (!mounted) return;
-    setState(() => _status = accepted
-        ? 'تمت الموافقة محليًا على $name؛ يكتمل الاتصال بعد موافقة الطرف الآخر.'
-        : 'تعذر قبول طلب الاتصال من $name.');
+    try {
+      final accepted = await _mesh.acceptPendingConnection(endpointId);
+      if (!mounted) return;
+      setState(() => _status = accepted
+          ? 'تمت الموافقة محليًا على $name؛ يكتمل الاتصال بعد موافقة الطرف الآخر.'
+          : 'تعذر قبول طلب الاتصال من $name.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = 'فشل قبول طلب الاتصال من $name: $error');
+    }
   }
 
   Future<void> _rejectPeer(String endpointId, String name) async {
-    final rejected = await _mesh.rejectPendingConnection(endpointId);
-    if (!mounted) return;
-    setState(() => _status = rejected
-        ? 'تم رفض طلب الاتصال من $name.'
-        : 'تعذر رفض طلب الاتصال من $name.');
+    try {
+      final rejected = await _mesh.rejectPendingConnection(endpointId);
+      if (!mounted) return;
+      setState(() => _status = rejected
+          ? 'تم رفض طلب الاتصال من $name.'
+          : 'تعذر رفض طلب الاتصال من $name.');
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = 'فشل رفض طلب الاتصال من $name: $error');
+    }
   }
 
   Future<void> _discoverIoT() async {
