@@ -102,7 +102,7 @@ class ChatProvider extends ChangeNotifier {
           ? 'لم يعثر البحث المحلي على شاهد قرآني مطابق. أجب عن السؤال العام إن أمكن، ولا تقتبس آية أو تنسب نصًا إلى القرآن دون شاهد موثق.'
           : hits
               .map((verse) =>
-                  '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/unified_quran.json')
+                  '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
               .join('\n');
 
       final verseContext = _core.currentVerseText;
