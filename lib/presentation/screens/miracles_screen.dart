@@ -5,6 +5,8 @@ import '../widgets/common/mudabbir_glass_panel.dart';
 import '../templates/mudabbir_templates.dart';
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../services/quran_numerical_analysis_service.dart';
+import '../../services/mushaf_source.dart';
+import 'quran/mushaf_screen.dart';
 
 class MiraclesScreen extends StatefulWidget {
   const MiraclesScreen({super.key});
@@ -68,6 +70,23 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
 
   void _search(String value) {
     setState(() => _query = value.trim());
+  }
+
+  void _openOccurrence(QuranWordOccurrence occurrence) {
+    final page = MushafSource.pageForVerse(
+      occurrence.surahNumber,
+      occurrence.ayahNumber,
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: occurrence.surahNumber,
+          initialAyah: occurrence.ayahNumber,
+          restoreLastPage: false,
+        ),
+      ),
+    );
   }
 
   @override
@@ -409,14 +428,20 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              SelectableText(
-                verseReferences,
-                textDirection: TextDirection.ltr,
-                textAlign: TextAlign.right,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  height: 1.7,
-                ),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                alignment: WrapAlignment.end,
+                children: occurrences.take(12).map((occurrence) {
+                  final label = occurrence.count > 1
+                      ? '${occurrence.surahNumber}:${occurrence.ayahNumber} ×${occurrence.count}'
+                      : '${occurrence.surahNumber}:${occurrence.ayahNumber}';
+                  return ActionChip(
+                    label: Text(label, textDirection: TextDirection.ltr),
+                    avatar: const Icon(Icons.menu_book_rounded, size: 16),
+                    onPressed: () => _openOccurrence(occurrence),
+                  );
+                }).toList(growable: false),
               ),
               if (occurrences.length > 12)
                 Text(
