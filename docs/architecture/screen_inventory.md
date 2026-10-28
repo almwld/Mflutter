@@ -520,3 +520,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/multi_user_service.dart`: the active local profile is restored from persisted preferences rather than always resetting to profile zero. Profile switching now updates in-memory state only after the active index is saved; adding profiles and awarding XP persist candidate state before publishing it, report storage failures, and bound the profile count/name length.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local AI search navigation)
+
+- `lib/presentation/screens/ai_advanced_screen.dart`: local TF-IDF search results are now actionable and open the exact verse in the canonical Mushaf with verse context/highlight, rather than leaving results as read-only snippets.
+- No tests, analyzer, formatter, or APK build were run.
