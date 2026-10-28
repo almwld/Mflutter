@@ -62,7 +62,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                     _panel(
                       title: 'شخصية المساعد', icon: Icons.tune_rounded,
                       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        const Text('اختر نمط التنسيق المستخدم في ردود الخدمة الحالية. هذا الخيار لا يغيّر أوزان النموذج المحلي ولا يضمن تغيير أسلوب توليد GGUF ما لم يستهلكه مسار المحادثة.', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.white70)),
+                        const Text('اختر شخصية المساعد. يستهلك مسار المحادثة هذا الاختيار عند بناء تعليمات التوليد المحلي؛ وهو يغيّر أسلوب الطلب ولا يغيّر أوزان النموذج.', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.white70)),
                         const SizedBox(height: 12),
                         Wrap(spacing: 8, runSpacing: 8, children: AIPersonalityService.personalityNames.map((name) {
                           final config = AIPersonalityService.getPersonalityConfig(name);
@@ -71,7 +71,17 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                             label: Text((config['name'] ?? name) + ' — ' + (config['style'] ?? '')),
                             selected: selected, selectedColor: AppColors.primaryGold, backgroundColor: AppColors.background,
                             labelStyle: TextStyle(color: selected ? AppColors.primaryNavy : Colors.white),
-                            onSelected: (_) { AIPersonalityService.switchPersonality(name); setState(() {}); },
+                            onSelected: (_) async {
+                            try {
+                              await AIPersonalityService.setPersonality(name);
+                              if (mounted) setState(() {});
+                            } catch (error) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('تعذر حفظ الشخصية على الجهاز: $error')),
+                              );
+                            }
+                          },
                           );
                         }).toList(growable: false)),
                         const SizedBox(height: 8),
@@ -86,7 +96,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                         Text(ContextMemoryService.getContextSummary(), textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70)),
                         const SizedBox(height: 6),
-                        const Text('تعكس هذه الأرقام الذاكرة المتاحة للخدمة في جلسة التشغيل الحالية؛ لا تُعرض على أنها سجل دائم بين مرات تشغيل التطبيق.', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.white54, fontSize: 12)),
+                        const Text('تُحفظ الأسئلة محليًا على الجهاز وتُستعاد عند فتح التطبيق؛ قد لا تُحفظ آخر إضافة إذا تعذرت الكتابة إلى التخزين.', textDirection: TextDirection.rtl, style: TextStyle(color: Colors.white54, fontSize: 12)),
                         if (ContextMemoryService.getRecentQuestions().isNotEmpty) ...[
                           const SizedBox(height: 12),
                           const Text('الأسئلة الأخيرة', textDirection: TextDirection.rtl, style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
