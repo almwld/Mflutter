@@ -774,3 +774,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/dream_journal_service.dart` and `lib/presentation/screens/cosmic_services_screen.dart` now share one schema and storage key for the local dream journal. The screen delegates loading and writes to the service; records remain bounded and validated, and no guessed Quran verse or dream interpretation is attached.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `TimeCapsuleService.sealCapsule` rejects unlock timestamps that are not in the future, so callers cannot create a capsule that is already unlocked by construction.
