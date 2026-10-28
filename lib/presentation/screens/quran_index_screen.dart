@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
 import 'quran/mushaf_variant_screen.dart';
@@ -15,6 +16,28 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
   final TextEditingController _search = TextEditingController();
   String _query = '';
   int _tab = 0;
+  int? _lastVariantPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreLastVariantPage();
+  }
+
+  Future<void> _restoreLastVariantPage() async {
+    final preferences = await SharedPreferences.getInstance();
+    final page = preferences.getInt('mudabbir_mushaf_variant_last_page');
+    if (!mounted || page == null) return;
+    setState(() => _lastVariantPage = MushafSource.normalizePage(page));
+  }
+
+  Future<void> _openVariantPage(int page) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => MushafVariantScreen(initialPage: page)),
+    );
+    await _restoreLastVariantPage();
+  }
 
   static const _background = Color(0xFF0B0D12);
   static const _surface = Color(0xFF15181F);
@@ -66,6 +89,25 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
             onSelectionChanged: (value) => setState(() => _tab = value.first),
           ),
         ),
+        if (_lastVariantPage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _openVariantPage(_lastVariantPage!),
+                icon: const Icon(Icons.play_arrow_rounded, color: _gold),
+                label: Text(
+                  'متابعة القراءة — صفحة $_lastVariantPage',
+                  style: const TextStyle(fontFamily: 'Amiri', color: _gold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF665226)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ),
         if (_tab == 0)
           Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -120,8 +162,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               color: _surface, borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
-                onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => MushafVariantScreen(initialPage: page))),
+                onTap: () => _openVariantPage(page),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(textDirection: TextDirection.rtl, children: [
@@ -171,9 +212,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => MushafVariantScreen(initialPage: page),
-                      )),
+                      onTap: () => _openVariantPage(page),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: const Color(0xFF1D1A13),
