@@ -33,8 +33,11 @@ class MultiUserService {
         if (decoded is List) {
           _profiles = decoded
               .whereType<Map>()
-              .map((p) => Map<String, dynamic>.from(p))
-              .toList();
+              .take(20)
+              .map((profile) => _normalizeProfile(
+                    Map<String, dynamic>.from(profile),
+                  ))
+              .toList(growable: true);
         }
       } catch (_) {
         _profiles = [];
@@ -110,6 +113,32 @@ class MultiUserService {
     if (!await prefs.setString(_storageKey, jsonEncode(profiles ?? _profiles))) {
       throw StateError('تعذر حفظ الملفات المحلية.');
     }
+  }
+
+  static Map<String, dynamic> _normalizeProfile(
+    Map<String, dynamic> raw,
+  ) {
+    final rawName = raw['name'];
+    final name = rawName is String && rawName.trim().isNotEmpty
+        ? rawName.trim()
+        : 'ملف محلي';
+    final rawAvatar = raw['avatar'];
+    final rawLevel = raw['level'];
+    final rawXp = raw['xp'];
+    final rawCreatedAt = raw['createdAt'];
+    final parsedDate = rawCreatedAt is String
+        ? DateTime.tryParse(rawCreatedAt)
+        : null;
+    return <String, dynamic>{
+      'name': name.length > 60 ? name.substring(0, 60) : name,
+      'avatar': rawAvatar is String
+          ? (rawAvatar.length > 32 ? rawAvatar.substring(0, 32) : rawAvatar)
+          : '',
+      'level': rawLevel is num ? rawLevel.toInt().clamp(1, 100000) : 1,
+      'xp': rawXp is num ? rawXp.toInt().clamp(0, 0x7fffffff) : 0,
+      'createdAt': parsedDate?.toIso8601String() ??
+          DateTime.now().toIso8601String(),
+    };
   }
 
   static Map<String, dynamic> _defaultProfile() => {
