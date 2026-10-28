@@ -285,7 +285,7 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'الضبط الدقيق متوقف حتى توفير مجموعة بيانات موسومة ومحرك تدريب حقيقي متوافق. لا يتم احتساب تدريب أو خسارة وهمية.',
+                    'لا يتوفر تدريب دقيق لأوزان GGUF/Qwen من هذه الشاشة. توجد شاشة مستقلة لتدريب مصنف خطي محلي على بيانات موسومة؛ ولا يُحتسب ذلك تدريبًا للنموذج اللغوي.',
                     textAlign: TextAlign.right,
                     style: TextStyle(color: Colors.white54, height: 1.5),
                   ),
