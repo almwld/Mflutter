@@ -819,3 +819,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Numerical corpus validation is now scoped to `analyzeAsset()`, which validates the actual bundled 114-surah asset before calculating. The reusable `analyzeJson()` entry point continues to support small supplied datasets for reproducible unit-level calculations instead of incorrectly requiring every caller to provide a full Mushaf.
+
+
+- Numerical analysis results now label their source accurately: bundled-asset calculations identify `assets/unified_quran.json`, while caller-supplied JSON defaults to `provided JSON`.
