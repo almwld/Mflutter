@@ -15,12 +15,14 @@ class P2PMeshService extends ChangeNotifier {
   final Nearby _nearby = Nearby();
   final Map<String, String> _peers = {};
   final Map<String, ConnectionInfo> _pendingConnections = {};
+  final Set<String> _connectedPeers = <String>{};
   bool _advertising = false;
   bool _discovering = false;
 
   Map<String, String> get peers => Map.unmodifiable(_peers);
   Map<String, ConnectionInfo> get pendingConnections =>
       Map.unmodifiable(_pendingConnections);
+  Set<String> get connectedPeers => Set.unmodifiable(_connectedPeers);
   bool get isAdvertising => _advertising;
   bool get isDiscovering => _discovering;
 
@@ -135,16 +137,18 @@ class P2PMeshService extends ChangeNotifier {
   void _handleConnectionResult(String endpointId, Status status) {
     if (status == Status.CONNECTED) {
       _peers[endpointId] = _peers[endpointId] ?? endpointId;
-      _pendingConnections.remove(endpointId);
+      _connectedPeers.add(endpointId);
     } else {
-      _pendingConnections.remove(endpointId);
+      _connectedPeers.remove(endpointId);
     }
+    _pendingConnections.remove(endpointId);
     notifyListeners();
   }
 
   void _handleDisconnected(String endpointId) {
     _peers.remove(endpointId);
     _pendingConnections.remove(endpointId);
+    _connectedPeers.remove(endpointId);
     notifyListeners();
   }
 
