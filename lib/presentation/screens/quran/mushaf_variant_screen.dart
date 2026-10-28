@@ -437,7 +437,7 @@ class _FixedMushafLine extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.clip,
               style: TextStyle(
-                fontFamily: 'Amiri',
+                fontFamily: FontManager.isRaqqSuraFontLoaded ? 'RaqqSura' : 'Amiri',
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: gold,
