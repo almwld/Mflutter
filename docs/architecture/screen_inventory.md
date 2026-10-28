@@ -870,3 +870,7 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The training import instructions now explicitly require examples for all three classifier classes, with at least two samples per class, matching the trainer's actual validation rather than implying absent classes are acceptable.
+
+
+- `GreatVersesScreen` now passes the selected surah and ayah as well as the page to the Mushaf, so opening a featured verse targets its exact reference instead of only its containing page.
+- `TrainingScreen` displays all three required classifier labels, including zero counts for missing classes, so dataset deficiencies are visible before training.
