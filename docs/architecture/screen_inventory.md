@@ -792,3 +792,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Time capsules now have a persisted deletion path in `TimeCapsuleService.removeCapsule` and a delete control in the capsule list. Users can free local capacity without clearing the entire store.
+
+
+- Legacy capsules without IDs now receive deterministic IDs derived from their content and unlock timestamp, so their delete controls continue to target the same record after a reload.
