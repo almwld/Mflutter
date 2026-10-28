@@ -114,6 +114,8 @@ class _QuranProScreenState extends State<QuranProScreen> {
     final verses = quran[n.toString()];
     setState(() {
       _currentSurah = n;
+      _selectedAyah = null;
+      _selectedAyahText = null;
       _currentVerses = verses is List ? List<dynamic>.from(verses) : <dynamic>[];
       _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
       _verseKeys.clear();
@@ -587,6 +589,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
                 ? (hieroglyphic ?? '')
                 : _transform(text);
         final verseNumber = i + 1;
+        final isSelected = _selectedAyah == verseNumber;
         final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
 
         return GestureDetector(
@@ -617,9 +620,14 @@ class _QuranProScreenState extends State<QuranProScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.03),
+              color: isSelected
+                  ? _goldColor.withOpacity(0.10)
+                  : Colors.white.withOpacity(0.03),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _goldColor.withOpacity(0.1)),
+              border: Border.all(
+                color: isSelected ? _goldColor.withOpacity(0.85) : _goldColor.withOpacity(0.1),
+                width: isSelected ? 1.4 : 1,
+              ),
               boxShadow: [
                 if (_showFrame)
                   BoxShadow(
