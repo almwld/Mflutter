@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../services/time_capsule_service.dart';
 import 'device/gaze_tracking_screen.dart';
 
 class CosmicServicesScreen extends StatefulWidget {
@@ -15,7 +16,6 @@ class CosmicServicesScreen extends StatefulWidget {
 
 class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   static const _dreamsKey = 'mudabbir_cosmic_dream_journal_v1';
-  static const _capsulesKey = 'mudabbir_cosmic_time_capsules_v1';
 
   List<Map<String, dynamic>> _dreams = [];
   List<Map<String, dynamic>> _capsules = [];
@@ -42,7 +42,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
       }
 
       final dreams = decode(preferences.getString(_dreamsKey));
-      final capsules = decode(preferences.getString(_capsulesKey));
+      final capsules = await TimeCapsuleService.getCapsules();
       if (!mounted) return;
       setState(() {
         _dreams = dreams;
@@ -84,20 +84,9 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   }
 
   Future<void> _saveCapsule(String text, DateTime unlockDate) async {
-    final entry = <String, dynamic>{
-      'id': DateTime.now().microsecondsSinceEpoch.toString(),
-      'createdAt': DateTime.now().toIso8601String(),
-      'unlockAt': DateTime(
-        unlockDate.year,
-        unlockDate.month,
-        unlockDate.day,
-      ).toIso8601String(),
-      'text': text.trim(),
-    };
-    final updated = [entry, ..._capsules];
     try {
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setString(_capsulesKey, jsonEncode(updated));
+      await TimeCapsuleService.sealCapsule(text.trim(), unlockDate);
+      final updated = await TimeCapsuleService.getCapsules();
       if (!mounted) return;
       setState(() {
         _capsules = updated;
