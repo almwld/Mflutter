@@ -30,6 +30,7 @@ class AgentChatProvider extends ChangeNotifier {
   AgentTask? get activeTask => _activeTask;
   List<String> get messages => List.unmodifiable(_messages);
   bool get paused => _paused;
+  bool get initialized => _initialized;
   String? get selectedAgent => _selectedAgent;
   int get agentCount => AgentRegistry.all.length;
   int get indexedDocumentCount => _knowledge.documentCount;
