@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:nearby_connections/nearby_connections.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// Local Nearby Connections lifecycle. Every connection request requires
 /// explicit approval and allows the user to compare the authentication token
@@ -26,11 +27,36 @@ class P2PMeshService extends ChangeNotifier {
   bool get isAdvertising => _advertising;
   bool get isDiscovering => _discovering;
 
+  Future<bool> _ensureNearbyPermissions() async {
+    final statuses = await <Permission>[
+      Permission.locationWhenInUse,
+      Permission.bluetooth,
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.bluetoothAdvertise,
+    ].request();
+
+    final legacyBluetooth = statuses[Permission.bluetooth]?.isGranted == true;
+    final scan = statuses[Permission.bluetoothScan]?.isGranted == true;
+    final connect = statuses[Permission.bluetoothConnect]?.isGranted == true;
+    final advertise = statuses[Permission.bluetoothAdvertise]?.isGranted == true;
+    final location = statuses[Permission.locationWhenInUse]?.isGranted == true;
+    return (scan || legacyBluetooth) &&
+        (connect || legacyBluetooth) &&
+        (advertise || legacyBluetooth) &&
+        location;
+  }
+
   Future<bool> advertise({
     required String deviceName,
     String serviceId = 'com.mudabbir.alasrar.mesh',
   }) async {
     try {
+      if (!await _ensureNearbyPermissions()) {
+        _advertising = false;
+        notifyListeners();
+        return false;
+      }
       final ok = await _nearby.startAdvertising(
         deviceName,
         Strategy.P2P_CLUSTER,
@@ -53,6 +79,11 @@ class P2PMeshService extends ChangeNotifier {
     String serviceId = 'com.mudabbir.alasrar.mesh',
   }) async {
     try {
+      if (!await _ensureNearbyPermissions()) {
+        _discovering = false;
+        notifyListeners();
+        return false;
+      }
       final ok = await _nearby.startDiscovery(
         serviceId,
         Strategy.P2P_CLUSTER,
@@ -77,6 +108,7 @@ class P2PMeshService extends ChangeNotifier {
 
   Future<bool> connect(String endpointId) async {
     try {
+      if (!await _ensureNearbyPermissions()) return false;
       return await _nearby.requestConnection(
         'مُدَبِّر',
         endpointId,
