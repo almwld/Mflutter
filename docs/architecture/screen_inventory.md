@@ -777,3 +777,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `TimeCapsuleService.sealCapsule` rejects unlock timestamps that are not in the future, so callers cannot create a capsule that is already unlocked by construction.
+
+
+- Time-capsule migration now uses a dedicated legacy-import path that retains previously saved capsules whose unlock date has already passed, while the normal creation path still requires a future unlock date. Migration remains idempotent and preserves the old key if import fails.
