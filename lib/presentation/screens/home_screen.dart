@@ -44,6 +44,7 @@ import 'challenges_screen.dart';
 import 'leaderboard_screen.dart';
 import 'planets_screen.dart';
 import 'letters_screen.dart';
+import 'advanced_tech_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -242,6 +243,7 @@ class _MushafHome extends StatelessWidget {
       ('الفهرس', Icons.list_alt_rounded, const QuranIndexScreen()),
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
+      ('مستكشف كلمات القرآن', Icons.manage_search_rounded, const QuranWordExplorerScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
       ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
@@ -514,9 +516,14 @@ class _MoreScreenState extends State<MoreScreen> {
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
       ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
       ('القرآن بأنماط الخط', Icons.auto_stories_rounded, const QuranProScreen()),
+      ('تقنيات متقدمة', Icons.science_outlined, const AdvancedTechScreen()),
       ('فهرس السور', Icons.list_alt_rounded, const SurahIndexScreen()),
       ('صفحة المصحف', Icons.menu_book_outlined, const QuranPageScreen(surahNumber: 1, surahName: 'الفاتحة')),
       ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
+      ('تحليل أبجد', Icons.functions_rounded, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadScreen())),
+      ('العناصر الرمزية', Icons.category_outlined, const ElementsScreen()),
+      ('الأعداد الرمزية', Icons.pin_outlined, const NumbersScreen()),
+      ('الأبراج الرمزية', Icons.public_outlined, const ZodiacScreen()),
       ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
       ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
