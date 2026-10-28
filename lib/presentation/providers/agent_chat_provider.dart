@@ -261,7 +261,13 @@ class AgentChatProvider extends ChangeNotifier {
         // separately while preserving the actual result and task status.
         _messages.add('تنبيه: اكتملت المهمة، لكن تعذر حفظ سجلها محليًا: $memoryError');
       }
-      await AchievementsService.recordCompletedInsight();
+      try {
+        await AchievementsService.recordCompletedInsight();
+      } catch (achievementError) {
+        // Optional achievement bookkeeping must not turn a successful local
+        // retrieval/inference run into a failed task.
+        _messages.add('تنبيه: اكتملت المهمة، لكن تعذر تحديث سجل الإنجازات المحلي: $achievementError');
+      }
       _notifySafely();
     } catch (error) {
       // Cancellation wins over an initialization/generation error. A native
