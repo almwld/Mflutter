@@ -617,3 +617,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Successful subsequent theme persistence now clears a previously displayed storage warning and notifies settings listeners, so recovered storage state is reflected in the UI.
+
+
+## UI continuation — 2026-10-29 (gaze calibration persistence)
+
+- `lib/services/gaze_fusion_service.dart`: calibration parameters become active in memory only after all preference writes succeed; partial writes trigger best-effort cleanup and an explicit failure. Reset clears persisted values before resetting active calibration state.
+- `lib/presentation/screens/device/gaze_tracking_screen.dart`: calibration-reset persistence failures are shown to the user instead of escaping from the button callback.
+- No tests, analyzer, formatter, or APK build were run.
