@@ -649,12 +649,22 @@ class AgentChatProvider extends ChangeNotifier {
     final evidence = results.join('\n\n');
     final nucleus = NucleusService();
     final verseContext = nucleus.currentVerseText;
-    final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+    final hasVerseContext =
+        verseContext != null && verseContext.trim().isNotEmpty;
+    final verseSource = hasVerseContext &&
+            nucleus.currentSurahNumber != null &&
+            nucleus.currentAyahNumber != null
+        ? 'القرآن الكريم ${nucleus.currentSurahNumber}:${nucleus.currentAyahNumber}'
+        : null;
+    final contextualEvidence = !hasVerseContext
         ? evidence
         : evidence + '\n\nالسياق المحدد في المصحف (' +
             nucleus.currentSurahNumber.toString() + ':' +
-            nucleus.currentAyahNumber.toString() + '):\n' + verseContext;
-    final sourceList = _knowledge.loadedSources.join(', ');
+            nucleus.currentAyahNumber.toString() + '):\n' + verseContext!;
+    final sourceList = <String>{
+      ..._knowledge.loadedSources,
+      if (verseSource != null) verseSource,
+    }.join(', ');
     final runtime = nucleus;
     if (runtime.isModelLoaded) {
       try {
@@ -696,8 +706,18 @@ class AgentChatProvider extends ChangeNotifier {
     return sources.toList(growable: false);
   }
 
-  List<String> _sourcesFromTask(AgentTask? task) =>
-      _sourcesFromSteps(task?.steps);
+  List<String> _sourcesFromTask(AgentTask? task) {
+    final sources = _sourcesFromSteps(task?.steps).toSet();
+    final nucleus = NucleusService();
+    if (nucleus.currentVerseText?.trim().isNotEmpty == true &&
+        nucleus.currentSurahNumber != null &&
+        nucleus.currentAyahNumber != null) {
+      sources.add(
+        'القرآن الكريم ${nucleus.currentSurahNumber}:${nucleus.currentAyahNumber}',
+      );
+    }
+    return sources.toList(growable: false);
+  }
 
   int _abjad(String text) {
     const values = {
