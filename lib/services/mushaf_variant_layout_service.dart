@@ -45,6 +45,11 @@ class MushafVariantLayoutService {
   }
 
   static Future<List<MushafVariantLine>> page(int pageNumber) {
+    if (pageNumber < 1 || pageNumber > 604) {
+      return Future<List<MushafVariantLine>>.error(
+        RangeError.range(pageNumber, 1, 604, 'pageNumber'),
+      );
+    }
     final cached = _pageCache[pageNumber];
     if (cached != null) return cached;
 
