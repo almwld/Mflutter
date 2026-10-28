@@ -916,3 +916,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The daily-verse bookmark indicator resets when the selected verse changes, preventing the previous verse's saved state from being shown while the new reference is checked.
+
+
+- `AgentKnowledgeService` now rolls back documents added during an asset load if decoding or schema collection fails, and does not list that asset as loaded. Malformed optional sources therefore cannot leak partial records into later searches; the required knowledge asset still fails initialization when unavailable or unusable.
