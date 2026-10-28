@@ -9,11 +9,26 @@ import 'quran_source_corrections.dart';
 
 class QuranService {
   static Map<String, dynamic>? _cachedQuran;
+  static Future<Map<String, dynamic>>? _loadingQuran;
 
-  static Future<Map<String, dynamic>> loadQuran() async {
+  static Future<Map<String, dynamic>> loadQuran() {
     final cached = _cachedQuran;
-    if (cached != null) return cached;
+    if (cached != null) return Future<Map<String, dynamic>>.value(cached);
+    final pending = _loadingQuran;
+    if (pending != null) return pending;
 
+    final loading = _loadQuranOnce();
+    _loadingQuran = loading;
+    return loading.then<Map<String, dynamic>>(
+      (quran) => quran,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_loadingQuran, loading)) _loadingQuran = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+  }
+
+  static Future<Map<String, dynamic>> _loadQuranOnce() async {
     final raw = await rootBundle.loadString('assets/unified_quran.json');
     final decoded = jsonDecode(raw);
     if (decoded is! Map) {
