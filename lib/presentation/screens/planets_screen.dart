@@ -35,12 +35,35 @@ class PlanetsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
+          _buildDisclaimer(context),
+          const SizedBox(height: AppDimensions.paddingMedium),
           _buildPlanetsGrid(planets, context),
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildInfluenceSection(context),
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildDaysSection(planets, context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDisclaimer(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Text(
+        'المحتوى التالي يعرض رموزًا وارتباطات تاريخية/ثقافية. لا توجد أدلة علمية موثوقة تثبت أن الكواكب أو الأبراج تحدد الشخصية أو تتنبأ بالأحداث.',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          color: colors.onSurface.withOpacity(.75),
+          height: 1.5,
+          fontSize: 12,
+        ),
       ),
     );
   }
@@ -121,7 +144,7 @@ class PlanetsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'تأثير الكواكب',
+            'ارتباطات رمزية تاريخية',
             style: TextStyle(
               fontFamily: 'Amiri',
               fontSize: 20,
