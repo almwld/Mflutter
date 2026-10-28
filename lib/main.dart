@@ -10,6 +10,7 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'services/theme_service.dart';
 import 'services/nucleus_service.dart';
+import 'services/achievements_service.dart';
 import 'core/themes/font_manager.dart';
 
 Future<void> _loadBundledKufiFont() async {
@@ -50,6 +51,7 @@ Future<void> _loadBundledKufiFont() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AchievementsService.recordNightUseIfApplicable();
   await _loadBundledKufiFont();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MudabbirApp());
