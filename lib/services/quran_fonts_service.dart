@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../core/themes/font_manager.dart';
+
 /// Loads the bundled Raqq manuscript-Kufic fonts from their text-encoded
 /// assets. A fallback is retained if the optional font assets are unavailable.
 class QuranFontsService {
@@ -27,6 +29,8 @@ class QuranFontsService {
       family: 'RaqqSura',
       assetPath: 'assets/fonts/RaqqSura.ttf.base64',
     );
+    FontManager.markRaqqFontLoaded(_raqqLoaded);
+    FontManager.markRaqqSuraFontLoaded(_raqqSuraLoaded);
   }
 
   static Future<bool> _loadFamily({
