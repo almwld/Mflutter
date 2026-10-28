@@ -248,3 +248,8 @@ These changes are code-level implementation notes only. No tests/builds were run
 
 ### Symbolic knowledge screens
 - Planetary, zodiac, elemental, number-symbolism, Abjad, and occult screens now explicitly identify their correspondences as historical/cultural/conventional systems rather than scientifically validated causal claims or predictions.
+
+### Traditional list/data corrections
+- `AbjadConstants.divineNames` now contains 99 unique entries in a commonly circulated traditional list, without the prior malformed Unicode item or duplicate names. The UI provides 99 matching concise glosses and discloses that lists/orderings may vary.
+- `LettersScreen` now shows traditional Abjad numeric values rather than sequential Arabic alphabet indices and corrects the lunar/solar letter groups and the five qalqalah letters.
+- Symbolic number/planet/element mappings use consistent one-based indexing and reject non-positive inputs.
