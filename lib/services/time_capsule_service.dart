@@ -115,6 +115,14 @@ class TimeCapsuleService {
     return capsule;
   }
 
+  static String _legacyId(String content, String unlockDate) {
+    var checksum = 0;
+    for (final unit in content.codeUnits) {
+      checksum = (checksum * 31 + unit) & 0x7fffffff;
+    }
+    return 'legacy_${DateTime.tryParse(unlockDate)?.microsecondsSinceEpoch ?? 0}_${checksum.toRadixString(16)}';
+  }
+
   static List<Map<String, dynamic>> _read(SharedPreferences prefs) {
     final raw = prefs.getString(_key);
     if (raw == null || raw.trim().isEmpty) return [];
@@ -136,7 +144,7 @@ class TimeCapsuleService {
         capsules.add(<String, dynamic>{
           'id': (row['id'] is String && (row['id'] as String).isNotEmpty)
               ? row['id']
-              : DateTime.now().microsecondsSinceEpoch.toString(),
+              : _legacyId(content, unlockDate),
           'content': content,
           'unlockDate': unlockDate,
           'sealed': row['sealed'] is String ? row['sealed'] : '',
