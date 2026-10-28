@@ -1,3 +1,5 @@
+import '../../utils/abjad_constants.dart';
+
 /// =============================================================================
 /// AbjadCalculator - حاسبة الجُمَّل
 /// =============================================================================
@@ -236,9 +238,9 @@ class AbjadCalculator {
 
   /// اختيار اسم من القائمة بحسب ترتيب اصطلاحي؛ لا يحمل دلالة تنبؤية.
   static String _getDivineName(int value) {
-    if (value < 1 || DivineNames.arabicNames.isEmpty) return 'غير محدد';
-    final index = (value - 1) % DivineNames.arabicNames.length;
-    return DivineNames.arabicNames[index];
+    if (value < 1 || AbjadConstants.divineNames.isEmpty) return 'غير محدد';
+    final index = (value - 1) % AbjadConstants.divineNames.length;
+    return AbjadConstants.divineNames[index];
   }
 
   /// الحصول على اللون
