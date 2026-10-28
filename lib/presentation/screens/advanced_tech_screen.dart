@@ -36,6 +36,7 @@ class _AdvancedTechScreenState extends State<AdvancedTechScreen> {
     _capsuleController.dispose();
     _geo.removeListener(_onGeoChanged);
     unawaited(_geo.stop());
+    unawaited(BinauralEngineService.stop().catchError((_) {}));
     super.dispose();
   }
 
