@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../widgets/common/mudabbir_glass_panel.dart';
+import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../services/quran_numerical_analysis_service.dart';
 
 class MiraclesScreen extends StatefulWidget {
@@ -70,11 +72,11 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: MudabbirDesignTokens.cosmicBackground,
       appBar: AppBar(
         title: const Text('التحليل العددي للنص'),
-        backgroundColor: AppColors.primaryNavy,
-        foregroundColor: AppColors.primaryGold,
+        backgroundColor: MudabbirDesignTokens.cosmicDeepBackground,
+        foregroundColor: MudabbirDesignTokens.goldBright,
         actions: [
           IconButton(
             tooltip: 'إعادة تحليل الملف المحلي',
@@ -145,20 +147,11 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
-        Container(
+        MudabbirGlassPanel(
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.primaryNavy,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primaryGold.withOpacity(.32)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryGold.withOpacity(.07),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+          radius: 24,
+          glow: true,
+          color: const Color(0xE6050811),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

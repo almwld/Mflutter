@@ -197,3 +197,7 @@ This is a file-to-target mapping, not a claim that every target has passed behav
 ### Quran bookmarks interaction
 
 `QuranPageScreen` now reads saved verse references from the existing `BookmarkService`, shows a bookmark control on each verse, and persists add/remove actions through the same store used by `FavoritesScreen`. The dedicated bookmarks route has a widget test for its title and empty state.
+
+### Shared visual foundation
+
+Added `MudabbirDesignTokens` for the cosmic palette, spacing, and motion durations, plus `MudabbirGlassPanel` for restrained translucent surfaces without expensive full-screen blur. The numerical-analysis and Nucleus graph screens now use the shared panel/background tokens for their main interactive surfaces.

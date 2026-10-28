@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/themes/mudabbir_design_tokens.dart';
+import '../widgets/common/mudabbir_glass_panel.dart';
 import '../../services/agent_registry.dart';
 import '../../services/nucleus_service.dart';
 
@@ -114,11 +116,11 @@ class _NucleusScreenState extends State<NucleusScreen>
           );
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: MudabbirDesignTokens.cosmicBackground,
       appBar: AppBar(
         title: const Text('النواة المركزية'),
-        backgroundColor: AppColors.primaryNavy,
-        foregroundColor: AppColors.primaryGold,
+        backgroundColor: MudabbirDesignTokens.cosmicDeepBackground,
+        foregroundColor: MudabbirDesignTokens.goldBright,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -230,13 +232,9 @@ class _NucleusScreenState extends State<NucleusScreen>
             style: TextStyle(color: Colors.white60, height: 1.5),
           ),
           const SizedBox(height: 10),
-          Container(
+          MudabbirGlassPanel(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primaryNavy.withOpacity(.75),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: Colors.white.withOpacity(.08)),
-            ),
+            radius: 22,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final size = Size(constraints.maxWidth, 290);
