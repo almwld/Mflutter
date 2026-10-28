@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/local_activity_summary_service.dart';
 
-class ChallengesScreen extends StatelessWidget {
+class ChallengesScreen extends StatefulWidget {
   const ChallengesScreen({super.key});
+
+  @override
+  State<ChallengesScreen> createState() => _ChallengesScreenState();
+}
+
+class _ChallengesScreenState extends State<ChallengesScreen> {
+  late Future<LocalActivitySummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = const LocalActivitySummaryService().load();
+  }
+
+  void _retry() {
+    setState(() => _summaryFuture = const LocalActivitySummaryService().load());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,20 +32,31 @@ class ChallengesScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryNavy,
       ),
       body: FutureBuilder<LocalActivitySummary>(
-        future: const LocalActivitySummaryService().load(),
+        future: _summaryFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'تعذر تحميل تقدمك المحلي. أعد فتح الشاشة للمحاولة.',
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(color: Colors.white70),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'تعذر تحميل تقدمك المحلي.',
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('إعادة المحاولة'),
+                    ),
+                  ],
                 ),
               ),
             );
