@@ -114,7 +114,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.dotlessPlain:
         return 'بدون نقاط أو تشكيل';
       case MushafVariantMode.kufi:
-        return 'كوفي';
+        return FontManager.isRaqqFontLoaded
+            ? 'رَقّ — كوفي مصحفي مبكر'
+            : 'رَقّ — الخط غير متاح';
       case MushafVariantMode.hieroglyphic:
         return 'هيروغليفي';
     }
