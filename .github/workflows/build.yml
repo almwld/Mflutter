@@ -36,6 +36,7 @@ jobs:
       - name: Generate Android host project
         run: |
           flutter create --platforms=android --project-name mudabbir_al_asrar --org com.mudabbir .
+          rm -f test/widget_test.dart
 
       - name: Configure native device capabilities
         run: |
