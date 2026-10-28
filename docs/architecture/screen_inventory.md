@@ -601,3 +601,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/cosmic_services_screen.dart`: malformed legacy journal JSON is isolated to its own record set so it does not prevent the other local services from loading; the screen surfaces a recovery warning. Dream-note saves now check the storage API's boolean result before reporting success.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (time capsule storage integrity)
+
+- `lib/services/time_capsule_service.dart`: capsule writes are serialized to prevent concurrent read-modify-write loss; the storage write result is checked; stored records are validated and bounded before being exposed to the UI.
+- No tests, analyzer, formatter, or APK build were run.
