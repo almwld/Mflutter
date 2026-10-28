@@ -51,7 +51,10 @@ class DailyStreakService {
     _pruneOldDates(nextDates);
     final prefs = await SharedPreferences.getInstance();
     final sorted = nextDates.toList()..sort();
-    await prefs.setStringList(_activeDatesKey, sorted);
+    final saved = await prefs.setStringList(_activeDatesKey, sorted);
+    if (!saved) {
+      throw StateError('تعذر حفظ نشاط القراءة في التخزين المحلي.');
+    }
     _activeDates = nextDates;
     _recalculate();
   }
