@@ -26,17 +26,43 @@ class ShareService {
   }
 
   static String formatForShare(Map<String, dynamic> verse) {
-    return '''
-🕌 مُدَبِّر الْأَسْرَارِ الْعُلْيَا
+    final lines = <String>['مُدَبِّر الأسرار العليا'];
+    final text = verse['text'];
+    if (text is String && text.trim().isNotEmpty) {
+      lines
+        ..add('')
+        ..add('الآية: $text');
+    }
 
-📖 ${verse['text']}
-📍 سورة ${verse['surah']} - آية ${verse['ayah']}
+    final surah = verse['surah'];
+    final ayah = verse['ayah'];
+    if (surah != null && ayah != null) {
+      lines.add('المرجع: سورة $surah — الآية $ayah');
+    }
 
-🔬 العلوم: ${verse['sciences']?.join(', ') ?? 'علوم متعددة'}
-🔮 الصفات: ${verse['attributes']?.join(', ') ?? 'الله'}
+    final sciences = verse['sciences'];
+    if (sciences is List) {
+      final labels = sciences
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      if (labels.isNotEmpty) lines.add('العلوم: ${labels.join(', ')}');
+    }
 
-🔢 الجمل: ${verse['jummal'] ?? 0}
-''';
+    final attributes = verse['attributes'];
+    if (attributes is List) {
+      final labels = attributes
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      if (labels.isNotEmpty) lines.add('الصفات: ${labels.join(', ')}');
+    }
+
+    final jummal = verse['jummal'];
+    if (jummal is num) lines.add('قيمة الجمل المسجلة: $jummal');
+    return lines.join('\\n');
   }
 
   static String formatDailyInsight(Map<String, String> insight) {
