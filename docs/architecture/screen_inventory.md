@@ -892,3 +892,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The elements screen now labels its relation table as tradition-dependent conceptual symbolism and replaces the unsupported “spirit animates everything” statement with a bounded symbolic association to life.
+
+
+- Daily-verse rotation now derives the date from the actual UTC instant before day arithmetic, making the same calendar-day selection independent of the device time zone.
