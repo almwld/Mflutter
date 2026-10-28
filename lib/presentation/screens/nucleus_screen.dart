@@ -96,6 +96,57 @@ class _NucleusScreenState extends State<NucleusScreen>
     }
   }
 
+  Future<void> _unloadModel() async {
+    if (_working || _core.isModelBusy || _core.isGenerating ||
+        !_core.isModelLoaded) {
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('تحرير ذاكرة النموذج'),
+        content: const Text(
+          'سيتم إيقاف النموذج المحلي وتحرير موارده من الذاكرة. '
+          'لن يُحذف ملف GGUF المستورد، ويمكن تحميله مجددًا لاحقًا.',
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('إيقاف وتحرير'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _working = true);
+    try {
+      await _core.unloadModel();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم إيقاف النموذج وتحرير موارده؛ بقي الملف المستورد محفوظًا.'),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تعذر تحرير موارد النموذج بالكامل: $error'),
+            duration: const Duration(seconds: 6),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _working = false);
+    }
+  }
+
   @override
   void dispose() {
     _core.removeListener(_refresh);
@@ -219,6 +270,16 @@ class _NucleusScreenState extends State<NucleusScreen>
               subtitle: Text(
                 'تستخدم المحادثة محرك llama.cpp عند التوليد.',
               ),
+            ),
+          if (_core.isModelLoaded)
+            OutlinedButton.icon(
+              onPressed: _working ||
+                      _core.isModelBusy ||
+                      _core.isGenerating
+                  ? null
+                  : _unloadModel,
+              icon: const Icon(Icons.memory_rounded),
+              label: const Text('إيقاف النموذج وتحرير الذاكرة'),
             ),
           if (_core.error != null)
             _status('تنبيه تشخيصي', 'تحتاج إلى مراجعة', _core.error!),
