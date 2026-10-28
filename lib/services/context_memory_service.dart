@@ -26,18 +26,44 @@ class ContextMemoryService {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is List) {
-          for (final item in decoded.whereType<Map>()) {
+          final newestFirst = decoded.whereType<Map>().toList().reversed.take(100).toList().reversed;
+          for (final item in newestFirst) {
             final row = Map<String, dynamic>.from(item);
-            final question = row['question']?.toString() ?? '';
-            final topic = row['topic']?.toString() ?? 'عام';
-            if (question.isEmpty) continue;
-            final timestamp = DateTime.tryParse(row['timestamp']?.toString() ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-            _memory.add({'question': question, 'response': row['response']?.toString() ?? '', 'topic': topic, 'timestamp': timestamp});
-            _topicFrequency[topic] = (_topicFrequency[topic] ?? 0) + 1;
-            _recentQuestions.add(question);
+            final rawQuestion = row['question'];
+            if (rawQuestion is! String || rawQuestion.trim().isEmpty) continue;
+            final rawResponse = row['response'];
+            final rawTopic = row['topic'];
+            final rawTimestamp = row['timestamp'];
+            final question = rawQuestion.trim();
+            final response = rawResponse is String ? rawResponse : '';
+            final topic = rawTopic is String && rawTopic.trim().isNotEmpty
+                ? rawTopic.trim()
+                : 'عام';
+            final timestamp = rawTimestamp is String
+                ? DateTime.tryParse(rawTimestamp) ?? DateTime.fromMillisecondsSinceEpoch(0)
+                : DateTime.fromMillisecondsSinceEpoch(0);
+            final savedQuestion = question.length > 500 ? question.substring(0, 500) : question;
+            final savedResponse = response.length > 3000 ? response.substring(0, 3000) : response;
+            final savedTopic = topic.length > 80 ? topic.substring(0, 80) : topic;
+            _memory.add({
+              'question': savedQuestion,
+              'response': savedResponse,
+              'topic': savedTopic,
+              'timestamp': timestamp,
+            });
+            _topicFrequency[savedTopic] = (_topicFrequency[savedTopic] ?? 0) + 1;
+            _recentQuestions.add(savedQuestion);
           }
         }
       } on FormatException {
+        _memory.clear();
+        _topicFrequency.clear();
+        _recentQuestions.clear();
+      } on TypeError {
+        _memory.clear();
+        _topicFrequency.clear();
+        _recentQuestions.clear();
+      } on ArgumentError {
         _memory.clear();
         _topicFrequency.clear();
         _recentQuestions.clear();
@@ -90,7 +116,9 @@ class ContextMemoryService {
     // a later successful write should still be able to persist newer memory.
     _writeQueue = _writeQueue.catchError((_) {}).then((_) async {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_storageKey, jsonEncode(snapshot));
+      if (!await prefs.setString(_storageKey, jsonEncode(snapshot))) {
+        throw StateError('تعذر حفظ ذاكرة السياق محليًا.');
+      }
     });
     return _writeQueue;
   }
