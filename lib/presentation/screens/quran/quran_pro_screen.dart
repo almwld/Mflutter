@@ -39,6 +39,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
   String? _selectedAyahText;
   String _surahName = 'الفاتحة';
   bool _loading = true;
+  String? _loadError;
   String? _variantWarning;
 
   // العرض
@@ -84,6 +85,12 @@ class _QuranProScreenState extends State<QuranProScreen> {
   }
 
   Future<void> _loadQuran() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
       // Only the canonical Arabic Quran asset is required to open the reader.
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
@@ -114,10 +121,10 @@ class _QuranProScreenState extends State<QuranProScreen> {
       unawaited(_loadOptionalScriptDatasets());
     } catch (error) {
       if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر تحميل بيانات المصحف: $error')),
-      );
+      setState(() {
+        _loading = false;
+        _loadError = 'تعذر تحميل بيانات المصحف: $error';
+      });
     }
   }
 
@@ -326,6 +333,35 @@ class _QuranProScreenState extends State<QuranProScreen> {
       return const Scaffold(
         backgroundColor: _bgColor,
         body: Center(child: CircularProgressIndicator(color: _goldColor)),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        backgroundColor: _bgColor,
+        appBar: AppBar(title: const Text('القرآن الكريم')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _loadError!,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _loadQuran,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('إعادة تحميل المصحف'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
