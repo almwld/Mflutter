@@ -727,7 +727,8 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   List<String> _sourcesFromTask(AgentTask? task) {
-    final sources = _sourcesFromSteps(task?.steps).toSet();
+    if (task == null) return const <String>[];
+    final sources = _sourcesFromSteps(task.steps).toSet();
     final verseSource = _activeTaskVerseSource;
     if (verseSource != null) sources.add(verseSource);
     return sources.toList(growable: false);
