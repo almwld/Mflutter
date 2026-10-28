@@ -43,7 +43,7 @@ class AgentRegistry {
     AgentDefinition('iqtisad','اقتصاد','الإدراك','تحليل المفاهيم الاقتصادية'),
     AgentDefinition('fan','بلاغة','الإدراك','تحليل الأساليب البلاغية'),
     AgentDefinition('sawt','صوت','الصوت','تحليل النصوص المرتبطة بالصوت'),
-    AgentDefinition('tiry al','تلاوة','الصوت','تنظيم بيانات التلاوة المتاحة'),
+    AgentDefinition('tilawa','تلاوة','الصوت','تنظيم بيانات التلاوة المتاحة'),
     AgentDefinition('shifa_sound','صوت علاجي','الصوت','فهرسة الادعاءات الصوتية دون اعتمادها كحقائق'),
     AgentDefinition('tawatur','تواتر','الصوت','تحليل تكرار الأنماط'),
     AgentDefinition('iqa','إيقاع','الصوت','تحليل الإيقاع النصي'),
