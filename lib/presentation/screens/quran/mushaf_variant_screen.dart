@@ -101,21 +101,42 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   }
 
   Future<void> _restoreDisplayMode() async {
-    final preferences = await SharedPreferences.getInstance();
-    final savedIndex = preferences.getInt('mudabbir_mushaf_variant_mode');
-    if (savedIndex == null ||
-        savedIndex < 0 ||
-        savedIndex >= MushafVariantMode.values.length ||
-        !mounted) {
-      return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedIndex = preferences.getInt('mudabbir_mushaf_variant_mode');
+      if (savedIndex == null ||
+          savedIndex < 0 ||
+          savedIndex >= MushafVariantMode.values.length ||
+          !mounted) {
+        return;
+      }
+      setState(() => _mode = MushafVariantMode.values[savedIndex]);
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not restore display mode: $error');
     }
-    setState(() => _mode = MushafVariantMode.values[savedIndex]);
+  }
+
+  Future<void> _persistVariantPreference(
+    Future<bool> Function(SharedPreferences preferences) write,
+    String setting,
+  ) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await write(preferences);
+      if (!saved) {
+        debugPrint('MushafVariantScreen: preference write rejected: $setting');
+      }
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not save $setting: $error');
+    }
   }
 
   Future<void> _setDisplayMode(MushafVariantMode mode) async {
     setState(() => _mode = mode);
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt('mudabbir_mushaf_variant_mode', mode.index);
+    await _persistVariantPreference(
+      (preferences) => preferences.setInt('mudabbir_mushaf_variant_mode', mode.index),
+      'display mode',
+    );
   }
 
   @override
