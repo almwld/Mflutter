@@ -1,5 +1,5 @@
 enum TaskStatus { pending, running, paused, completed, failed, cancelled }
-enum StepStatus { pending, running, done, failed, paused }
+enum StepStatus { pending, running, done, failed, paused, cancelled }
 
 class StepDetail {
   final String label;
