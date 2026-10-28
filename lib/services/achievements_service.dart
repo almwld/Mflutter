@@ -14,7 +14,7 @@ class AchievementsService {
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'استخدام التطبيق ليلاً', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'فتح التطبيق بين 20:00 و04:59 بالتوقيت المحلي', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': true},
   ];
 
@@ -45,6 +45,23 @@ class AchievementsService {
       'share_verse',
       preferences.getBool('mudabbir_shared_verse') == true ? 1 : 0,
     );
+    _setProgress(
+      'night_mode',
+      preferences.getBool('mudabbir_night_use') == true ? 1 : 0,
+    );
+  }
+
+  /// Records app startup during the device's local night window (20:00–04:59).
+  static Future<void> recordNightUseIfApplicable() async {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 20) return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool('mudabbir_night_use', true);
+      _setProgress('night_mode', 1);
+    } catch (_) {
+      // App startup must not be blocked by achievement persistence.
+    }
   }
 
   /// Records a real completed calculation, persisting the event locally.
