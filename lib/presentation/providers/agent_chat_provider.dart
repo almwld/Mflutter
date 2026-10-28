@@ -418,7 +418,7 @@ class AgentChatProvider extends ChangeNotifier {
     if (RegExp(r'عدد|تكرار|مره|كم|احصاء|كلمه').hasMatch(normalized)) {
       add('adadi');
     }
-    if (RegExp(r'ذاكرة|سابق|تذكر|ملاحظة|دفتر').hasMatch(normalized)) add('memory');
+    if (RegExp(r'ذاكره|سابق|تذكر|ملاحظه|دفتر|محفوظ|مخزن').hasMatch(normalized)) add('memory');
     add('overthinker');
     add('loop_engineering');
     add('critic');
@@ -551,10 +551,37 @@ class AgentChatProvider extends ChangeNotifier {
             'مع تسجيل الخطأ النهائي وعدم اختلاق نتيجة بديلة. '
             'محاولات هذه الخطوة: ${_attemptsByAgent[agent.id] ?? 1}.';
       case 'memory':
+        final notes = await _memory.searchVault(query, limit: 5);
         final runs = await _memory.recentRuns(limit: 5);
-        if (runs.isEmpty) return 'لا توجد جلسات سابقة محفوظة محليًا بعد.';
-        return runs.map((row) =>
-            'سابقًا: ${row['query']}\nالملخص: ${row['answer']}').join('\n\n');
+        if (notes.isEmpty && runs.isEmpty) {
+          return 'لا توجد ملاحظات أو جلسات سابقة محفوظة محليًا بعد.';
+        }
+        final sections = <String>[];
+        if (notes.isNotEmpty) {
+          sections.add(
+            'ملاحظات دفتر المعرفة المطابقة (محلية):\n' +
+                notes.map((row) {
+                  final title = (row['title'] ?? 'ملاحظة بلا عنوان').toString();
+                  final content = (row['content'] ?? '').toString();
+                  final sources = row['sources'] is List
+                      ? (row['sources'] as List).whereType<String>().join(', ')
+                      : '';
+                  final createdAt = (row['createdAt'] ?? '').toString();
+                  final snippet = content.length > 1200
+                      ? '${content.substring(0, 1200)}…'
+                      : content;
+                  return 'العنوان: $title\nالتاريخ: $createdAt\nالمصادر: ${sources.isEmpty ? 'غير مسجلة' : sources}\n$snippet';
+                }).join('\n\n'),
+          );
+        }
+        if (runs.isNotEmpty) {
+          sections.add(
+            'جلسات التنفيذ الأخيرة:\n' +
+                runs.map((row) =>
+                    'سابقًا: ${row['query']}\nالملخص: ${row['answer']}').join('\n\n'),
+          );
+        }
+        return sections.join('\n\n---\n\n');
       case 'obsidian':
         final evidence = _activeTask?.steps
                 .where((step) => step.result != null && step.result!.trim().isNotEmpty)
