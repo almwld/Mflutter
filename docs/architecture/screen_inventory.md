@@ -301,3 +301,11 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/services/ai_personality_service.dart` and `lib/presentation/screens/personalization_screen.dart`: persisted personality selection can be awaited, preference loading is coalesced, and the UI text reflects the actual chat integration and local persistence behavior.
 - The personalization screen displays recent saved exchange summaries rather than only a list of questions.
 - Validation remains intentionally deferred: no tests, analyzer, formatter, or build were run in this continuation.
+
+
+## UI continuation — 2026-10-29 (knowledge readiness and conversation context)
+
+- The agent knowledge service now coalesces concurrent requests to load optional script variants, avoiding duplicate concurrent index mutation.
+- Initialization now fails explicitly when the required knowledge asset was not actually loaded, rather than silently returning with an unusable index. The nucleus can report this as a degraded knowledge state and retry initialization.
+- Chat context now includes a bounded snapshot of recent saved exchanges (question plus a short answer summary), not just prior questions. This context is treated as conversational continuity, not verified evidence.
+- No tests, analyzer, formatter, or build were run, per the current instruction.
