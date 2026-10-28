@@ -213,8 +213,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
                         const SizedBox(height: 8),
                         Text('الملف: ${dataset.fileName}', style: const TextStyle(color: Colors.white)),
                         Text('عدد العينات: ${dataset.samples.length}', style: const TextStyle(color: Colors.white70)),
-                        for (final entry in classCounts.entries)
-                          Text('${entry.key}: ${entry.value}', style: const TextStyle(color: Colors.white70)),
+                        for (final label in const <String>[
+                          'cosmic',
+                          'tranquil',
+                          'calculation',
+                        ])
+                          Text(
+                            '$label: ${classCounts[label] ?? 0}',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
                       ],
                       if (_datasetError != null) ...[
                         const SizedBox(height: 8),
