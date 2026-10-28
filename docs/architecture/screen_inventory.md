@@ -508,3 +508,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/reading_progress_service.dart`: reading-day history now filters malformed calendar keys, impossible dates, duplicates, and future dates before counting or recalculating streaks. Writes normalize legacy history to a canonical sorted list so corrupt entries cannot inflate all-time reading-day statistics.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (immersive Quran reading)
+
+- `lib/presentation/screens/quran_page_screen.dart`: double-tap now synchronizes the reader chrome with Android immersive system-bar visibility, and system bars are restored on exit. Platform failures are handled without breaking the reader.
+- No tests, analyzer, formatter, or APK build were run.
