@@ -378,10 +378,16 @@ class _QuranProScreenState extends State<QuranProScreen> {
     controller.dispose();
     if (selectedIndex == null || !mounted) return;
     final selectedVerse = _currentVerses[selectedIndex];
+    final selectedText =
+        selectedVerse is Map ? selectedVerse['text']?.toString() ?? '' : '';
+    setState(() {
+      _selectedAyah = selectedIndex + 1;
+      _selectedAyahText = selectedText;
+    });
     NucleusService().setQuranContext(
       surahNumber: _currentSurah,
       ayahNumber: selectedIndex + 1,
-      verseText: selectedVerse is Map ? selectedVerse['text']?.toString() : null,
+      verseText: selectedText,
     );
     var targetContext = _verseKeys[selectedIndex]?.currentContext;
     // ListView.builder creates off-screen rows lazily. Move near the target first
