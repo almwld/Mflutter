@@ -60,17 +60,48 @@ class AgentMemoryService {
   }
 
   Future<List<Map<String, dynamic>>> searchVault(String query, {int limit = 8}) async {
-    final prefs = await SharedPreferences.getInstance();
+    if (limit <= 0) return const [];
     final needle = _normalize(query);
     if (needle.isEmpty) return const [];
+
+    final prefs = await SharedPreferences.getInstance();
     final rows = _decodeRows(prefs.getString(_vaultKey));
-    final matches = rows.where((row) {
-      final text = _normalize('${row['title'] ?? ''} ${row['content'] ?? ''}');
-      return text.contains(needle) ||
-          needle.split(' ').where((word) => word.length > 1).any(text.contains);
-    }).toList()
-      ..sort((a, b) => (b['createdAt'] ?? '').toString().compareTo((a['createdAt'] ?? '').toString()));
-    return matches.take(limit).toList(growable: false);
+    final terms = needle.split(' ').where((term) => term.isNotEmpty).toSet();
+    if (terms.isEmpty) return const [];
+
+    // Rank relevant notes instead of returning a recent note merely because
+    // it shares one common word with the query. Phrase and title matches are
+    // stronger signals than partial body-term overlap.
+    final ranked = <({Map<String, dynamic> row, int score, String date})>[];
+    for (final row in rows) {
+      final title = _normalize((row['title'] ?? '').toString());
+      final content = _normalize((row['content'] ?? '').toString());
+      final combined = '$title $content';
+      final matchedTerms = terms.where(combined.contains).length;
+      if (matchedTerms == 0) continue;
+
+      var score = matchedTerms * 10;
+      if (title.contains(needle)) score += 100;
+      if (content.contains(needle)) score += 50;
+      for (final term in terms) {
+        if (title.contains(term)) score += 8;
+      }
+      // Prefer notes that cover the complete query over notes that match only
+      // a small fraction of its words.
+      if (matchedTerms == terms.length) score += 20;
+
+      ranked.add((
+        row: row,
+        score: score,
+        date: (row['createdAt'] ?? '').toString(),
+      ));
+    }
+
+    ranked.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      return byScore != 0 ? byScore : b.date.compareTo(a.date);
+    });
+    return ranked.take(limit).map((entry) => entry.row).toList(growable: false);
   }
 
   List<Map<String, dynamic>> _decodeRows(String? raw) {
