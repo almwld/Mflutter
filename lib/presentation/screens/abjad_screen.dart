@@ -32,6 +32,20 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'القيمة الأساسية هنا مجموع قيم الحروف وفق جدول أبجد التقليدي. المتوسط ونصف المجموع عمليتان حسابيتان موضحتان بالاسم. ربط الناتج بعنصر أو كوكب أو برج أو اسم من قائمة هو اصطلاح رمزي لا قياس علمي ولا تنبؤ.',
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: secondaryText,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           TextField(
             controller: _controller,
             textDirection: TextDirection.rtl,
@@ -59,12 +73,34 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _ResultRow(label: 'الجمل الكبير', value: r.kabir.toString(), color: colors.primary),
-                      _ResultRow(label: 'الجمل الصغير', value: r.saghir.toString(), color: colors.onSurface),
-                      _ResultRow(label: 'الجمل الوسط', value: r.wasat.toString(), color: colors.onSurface),
+                      _ResultRow(
+                        label: 'مجموع أبجد الكبير',
+                        value: r.kabir.toString(),
+                        color: colors.primary,
+                      ),
+                      _ResultRow(
+                        label: 'متوسط قيم الحروف',
+                        value: r.saghir.toString(),
+                        color: colors.onSurface,
+                      ),
+                      _ResultRow(
+                        label: 'نصف المجموع',
+                        value: r.wasat.toString(),
+                        color: colors.onSurface,
+                      ),
                       const SizedBox(height: 8),
-                      Text('العنصر: ${r.element} | الكوكب: ${r.planet} | البرج: ${r.zodiac}', textAlign: TextAlign.right, style: TextStyle(color: secondaryText)),
-                      Text('الطاقة: ${r.energy.toStringAsFixed(3)}', style: TextStyle(color: secondaryText)),
+                      Text(
+                        'ارتباطات رمزية تقليدية: العنصر ${r.element} • الكوكب ${r.planet} • البرج ${r.zodiac}',
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: secondaryText),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'الاسم حسب ترتيب القائمة الشائعة: ${r.divineName}',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(color: secondaryText),
+                      ),
                     ],
                   ),
                 ),
