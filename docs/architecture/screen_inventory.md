@@ -347,3 +347,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/providers/agent_chat_provider.dart`: each agent step now reports whether its ID has an explicit runtime handler or currently falls back to generic local knowledge retrieval. This prevents registry presence from being mistaken for an independently implemented specialist.
 - Tests, analyzer, formatter, and APK build remain intentionally unrun.
+
+
+## UI continuation — 2026-10-29 (bookmark mutation safety)
+
+- `lib/services/bookmark_service.dart`: bookmark removal now reads the underlying local store directly while already inside the serialized mutation queue. Calling the public queue-aware read from inside the queue awaited the current mutation itself and could deadlock removals.
+- No tests, analyzer, formatter, or APK build were run.
