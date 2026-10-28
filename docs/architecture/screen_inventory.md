@@ -913,3 +913,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AgentKnowledgeService.normalize` now normalizes hamza-on-waw/yaa consistently with the Quran search index and local lexical retrieval, reducing mismatches between the same Arabic query across knowledge sources.
+
+
+- The daily-verse bookmark indicator resets when the selected verse changes, preventing the previous verse's saved state from being shown while the new reference is checked.
