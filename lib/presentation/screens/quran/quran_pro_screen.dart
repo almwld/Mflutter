@@ -515,8 +515,8 @@ class _QuranProScreenState extends State<QuranProScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _currentVerses.length,
       itemBuilder: (context, i) {
-        final v = _currentVerses[i];
-        final text = v['text'] ?? '';
+        final verse = _currentVerses[i];
+        final text = verse['text'] ?? '';
         final musnadRows = _musnadQuran?[_currentSurah.toString()];
         final musnad = musnadRows != null && i < musnadRows.length
             ? musnadRows[i]['musnad'] as String?
@@ -530,40 +530,40 @@ class _QuranProScreenState extends State<QuranProScreen>
             : _mode == QuranDisplayMode.hieroglyphic
                 ? (hieroglyphic ?? '')
                 : _transform(text);
-        final num = i + 1;
-
+        final verseNumber = i + 1;
         final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
+
         return Container(
-              key: verseKey,
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _goldColor.withOpacity(0.1)),
-                boxShadow: [
-                  if (_showFrame)
-                    BoxShadow(
-                      color: _goldColor.withOpacity(0.05),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    ),
-                ],
+          key: verseKey,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: _goldColor.withOpacity(0.1)),
+            boxShadow: [
+              if (_showFrame)
+                BoxShadow(
+                  color: _goldColor.withOpacity(0.05),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              QuranWaveText(
+                text: transformed,
+                importanceText: text.toString(),
+                style: _textStyle(),
+                enabled: _waveEnabled,
+                textAlign: WrapAlignment.end,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  QuranWaveText(
-                    text: transformed,
-                    importanceText: text.toString(),
-                    style: _textStyle(),
-                    enabled: _waveEnabled,
-                    textAlign: WrapAlignment.end,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildVerseNumber(num),
-                ],
-              ),
+              const SizedBox(height: 8),
+              _buildVerseNumber(verseNumber),
+            ],
+          ),
         );
       },
     );
