@@ -137,6 +137,14 @@ class _TrainingScreenState extends State<TrainingScreen> {
                         style: const TextStyle(color: Colors.white),
                       ),
                       Text('الحالة: ${provider.status}', style: const TextStyle(color: Colors.white70)),
+                      if (provider.modelInitializationError != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'تفاصيل فحص النموذج: ${provider.modelInitializationError}',
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(color: Colors.orangeAccent, fontSize: 12),
+                        ),
+                      ],
                       if (!provider.modelLoaded &&
                           !provider.isTraining &&
                           !provider.isInitializing) ...[
