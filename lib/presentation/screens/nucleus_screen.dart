@@ -185,7 +185,16 @@ class _NucleusScreenState extends State<NucleusScreen>
         ],
       ),
     );
-    await AchievementsService.recordScienceExplored(id);
+    try {
+      await AchievementsService.recordScienceExplored(id);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('عُرضت تفاصيل المجال، لكن تعذر حفظ الإنجاز المحلي: $error'),
+        ),
+      );
+    }
   }
 
   @override
