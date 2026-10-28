@@ -798,3 +798,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Local profile avatar values are trimmed and bounded before persistence, matching the validation already applied to profile names and numeric progress.
+
+
+- `QuranPageScreen` now validates the selected surah number, canonical expected verse count, every source verse text, and the post-correction count before displaying it. An incomplete asset enters the existing retryable error state rather than being presented as a complete surah.
