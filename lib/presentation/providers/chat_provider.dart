@@ -113,10 +113,10 @@ class ChatProvider extends ChangeNotifier {
               _core.currentAyahNumber.toString() + '): ' + verseContext;
 
       final persona = AIPersonalityService.activeConfig;
-      final recentQuestions = ContextMemoryService.getRecentQuestions().take(5).toList();
-      final memoryContext = recentQuestions.isEmpty
-          ? 'لا توجد أسئلة سابقة محفوظة.'
-          : recentQuestions.join(' | ');
+      final recentExchanges = ContextMemoryService.getRecentExchanges(limit: 3);
+      final memoryContext = recentExchanges.isEmpty
+          ? 'لا توجد محادثات سابقة محفوظة.'
+          : recentExchanges.join('\n');
       final systemInstruction = 'أنت ${persona['name'] ?? 'مُدَبِّر'}، أسلوبك ${persona['style'] ?? 'واضح ومتزن'}. '
           'أجب بالعربية الفصحى، وميّز بين النص الموثق والاستنتاج، ولا تختلق آيات أو مصادر. '
           'استخدم ذاكرة السياق للاستمرارية فقط ولا تعاملها كحقيقة موثقة: $memoryContext';
