@@ -175,6 +175,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 initialized: provider.initialized,
                 initializationError: provider.initializationError,
                 modelLoaded: _modelLoaded,
+                onRetry: provider.initialize,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
@@ -333,12 +334,14 @@ class _WorkspaceHero extends StatelessWidget {
   final bool initialized;
   final String? initializationError;
   final bool modelLoaded;
+  final VoidCallback onRetry;
   const _WorkspaceHero({
     required this.documentCount,
     required this.sourceCount,
     required this.initialized,
     required this.initializationError,
     required this.modelLoaded,
+    required this.onRetry,
   });
 
   @override
@@ -405,6 +408,18 @@ class _WorkspaceHero extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.redAccent, fontSize: 10),
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('إعادة تهيئة المعرفة'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryGold,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 8),
