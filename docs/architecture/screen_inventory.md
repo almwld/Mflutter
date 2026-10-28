@@ -702,3 +702,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/occult_explorer_screen.dart`: explicit audio-stop actions now report plugin failures, and dispose-time stop futures are caught to avoid unhandled asynchronous errors while leaving the screen.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (conversation-memory recovery)
+
+- `lib/services/context_memory_service.dart`: persisted conversation rows are validated and bounded when loaded, malformed legacy records no longer poison the memory index, and rejected local writes raise an explicit persistence error while the existing queue remains recoverable.
+- No tests, analyzer, formatter, or APK build were run.
