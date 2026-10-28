@@ -502,6 +502,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('التدبر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
+      ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
       ('الإحصائيات', Icons.insights_rounded, const StatsScreen()),
       ('عدسة AR', Icons.view_in_ar_outlined, const ARLensScreen()),
