@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'bookmark_service.dart';
 import 'reading_progress_service.dart';
 
@@ -8,10 +10,14 @@ class LocalActivitySummaryService {
 
   Future<LocalActivitySummary> load() async {
     final results = await Future.wait<Object>(<Future<Object>>[
-      ReadingProgressService.getPagesRead(),
-      ReadingProgressService.getReadingDays(),
-      ReadingProgressService.getCurrentStreak(),
-      BookmarkService.getBookmarks(),
+      _safe(ReadingProgressService.getPagesRead(), 0, 'pages read'),
+      _safe(ReadingProgressService.getReadingDays(), 0, 'reading days'),
+      _safe(ReadingProgressService.getCurrentStreak(), 0, 'current streak'),
+      _safe(
+        BookmarkService.getBookmarks(),
+        const <Map<String, dynamic>>[],
+        'bookmarks',
+      ),
     ]);
     final pagesRead = results[0] as int;
     final readingDays = results[1] as int;
@@ -23,6 +29,15 @@ class LocalActivitySummaryService {
       currentStreak: currentStreak,
       bookmarkCount: bookmarks.length,
     );
+  }
+
+  Future<T> _safe<T>(Future<T> source, T fallback, String label) async {
+    try {
+      return await source;
+    } catch (error) {
+      debugPrint('LocalActivitySummaryService: $label unavailable: $error');
+      return fallback;
+    }
   }
 }
 
