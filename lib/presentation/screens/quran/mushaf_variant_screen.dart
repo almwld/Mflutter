@@ -213,7 +213,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
                 (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
-                (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
+                (MushafVariantMode.kufi, 'كوفي عربي', 'خط Noto Kufi Arabic محمّل محليًا؛ لا يتغير نص القرآن الأصلي'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
                 ListTile(
@@ -292,7 +292,7 @@ class _VariantPage extends StatelessWidget {
       case MushafVariantMode.dotlessPlain:
         return 'Amiri';
       case MushafVariantMode.kufi:
-        return 'Amiri';
+        return 'NotoKufiArabic';
       case MushafVariantMode.hieroglyphic:
         return 'NotoSansEgyptianHieroglyphs';
     }
