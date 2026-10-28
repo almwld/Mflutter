@@ -51,6 +51,7 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
       setState(() {
         _verses = verses;
         _index = index;
+        _isBookmarked = false;
         _loading = false;
         _error = null;
       });
@@ -99,7 +100,10 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
 
   Future<void> _nextVerse() async {
     if (_verses.isEmpty) return;
-    setState(() => _index = (_index + 1) % _verses.length);
+    setState(() {
+      _index = (_index + 1) % _verses.length;
+      _isBookmarked = false;
+    });
     await _refreshBookmark();
   }
 
