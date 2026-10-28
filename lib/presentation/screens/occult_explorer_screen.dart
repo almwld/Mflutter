@@ -6,6 +6,7 @@ import '../../data/abjad_extended_service.dart';
 import '../../data/occult_data_service.dart';
 import '../../models/occult_models.dart';
 import '../../services/audio_synthesis_service.dart';
+import '../../services/achievements_service.dart';
 
 class OccultExplorerScreen extends StatefulWidget {
   const OccultExplorerScreen({super.key});
@@ -280,6 +281,8 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   }
 
   void _showDetails(OccultEntry entry) {
+    // Count a distinct knowledge topic only when the user opens its details.
+    unawaited(AchievementsService.recordScienceExplored(entry.name));
     final colors = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
