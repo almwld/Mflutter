@@ -296,7 +296,12 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
                     children: [
                       _modeChip(_LensMode.text, 'النصوص', Icons.text_fields_rounded),
                       _modeChip(_LensMode.quran, 'القرآن', Icons.menu_book_rounded),
-                      _modeChip(_LensMode.objects, 'الأشياء', Icons.center_focus_strong_rounded),
+                      _modeChip(
+                        _LensMode.objects,
+                        'الأشياء (غير مفعّل)',
+                        Icons.center_focus_strong_rounded,
+                        enabled: false,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -345,12 +350,13 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
                   if (_recognizedText != null) _buildTextResult(theme),
                   if (_translatedText != null) _buildInfoCard('الترجمة الإنجليزية', _translatedText!, Icons.translate_rounded),
                   if (_mode == _LensMode.text && (_recognizedText?.isNotEmpty ?? false))
-                    Align(
-                      alignment: Alignment.center,
-                      child: OutlinedButton.icon(
-                        onPressed: _processing ? null : _translateText,
-                        icon: const Icon(Icons.translate_rounded),
-                        label: const Text('ترجمة النص إلى الإنجليزية'),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'الترجمة الآلية غير مفعّلة؛ لن ينزّل التطبيق نموذجًا تلقائيًا.',
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white54, fontSize: 11),
                       ),
                     ),
                   if (_mode == _LensMode.quran && _matches.isNotEmpty) _buildQuranMatches(theme),
@@ -358,7 +364,7 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
                   if (_analysisError != null) _buildInfoCard('ملاحظة', _analysisError!, Icons.info_outline_rounded),
                   const SizedBox(height: 6),
                   const Text(
-                    'الخصوصية: لا تُرفع الصورة إلى خادم. نموذج OCR العربي والترجمة يُنزّلان عند الحاجة الأولى، ثم تتم المعالجة محليًا.',
+                    'الخصوصية: لا تُرفع الصورة إلى خادم. يتطلب OCR العربي استيراد ara.traineddata يدويًا؛ لا ينزّل التطبيق نماذج تلقائيًا، والترجمة وتحليل الأشياء غير مفعّلين حاليًا.',
                     textDirection: TextDirection.rtl,
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white60, fontSize: 11, height: 1.5),
@@ -372,7 +378,12 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
     );
   }
 
-  Widget _modeChip(_LensMode mode, String label, IconData icon) {
+  Widget _modeChip(
+    _LensMode mode,
+    String label,
+    IconData icon, {
+    bool enabled = true,
+  }) {
     final selected = _mode == mode;
     return ChoiceChip(
       selected: selected,
@@ -382,7 +393,7 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
       selectedColor: const Color(0xFF00838F),
       backgroundColor: const Color(0xFF12352E),
       side: BorderSide(color: selected ? const Color(0xFF00BCD4) : Colors.white24),
-      onSelected: (_) => _selectMode(mode),
+      onSelected: enabled ? (_) => _selectMode(mode) : null,
     );
   }
 
