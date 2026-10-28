@@ -332,13 +332,21 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
 
     final word = normalizedQuery.single;
     final count = analysis.countWord(word);
+    final occurrences = analysis.occurrencesFor(word);
+    final verseReferences = occurrences
+        .take(12)
+        .map((item) => '${item.surahNumber}:${item.ayahNumber}')
+        .join(' • ');
     return Card(
       key: ValueKey<String>('result-$word-$count'),
       color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              children: [
             Container(
               width: 58,
               height: 58,
@@ -382,6 +390,38 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                 ],
               ),
             ),
+            if (count > 0) ...[
+              const SizedBox(height: 14),
+              const Divider(color: Colors.white12),
+              const SizedBox(height: 8),
+              Text(
+                'مواضع الظهور (السورة:الآية) — أول ${occurrences.length < 12 ? occurrences.length : 12} موضعًا',
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              SelectableText(
+                verseReferences,
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  height: 1.7,
+                  fontFeatures: [],
+                ),
+              ),
+              if (occurrences.length > 12)
+                Text(
+                  'و${occurrences.length - 12} موضعًا إضافيًا.',
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(color: Colors.white54, fontSize: 12),
+                ),
+            ],
           ],
         ),
       ),
