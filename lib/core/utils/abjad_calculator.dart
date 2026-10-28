@@ -159,7 +159,6 @@ class AbjadCalculator {
     final planet = _getPlanet(kabir);
     final zodiac = _getZodiac(kabir);
     final divineName = _getDivineName(kabir);
-    final frequency = _getFrequency(kabir);
     final color = _getColor(kabir);
 
     return AbjadResult(
@@ -171,7 +170,8 @@ class AbjadCalculator {
       planet: planet,
       zodiac: zodiac,
       divineName: divineName,
-      frequency: frequency,
+      // Retained for model compatibility; no physical frequency is calculated.
+      frequency: 0,
       color: color,
     );
   }
@@ -254,17 +254,11 @@ class AbjadCalculator {
     return ZodiacType.values[remainder];
   }
 
-  /// الحصول على الاسم الإلهي
+  /// اختيار اسم من القائمة بحسب ترتيب اصطلاحي؛ لا يحمل دلالة تنبؤية.
   static String _getDivineName(int value) {
-    final index = (value % 99);
+    if (value < 1 || DivineNames.arabicNames.isEmpty) return 'غير محدد';
+    final index = (value - 1) % DivineNames.arabicNames.length;
     return DivineNames.arabicNames[index];
-  }
-
-  /// الحصول على التكرر
-  static int _getFrequency(int value) {
-    if (value < 100) return 1;
-    if (value < 1000) return value ~/ 100;
-    return value ~/ 1000;
   }
 
   /// الحصول على اللون
