@@ -212,18 +212,23 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   }
 
   Future<void> _restoreLastPage() async {
-    final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
-    if (!mounted || _hasUserNavigated) return;
-    // Opening the restored page is real local reading activity even when it
-    // matches the PageController's initial index and emits no page-change event.
-    unawaited(ReadingProgressService.saveLastPage(last).catchError((error) {
-      debugPrint('MushafScreen: could not save restored page: $error');
-    }));
-    unawaited(DailyStreakService.recordActivity().catchError((_) {}));
-    if (last == _currentPage.value) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _goToPage(last);
-    });
+    try {
+      final last =
+          await ReadingProgressService.getLastPage(fallback: _currentPage.value);
+      if (!mounted || _hasUserNavigated) return;
+      // Opening the restored page is real local reading activity even when it
+      // matches the PageController's initial index and emits no page-change event.
+      unawaited(ReadingProgressService.saveLastPage(last).catchError((error) {
+        debugPrint('MushafScreen: could not save restored page: $error');
+      }));
+      unawaited(DailyStreakService.recordActivity().catchError((_) {}));
+      if (last == _currentPage.value) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _goToPage(last);
+      });
+    } catch (error) {
+      debugPrint('MushafScreen: could not restore last page: $error');
+    }
   }
 
   void _goToPage(int page) {
