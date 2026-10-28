@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getSurahNameArabic;
 
 import '../../services/bookmark_service.dart';
 import '../../services/mushaf_source.dart';
@@ -170,7 +171,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              'سورة $surah • الآية $ayah • صفحة ${MushafSource.pageForVerse(surah, ayah)}',
+                              'سورة ${getSurahNameArabic(surah)} • الآية $ayah • صفحة ${MushafSource.pageForVerse(surah, ayah)}',
                               textDirection: TextDirection.rtl,
                               style: TextStyle(color: colors.primary),
                             ),
