@@ -2,8 +2,32 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/reading_progress_service.dart';
 
-class StatsScreen extends StatelessWidget {
+class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
+
+  @override
+  State<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends State<StatsScreen> {
+  late Future<List<dynamic>> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _loadStats();
+  }
+
+  Future<List<dynamic>> _loadStats() => Future.wait<dynamic>([
+        ReadingProgressService.getLastPage(),
+        ReadingProgressService.getKhatmahProgress(),
+        ReadingProgressService.getPagesRead(),
+        ReadingProgressService.getCurrentStreak(),
+        ReadingProgressService.getReadingDays(),
+        ReadingProgressService.getPagesReadInLast7Days(),
+      ]);
+
+  void _retry() => setState(() => _statsFuture = _loadStats());
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +40,36 @@ class StatsScreen extends StatelessWidget {
         ),
         backgroundColor: AppColors.primaryNavy,
       ),
-      body: FutureBuilder(
-        future: Future.wait([
-          ReadingProgressService.getLastPage(),
-          ReadingProgressService.getKhatmahProgress(),
-          ReadingProgressService.getPagesRead(),
-          ReadingProgressService.getCurrentStreak(),
-          ReadingProgressService.getReadingDays(),
-          ReadingProgressService.getPagesReadInLast7Days(),
-        ]),
+      body: FutureBuilder<List<dynamic>>(
+        future: _statsFuture,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: Colors.redAccent, size: 34),
+                    const SizedBox(height: 12),
+                    Text(
+                      'تعذر تحميل إحصاءات القراءة المحلية: ${snapshot.error}',
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
