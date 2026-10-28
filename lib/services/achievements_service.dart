@@ -13,7 +13,7 @@ class AchievementsService {
     {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': false},
-    {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'استخدام التطبيق ليلاً', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': false},
     {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': false},
   ];
@@ -35,6 +35,9 @@ class AchievementsService {
     final abjadCalculations =
         preferences.getInt('mudabbir_abjad_calculations') ?? 0;
     _setProgress('first_abjad', abjadCalculations > 0 ? 1 : 0);
+    final completedInsights =
+        preferences.getInt('mudabbir_completed_insights') ?? 0;
+    _setProgress('ten_insights', completedInsights / 10);
   }
 
   /// Records a real completed calculation, persisting the event locally.
@@ -46,6 +49,19 @@ class AchievementsService {
       _setProgress('first_abjad', 1);
     } catch (_) {
       // A profile/achievement persistence issue must not block the calculator.
+    }
+  }
+
+  /// Counts a successfully completed local agent task, not a submitted prompt.
+  static Future<void> recordCompletedInsight() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final previous = preferences.getInt('mudabbir_completed_insights') ?? 0;
+      final next = previous + 1;
+      await preferences.setInt('mudabbir_completed_insights', next);
+      _setProgress('ten_insights', next / 10);
+    } catch (_) {
+      // The agent's answer remains successful if achievement persistence fails.
     }
   }
 
