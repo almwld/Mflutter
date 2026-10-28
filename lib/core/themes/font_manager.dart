@@ -8,8 +8,8 @@ class FontManager {
     MudabbirFont.amiri: 'Amiri',
     MudabbirFont.uthmani: 'Amiri',       // نستخدم Amiri بدل Uthmani
     MudabbirFont.musnad: 'Musnad',
-    MudabbirFont.kufi: 'Amiri',          // كوفي مبسط
-    MudabbirFont.hieroglyphic: 'Amiri',
+    MudabbirFont.kufi: 'NotoKufiArabic',
+    MudabbirFont.hieroglyphic: 'NotoSansEgyptianHieroglyphs',
   };
 
   static String getFamily(MudabbirFont font) => _fontFamilies[font] ?? 'Amiri';
