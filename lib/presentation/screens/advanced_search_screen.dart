@@ -42,6 +42,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen> {
       setState(() {
         _loadingIndex = true;
         _searching = false;
+        _hasSearched = false;
         _error = null;
         _results = const [];
       });
