@@ -74,7 +74,10 @@ class BookmarkService {
       _enqueueWrite(() => _removeBookmark(surah, ayah));
 
   static Future<void> _removeBookmark(int surah, int ayah) async {
-    final bookmarks = await getBookmarks();
+    // This mutation already runs inside the serialized write queue. Calling
+    // getBookmarks() here would await the queue entry currently awaiting this
+    // function, deadlocking every remove operation.
+    final bookmarks = await _readBookmarks();
     bookmarks.removeWhere(
       (item) => (item['surah'] as num).toInt() == surah &&
           (item['ayah'] as num).toInt() == ayah,
