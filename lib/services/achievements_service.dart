@@ -57,7 +57,7 @@ class AchievementsService {
     if (hour >= 5 && hour < 20) return;
     try {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setBool('mudabbir_night_use', true);
+      if (!await preferences.setBool('mudabbir_night_use', true)) return;
       _setProgress('night_mode', 1);
     } catch (_) {
       // App startup must not be blocked by achievement persistence.
@@ -69,7 +69,7 @@ class AchievementsService {
     try {
       final preferences = await SharedPreferences.getInstance();
       final previous = preferences.getInt('mudabbir_abjad_calculations') ?? 0;
-      await preferences.setInt('mudabbir_abjad_calculations', previous + 1);
+      if (!await preferences.setInt('mudabbir_abjad_calculations', previous + 1)) return;
       _setProgress('first_abjad', 1);
     } catch (_) {
       // A profile/achievement persistence issue must not block the calculator.
@@ -80,7 +80,7 @@ class AchievementsService {
   static Future<void> recordVerseShared() async {
     try {
       final preferences = await SharedPreferences.getInstance();
-      await preferences.setBool('mudabbir_shared_verse', true);
+      if (!await preferences.setBool('mudabbir_shared_verse', true)) return;
       _setProgress('share_verse', 1);
     } catch (_) {
       // Sharing itself must not fail because achievement storage is unavailable.
@@ -97,10 +97,10 @@ class AchievementsService {
               const <String>[])
           .toSet();
       explored.add(normalizedId);
-      await preferences.setStringList(
+      if (!await preferences.setStringList(
         'mudabbir_explored_sciences',
         explored.toList(growable: false),
-      );
+      )) return;
       _setProgress('seven_sciences', explored.length / 7);
     } catch (_) {
       // Science browsing remains available if achievement persistence fails.
@@ -113,7 +113,7 @@ class AchievementsService {
       final preferences = await SharedPreferences.getInstance();
       final previous = preferences.getInt('mudabbir_completed_insights') ?? 0;
       final next = previous + 1;
-      await preferences.setInt('mudabbir_completed_insights', next);
+      if (!await preferences.setInt('mudabbir_completed_insights', next)) return;
       _setProgress('ten_insights', next / 10);
     } catch (_) {
       // The agent's answer remains successful if achievement persistence fails.
