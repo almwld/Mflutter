@@ -25,6 +25,11 @@ class MultiUserService {
   static List<Map<String, dynamic>> get profiles =>
       List.unmodifiable(_profiles.map((p) => Map<String, dynamic>.from(p)));
 
+  static int get activeProfileIndex =>
+      _activeProfile >= 0 && _activeProfile < _profiles.length
+          ? _activeProfile
+          : 0;
+
   static Future<void> initialize() async {
     if (_initialized) return;
     final pending = _initializing;
