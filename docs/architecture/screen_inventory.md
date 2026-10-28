@@ -636,3 +636,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Settings reset feedback now distinguishes an in-memory reset from a reset whose local persistence succeeded, avoiding a false success claim after storage errors.
+
+
+## UI continuation — 2026-10-29 (agent cancellation)
+
+- `lib/presentation/providers/agent_chat_provider.dart`: asynchronous native generation-stop failures during explicit task cancellation are now caught and logged, so a plugin/runtime stop error cannot become an unhandled future while the provider marks the task cancelled.
+- No tests, analyzer, formatter, or APK build were run.
