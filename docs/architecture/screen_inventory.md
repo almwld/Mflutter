@@ -726,3 +726,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/achievements_service.dart`: Abjad calculations, distinct knowledge-topic visits, and completed insight counters now serialize their local read-modify-write events to avoid dropped increments or overwritten topic sets during rapid/concurrent UI actions.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (reading progress source recovery)
+
+- `lib/services/reading_progress_service.dart` contained a truncated regular-expression line and duplicated method bodies inside `_readValidDays`, leaving the source syntactically malformed. The service was reconstructed with one valid implementation for bounded page positions, unique page/day sets, calendar-date validation, current streak, and seven-day reading counts. Future dates and impossible date strings are excluded.
+- No tests, analyzer, formatter, or APK build were run.
