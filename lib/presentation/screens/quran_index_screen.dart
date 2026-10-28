@@ -177,9 +177,22 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
         Expanded(child: _tab == 0 ? ListView.separated(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
-          itemCount: items.length,
+          itemCount: items.isEmpty ? 1 : items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 7),
           itemBuilder: (context, index) {
+            if (items.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'لا توجد سورة مطابقة للبحث.',
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Amiri', color: _muted),
+                  ),
+                ),
+              );
+            }
             final number = items[index];
             final name = getSurahNameArabic(number);
             final page = MushafSource.pageForVerse(number, 1);
