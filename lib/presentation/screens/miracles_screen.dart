@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../widgets/common/mudabbir_glass_panel.dart';
+import '../templates/mudabbir_templates.dart';
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../services/quran_numerical_analysis_service.dart';
 
@@ -144,7 +145,7 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     final normalizedQuery =
         QuranNumericalAnalysisService.tokenize(_query);
 
-    return ListView(
+    return AnalyticsTemplate(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
       children: [
         MudabbirGlassPanel(

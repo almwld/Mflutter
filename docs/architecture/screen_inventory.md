@@ -201,3 +201,7 @@ This is a file-to-target mapping, not a claim that every target has passed behav
 ### Shared visual foundation
 
 Added `MudabbirDesignTokens` for the cosmic palette, spacing, and motion durations, plus `MudabbirGlassPanel` for restrained translucent surfaces without expensive full-screen blur. The numerical-analysis and Nucleus graph screens now use the shared panel/background tokens for their main interactive surfaces.
+
+### Shared templates
+
+Added 12 reusable layout primitives in `lib/presentation/templates/mudabbir_templates.dart`: Dashboard, Reader, Chat, Library, Analytics, Graph, Player, Settings, Search, Profile, Lab, and Service Hub. They compose presentation only; feature screens retain ownership of state and services. `MiraclesScreen` now uses `AnalyticsTemplate`, and a widget smoke test covers all 12 templates.
