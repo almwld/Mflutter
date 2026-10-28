@@ -130,12 +130,19 @@ class QuranWordAnalysis {
     required this.source,
   })  : wordCounts = Map<String, int>.unmodifiable(counts),
         wordOccurrences = Map<String, List<QuranWordOccurrence>>.unmodifiable(
-          occurrences.map(
-            (word, items) => MapEntry(
+          occurrences.map((word, items) {
+            final ordered = List<QuranWordOccurrence>.from(items)
+              ..sort((a, b) {
+                final bySurah = a.surahNumber.compareTo(b.surahNumber);
+                return bySurah != 0
+                    ? bySurah
+                    : a.ayahNumber.compareTo(b.ayahNumber);
+              });
+            return MapEntry(
               word,
-              List<QuranWordOccurrence>.unmodifiable(items),
-            ),
-          ),
+              List<QuranWordOccurrence>.unmodifiable(ordered),
+            );
+          }),
         );
 
   final Map<String, int> wordCounts;
@@ -144,7 +151,7 @@ class QuranWordAnalysis {
   List<QuranWordOccurrence> occurrencesFor(String input) {
     final tokens = QuranNumericalAnalysisService.tokenize(input);
     if (tokens.length != 1) return const <QuranWordOccurrence>[];
-    return wordOccurrences[tokens.single] ?? const <QuranWordOccurrence>[]; 
+    return wordOccurrences[tokens.single] ?? const <QuranWordOccurrence>[];
   }
   final int verseCount;
   final int wordCount;
