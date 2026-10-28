@@ -654,7 +654,12 @@ class AgentChatProvider extends ChangeNotifier {
             : _sourcesFromText(result).join(', ')),
       ];
 
-  Future<String> _composeAnswer(AgentTask task) async {
+  Future<String> _composeAnswer(
+    AgentTask task, {
+    required int? contextSurahNumber,
+    required int? contextAyahNumber,
+    required String? contextVerseText,
+  }) async {
     final results = task.steps
         .where((step) => step.result != null && step.result!.trim().isNotEmpty)
         .map((step) => '${step.title}:\n${step.result}')
@@ -664,25 +669,23 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     final evidence = results.join('\n\n');
-    final nucleus = NucleusService();
-    final verseContext = nucleus.currentVerseText;
-    final hasVerseContext = verseContext != null &&
-        verseContext.trim().isNotEmpty &&
-        nucleus.currentSurahNumber != null &&
-        nucleus.currentAyahNumber != null;
+    final hasVerseContext = contextVerseText != null &&
+        contextVerseText.trim().isNotEmpty &&
+        contextSurahNumber != null &&
+        contextAyahNumber != null;
     final verseSource = hasVerseContext
-        ? 'القرآن الكريم ${nucleus.currentSurahNumber}:${nucleus.currentAyahNumber}'
+        ? 'القرآن الكريم $contextSurahNumber:$contextAyahNumber'
         : null;
     final contextualEvidence = !hasVerseContext
         ? evidence
         : evidence + '\n\nالسياق المحدد في المصحف (' +
-            nucleus.currentSurahNumber.toString() + ':' +
-            nucleus.currentAyahNumber.toString() + '):\n' + verseContext!;
+            contextSurahNumber.toString() + ':' +
+            contextAyahNumber.toString() + '):\n' + contextVerseText!;
     final sourceList = <String>{
       ..._knowledge.loadedSources,
       if (verseSource != null) verseSource,
     }.join(', ');
-    final runtime = nucleus;
+    final runtime = NucleusService();
     if (runtime.isModelLoaded) {
       try {
         final boundedEvidence = contextualEvidence.length > 12000
@@ -726,13 +729,8 @@ class AgentChatProvider extends ChangeNotifier {
   List<String> _sourcesFromTask(AgentTask? task) {
     final sources = _sourcesFromSteps(task?.steps).toSet();
     final nucleus = NucleusService();
-    if (nucleus.currentVerseText?.trim().isNotEmpty == true &&
-        nucleus.currentSurahNumber != null &&
-        nucleus.currentAyahNumber != null) {
-      sources.add(
-        'القرآن الكريم ${nucleus.currentSurahNumber}:${nucleus.currentAyahNumber}',
-      );
-    }
+    final verseSource = _activeTaskVerseSource;
+    if (verseSource != null) sources.add(verseSource);
     return sources.toList(growable: false);
   }
 
