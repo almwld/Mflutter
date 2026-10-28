@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/abjad_provider.dart';
+import '../../services/achievements_service.dart';
 
 class AbjadCalculatorScreen extends StatefulWidget {
   const AbjadCalculatorScreen({super.key});
@@ -11,7 +12,7 @@ class AbjadCalculatorScreen extends StatefulWidget {
 class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   final _controller = TextEditingController();
 
-  void _calculate() {
+  Future<void> _calculate() async {
     final text = _controller.text.trim();
     if (text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -20,6 +21,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       return;
     }
     context.read<AbjadProvider>().calculateAbjad(text);
+    await AchievementsService.recordAbjadCalculation();
   }
 
   @override
