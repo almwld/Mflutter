@@ -237,6 +237,8 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   void _goToPage(int page) {
     final target = MushafSource.normalizePage(page);
+    // Explicit navigation wins over a still-pending asynchronous restore.
+    _hasUserNavigated = true;
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 260),
