@@ -1,13 +1,12 @@
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 
-/// Local Nearby Connections lifecycle. Incoming requests require explicit
-/// approval; outgoing requests are accepted on this device while the peer
-/// confirms the same authentication token on their side.
+/// Local Nearby Connections lifecycle. Every connection request requires
+/// explicit approval and allows the user to compare the authentication token
+/// before accepting; no peer is silently trusted.
 class P2PMeshService extends ChangeNotifier {
   P2PMeshService._();
 
@@ -90,16 +89,9 @@ class P2PMeshService extends ChangeNotifier {
 
   void _handleConnectionInitiated(String endpointId, ConnectionInfo info) {
     _peers[endpointId] = info.endpointName;
-    if (info.isIncomingConnection) {
-      // Never silently accept an unsolicited incoming peer.
-      _pendingConnections[endpointId] = info;
-      notifyListeners();
-      return;
-    }
-
-    // The local device initiated this request; accept locally and let the
-    // remote user confirm the matching authentication token.
-    unawaited(_acceptConnection(endpointId));
+    // Both endpoints must explicitly approve the request. The UI exposes the
+    // authentication token so users can compare it out-of-band first.
+    _pendingConnections[endpointId] = info;
     notifyListeners();
   }
 
