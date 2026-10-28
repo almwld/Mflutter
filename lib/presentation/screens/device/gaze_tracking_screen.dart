@@ -79,8 +79,9 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
   Future<void> _initialize() async {
     final generation = ++_generation;
     if (mounted) setState(() { _loading = true; _error = null; });
-    await _releaseCamera();
     try {
+      await _releaseCamera();
+      if (!mounted || generation != _generation) return;
       await _fusion.load();
       final detector = await FaceDetector.create(model: FaceDetectionModel.frontCamera);
       final cameras = await availableCameras();
@@ -133,8 +134,18 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     final detector = _detector;
     _camera = null;
     _detector = null;
-    await camera?.dispose();
-    await detector?.dispose();
+    // Releasing one native resource must not prevent releasing the other or
+    // leak an asynchronous exception during lifecycle changes/dispose.
+    try {
+      await camera?.dispose();
+    } catch (error) {
+      debugPrint('Could not dispose gaze camera: $error');
+    }
+    try {
+      await detector?.dispose();
+    } catch (error) {
+      debugPrint('Could not dispose gaze detector: $error');
+    }
   }
 
   double? _eyeRatio(Eye? eye, bool horizontal) {
