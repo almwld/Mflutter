@@ -33,6 +33,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
   bool _systemBarsVisible = false;
+  bool _chromeVisible = true;
 
   Future<void> _setImmersiveMode(bool immersive) async {
     await SystemChrome.setEnabledSystemUIMode(
@@ -42,7 +43,11 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   }
 
   Future<void> _toggleSystemBars() async {
-    await _setImmersiveMode(_systemBarsVisible);
+    final showChrome = !_chromeVisible;
+    if (mounted) setState(() => _chromeVisible = showChrome);
+    // Keep the app's reader controls and Android system bars in sync so a
+    // double tap genuinely enters/exits immersive reading.
+    await _setImmersiveMode(!showChrome);
   }
 
   @override
@@ -150,7 +155,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
         child: SafeArea(
           child: Column(
           children: [
-            _buildHeader(gold),
+            if (_chromeVisible) _buildHeader(gold),
             Expanded(
               child: PageView.builder(
                 controller: _controller,
@@ -169,7 +174,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 ),
               ),
             ),
-            _buildNavigation(gold),
+            if (_chromeVisible) _buildNavigation(gold),
           ],
           ),
         ),
