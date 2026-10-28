@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/reading_progress_service.dart';
-import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
 
 class StatsScreen extends StatefulWidget {
