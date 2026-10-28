@@ -49,6 +49,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   late final TransformationController _mushafZoomController;
   bool _zoomMode = false;
   bool _readerControlsVisible = true;
+  bool _hasUserNavigated = false;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   static const _paper = Color(0xFFF8F1E4);
@@ -207,7 +208,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   Future<void> _restoreLastPage() async {
     final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
-    if (!mounted) return;
+    if (!mounted || _hasUserNavigated) return;
     // Opening the restored page is real local reading activity even when it
     // matches the PageController's initial index and emits no page-change event.
     unawaited(ReadingProgressService.saveLastPage(last).catchError((error) {
@@ -593,6 +594,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                   onPageChanged: (pageNumber) {
                     final page = MushafSource.normalizePage(pageNumber);
                     final previousPage = _currentPage.value;
+                    if (page != previousPage) _hasUserNavigated = true;
                     _currentPage.value = page;
                     if (_zoomMode) {
                       _mushafZoomController.value = Matrix4.identity();
