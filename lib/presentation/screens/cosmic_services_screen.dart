@@ -226,7 +226,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   Future<void> _showCapsules() async {
     final now = DateTime.now();
     final due = _capsules.where((item) {
-      final raw = item['unlockAt']?.toString();
+      final raw = item['unlockDate']?.toString();
       final date = raw == null ? null : DateTime.tryParse(raw);
       return date != null && !date.isAfter(now);
     }).toList(growable: false);
@@ -242,7 +242,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
               : ListView(
                   shrinkWrap: true,
                   children: _capsules.map((item) {
-                    final raw = item['unlockAt']?.toString() ?? '';
+                    final raw = item['unlockDate']?.toString() ?? '';
                     final date = DateTime.tryParse(raw);
                     final available = date != null && !date.isAfter(now);
                     return ListTile(
@@ -251,7 +251,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
                         color: AppColors.primaryGold,
                       ),
                       title: Text(
-                        available ? (item['text'] ?? '').toString() : 'رسالة مؤجلة',
+                        available ? (item['content'] ?? '').toString() : 'رسالة مؤجلة',
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         textDirection: TextDirection.rtl,
