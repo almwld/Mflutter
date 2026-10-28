@@ -62,9 +62,9 @@ class ChatService {
 
     // نتائج الجمل
     buffer.writeln('📊 حساب الجمل:');
-    buffer.writeln('• الكبير: ${abjadResult.kabir}');
-    buffer.writeln('• الصغير: ${abjadResult.saghir}');
-    buffer.writeln('• الوسط: ${abjadResult.wasat}');
+    buffer.writeln('• مجموع أبجد الكبير: ${abjadResult.kabir}');
+    buffer.writeln('• متوسط قيم الحروف: ${abjadResult.saghir}');
+    buffer.writeln('• نصف المجموع: ${abjadResult.wasat}');
     buffer.writeln('• العنصر الرمزي: ${abjadResult.element}');
     buffer.writeln('• الكوكب الرمزي: ${abjadResult.planet}');
     buffer.writeln('• البرج الرمزي: ${abjadResult.zodiac}');
