@@ -247,6 +247,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
         title: const Text('الكبسولات الزمنية المحلية'),
         content: SizedBox(
           width: 420,
+          height: 320,
           child: _capsules.isEmpty
               ? const Text('لا توجد كبسولات محفوظة بعد.')
               : ListView(
