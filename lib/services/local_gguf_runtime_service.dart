@@ -80,6 +80,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     _busy = true;
     _status = 'جارٍ فحص ملف GGUF المستورد...';
     notifyListeners();
+    File? temporaryImport;
     try {
       final source = File(sourcePath);
       final sourceName = source.uri.pathSegments.isEmpty
@@ -105,6 +106,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         return target;
       }
       final temp = File('${target.path}.importing');
+      temporaryImport = temp;
       if (await temp.exists()) await temp.delete();
       await source.openRead().pipe(temp.openWrite());
       if (!await _isValidGguf(temp)) {
@@ -112,14 +114,29 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         throw const FormatException('فشل التحقق من نسخة GGUF بعد الاستيراد.');
       }
       final backup = File('${target.path}.previous');
+      if (await backup.exists()) {
+        final backupValid = await _isValidGguf(backup);
+        final targetExists = await target.exists();
+        final targetValid = targetExists && await _isValidGguf(target);
+        if (!targetValid && backupValid) {
+          if (targetExists) await target.delete();
+          await backup.rename(target.path);
+        } else if (targetValid) {
+          await backup.delete();
+        } else {
+          throw StateError(
+            'عُثر على نسخة احتياطية غير صالحة ولا يوجد نموذج صالح يمكن استعادته.',
+          );
+        }
+      }
       final hadPrevious = await target.exists();
-      if (await backup.exists()) await backup.delete();
       if (hadPrevious) await target.rename(backup.path);
 
       try {
         // Keep the previous valid model recoverable until both the validated
         // file replacement and the selected-model marker have succeeded.
         await temp.rename(target.path);
+        temporaryImport = null;
         await _selectModel(sourceName);
       } catch (_) {
         if (await target.exists()) await target.delete();
@@ -140,6 +157,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       _status = 'تم استيراد النموذج $sourceName إلى مساحة التطبيق الخاصة.';
       return target;
     } catch (error) {
+      final temp = temporaryImport;
+      if (temp != null && await temp.exists()) {
+        try {
+          await temp.delete();
+        } catch (_) {
+          // Keep the original import error as the primary failure.
+        }
+      }
       _status = 'فشل استيراد النموذج: $error';
       rethrow;
     } finally {
