@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
 
+/// Preserve the legacy import path for the shared tools directory.
+export 'home_screen.dart' show MoreScreen;
+
 /// Backwards-compatible entry point for callers that still open
 /// [MainNavigation].
 ///
@@ -14,6 +17,3 @@ class MainNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const HomeScreen();
 }
-
-/// Preserve the legacy import path for the shared tools directory.
-export 'home_screen.dart' show MoreScreen;
