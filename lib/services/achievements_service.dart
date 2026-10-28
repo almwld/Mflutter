@@ -15,7 +15,7 @@ class AchievementsService {
     {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'استخدام التطبيق ليلاً', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': false},
-    {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': true},
   ];
 
   static List<Map<String, dynamic>> get achievements =>
@@ -41,6 +41,10 @@ class AchievementsService {
     final exploredSciences =
         preferences.getStringList('mudabbir_explored_sciences') ?? const [];
     _setProgress('seven_sciences', exploredSciences.toSet().length / 7);
+    _setProgress(
+      'share_verse',
+      preferences.getBool('mudabbir_shared_verse') == true ? 1 : 0,
+    );
   }
 
   /// Records a real completed calculation, persisting the event locally.
@@ -52,6 +56,17 @@ class AchievementsService {
       _setProgress('first_abjad', 1);
     } catch (_) {
       // A profile/achievement persistence issue must not block the calculator.
+    }
+  }
+
+  /// Records a verse share only after the platform reports a successful share.
+  static Future<void> recordVerseShared() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setBool('mudabbir_shared_verse', true);
+      _setProgress('share_verse', 1);
+    } catch (_) {
+      // Sharing itself must not fail because achievement storage is unavailable.
     }
   }
 
