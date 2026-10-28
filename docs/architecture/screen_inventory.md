@@ -544,3 +544,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/cloud_sync_service.dart` and `lib/presentation/screens/player_profile_screen.dart`: corrected the misleading “local checkpoint saved” message. The current service records only a timestamp; it does not snapshot app data or synchronize it. The UI now says so explicitly, and a failed SharedPreferences write no longer reports success.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (agent memory persistence)
+
+- `lib/services/agent_memory_service.dart`: recent-run reads now handle non-positive limits safely; malformed legacy JSON/maps are treated as an empty recoverable store; failed writes to run history or the knowledge vault now raise explicit persistence errors instead of being silently reported as success.
+- No tests, analyzer, formatter, or APK build were run.
