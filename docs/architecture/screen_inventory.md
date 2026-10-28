@@ -262,3 +262,6 @@ These changes are code-level implementation notes only. No tests/builds were run
 - The profile screen describes its checkpoint as local-only and restores its timestamp at startup; no remote cloud sync backend is claimed.
 - Abjad calculations now use the shared letter-value table; fake energy/frequency outputs are removed or set to zero, symbolic mappings are labeled as such, and the 99-name list is shared across the UI, service, and datasource.
 - P2P advertising/discovery now requests runtime permissions and requires explicit approval on both endpoints with authentication-token comparison.
+
+### More-directory reachability
+- Added searchable entries for the Quran word explorer, Advanced Tech, the detailed Abjad screen, and the symbolic elements/numbers/zodiac screens. These routes reuse the canonical widgets and wrap provider-dependent Abjad screens with their required provider.
