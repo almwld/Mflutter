@@ -24,6 +24,7 @@ class AgentKnowledgeService {
   final List<AgentKnowledgeDocument> _documents = [];
   final Set<String> _loadedSources = {};
   Future<void>? _initializing;
+  Future<void>? _loadingVariants;
   bool _variantsLoaded = false;
 
   bool get isReady => _loadedSources.contains(_knowledgeAsset);
@@ -146,11 +147,25 @@ class AgentKnowledgeService {
 
   Future<void> _loadVariantsIfNeeded() async {
     if (_variantsLoaded) return;
+    final pending = _loadingVariants;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final attempt = _loadVariantAssets();
+    _loadingVariants = attempt;
+    try {
+      await attempt;
+      _variantsLoaded = true;
+    } finally {
+      if (identical(_loadingVariants, attempt)) _loadingVariants = null;
+    }
+  }
+
+  Future<void> _loadVariantAssets() async {
     for (final path in _variantAssets) {
       await _loadJsonAsset(path);
     }
-    // Mark complete only after every optional source has been attempted.
-    _variantsLoaded = true;
   }
 
   Future<List<AgentKnowledgeDocument>> search(
