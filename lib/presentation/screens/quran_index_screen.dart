@@ -56,7 +56,10 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
           return String.fromCharCode(0x30 + digit);
         },
       )
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'),
+        '',
+      )
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
       .replaceAll(RegExp(r'[ؤئ]'), 'ء')
       .replaceAll('ى', 'ي')
