@@ -225,6 +225,10 @@ class NucleusService extends ChangeNotifier {
     return File(_runtime.loadedPath!);
   }
 
+  Future<void> stopGeneration() => _runtime.stopGeneration();
+
+  Future<void> unloadModel() => _runtime.unloadModel();
+
   Future<String> generateGroundedAnswer({
     required String question,
     required String evidence,

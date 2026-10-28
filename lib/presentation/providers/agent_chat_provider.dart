@@ -222,8 +222,8 @@ class AgentChatProvider extends ChangeNotifier {
     _paused = false;
     // Stop native generation too; otherwise the task would remain busy until
     // llama.cpp finishes even though the user explicitly cancelled it.
-    if (LocalGgufRuntimeService.instance.isGenerating) {
-      unawaited(LocalGgufRuntimeService.instance.stopGeneration());
+    if (NucleusService().isGenerating) {
+      unawaited(NucleusService().stopGeneration());
     }
     if (_activeTask != null) {
       _activeTask = _activeTask!.copyWith(status: TaskStatus.cancelled);
