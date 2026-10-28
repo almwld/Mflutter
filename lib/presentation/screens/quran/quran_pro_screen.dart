@@ -127,14 +127,9 @@ class _QuranProScreenState extends State<QuranProScreen> {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
     });
     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
-    if (_currentVerses.isNotEmpty) {
-      final firstVerse = _currentVerses.first;
-      NucleusService().setQuranContext(
-        surahNumber: n,
-        ayahNumber: 1,
-        verseText: firstVerse is Map ? firstVerse['text']?.toString() : null,
-      );
-    }
+    // A newly opened surah has no selected verse yet; do not leave the nucleus
+    // pointed at the first verse or at a verse selected in a previous surah.
+    NucleusService().clearQuranContext();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) _scroll.jumpTo(0);
     });
