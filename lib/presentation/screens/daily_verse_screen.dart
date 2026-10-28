@@ -34,6 +34,9 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
     try {
       final verses = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
+      if (verses.isEmpty) {
+        throw StateError('فهرس القرآن المحلي لا يحتوي على آيات.');
+      }
       final now = DateTime.now();
       final dayOfYear = now.difference(DateTime(now.year)).inDays;
       final index = dayOfYear % verses.length;
