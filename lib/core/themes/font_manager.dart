@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 enum MudabbirFont { amiri, uthmani, musnad, kufi, hieroglyphic }
 
 class FontManager {
+  static bool _raqqFontLoaded = false;
+  static bool get isRaqqFontLoaded => _raqqFontLoaded;
+  static void markRaqqFontLoaded(bool loaded) => _raqqFontLoaded = loaded;
+
   static const Map<MudabbirFont, String> _fontFamilies = {
     MudabbirFont.amiri: 'Amiri',
     MudabbirFont.uthmani: 'Amiri',       // نستخدم Amiri بدل Uthmani
