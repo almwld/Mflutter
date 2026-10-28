@@ -198,6 +198,18 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: Text(
+                          '${agents.length} نتيجة',
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
                     PopupMenuButton<String>(
                       onSelected: (value) => setState(() => _layer = value),
                       itemBuilder: (_) => layers
