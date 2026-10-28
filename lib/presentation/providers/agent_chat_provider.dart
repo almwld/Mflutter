@@ -264,10 +264,7 @@ class AgentChatProvider extends ChangeNotifier {
     if (NucleusService().isGenerating) {
       unawaited(NucleusService().stopGeneration());
     }
-    if (_activeTask != null) {
-      _activeTask = _activeTask!.copyWith(status: TaskStatus.cancelled);
-      notifyListeners();
-    }
+    _markCancelledIfCurrent(task);
   }
 
   List<AgentStep> _replaceStep(List<AgentStep> steps, int index, AgentStep value) {
