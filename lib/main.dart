@@ -10,6 +10,7 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'services/theme_service.dart';
 import 'services/nucleus_service.dart';
+import 'core/themes/font_manager.dart';
 
 Future<void> _loadBundledKufiFont() async {
   try {
@@ -24,7 +25,9 @@ Future<void> _loadBundledKufiFont() async {
     final loader = FontLoader('Raqq')
       ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
     await loader.load();
+    FontManager.markRaqqFontLoaded(true);
   } catch (_) {
+    FontManager.markRaqqFontLoaded(false);
     // Keep the app usable if the optional display font cannot be loaded.
     // The canonical Quran text remains unchanged; Flutter uses its fallback.
   }
