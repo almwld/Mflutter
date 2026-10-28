@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../services/nucleus_service.dart';
 import 'home_screen.dart';
@@ -33,7 +35,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   Future<void> _start() async {
     await Future<void>.delayed(const Duration(milliseconds: 350));
-    try { await _core.initialize(); } catch (error) {
+    try {
+      // Keep startup responsive if local indexing is slow. The shared nucleus
+      // initialization continues in the background and screens can observe
+      // its readiness/errors through the existing listener.
+      await _core.initialize().timeout(const Duration(seconds: 8));
+    } on TimeoutException {
+      if (mounted) {
+        setState(() => _message = 'تستمر تهيئة المعرفة المحلية؛ سيتم فتح الواجهة الآن.');
+      }
+    } catch (error) {
       if (mounted) setState(() => _message = 'بدء محدود: ' + error.toString());
     }
     if (!mounted || _opened) return;
