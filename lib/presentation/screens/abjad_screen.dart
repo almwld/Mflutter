@@ -12,7 +12,14 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   final _controller = TextEditingController();
 
   void _calculate() {
-    context.read<AbjadProvider>().calculateAbjad(_controller.text);
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('أدخل نصًا عربيًا لحساب قيم الحروف.')),
+      );
+      return;
+    }
+    context.read<AbjadProvider>().calculateAbjad(text);
   }
 
   @override
