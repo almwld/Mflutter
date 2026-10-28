@@ -80,14 +80,16 @@ class LabeledTrainingDatasetService {
       rows.add(<String, dynamic>{'text': text.trim(), 'axis_type': label});
     }
 
-    if (classCounts.length < 2) {
-      throw const FormatException(
-        'لا يمكن تدريب مصنف متعدد الفئات على فئة واحدة فقط؛ أضف عينات من فئتين مختلفتين على الأقل.',
+    final missingLabels = supportedLabels
+        .where((label) => !classCounts.containsKey(label))
+        .toList(growable: false);
+    if (missingLabels.isNotEmpty) {
+      throw FormatException(
+        'يتطلب المصنف ثلاث فئات؛ الفئات المفقودة: ${missingLabels.join(', ')}.',
       );
     }
-    final underrepresented = classCounts.entries
-        .where((entry) => entry.value < 2)
-        .map((entry) => entry.key)
+    final underrepresented = supportedLabels
+        .where((label) => (classCounts[label] ?? 0) < 2)
         .toList(growable: false);
     if (underrepresented.isNotEmpty) {
       throw FormatException(
