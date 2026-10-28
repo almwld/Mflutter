@@ -58,6 +58,26 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
     await _discoverPeers();
   }
 
+  Future<void> _toggleAdvertising() async {
+    if (_mesh.isAdvertising) {
+      try {
+        await _mesh.stopAdvertising();
+        if (!mounted) return;
+        setState(() => _status = 'تم إيقاف إعلان هذا الجهاز على شبكة P2P.');
+      } catch (error) {
+        if (!mounted) return;
+        setState(() => _status = 'تعذر إيقاف الإعلان: $error');
+      }
+      return;
+    }
+
+    final started = await _mesh.advertise(deviceName: 'مُدَبِّر');
+    if (!mounted) return;
+    setState(() => _status = started
+        ? 'هذا الجهاز قابل للاكتشاف الآن عبر Nearby Connections.'
+        : 'تعذر جعل الجهاز قابلًا للاكتشاف. تحقق من الأذونات ودعم الجهاز.');
+  }
+
   Future<void> _discoverPeers() async {
     if (_scanning) return;
     setState(() {
@@ -151,6 +171,22 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
             trailing: Icon(
               discovering ? Icons.stop_circle_outlined : Icons.search_rounded,
               color: discovering ? Colors.redAccent : AppColors.primaryGold,
+            ),
+          ),
+          _buildCard(
+            'إتاحة هذا الجهاز للاكتشاف',
+            _mesh.isAdvertising
+                ? 'إعلان نشط — يمكن للأجهزة الأخرى العثور عليه'
+                : 'الإعلان متوقف',
+            Icons.wifi_tethering_rounded,
+            _toggleAdvertising,
+            trailing: Icon(
+              _mesh.isAdvertising
+                  ? Icons.stop_circle_outlined
+                  : Icons.wifi_tethering_rounded,
+              color: _mesh.isAdvertising
+                  ? Colors.redAccent
+                  : AppColors.primaryGold,
             ),
           ),
           if (_peers.isEmpty && discovering)
