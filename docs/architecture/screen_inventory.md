@@ -614,3 +614,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/providers/theme_provider.dart`: preference loading now falls back to safe defaults with a retained error state, theme/font writes are serialized using state snapshots, and storage failures no longer escape as unhandled asynchronous errors.
 - `lib/presentation/screens/settings/settings_screen.dart`: displays the provider's local preference load/save error so an in-memory setting change is not mistaken for a successfully persisted preference.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Successful subsequent theme persistence now clears a previously displayed storage warning and notifies settings listeners, so recovered storage state is reflected in the UI.
