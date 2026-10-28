@@ -29,17 +29,21 @@ class ReadingProgressService {
 
   static Future<void> _savePageAndActivity(int normalizedPage) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_pageKey, normalizedPage);
+    if (!await prefs.setInt(_pageKey, normalizedPage)) {
+      throw StateError('تعذر حفظ موضع القراءة محليًا.');
+    }
 
     final pages = _readValidPages(
       prefs.getStringList(_pagesReadKey) ?? const <String>[],
     );
     if (pages.add(normalizedPage)) {
       final sorted = pages.toList()..sort();
-      await prefs.setStringList(
+      if (!await prefs.setStringList(
         _pagesReadKey,
         sorted.map((value) => value.toString()).toList(growable: false),
-      );
+      )) {
+        throw StateError('تعذر تحديث صفحات القراءة المحفوظة.');
+      }
     } else {
       // Clean up legacy invalid entries and duplicates while preserving
       // previously recorded valid pages.
@@ -47,7 +51,9 @@ class ReadingProgressService {
       final normalized = pages.toList()..sort();
       final canonical = normalized.map((value) => value.toString()).toList();
       if (!_sameStrings(stored, canonical)) {
-        await prefs.setStringList(_pagesReadKey, canonical);
+        if (!await prefs.setStringList(_pagesReadKey, canonical)) {
+          throw StateError('تعذر تصحيح سجل صفحات القراءة.');
+        }
       }
     }
 
@@ -55,7 +61,9 @@ class ReadingProgressService {
     final today = _dateKey(DateTime.now());
     if (!days.contains(today)) {
       days.add(today);
-      await prefs.setStringList(_readingDaysKey, days);
+      if (!await prefs.setStringList(_readingDaysKey, days)) {
+        throw StateError('تعذر حفظ يوم القراءة محليًا.');
+      }
     }
   }
 
