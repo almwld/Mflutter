@@ -804,3 +804,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `QuranMultiModeScreen` now applies the same canonical per-surah count/text validation as the standard surah reader, verifies that correction preserves the verse count, and exposes retry when the local asset is missing or incomplete.
+
+
+- Persisted profile normalization now rejects non-finite level/XP values before integer conversion, preventing malformed numeric JSON from discarding the entire local profile list.
