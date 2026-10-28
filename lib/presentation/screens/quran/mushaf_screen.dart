@@ -110,7 +110,9 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     }
     _restorePageTheme();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafScreen: could not restore system bars on dispose: $error');
+    });
   }
 
   Future<void> _toggleReaderControls() async {
