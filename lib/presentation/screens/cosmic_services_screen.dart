@@ -299,6 +299,27 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     }
   }
 
+  Future<void> _removeCapsule(String id, BuildContext dialogContext) async {
+    try {
+      await TimeCapsuleService.removeCapsule(id);
+      final updated = await TimeCapsuleService.getCapsules();
+      if (!mounted) return;
+      setState(() {
+        _capsules = updated;
+        _error = null;
+      });
+      if (dialogContext.mounted) Navigator.pop(dialogContext);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف الكبسولة المحلية.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حذف الكبسولة: $error')),
+      );
+    }
+  }
+
   Future<void> _showCapsules() async {
     final now = DateTime.now();
     final due = _capsules.where((item) {
@@ -333,6 +354,14 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
                         textDirection: TextDirection.rtl,
                       ),
                       subtitle: Text('تاريخ الفتح: ${raw.isEmpty ? 'غير محدد' : raw}'),
+                      trailing: IconButton(
+                        tooltip: 'حذف الكبسولة',
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        onPressed: () => _removeCapsule(
+                          (item['id'] ?? '').toString(),
+                          dialogContext,
+                        ),
+                      ),
                     );
                   }).toList(),
                 ),
