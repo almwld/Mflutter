@@ -714,3 +714,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/multi_user_service.dart`: profile creation, switching, and XP updates now share a serial mutation queue. Concurrent UI actions no longer race through read-modify-write cycles and overwrite one another; avatar input is bounded and XP arithmetic is capped to the supported persisted range.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (Quran bookmarks integrity)
+
+- `lib/services/bookmark_service.dart`: bookmark storage is capped at 500 entries, and saved verse previews are now sourced from the bundled Quran verse lookup rather than trusting caller-provided display text. Duplicate references remain replaceable at the limit.
+- No tests, analyzer, formatter, or APK build were run.
