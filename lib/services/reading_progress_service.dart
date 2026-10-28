@@ -30,6 +30,27 @@ class ReadingProgressService {
     return _saveQueue;
   }
 
+  /// Records a real reading-day event without inventing a page number.
+  /// Used by surah-based readers that do not expose a page position.
+  static Future<void> recordReadingDay() {
+    final day = _dateKey(DateTime.now());
+    _saveQueue = _saveQueue
+        .catchError((Object _) {})
+        .then((_) => _saveReadingDay(day));
+    return _saveQueue;
+  }
+
+  static Future<void> _saveReadingDay(String day) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_readingDaysKey) ?? const <String>[];
+    final days = _readValidDays(stored)..add(day);
+    final sorted = days.toList()..sort();
+    if (!_sameStrings(stored, sorted) &&
+        !await prefs.setStringList(_readingDaysKey, sorted)) {
+      throw StateError('تعذر حفظ يوم القراءة محليًا.');
+    }
+  }
+
   static Future<void> _savePageAndActivity(int normalizedPage) async {
     final prefs = await SharedPreferences.getInstance();
     if (!await prefs.setInt(_pageKey, normalizedPage)) {
