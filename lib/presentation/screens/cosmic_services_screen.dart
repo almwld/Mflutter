@@ -135,6 +135,30 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     }
   }
 
+  Future<void> _removeDream(
+    String id,
+    BuildContext dialogContext,
+  ) async {
+    try {
+      await DreamJournalService.removeDream(id);
+      final updated = await DreamJournalService.getDreams();
+      if (!mounted) return;
+      setState(() {
+        _dreams = updated;
+        _error = null;
+      });
+      if (dialogContext.mounted) Navigator.pop(dialogContext, false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف المذكرة المحلية.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حذف المذكرة: $error')),
+      );
+    }
+  }
+
   Future<void> _openDreamJournal() async {
     final controller = TextEditingController();
     final shouldSave = await showDialog<bool>(
@@ -186,6 +210,14 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
                         (_dreams[index]['createdAt'] ?? '').toString(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'حذف المذكرة',
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        onPressed: () => _removeDream(
+                          (_dreams[index]['id'] ?? '').toString(),
+                          dialogContext,
+                        ),
                       ),
                     ),
                   ),
