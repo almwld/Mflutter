@@ -341,3 +341,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/player_profile_screen.dart`: local checkpoint-save exceptions now produce a visible status message rather than an uncaught asynchronous failure.
 - `lib/presentation/screens/home_screen.dart`: removed a duplicated quick-action destination and exposed the dedicated letters screen from the quick-access row.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (agent capability transparency)
+
+- `lib/presentation/providers/agent_chat_provider.dart`: each agent step now reports whether its ID has an explicit runtime handler or currently falls back to generic local knowledge retrieval. This prevents registry presence from being mistaken for an independently implemented specialist.
+- Tests, analyzer, formatter, and APK build remain intentionally unrun.
