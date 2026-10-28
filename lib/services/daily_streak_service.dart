@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'reading_progress_service.dart';
+
 /// Persistent reading streak based on distinct calendar days with real Quran
 /// reading activity. Opening the profile never counts as reading.
 class DailyStreakService {
@@ -49,6 +51,9 @@ class DailyStreakService {
 
   static Future<void> _recordActivity() async {
     await initialize();
+    // Keep the profile, statistics, and achievement ledgers aligned even when
+    // this calendar day was already recorded in the streak-specific store.
+    await ReadingProgressService.recordReadingDay();
     final today = _dateKey(DateTime.now());
     if (_activeDates.contains(today)) return;
 
