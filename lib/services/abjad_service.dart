@@ -40,12 +40,8 @@ class AbjadService {
     final zodiac = hasLetters ? _getZodiac(totalKabir) : 'غير محدد';
     final divineName = hasLetters ? _getDivineName(totalKabir) : 'غير محدد';
 
-    // حساب التذبذب (البعد عن المتوسط)
-    final avgValue = letterResults.isEmpty ? 0 :
-        letterResults.map((l) => l.value).reduce((a, b) => a + b) / letterResults.length;
-    final variance = letterResults.isEmpty ? 0.0 :
-        letterResults.map((l) => (l.value - avgValue).abs()).reduce((a, b) => a + b) / letterResults.length;
-    final frequency = (1.0 - (variance / 20.0)).clamp(0.0, 1.0);
+    // No physical frequency or energy measurement is derived from letters.
+    // The legacy field remains zero for data-model compatibility.
 
     // تحديد اللون
     final color = _getColor(totalKabir);
@@ -58,7 +54,7 @@ class AbjadService {
       planet: planet,
       zodiac: zodiac,
       divineName: divineName,
-      frequency: frequency,
+      frequency: 0,
       color: color,
       letterResults: letterResults,
     );
