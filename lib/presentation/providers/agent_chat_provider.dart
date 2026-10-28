@@ -360,7 +360,9 @@ class AgentChatProvider extends ChangeNotifier {
     // Stop native generation too; otherwise the task would remain busy until
     // llama.cpp finishes even though the user explicitly cancelled it.
     if (NucleusService().isGenerating) {
-      unawaited(NucleusService().stopGeneration());
+      unawaited(NucleusService().stopGeneration().catchError((Object error) {
+        debugPrint('AgentChatProvider: native generation stop failed: $error');
+      }));
     }
     _markCancelledIfCurrent(task);
   }
