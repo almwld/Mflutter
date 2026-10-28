@@ -565,3 +565,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The comparison screen also distinguishes an empty local corpus from a malformed user reference, avoiding a misleading prompt to correct references when no verses were loaded.
+
+
+## UI continuation — 2026-10-29 (Arabic search normalization)
+
+- `lib/presentation/screens/advanced_search_screen.dart`: text matching now removes the complete Arabic combining-mark range and tatweel, rather than a partial hard-coded subset, while keeping normalization separate from canonical verse text.
+- No tests, analyzer, formatter, or APK build were run.
