@@ -55,6 +55,7 @@ flutter:
     - assets/hieroglyphic_quran.json
     - assets/all_knowledge.json
     - assets/agent_knowledge.json
+    - assets/nucleus.json
     - assets/mushaf_layout.json
     - assets/fonts/
     - assets/images/

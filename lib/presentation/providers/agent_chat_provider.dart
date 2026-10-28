@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/agent_task.dart';
 import '../../services/agent_knowledge_service.dart';
-import '../../services/local_gguf_runtime_service.dart';
+import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
 import '../../services/quran_loader_service.dart';
@@ -222,8 +222,8 @@ class AgentChatProvider extends ChangeNotifier {
     _paused = false;
     // Stop native generation too; otherwise the task would remain busy until
     // llama.cpp finishes even though the user explicitly cancelled it.
-    if (LocalGgufRuntimeService.instance.isGenerating) {
-      unawaited(LocalGgufRuntimeService.instance.stopGeneration());
+    if (NucleusService().isGenerating) {
+      unawaited(NucleusService().stopGeneration());
     }
     if (_activeTask != null) {
       _activeTask = _activeTask!.copyWith(status: TaskStatus.cancelled);
@@ -507,13 +507,20 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     final evidence = results.join('\n\n');
+    final nucleus = NucleusService();
+    final verseContext = nucleus.currentVerseText;
+    final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+        ? evidence
+        : evidence + '\n\nالسياق المحدد في المصحف (' +
+            nucleus.currentSurahNumber.toString() + ':' +
+            nucleus.currentAyahNumber.toString() + '):\n' + verseContext;
     final sourceList = _knowledge.loadedSources.join(', ');
-    final runtime = LocalGgufRuntimeService.instance;
-    if (runtime.isLoaded) {
+    final runtime = nucleus;
+    if (runtime.isModelLoaded) {
       try {
-        final boundedEvidence = evidence.length > 12000
-            ? '${evidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
-            : evidence;
+        final boundedEvidence = contextualEvidence.length > 12000
+            ? '${contextualEvidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
+            : contextualEvidence;
         final generated = await runtime.generateGroundedAnswer(
           question: task.userQuery,
           evidence: boundedEvidence,

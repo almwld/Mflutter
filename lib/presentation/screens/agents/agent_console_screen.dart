@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
-import '../../../services/local_gguf_runtime_service.dart';
+import '../../../services/nucleus_service.dart';
 import '../../providers/agent_chat_provider.dart';
 import '../../../services/external_asset_service.dart';
 
@@ -288,7 +288,7 @@ class _LocalModelPanel extends StatefulWidget {
 }
 
 class _LocalModelPanelState extends State<_LocalModelPanel> {
-  final _runtime = LocalGgufRuntimeService.instance;
+  final _runtime = NucleusService();
   bool _hasModel = false;
   bool _working = false;
   @override
@@ -349,7 +349,7 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
     try {
       await action();
     } catch (error) {
-      final cancelled = _runtime.status.contains('أُلغي');
+      final cancelled = _runtime.modelStatus.contains('أُلغي');
       if (mounted && !cancelled) ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('تعذرت العملية: $error')),
       );
@@ -377,33 +377,33 @@ class _LocalModelPanelState extends State<_LocalModelPanel> {
           leading: Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: _runtime.isLoaded ? Colors.green.withOpacity(.12) : AppColors.primaryGold.withOpacity(.12),
+              color: _runtime.isModelLoaded ? Colors.green.withOpacity(.12) : AppColors.primaryGold.withOpacity(.12),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(Icons.memory_rounded, color: _runtime.isLoaded ? Colors.greenAccent : AppColors.primaryGold),
+            child: Icon(Icons.memory_rounded, color: _runtime.isModelLoaded ? Colors.greenAccent : AppColors.primaryGold),
           ),
           title: const Text('النموذج المحلي GGUF',
               style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           subtitle: Text(
-            _runtime.isLoaded ? 'محمّل • الاستدلال محلي' : _hasModel ? 'ملف مستورد • لم يُختبر بعد في محرك الاستدلال' : 'لا يوجد نموذج • استورد ملف GGUF محليًا',
+            _runtime.isModelLoaded ? 'محمّل • الاستدلال محلي' : _hasModel ? 'ملف مستورد • لم يُختبر بعد في محرك الاستدلال' : 'لا يوجد نموذج • استورد ملف GGUF محليًا',
             style: const TextStyle(color: Colors.white54, fontSize: 11),
           ),
           children: [
-            Align(alignment: Alignment.centerRight, child: Text(_runtime.status,
+            Align(alignment: Alignment.centerRight, child: Text(_runtime.modelStatus,
                 style: const TextStyle(color: Colors.white70, fontSize: 11))),
             const SizedBox(height: 9),
             Wrap(spacing: 7, runSpacing: 7, children: [
               OutlinedButton.icon(
-                onPressed: busy || _runtime.isLoaded ? null : _importModel,
+                onPressed: busy || _runtime.isModelLoaded ? null : _importModel,
                 icon: const Icon(Icons.file_open_rounded, size: 17),
                 label: const Text('استيراد من ذاكرة الهاتف'),
               ),
               FilledButton.icon(
-                onPressed: busy ? null : _runtime.isLoaded
+                onPressed: busy ? null : _runtime.isModelLoaded
                     ? () => _run(_runtime.unloadModel)
                     : _hasModel ? () => _run(_runtime.loadModel) : null,
-                icon: Icon(_runtime.isLoaded ? Icons.stop_circle_outlined : Icons.play_arrow_rounded),
-                label: Text(_runtime.isLoaded ? 'إيقاف النموذج' : 'تحميل النموذج'),
+                icon: Icon(_runtime.isModelLoaded ? Icons.stop_circle_outlined : Icons.play_arrow_rounded),
+                label: Text(_runtime.isModelLoaded ? 'إيقاف النموذج' : 'تحميل النموذج'),
               ),
               if (_runtime.isGenerating)
                 OutlinedButton.icon(

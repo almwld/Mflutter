@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../services/ollama_service.dart';
-import '../../services/local_gguf_runtime_service.dart';
+import '../../services/nucleus_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
 class ChatProvider extends ChangeNotifier {
   ChatProvider() {
-    _gguf.addListener(_onGgufChanged);
+    _core.addListener(_onGgufChanged);
   }
 
   final List<ChatMessage> _messages = [];
   final OllamaService _localAi = OllamaService();
-  final LocalGgufRuntimeService _gguf = LocalGgufRuntimeService.instance;
+  final NucleusService _core = NucleusService();
 
   // Quran data is immutable for the lifetime of this provider. Keep one
   // shared indexing future so consecutive messages do not reload and rebuild
@@ -21,7 +21,7 @@ class ChatProvider extends ChangeNotifier {
 
   void _onGgufChanged() => notifyListeners();
 
-  bool get hasActiveLocalModel => _gguf.isLoaded || _localAi.isRunning;
+  bool get hasActiveLocalModel => _core.isModelLoaded || _localAi.isRunning;
 
   bool _loading = false;
   String? _error;
@@ -31,13 +31,13 @@ class ChatProvider extends ChangeNotifier {
   String? get error => _error;
 
   String get localModelLabel {
-    if (_gguf.isLoaded) return '3arabLM GGUF محمّل محليًا';
+    if (_core.isModelLoaded) return '3arabLM GGUF محمّل محليًا';
     if (_localAi.isRunning) return 'خادم Ollama المحلي متصل';
     return 'لا يوجد نموذج محمّل؛ افتح الوكلاء الفائقين لتحميل GGUF';
   }
 
   Future<bool> checkLocalModel() async {
-    if (_gguf.isLoaded) return true;
+    if (_core.isModelLoaded) return true;
     return _localAi.checkAvailability();
   }
 
@@ -87,11 +87,18 @@ class ChatProvider extends ChangeNotifier {
                   '${verse['surah']} ${verse['ayah']}: ${verse['text']} — المصدر: assets/quran_full.json')
               .join('\n');
 
+      final verseContext = _core.currentVerseText;
+      final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+          ? evidence
+          : evidence + '\nالسياق المحدد في المصحف (' +
+              _core.currentSurahNumber.toString() + ':' +
+              _core.currentAyahNumber.toString() + '): ' + verseContext;
+
       final String generated;
-      if (_gguf.isLoaded) {
-        generated = await _gguf.generateGroundedAnswer(
+      if (_core.isModelLoaded) {
+        generated = await _core.generateGroundedAnswer(
           question: cleanText,
-          evidence: evidence,
+          evidence: contextualEvidence,
           maxTokens: 512,
         );
       } else {
@@ -99,7 +106,7 @@ class ChatProvider extends ChangeNotifier {
           'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
           'أجب عن السؤال مباشرة بالعربية الفصحى متى أمكن. عدم العثور على آية مطابقة ليس سببًا لرفض سؤال عام. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة، '
           'لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
-          'المستخدم: $cleanText\n\nالأدلة المحلية:\n$evidence\n\nمُدَبِّر:',
+          'المستخدم: $cleanText\n\nالأدلة المحلية:\n$contextualEvidence\n\nمُدَبِّر:',
         );
       }
       final evidenceNote = hits.isEmpty
@@ -111,7 +118,7 @@ class ChatProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _messages.add(ChatMessage(
-        text: _gguf.isLoaded
+        text: _core.isModelLoaded
             ? 'تعذر الاستدلال باستخدام نموذج GGUF المحلي. راجع حالة النموذج في شاشة الوكلاء الفائقين.'
             : 'تعذر الوصول إلى نموذج محلي. حمّل GGUF من شاشة الوكلاء الفائقين أو تحقق من خادم Ollama.',
         isUser: false,
@@ -130,7 +137,7 @@ class ChatProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _gguf.removeListener(_onGgufChanged);
+    _core.removeListener(_onGgufChanged);
     super.dispose();
   }
 }
