@@ -98,11 +98,16 @@ class _QuranProScreenState extends State<QuranProScreen> {
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('صيغة بيانات المصحف غير صحيحة');
       }
+      final canonical = QuranSourceCorrections.correctQuranMap(
+        Map<String, dynamic>.from(decoded),
+      );
+      final firstSurah = canonical['1'];
+      if (firstSurah is! List || firstSurah.isEmpty) {
+        throw const FormatException('مصدر القرآن لا يحتوي آيات صالحة لسورة الفاتحة.');
+      }
       if (!mounted) return;
       setState(() {
-        _quran = QuranSourceCorrections.correctQuranMap(
-          Map<String, dynamic>.from(decoded),
-        );
+        _quran = canonical;
         _loading = false;
       });
 
