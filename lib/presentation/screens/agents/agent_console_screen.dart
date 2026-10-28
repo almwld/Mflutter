@@ -155,6 +155,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 documentCount: provider.indexedDocumentCount,
                 sourceCount: provider.loadedKnowledgeSources.length,
                 initialized: provider.initialized,
+                initializationError: provider.initializationError,
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
@@ -267,7 +268,8 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 child: _Transcript(
                   task: task,
                   messages: provider.messages,
-                  loadingKnowledge: !provider.initialized,
+                  loadingKnowledge: !provider.initialized &&
+                      provider.initializationError == null,
                 ),
               ),
               _Composer(
@@ -293,10 +295,12 @@ class _WorkspaceHero extends StatelessWidget {
   final int documentCount;
   final int sourceCount;
   final bool initialized;
+  final String? initializationError;
   const _WorkspaceHero({
     required this.documentCount,
     required this.sourceCount,
     required this.initialized,
+    required this.initializationError,
   });
 
   @override
@@ -325,9 +329,27 @@ class _WorkspaceHero extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               Text(
-                initialized ? 'بحث محلي موثّق • النموذج التوليدي اختياري' : 'تهيئة فهرس المعرفة المحلي…',
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                initializationError != null
+                    ? 'تعذر تهيئة المعرفة المحلية'
+                    : initialized
+                        ? 'بحث محلي موثّق • النموذج التوليدي اختياري'
+                        : 'تهيئة فهرس المعرفة المحلي…',
+                style: TextStyle(
+                  color: initializationError != null
+                      ? Colors.redAccent
+                      : Colors.white70,
+                  fontSize: 11,
+                ),
               ),
+              if (initializationError != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  initializationError!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 10),
+                ),
+              ],
               const SizedBox(height: 8),
               Wrap(spacing: 6, children: [
                 _Metric(icon: Icons.groups_2_outlined, text: '${AgentRegistry.all.length} وكيل'),
