@@ -114,6 +114,17 @@ class _TrainingScreenState extends State<TrainingScreen> {
                         style: const TextStyle(color: Colors.white),
                       ),
                       Text('الحالة: ${provider.status}', style: const TextStyle(color: Colors.white70)),
+                      if (!provider.modelLoaded && !provider.isTraining) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: OutlinedButton.icon(
+                            onPressed: provider.retryInitialize,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('إعادة فحص النموذج المحلي'),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       const Text(
                         'هذا تدريب إشرافي لمصنف خطي صغير فقط، وليس تدريبًا لنموذج GGUF أو Qwen. لا تُستخدم آيات القرآن تلقائيًا كبيانات موسومة.',
