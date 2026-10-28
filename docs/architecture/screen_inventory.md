@@ -867,3 +867,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `TrainingScreen` loss-chart rendering now skips non-numeric and non-finite persisted history entries instead of casting malformed local values during paint.
+
+
+- The training import instructions now explicitly require examples for all three classifier classes, with at least two samples per class, matching the trainer's actual validation rather than implying absent classes are acceptable.
