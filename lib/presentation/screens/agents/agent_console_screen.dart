@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
+import '../../../services/agent_knowledge_service.dart';
 import '../../../services/nucleus_service.dart';
 import '../../providers/agent_chat_provider.dart';
 import '../../../services/external_asset_service.dart';
@@ -29,6 +30,8 @@ class _AgentConsoleView extends StatefulWidget {
 
 class _AgentConsoleViewState extends State<_AgentConsoleView> {
   final _controller = TextEditingController();
+  final _agentSearchController = TextEditingController();
+  String _agentQuery = '';
   String _layer = 'الكل';
 
   Future<void> _importOptionalAssets() async {
@@ -49,6 +52,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
   @override
   void dispose() {
     _controller.dispose();
+    _agentSearchController.dispose();
     super.dispose();
   }
 
@@ -57,9 +61,16 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
     final provider = context.watch<AgentChatProvider>();
     final task = provider.activeTask;
     final layers = <String>{'الكل', ...AgentRegistry.all.map((a) => a.layer)};
-    final agents = _layer == 'الكل'
-        ? AgentRegistry.all
-        : AgentRegistry.all.where((a) => a.layer == _layer).toList();
+    final normalizedAgentQuery = AgentKnowledgeService.normalize(_agentQuery);
+    final agents = AgentRegistry.all.where((agent) {
+      final matchesLayer = _layer == 'الكل' || agent.layer == _layer;
+      final searchable = AgentKnowledgeService.normalize(
+        '${agent.name} ${agent.id} ${agent.layer} ${agent.description}',
+      );
+      return matchesLayer &&
+          (normalizedAgentQuery.isEmpty ||
+              searchable.contains(normalizedAgentQuery));
+    }).toList(growable: false);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -144,6 +155,42 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 documentCount: provider.indexedDocumentCount,
                 sourceCount: provider.loadedKnowledgeSources.length,
                 initialized: provider.loadedKnowledgeSources.isNotEmpty,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                child: TextField(
+                  controller: _agentSearchController,
+                  textDirection: TextDirection.rtl,
+                  onChanged: (value) => setState(() => _agentQuery = value),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  decoration: InputDecoration(
+                    hintText: 'ابحث عن وكيل بالاسم أو المعرّف أو الوصف',
+                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 19,
+                        color: AppColors.primaryGold),
+                    suffixIcon: _agentQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'مسح بحث الوكلاء',
+                            onPressed: () {
+                              _agentSearchController.clear();
+                              setState(() => _agentQuery = '');
+                            },
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                          ),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                  ),
+                ),
               ),
               SizedBox(
                 height: 42,
