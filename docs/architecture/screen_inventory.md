@@ -919,3 +919,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AgentKnowledgeService` now rolls back documents added during an asset load if decoding or schema collection fails, and does not list that asset as loaded. Malformed optional sources therefore cannot leak partial records into later searches; the required knowledge asset still fails initialization when unavailable or unusable.
+
+
+- `AgentKnowledgeService.search` now uses deterministic tie-breakers (source, title, then content) after its lexical score, so repeated identical queries return a stable ordering when several documents score equally.
