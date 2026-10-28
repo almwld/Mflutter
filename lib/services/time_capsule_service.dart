@@ -40,6 +40,41 @@ class TimeCapsuleService {
     });
   }
 
+  /// Imports a pre-existing local capsule during schema migration. Unlike
+  /// new capsules, legacy unlock dates may already be due and must be retained.
+  static Future<void> importLegacyCapsule(
+    String content,
+    DateTime unlockDate,
+  ) {
+    final normalized = content.trim();
+    if (normalized.isEmpty || normalized.length > maxContentLength) {
+      throw ArgumentError('محتوى الكبسولة القديمة غير صالح.');
+    }
+    return _enqueueWrite(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final capsules = _read(prefs);
+      final unlockIso = unlockDate.toIso8601String();
+      if (capsules.any((capsule) =>
+          capsule['content'] == normalized &&
+          capsule['unlockDate'] == unlockIso)) {
+        return;
+      }
+      if (capsules.length >= maxCapsules) {
+        throw StateError('لا توجد مساحة كافية لاستيراد الكبسولة القديمة.');
+      }
+      final now = DateTime.now();
+      capsules.add({
+        'id': now.microsecondsSinceEpoch.toString(),
+        'content': normalized,
+        'unlockDate': unlockIso,
+        'sealed': now.toIso8601String(),
+      });
+      if (!await prefs.setString(_key, jsonEncode(capsules))) {
+        throw StateError('تعذر استيراد الكبسولة القديمة.');
+      }
+    });
+  }
+
   static Future<List<Map<String, dynamic>>> getCapsules() async {
     await _writeQueue.catchError((Object _) {});
     final prefs = await SharedPreferences.getInstance();
