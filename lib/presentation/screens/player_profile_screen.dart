@@ -224,8 +224,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       'المستوى ${MultiUserService.profiles[index]['level']} • ${MultiUserService.profiles[index]['xp']} XP',
                       style: const TextStyle(color: Colors.white54),
                     ),
-                    trailing: (MultiUserService.profiles[index]['name'] == MultiUserService.activeProfile['name'] &&
-                            MultiUserService.profiles[index]['createdAt'] == MultiUserService.activeProfile['createdAt'])
+                    trailing: index == MultiUserService.activeProfileIndex
                         ? const Icon(Icons.check_circle, color: AppColors.primaryGold)
                         : const Icon(Icons.radio_button_unchecked, color: Colors.white38),
                     onTap: () => _switchProfile(index),
