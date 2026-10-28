@@ -386,3 +386,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran/mushaf_screen.dart`: page-jump input now accepts Arabic-Indic and Persian digits and rejects invalid/out-of-range values with visible feedback instead of silently normalizing them to the first or last page.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (variant reader navigation)
+
+- `lib/presentation/screens/quran/mushaf_variant_screen.dart`: added direct page navigation from the variant-reader header, including Arabic-Indic/Persian digit normalization and strict 1–604 validation. The user can now jump to a page without repeatedly swiping through the fixed-layout Mushaf.
+- No tests, analyzer, formatter, or APK build were run.
