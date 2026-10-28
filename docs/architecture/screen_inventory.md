@@ -571,3 +571,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/advanced_search_screen.dart`: text matching now removes the complete Arabic combining-mark range and tatweel, rather than a partial hard-coded subset, while keeping normalization separate from canonical verse text.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `AIAdvancedScreen` now reports an empty local Quran corpus as an indexing failure and exposes the existing retry action rather than presenting a ready-but-empty search index.
