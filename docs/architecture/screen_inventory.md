@@ -478,3 +478,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/advanced_search_screen.dart`: generation tokens now prevent an older overlapping search or index load from overwriting a newer request. Clearing the query cancels the relevance of any pending search result, and empty-query handling clears the active searching state.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (reading activity integrity)
+
+- `lib/presentation/screens/quran_page_screen.dart`: reading-streak activity is recorded only after the source-correction step leaves usable verse data, not merely because the raw JSON value was a non-empty list.
+- No tests, analyzer, formatter, or APK build were run.
