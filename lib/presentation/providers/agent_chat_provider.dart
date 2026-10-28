@@ -270,8 +270,24 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     // A bare verse reference is a lookup request, not a text-search query.
+    // Keep this deterministic path independent of any selected general agent.
     if (parseVerseReference(query) != null) {
       add('ayaat');
+      add('verifier');
+      return result;
+    }
+
+    // An explicit agent selection is an execution constraint, not just an
+    // extra entry in the default pipeline. Run the selected specialist between
+    // the shared safety/planning stages and the critic/verifier stages.
+    // This avoids silently running the full multi-agent pipeline when the
+    // user deliberately chose one agent from the console.
+    final selectedId = _selectedAgent;
+    if (selectedId != null) {
+      add('planner');
+      add('safety');
+      add(selectedId);
+      add('critic');
       add('verifier');
       return result;
     }
@@ -281,7 +297,6 @@ class AgentChatProvider extends ChangeNotifier {
     add('researcher');
     add('retriever');
 
-    if (_selectedAgent != null) add(_selectedAgent!);
     final normalized = AgentKnowledgeService.normalize(query);
     if (RegExp(r'ايه|قران|سوره|تفسير|معني|النور|الصمد|مسند|هيروغليف|عثمان').hasMatch(normalized)) {
       for (final id in ['ayaat', 'tafsir', 'siyaq']) {
