@@ -41,6 +41,23 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
   }
 
+  Future<void> _startTraining(TrainingProvider provider) async {
+    final dataset = _dataset;
+    if (dataset == null || provider.isTraining) return;
+    setState(() => _datasetError = null);
+    try {
+      await provider.trainOnVerses(dataset.samples, epochs: 50);
+      if (!mounted) return;
+      final status = provider.status;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(status)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _datasetError = 'تعذر بدء التدريب المحلي: $error');
+    }
+  }
+
   void _showPredictionDialog(BuildContext context, Map<String, dynamic> result) {
     showDialog<void>(
       context: context,
@@ -127,9 +144,9 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       const Text('مجموعة البيانات الموسومة', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
                       const SizedBox(height: 6),
                       const Text(
-                        'تم تعطيل بدء التدريب مؤقتًا لأن مسار المصنف الجاهز للتشغيل غير متوفر. لم يعد الزر يوحي بأن التدريب سيعمل قبل تجهيز المحرك.',
+                        'يمكن تدريب المصنف الخطي المحلي على العينات الموسومة المستوردة. لا يدرّب هذا الإجراء نموذج GGUF أو Qwen ولا يستخدم نص القرآن تلقائيًا كتصنيفات.',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(color: Colors.orangeAccent),
+                        style: TextStyle(color: Colors.white70),
                       ),
                       const SizedBox(height: 8),
                       const Text(
@@ -163,9 +180,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: null,
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('التدريب متوقف مؤقتًا'),
+                          onPressed: dataset == null || provider.isTraining
+                              ? null
+                              : () => _startTraining(provider),
+                          icon: provider.isTraining
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.play_arrow),
+                          label: Text(provider.isTraining
+                              ? 'التدريب جارٍ...'
+                              : 'بدء تدريب المصنف المحلي'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
                             foregroundColor: AppColors.primaryNavy,
