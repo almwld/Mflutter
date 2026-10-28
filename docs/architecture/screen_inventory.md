@@ -843,3 +843,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `AbjadCalculatorScreen` no longer records a calculation achievement when input contains Arabic-block characters but no letters recognized by the Abjad table.
 - `StatsScreen` now labels the numerator as distinct pages visited and the percentage as page coverage. It no longer declares a khatmah complete merely because 604 unique page numbers were stored; sequential completion is not represented by this ledger.
+
+
+- Arabic search consistency: `NucleusScreen` now uses the shared agent-knowledge normalizer for agent name/ID/layer/description queries, and `CompareScreen` removes the extended Quranic annotation marks before lexical-overlap comparison. Neither operation mutates canonical verse text.
