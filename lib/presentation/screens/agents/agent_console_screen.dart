@@ -90,6 +90,39 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 icon: const Icon(Icons.data_object_rounded),
               ),
             IconButton(
+              tooltip: 'مسح المحادثة الحالية',
+              onPressed: task == null ||
+                      task.status == TaskStatus.running ||
+                      task.status == TaskStatus.paused
+                  ? null
+                  : () async {
+                      final clear = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('مسح المحادثة الحالية؟'),
+                          content: const Text(
+                            'سيُمسح سجل العرض والمهمة الحالية فقط. '
+                            'ستبقى جلسات الذاكرة والملاحظات المحفوظة محليًا دون تغيير.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext, false),
+                              child: const Text('إلغاء'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(dialogContext, true),
+                              child: const Text('مسح'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (clear == true && context.mounted) {
+                        provider.clearConversation();
+                      }
+                    },
+              icon: const Icon(Icons.cleaning_services_outlined),
+            ),
+            IconButton(
               tooltip: 'استيراد أصول OCR / ML Kit والنماذج المحلية',
               onPressed: _importOptionalAssets,
               icon: const Icon(Icons.folder_open_outlined),
