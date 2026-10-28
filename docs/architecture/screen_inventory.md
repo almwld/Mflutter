@@ -353,3 +353,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/bookmark_service.dart`: bookmark removal now reads the underlying local store directly while already inside the serialized mutation queue. Calling the public queue-aware read from inside the queue awaited the current mutation itself and could deadlock removals.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (search and playback error paths)
+
+- `lib/presentation/screens/ai_advanced_screen.dart`: local Quran index failures now expose a dedicated retry action instead of leaving the user with only a search action that cannot recover the failed index.
+- `lib/presentation/screens/recitation_screen.dart`: asynchronous audio release-mode initialization and explicit stop failures are surfaced through the playback error state rather than becoming uncaught or silently swallowed errors.
+- Tests, analyzer, formatter, and APK build were not run.
