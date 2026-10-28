@@ -41,9 +41,13 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   Future<void> _pagePersistence = Future<void>.value();
 
   Future<void> _setImmersiveMode(bool immersive) async {
-    await SystemChrome.setEnabledSystemUIMode(
-      immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
-    );
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      );
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not update system bars: $error');
+    }
   }
 
   Future<void> _toggleSystemBars() async {
