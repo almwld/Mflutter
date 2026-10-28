@@ -594,16 +594,22 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                   },
                   onPageChanged: (pageNumber) {
                     final page = MushafSource.normalizePage(pageNumber);
+                    final previousPage = _currentPage.value;
                     _currentPage.value = page;
                     if (_zoomMode) {
                       _mushafZoomController.value = Matrix4.identity();
                     }
                     ReadingProgressService.saveLastPage(page);
                     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
-                    if (_highlights.isNotEmpty) {
+                    if (page != previousPage) {
+                      // The prior verse no longer belongs to the visible page;
+                      // clear its shared context even if a menu already removed
+                      // the temporary visual highlight.
                       NucleusService().clearQuranContext();
-                      setState(() => _highlights = const []);
-                      _stopLivingEffects();
+                      if (_highlights.isNotEmpty) {
+                        setState(() => _highlights = const []);
+                        _stopLivingEffects();
+                      }
                     }
                   },
                   onDoubleTap: (surah, ayah) {
