@@ -16,6 +16,7 @@ class CosmicServicesScreen extends StatefulWidget {
 
 class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   static const _dreamsKey = 'mudabbir_cosmic_dream_journal_v1';
+  static const _legacyCapsulesKey = 'mudabbir_cosmic_time_capsules_v1';
 
   List<Map<String, dynamic>> _dreams = [];
   List<Map<String, dynamic>> _capsules = [];
@@ -42,7 +43,24 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
       }
 
       final dreams = decode(preferences.getString(_dreamsKey));
-      final capsules = await TimeCapsuleService.getCapsules();
+      var capsules = await TimeCapsuleService.getCapsules();
+      final legacyCapsules = decode(preferences.getString(_legacyCapsulesKey));
+      if (legacyCapsules.isNotEmpty) {
+        for (final legacy in legacyCapsules) {
+          final text = (legacy['text'] ?? '').toString().trim();
+          final rawUnlock = (legacy['unlockAt'] ?? '').toString();
+          final unlock = DateTime.tryParse(rawUnlock);
+          if (text.isEmpty || unlock == null) continue;
+          final alreadyExists = capsules.any((capsule) =>
+              (capsule['content'] ?? '').toString() == text &&
+              (capsule['unlockDate'] ?? '').toString() == unlock.toIso8601String());
+          if (!alreadyExists) {
+            await TimeCapsuleService.sealCapsule(text, unlock);
+          }
+        }
+        await preferences.remove(_legacyCapsulesKey);
+        capsules = await TimeCapsuleService.getCapsules();
+      }
       if (!mounted) return;
       setState(() {
         _dreams = dreams;
