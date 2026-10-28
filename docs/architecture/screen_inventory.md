@@ -241,7 +241,7 @@ Per the user's explicit instruction, tests and builds were not run for these fol
 ### Additional service-screen follow-up
 - `CosmicServicesScreen` now has a local-only dream journal and date-based time-capsule storage using application preferences. Quantum/audio/astronomy cards explicitly disclose that they do not run real physical measurements or claim therapeutic effects; eye tracking opens the existing calibration screen.
 - `SovereignHubScreen` listens to live P2P discovery callbacks, lists discovered peers, exposes independent advertise/discover/stop controls, and permits sending a connection request. Both endpoints must explicitly accept a connection request; the UI displays the Nearby authentication token for out-of-band comparison and reports request submission rather than assuming that the remote device accepted the connection.
-- `P2PMeshService` publishes discovery/connection state changes to listeners and resets activity flags after failed startup.
+- `P2PMeshService` publishes discovery/connection state changes to listeners, tracks connected peers separately from discovered endpoints, requires explicit approval on both endpoints, and resets activity flags after failed startup.
 - `PlayerProfileScreen` labels the current checkpoint action as local-only because `CloudSyncService` persists a timestamp in SharedPreferences and does not have a remote backend configured.
 
 These changes are code-level implementation notes only. No tests/builds were run for this continuation.
