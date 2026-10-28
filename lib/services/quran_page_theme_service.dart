@@ -19,14 +19,10 @@ class QuranPageThemeService {
   }
 
   static Future<void> save(QuranPageTheme theme) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final saved = await prefs.setInt(_key, theme.index);
-      if (!saved) {
-        debugPrint('QuranPageThemeService: page theme write was rejected.');
-      }
-    } catch (error) {
-      debugPrint('QuranPageThemeService: could not save page theme: $error');
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setInt(_key, theme.index);
+    if (!saved) {
+      throw StateError('تعذر حفظ مظهر صفحات المصحف محليًا.');
     }
   }
 
