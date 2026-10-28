@@ -78,12 +78,20 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   }
 
   Future<void> _saveDream(String text) async {
+    final content = text.trim();
+    if (content.isEmpty) return;
+    if (content.length > 5000) {
+      if (mounted) setState(() => _error = 'المذكرة طويلة جدًا؛ الحد الأقصى 5000 حرف.');
+      return;
+    }
     final entry = <String, dynamic>{
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
       'createdAt': DateTime.now().toIso8601String(),
-      'text': text.trim(),
+      'text': content,
     };
-    final updated = [entry, ..._dreams];
+    // Keep local preferences bounded so a long-running journal cannot grow
+    // without limit and eventually make every save fail.
+    final updated = [entry, ..._dreams].take(200).toList(growable: false);
     try {
       final preferences = await SharedPreferences.getInstance();
       await preferences.setString(_dreamsKey, jsonEncode(updated));
