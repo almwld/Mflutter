@@ -40,12 +40,35 @@ class ZodiacScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppDimensions.paddingMedium),
         children: [
+          _buildDisclaimer(context),
+          const SizedBox(height: AppDimensions.paddingMedium),
           _buildElementsLegend(context),
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildZodiacCircle(signs, context),
           const SizedBox(height: AppDimensions.paddingLarge),
           _buildSignsGrid(signs, context),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDisclaimer(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        border: Border.all(color: colors.outlineVariant),
+      ),
+      child: Text(
+        'المحتوى التالي يعرض رموزًا وارتباطات تاريخية/ثقافية. لا توجد أدلة علمية موثوقة تثبت أن الكواكب أو الأبراج تحدد الشخصية أو تتنبأ بالأحداث.',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          color: colors.onSurface.withOpacity(.75),
+          height: 1.5,
+          fontSize: 12,
+        ),
       ),
     );
   }
