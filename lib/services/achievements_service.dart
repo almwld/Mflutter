@@ -1,6 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'daily_streak_service.dart';
 import 'local_activity_summary_service.dart';
 
 /// Achievement state is derived from observable local activity. Features that
@@ -26,13 +25,6 @@ class AchievementsService {
       _achievements.where((item) => item['unlocked'] == true).length;
 
   static Future<void> refreshFromLocalActivity() async {
-    var streakReady = true;
-    try {
-      await DailyStreakService.initialize();
-    } catch (_) {
-      streakReady = false;
-      // Other local activity metrics remain useful if the streak store fails.
-    }
     final summary = await const LocalActivitySummaryService().load();
     final unavailable = summary.warnings.join(' ');
     if (!unavailable.contains('الصفحات المقروءة')) {
@@ -41,8 +33,8 @@ class AchievementsService {
     if (!unavailable.contains('العلامات المحفوظة')) {
       _setProgress('ten_verses', summary.bookmarkCount / 10);
     }
-    if (streakReady) {
-      _setProgress('daily_streak_3', DailyStreakService.streak / 3);
+    if (!unavailable.contains('سلسلة القراءة')) {
+      _setProgress('daily_streak_3', summary.currentStreak / 3);
     }
 
     try {
