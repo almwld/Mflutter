@@ -39,6 +39,8 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
       setState(() {
         _indexing = true;
         _indexError = null;
+        _searchError = null;
+        _searchResults = const <LocalSearchResult>[];
       });
     }
     try {
@@ -107,6 +109,13 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
       setState(() {
         _searchResults = const <LocalSearchResult>[];
         _searchError = 'اكتب كلمة أو عبارة للبحث.';
+      });
+      return;
+    }
+    if (_indexError != null) {
+      setState(() {
+        _searchResults = const <LocalSearchResult>[];
+        _searchError = 'فهرس القرآن غير جاهز بسبب خطأ سابق؛ أعد تحميله قبل البحث.';
       });
       return;
     }
