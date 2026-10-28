@@ -207,7 +207,15 @@ class AgentKnowledgeService {
       if (haystack.contains(normalizedQuery)) score += 5;
       if (score > 0) ranked.add((document: document, score: score));
     }
-    ranked.sort((a, b) => b.score.compareTo(a.score));
+    ranked.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      final bySource = a.document.source.compareTo(b.document.source);
+      if (bySource != 0) return bySource;
+      final byTitle = a.document.title.compareTo(b.document.title);
+      if (byTitle != 0) return byTitle;
+      return a.document.content.compareTo(b.document.content);
+    });
     final seen = <String>{};
     return ranked
         .where((item) => seen.add('${item.document.source}|${item.document.title}|${item.document.content}'))
