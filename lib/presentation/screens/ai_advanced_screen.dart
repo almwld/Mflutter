@@ -218,7 +218,7 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                         style: const TextStyle(color: Colors.white70, height: 1.6),
                       ),
                       subtitle: Text(
-                        'المرجع: ${result.id} • تطابق نصي: ${(result.score * 100).toStringAsFixed(1)}%',
+                        'المرجع: ${result.id} • درجة تشابه نصي نسبية: ${result.score.toStringAsFixed(3)}',
                         textDirection: TextDirection.rtl,
                         style: const TextStyle(color: AppColors.primaryGold, fontSize: 12),
                       ),
@@ -238,7 +238,7 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   const Text(
-                    'ملاحظات تفسيرية محلية محدودة',
+                    'ملخصات تعليمية محلية محدودة',
                     style: TextStyle(
                       color: AppColors.primaryGold,
                       fontSize: 18,
@@ -247,7 +247,7 @@ class _AIAdvancedScreenState extends State<AIAdvancedScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'هذه ملاحظات ثابتة لعدد محدود من الآيات، وليست مكتبة تفاسير كاملة ولا بديلاً عن الرجوع إلى مصدر تفسير موثق.',
+                    'هذه ملخصات موجزة ثابتة لآيات محددة، وليست نصوصًا منقولة عن كتاب تفسير موثق ولا تفسيرًا مولّدًا بالذكاء الاصطناعي. راجع كتب التفسير المعتمدة للتحقق والتوسع.',
                     textAlign: TextAlign.right,
                     style: TextStyle(color: Colors.white54, height: 1.5),
                   ),
