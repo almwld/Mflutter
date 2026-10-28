@@ -116,9 +116,14 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   Future<void> _toggleReaderControls() async {
     final show = !_readerControlsVisible;
     if (mounted) setState(() => _readerControlsVisible = show);
-    await SystemChrome.setEnabledSystemUIMode(
-      show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
-    );
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+      );
+    } catch (error) {
+      // Preserve a usable reader even if the platform rejects immersive mode.
+      debugPrint('MushafScreen: could not update system bars: $error');
+    }
   }
 
   @override
