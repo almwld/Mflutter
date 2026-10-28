@@ -93,6 +93,22 @@ class ContextMemoryService {
   }
 
   static List<String> getRecentQuestions() => List.from(_recentQuestions.reversed);
+
+  /// Returns a bounded, newest-first snapshot for conversational continuity.
+  /// Answers are truncated so a long session cannot inflate every model prompt.
+  static List<String> getRecentExchanges({int limit = 3}) {
+    if (limit <= 0) return const [];
+    return _memory.reversed.take(limit).map((row) {
+      final question = (row['question']?.toString() ?? '').trim();
+      final response = (row['response']?.toString() ?? '').trim();
+      final topic = (row['topic']?.toString() ?? 'عام').trim();
+      final shortResponse = response.length > 240
+          ? response.substring(0, 240) + '…'
+          : response;
+      return 'الموضوع: $topic | السؤال السابق: $question | خلاصة الإجابة السابقة: $shortResponse';
+    }).where((entry) => entry.trim().isNotEmpty).toList(growable: false);
+  }
+
   static Map<String, int> getTopicStats() => Map.from(_topicFrequency);
 
   static String getContextSummary() {
