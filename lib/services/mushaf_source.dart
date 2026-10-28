@@ -58,11 +58,9 @@ class MushafSource {
   static int firstPageForSurah(int surah) => pageForVerse(surah, 1);
 
   static int firstPageForJuz(int juz) {
-    final target = juz.clamp(1, totalJuz);
-    for (var page = 1; page <= totalPages; page++) {
-      if (juzForPage(page) == target) return page;
-    }
-    return 1;
+    final target = juz.clamp(1, totalJuz).toInt();
+    final start = _juzStarts[target - 1];
+    return pageForVerse(start.$1, start.$2);
   }
 
   /// يعيد الصفحة الأولى لكل حزب وفق انتقال نص الحزب الذي توفره QCF.
