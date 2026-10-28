@@ -39,6 +39,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
   String? _selectedAyahText;
   String _surahName = 'الفاتحة';
   bool _loading = true;
+  String? _variantWarning;
 
   // العرض
   QuranDisplayMode _mode = QuranDisplayMode.uthmaniGold;
@@ -84,20 +85,37 @@ class _QuranProScreenState extends State<QuranProScreen> {
 
   Future<void> _loadQuran() async {
     try {
+      // The canonical Arabic Quran asset is required; experimental script
+      // datasets are optional and must never block ordinary Quran reading.
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
-      final musnadQuran = await MusnadQuranService.load();
-      final hieroglyphicQuran = await HieroglyphicQuranService.load();
       final decoded = jsonDecode(jsonStr);
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('صيغة بيانات المصحف غير صحيحة');
       }
+
+      Map<String, List<Map<String, dynamic>>>? musnadQuran;
+      Map<String, List<Map<String, dynamic>>>? hieroglyphicQuran;
+      final variantWarnings = <String>[];
+      try {
+        musnadQuran = await MusnadQuranService.load();
+      } catch (error) {
+        variantWarnings.add('بيانات المسند غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+        debugPrint('QuranProScreen: Musnad dataset unavailable: $error');
+      }
+      try {
+        hieroglyphicQuran = await HieroglyphicQuranService.load();
+      } catch (error) {
+        variantWarnings.add('بيانات الهيروغليفي غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+        debugPrint('QuranProScreen: hieroglyphic dataset unavailable: $error');
+      }
       if (!mounted) return;
       setState(() {
         _quran = QuranSourceCorrections.correctQuranMap(
-          Map<String, dynamic>.from(decoded as Map),
+          Map<String, dynamic>.from(decoded),
         );
         _musnadQuran = musnadQuran;
         _hieroglyphicQuran = hieroglyphicQuran;
+        _variantWarning = variantWarnings.isEmpty ? null : variantWarnings.join(' ');
         _loading = false;
       });
       try {
@@ -311,6 +329,17 @@ class _QuranProScreenState extends State<QuranProScreen> {
         child: Column(
           children: [
             if (_chromeVisible) _buildModeBar(),
+            if (_chromeVisible && _variantWarning != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                color: Colors.orange.withOpacity(.12),
+                child: Text(
+                  _variantWarning!,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
+                ),
+              ),
             Expanded(child: _buildVerseList()),
           ],
         ),
@@ -692,9 +721,9 @@ class _QuranProScreenState extends State<QuranProScreen> {
             ? hieroglyphicRows[i]['hieroglyphic'] as String?
             : null;
         final transformed = _mode == QuranDisplayMode.musnadAncient
-            ? (musnad ?? '')
+            ? (musnad ?? _transform(text))
             : _mode == QuranDisplayMode.hieroglyphic
-                ? (hieroglyphic ?? '')
+                ? (hieroglyphic ?? _transform(text))
                 : _transform(text);
         final verseNumber = i + 1;
         final isSelected = _selectedAyah == verseNumber;
