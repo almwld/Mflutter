@@ -161,7 +161,7 @@ The initial implementation slice passed GitHub Actions analysis, nucleus core te
 |---:|---|---|
 | 1 | SplashScreen | `lib/presentation/screens/splash_screen.dart` |
 | 2 | MainNavigation | `lib/presentation/screens/main_navigation.dart`; now a compatibility adapter to canonical `HomeScreen` |
-| 3 | ChatScreen | `lib/presentation/screens/chat/chat_screen.dart` is the main HomeScreen destination; a second legacy `chat_screen.dart` also exists and needs follow-up review |
+| 3 | ChatScreen | `lib/presentation/screens/chat/chat_screen.dart` is the canonical HomeScreen destination; `lib/presentation/screens/chat_screen.dart` is now a compatibility export to avoid duplicate UI/provider state |
 | 4 | QuranScreen | `lib/presentation/screens/quran_screen.dart`; the home reading shortcut also opens `quran/mushaf_screen.dart` |
 | 5 | SurahIndexScreen | `lib/presentation/screens/surah_index_screen.dart` |
 | 6 | QuranPageScreen | `lib/presentation/screens/quran_page_screen.dart` |
