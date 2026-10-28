@@ -753,3 +753,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Profile selection now uses the persisted active index rather than comparing profile names/timestamps, so duplicate names cannot cause the wrong row to appear selected.
+
+
+- `PlayerProfileScreen` now reads its streak and seven-day dots from the same canonical reading-progress ledger used by statistics and achievements, rather than a separate store that could remain empty while page reads were recorded.
