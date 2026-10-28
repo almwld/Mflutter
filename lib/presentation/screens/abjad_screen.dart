@@ -84,9 +84,11 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
             controller: _controller,
             textDirection: TextDirection.rtl,
             style: theme.textTheme.bodyLarge,
+            maxLength: 120,
             decoration: const InputDecoration(
               hintText: 'أدخل النص لحساب الجمل...',
               prefixIcon: Icon(Icons.calculate_outlined),
+              helperText: 'تُحسب الحروف المعروفة في جدول أبجد؛ تُتجاهل المسافات والرموز والحروف غير المدرجة.',
             ),
             onSubmitted: (_) => _calculate(),
           ),
@@ -121,6 +123,30 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                         label: 'نصف المجموع',
                         value: r.wasat.toString(),
                         color: colors.onSurface,
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Text(
+                          'تفصيل قيمة كل حرف',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: r.letterResults
+                            .map(
+                              (letter) => Chip(
+                                label: Text('${letter.letter} = ${letter.value}'),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            )
+                            .toList(growable: false),
                       ),
                       const SizedBox(height: 8),
                       Text(
