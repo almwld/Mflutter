@@ -44,6 +44,14 @@ class _CompareScreenState extends State<CompareScreen> {
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
+      if (ayahs.isEmpty) {
+        setState(() {
+          _ayahs = const [];
+          _loading = false;
+          _error = 'مصدر القرآن المحلي لم يُرجع أي آية قابلة للمقارنة.';
+        });
+        return;
+      }
       setState(() {
         _ayahs = ayahs;
         _loading = false;
