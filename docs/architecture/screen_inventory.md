@@ -451,3 +451,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/services/local_activity_summary_service.dart`: fallback values remain available if a local metric store fails, but the summary now records explicit warnings instead of silently presenting fallback zeroes as complete data.
 - `lib/presentation/screens/community_screen.dart`, `challenges_screen.dart`, and `leaderboard_screen.dart`: render a visible partial-data warning when one or more local activity sources could not be read. The leaderboard remains explicitly local-only and does not fabricate community rankings.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (seven-day metric semantic correction)
+
+- Follow-up source inspection found that the legacy `getPagesReadInLast7Days()` method actually counted distinct reading days, not pages. Added the accurately named `getReadingDaysInLast7Days()`, retained the old name as a deprecated compatibility alias, and updated `stats_screen.dart` to display “أيام القراءة آخر 7 أيام” with day units. This supersedes the earlier inventory note that described the metric as pages.
+- No tests, analyzer, formatter, or APK build were run.
