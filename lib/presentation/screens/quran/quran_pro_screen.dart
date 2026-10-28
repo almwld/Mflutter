@@ -146,7 +146,9 @@ class _QuranProScreenState extends State<QuranProScreen>
           ? 'Musnad'
           : _mode == QuranDisplayMode.hieroglyphic
               ? 'NotoSansEgyptianHieroglyphs'
-              : 'Amiri',
+              : _mode == QuranDisplayMode.kufi
+                  ? 'Raqq'
+                  : 'Amiri',
       fontWeight: FontWeight.bold,
       color: _mode == QuranDisplayMode.uthmaniGold
           ? const Color(0xFFFFD700)
