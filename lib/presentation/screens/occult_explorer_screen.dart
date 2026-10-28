@@ -16,7 +16,7 @@ class OccultExplorerScreen extends StatefulWidget {
 class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   final _abjad = TextEditingController();
   final _search = TextEditingController();
-  late final Future<List<OccultEntry>> _entries = OccultDataService.fetchAllEntries();
+  late Future<List<OccultEntry>> _entries;
   String _category = 'all';
   String _query = '';
   int? _result;
@@ -26,6 +26,16 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
     'all': 'الكل', 'tarot': 'التاروت', 'runes': 'الرونية',
     'crystals': 'الأحجار والمعادن', 'hermeticism': 'الهرمسية', 'general': 'عام',
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _entries = OccultDataService.fetchAllEntries();
+  }
+
+  void _retryLoadEntries() {
+    setState(() => _entries = OccultDataService.fetchAllEntries());
+  }
 
   @override
   void dispose() {
@@ -170,7 +180,29 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
                 return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
               }
               if (snapshot.hasError) {
-                return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('تعذر تحميل البيانات المحلية.')));
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'تعذر تحميل البيانات المحلية.',
+                          textDirection: TextDirection.rtl,
+                        ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: OutlinedButton.icon(
+                            onPressed: _retryLoadEntries,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('إعادة المحاولة'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }
               final all = snapshot.data ?? const <OccultEntry>[];
               final categories = <String>{'all', ...all.map((e) => e.category)}.toList();
