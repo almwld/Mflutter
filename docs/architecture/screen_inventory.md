@@ -907,3 +907,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `TafsirGeneratorService` now documents at the service boundary that its small fixed text set is not a sourced tafsir database and must not be presented as quoted or verified exegesis.
+
+
+- The agent-console Abjad handler now uses `AbjadConstants`, the same table as `AbjadCalculatorScreen`, removing a duplicate mapping that disagreed on values such as ta marbuta and could produce different totals for the same text.
