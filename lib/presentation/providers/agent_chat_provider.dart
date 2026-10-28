@@ -28,6 +28,7 @@ class AgentChatProvider extends ChangeNotifier {
   bool _initialized = false;
   String? _initializationError;
   String? _selectedAgent;
+  String? _activeTaskVerseSource;
 
   bool _disposed = false;
 
@@ -125,6 +126,17 @@ class AgentChatProvider extends ChangeNotifier {
     if (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused) return;
 
     final generation = ++_executionGeneration;
+    final nucleusAtStart = NucleusService();
+    final contextSurahNumber = nucleusAtStart.currentSurahNumber;
+    final contextAyahNumber = nucleusAtStart.currentAyahNumber;
+    final contextVerseText = nucleusAtStart.currentVerseText;
+    final hasContextAtStart = contextSurahNumber != null &&
+        contextAyahNumber != null &&
+        contextVerseText != null &&
+        contextVerseText.trim().isNotEmpty;
+    _activeTaskVerseSource = hasContextAtStart
+        ? 'القرآن الكريم $contextSurahNumber:$contextAyahNumber'
+        : null;
     _cancelled = false;
     _paused = false;
     _attemptsByAgent.clear();
@@ -217,7 +229,12 @@ class AgentChatProvider extends ChangeNotifier {
         }
       }
 
-      final answer = await _composeAnswer(task);
+      final answer = await _composeAnswer(
+        task,
+        contextSurahNumber: contextSurahNumber,
+        contextAyahNumber: contextAyahNumber,
+        contextVerseText: contextVerseText,
+      );
       // Local GGUF generation can run while the final answer is composed.
       // If the user cancels during that phase, do not report a completed task
       // or persist a cancelled run as a successful answer.
