@@ -22,8 +22,7 @@ class QuranProScreen extends StatefulWidget {
   State<QuranProScreen> createState() => _QuranProScreenState();
 }
 
-class _QuranProScreenState extends State<QuranProScreen>
-    with SingleTickerProviderStateMixin {
+class _QuranProScreenState extends State<QuranProScreen> {
   // البيانات
   Map<String, dynamic>? _quran;
   Map<String, List<Map<String, dynamic>>>? _musnadQuran;
