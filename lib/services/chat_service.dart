@@ -65,10 +65,13 @@ class ChatService {
     buffer.writeln('• الكبير: ${abjadResult.kabir}');
     buffer.writeln('• الصغير: ${abjadResult.saghir}');
     buffer.writeln('• الوسط: ${abjadResult.wasat}');
-    buffer.writeln('• العنصر: ${abjadResult.element}');
-    buffer.writeln('• الكوكب: ${abjadResult.planet}');
-    buffer.writeln('• البرج: ${abjadResult.zodiac}');
-    buffer.writeln('• الاسم الإلهي: ${abjadResult.divineName}');
+    buffer.writeln('• العنصر الرمزي: ${abjadResult.element}');
+    buffer.writeln('• الكوكب الرمزي: ${abjadResult.planet}');
+    buffer.writeln('• البرج الرمزي: ${abjadResult.zodiac}');
+    buffer.writeln('• الاسم حسب ترتيب القائمة: ${abjadResult.divineName}');
+    buffer.writeln(
+      'هذه روابط اصطلاحية من جداول رمزية وليست قياسات علمية أو تنبؤات.',
+    );
     buffer.writeln('');
 
     // الآيات
@@ -119,12 +122,12 @@ class ChatService {
   /// توليد سؤال بصيرة
   String _generateInsightQuestion(AbjadResult abjad) {
     final questions = [
-      'كيف يمكن لهذا الرقم ${abjad.kabir} أن يؤثر في قراراتك اليومية؟',
-      'ما العلاقة بين عنصر "${abjad.element}" وروحانيتك؟',
-      'كيف يمكنك استخدام كوكب "${abjad.planet}" في تحسين طاقتك؟',
-      'ما البرج المناسب لك: "${abjad.zodiac}" - وكيف يؤثر في شخصيتك؟',
-      'تأمل في الاسم "${abjad.divineName}" - كيف يمكن أن يغير حياتك؟',
-      'كيف يؤثر تذبذب ${(abjad.frequency * 100).toStringAsFixed(0)}% على تفكيرك؟',
+      'ما الذي تريد التحقق منه في قيمة أبجد ${abjad.kabir بوصفها حسابًا حرفيًا؟',
+      'هل تريد مراجعة مصدر موثوق لمعنى الاسم ${abjad.divineName}؟',
+      'ما السياق النصي الذي يساعد على فهم الآيات ذات الصلة؟',
+      'ما الافتراضات التي ينبغي اختبارها قبل استنتاج نمط؟',
+      'هل تريد مقارنة قيمة الحروف وفق جدول أبجد المعلن؟',
+      'كيف يمكن فصل التأمل الشخصي عن الدليل النصي القابل للتحقق؟',
     ];
     return questions[abjad.kabir % questions.length];
   }
