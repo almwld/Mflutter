@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'quran/mushaf_screen.dart';
+import 'quran/quran_pro_screen.dart';
 import 'quran_index_screen.dart';
 import 'chat/chat_screen.dart';
 import 'advanced_search_screen.dart';
@@ -508,6 +509,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
       ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
+      ('القرآن بأنماط الخط', Icons.auto_stories_rounded, const QuranProScreen()),
       ('فهرس السور', Icons.list_alt_rounded, const SurahIndexScreen()),
       ('صفحة المصحف', Icons.menu_book_outlined, const QuranPageScreen(surahNumber: 1, surahName: 'الفاتحة')),
       ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
