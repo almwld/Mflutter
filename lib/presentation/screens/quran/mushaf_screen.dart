@@ -593,6 +593,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     ReadingProgressService.saveLastPage(page);
                     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
                     if (_highlights.isNotEmpty) {
+                      NucleusService().clearQuranContext();
                       setState(() => _highlights = const []);
                       _stopLivingEffects();
                     }
