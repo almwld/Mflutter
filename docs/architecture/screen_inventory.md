@@ -484,3 +484,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/quran_page_screen.dart`: reading-streak activity is recorded only after the source-correction step leaves usable verse data, not merely because the raw JSON value was a non-empty list.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (activity-screen recovery)
+
+- `community_screen.dart`, `challenges_screen.dart`, and `leaderboard_screen.dart` now keep their local summary request in state and provide an actual retry action after load failures, instead of asking users to reopen the screen manually.
+- No tests, analyzer, formatter, or APK build were run.
