@@ -877,3 +877,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AbjadCalculatorScreen` now bounds input length and shows the value assigned to each recognized letter alongside the total, rounded mean, and half-total. This makes the arithmetic traceable instead of presenting only the final numbers.
+
+
+- `GreatVersesScreen` now treats an empty Quran index as a recoverable load error instead of rendering a list of unavailable featured references.
