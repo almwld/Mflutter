@@ -7,6 +7,7 @@ import 'local_activity_summary_service.dart';
 /// do not yet emit measurable events remain explicitly untracked instead of
 /// displaying fabricated progress or unlocked badges.
 class AchievementsService {
+  static Future<void> _eventQueue = Future<void>.value();
   static final List<Map<String, dynamic>> _achievements = <Map<String, dynamic>>[
     {'id': 'first_verse', 'title': 'أول صفحة', 'desc': 'فتح صفحة من المصحف', 'icon': '📖', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_verses', 'title': 'حافظ الآيات', 'desc': 'حفظ 10 آيات في المفضلة', 'icon': '📚', 'unlocked': false, 'progress': 0.0, 'tracking': true},
@@ -82,16 +83,21 @@ class AchievementsService {
   }
 
   /// Records a real completed calculation, persisting the event locally.
-  static Future<void> recordAbjadCalculation() async {
-    try {
-      final preferences = await SharedPreferences.getInstance();
-      final previous = preferences.getInt('mudabbir_abjad_calculations') ?? 0;
-      if (!await preferences.setInt('mudabbir_abjad_calculations', previous + 1)) return;
-      _setProgress('first_abjad', 1);
-    } catch (_) {
-      // A profile/achievement persistence issue must not block the calculator.
-    }
-  }
+  static Future<void> recordAbjadCalculation() =>
+      _enqueueEvent(() async {
+        try {
+          final preferences = await SharedPreferences.getInstance();
+          final previous =
+              preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+          if (!await preferences.setInt(
+            'mudabbir_abjad_calculations',
+            previous + 1,
+          )) return;
+          _setProgress('first_abjad', 1);
+        } catch (_) {
+          // A profile/achievement persistence issue must not block the calculator.
+        }
+      });
 
   /// Records a verse share only after the platform reports a successful share.
   static Future<void> recordVerseShared() async {
@@ -105,36 +111,53 @@ class AchievementsService {
   }
 
   /// Counts distinct science topics whose detail view the user opened.
-  static Future<void> recordScienceExplored(String scienceId) async {
+  static Future<void> recordScienceExplored(String scienceId) {
     final normalizedId = scienceId.trim();
-    if (normalizedId.isEmpty) return;
-    try {
-      final preferences = await SharedPreferences.getInstance();
-      final explored = (preferences.getStringList('mudabbir_explored_sciences') ??
-              const <String>[])
-          .toSet();
-      explored.add(normalizedId);
-      if (!await preferences.setStringList(
-        'mudabbir_explored_sciences',
-        explored.toList(growable: false),
-      )) return;
-      _setProgress('seven_sciences', explored.length / 7);
-    } catch (_) {
-      // Science browsing remains available if achievement persistence fails.
-    }
+    if (normalizedId.isEmpty) return Future<void>.value();
+    return _enqueueEvent(() async {
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        final explored =
+            (preferences.getStringList('mudabbir_explored_sciences') ??
+                    const <String>[])
+                .toSet();
+        explored.add(normalizedId);
+        if (!await preferences.setStringList(
+          'mudabbir_explored_sciences',
+          explored.toList(growable: false),
+        )) return;
+        _setProgress('seven_sciences', explored.length / 7);
+      } catch (_) {
+        // Science browsing remains available if achievement persistence fails.
+      }
+    });
   }
 
   /// Counts a successfully completed local agent task, not a submitted prompt.
-  static Future<void> recordCompletedInsight() async {
-    try {
-      final preferences = await SharedPreferences.getInstance();
-      final previous = preferences.getInt('mudabbir_completed_insights') ?? 0;
-      final next = previous + 1;
-      if (!await preferences.setInt('mudabbir_completed_insights', next)) return;
-      _setProgress('ten_insights', next / 10);
-    } catch (_) {
-      // The agent's answer remains successful if achievement persistence fails.
-    }
+  static Future<void> recordCompletedInsight() =>
+      _enqueueEvent(() async {
+        try {
+          final preferences = await SharedPreferences.getInstance();
+          final previous =
+              preferences.getInt('mudabbir_completed_insights') ?? 0;
+          final next = previous + 1;
+          if (!await preferences.setInt(
+            'mudabbir_completed_insights',
+            next,
+          )) return;
+          _setProgress('ten_insights', next / 10);
+        } catch (_) {
+          // The agent's answer remains successful if achievement persistence fails.
+        }
+      });
+
+  static Future<void> _enqueueEvent(
+    Future<void> Function() operation,
+  ) {
+    _eventQueue = _eventQueue
+        .catchError((Object _) {})
+        .then((_) => operation());
+    return _eventQueue;
   }
 
   static void _setProgress(String id, double value) {
