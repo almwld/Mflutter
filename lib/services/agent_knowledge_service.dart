@@ -54,7 +54,11 @@ class AgentKnowledgeService {
   }
 
   Future<void> _initialize() async {
+    final beforeRequiredKnowledge = _documents.length;
     await _loadJsonAsset(_knowledgeAsset);
+    if (!isReady || _documents.length == beforeRequiredKnowledge) {
+      throw StateError('Required knowledge asset contains no indexable documents: ' + _knowledgeAsset);
+    }
     await _loadJsonAsset(_generalAsset);
     await _loadJsonAsset(_infoAsset);
 
