@@ -107,7 +107,7 @@ class QuranWordIndexService {
 
   static List<QuranWordEntry> _wordsForAyah(Ayah ayah) {
     final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
-    final juz = MushafSource.juzForPage(page);
+    final juz = MushafSource.juzForVerse(ayah.surahNumber, ayah.ayahNumber);
     final tokens = ayah.text
         .split(RegExp(r'\s+'))
         .map((token) => token.trim())
