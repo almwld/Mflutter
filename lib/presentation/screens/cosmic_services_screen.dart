@@ -62,9 +62,10 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
           if (text.isEmpty || unlock == null) continue;
           final alreadyExists = capsules.any((capsule) =>
               (capsule['content'] ?? '').toString() == text &&
-              (capsule['unlockDate'] ?? '').toString() == unlock.toIso8601String());
+              DateTime.tryParse((capsule['unlockDate'] ?? '').toString()) ==
+                  unlock);
           if (!alreadyExists) {
-            await TimeCapsuleService.sealCapsule(text, unlock);
+            await TimeCapsuleService.importLegacyCapsule(text, unlock);
           }
         }
         await preferences.remove(_legacyCapsulesKey);
