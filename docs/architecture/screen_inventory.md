@@ -828,3 +828,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The searchable More directory now strips the extended Arabic combining-mark range as well as tatweel, aligning its Arabic query normalization with the Quran search surfaces.
+
+
+- Surah-index search now removes the same extended Quranic mark range while retaining Arabic/Persian digit normalization and canonical surah names.
