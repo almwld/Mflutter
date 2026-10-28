@@ -62,10 +62,13 @@ class ReadingProgressService {
       }
     }
 
-    final days = prefs.getStringList(_readingDaysKey) ?? <String>[];
+    final storedDays =
+        prefs.getStringList(_readingDaysKey) ?? const <String>[];
+    final days = _readValidDays(storedDays).toList()..sort();
     final today = _dateKey(DateTime.now());
-    if (!days.contains(today)) {
-      days.add(today);
+    if (!days.contains(today)) days.add(today);
+    days.sort();
+    if (!_sameStrings(storedDays, days)) {
       if (!await prefs.setStringList(_readingDaysKey, days)) {
         throw StateError('تعذر حفظ يوم القراءة محليًا.');
       }
@@ -100,6 +103,76 @@ class ReadingProgressService {
     return pages;
   }
 
+  static Set<String> _readValidDays(List<String> values) {
+    final days = <String>{};
+    for (final value in values) {
+      if (!RegExp(r'^\\d{4}-\\d{2}-\\d{2}
+
+  static Future<int> getReadingDays() async {
+    await _awaitPendingWrites();
+    final prefs = await SharedPreferences.getInstance();
+    // Count distinct dates so legacy duplicates cannot inflate the metric.
+    return _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    ).length;
+  }
+
+  static Future<int> getCurrentStreak() async {
+    await _awaitPendingWrites();
+    final prefs = await SharedPreferences.getInstance();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    // Keep yesterday's streak alive until the user either reads today or
+    // misses a full calendar day, matching the persistent DailyStreakService.
+    var cursor = days.contains(_dateKey(today))
+        ? today
+        : today.subtract(const Duration(days: 1));
+    var streak = 0;
+
+    while (days.contains(_dateKey(cursor))) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  /// Number of distinct reading days in the last seven calendar days.
+  static Future<int> getReadingDaysInLast7Days() async {
+    await _awaitPendingWrites();
+    final prefs = await SharedPreferences.getInstance();
+    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    var count = 0;
+    for (var i = 0; i < 7; i++) {
+      if (days.contains(_dateKey(today.subtract(Duration(days: i))))) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /// Compatibility alias retained for existing callers. The value is a count
+  /// of distinct reading days, not pages read.
+  @Deprecated('Use getReadingDaysInLast7Days; this returns days, not pages.')
+  static Future<int> getPagesReadInLast7Days() =>
+      getReadingDaysInLast7Days();
+
+  static String _dateKey(DateTime date) =>
+      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+}
+).hasMatch(value)) continue;
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null || _dateKey(parsed) != value) continue;
+      if (parsed.isAfter(DateTime.now())) continue;
+      days.add(value);
+    }
+    return days;
+  }
+
   static bool _sameStrings(List<String> left, List<String> right) {
     if (left.length != right.length) return false;
     for (var i = 0; i < left.length; i++) {
@@ -112,13 +185,17 @@ class ReadingProgressService {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     // Count distinct dates so legacy duplicates cannot inflate the metric.
-    return (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet().length;
+    return _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    ).length;
   }
 
   static Future<int> getCurrentStreak() async {
     await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     // Keep yesterday's streak alive until the user either reads today or
