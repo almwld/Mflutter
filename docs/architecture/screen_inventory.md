@@ -807,3 +807,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Persisted profile normalization now rejects non-finite level/XP values before integer conversion, preventing malformed numeric JSON from discarding the entire local profile list.
+
+
+- Advanced Quran search normalization now strips both Arabic combining diacritics and the extended Quranic annotation-mark range in addition to tatweel, while leaving displayed/canonical verse text untouched.
