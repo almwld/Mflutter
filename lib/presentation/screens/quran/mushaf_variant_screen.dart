@@ -36,6 +36,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
   bool _chromeVisible = true;
+  Future<void> _pagePersistence = Future<void>.value();
 
   Future<void> _setImmersiveMode(bool immersive) async {
     await SystemChrome.setEnabledSystemUIMode(
@@ -70,10 +71,20 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _persistCurrentPage(int page) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setInt('mudabbir_mushaf_variant_last_page',
-        MushafSource.normalizePage(page));
+  Future<void> _persistCurrentPage(int page) {
+    final normalizedPage = MushafSource.normalizePage(page);
+    // Serialize writes so a slow earlier preference write cannot overwrite
+    // the most recently viewed page after rapid swipes.
+    _pagePersistence = _pagePersistence.then((_) async {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setInt(
+        'mudabbir_mushaf_variant_last_page',
+        normalizedPage,
+      );
+    }).catchError((Object error) {
+      debugPrint('MushafVariantScreen: could not save reading page: $error');
+    });
+    return _pagePersistence;
   }
 
   Future<void> _restorePageTheme() async {
