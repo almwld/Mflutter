@@ -744,3 +744,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/achievements_service.dart` now derives the three-day streak achievement from `LocalActivitySummaryService`, which reads the same persisted reading-day ledger as the reading statistics. This removes the previous mismatch where the achievement depended on a separate streak store that was not necessarily updated by page navigation.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (local profile management UI)
+
+- `lib/presentation/screens/player_profile_screen.dart` now initializes local profile storage before rendering and exposes actual profile creation and switching backed by `MultiUserService`. The screen explains that these are device-local profiles, not authenticated accounts or cloud sync; storage failures are surfaced to the user.
+- No tests, analyzer, formatter, or APK build were run.
