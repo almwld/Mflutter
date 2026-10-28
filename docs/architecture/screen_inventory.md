@@ -889,3 +889,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AIAdvancedScreen` now distinguishes unsupported GGUF/Qwen fine-tuning from the separate, available local linear-classifier training workflow, avoiding the impression that no local training path exists.
+
+
+- The elements screen now labels its relation table as tradition-dependent conceptual symbolism and replaces the unsupported “spirit animates everything” statement with a bounded symbolic association to life.
