@@ -100,9 +100,15 @@ class _QuranProScreenState extends State<QuranProScreen> {
         _hieroglyphicQuran = hieroglyphicQuran;
         _loading = false;
       });
-      final preferences = await SharedPreferences.getInstance();
-      final savedSurah = preferences.getInt('mudabbir_quran_pro_last_surah') ?? 1;
-      _loadSurah(savedSurah.clamp(1, 114));
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        final savedSurah =
+            preferences.getInt('mudabbir_quran_pro_last_surah') ?? 1;
+        _loadSurah(savedSurah.clamp(1, 114).toInt());
+      } catch (error) {
+        debugPrint('QuranProScreen: could not restore last surah: $error');
+        _loadSurah(1);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
