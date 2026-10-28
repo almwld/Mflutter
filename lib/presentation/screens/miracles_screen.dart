@@ -353,12 +353,6 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     final word = normalizedQuery.single;
     final count = analysis.countWord(word);
     final occurrences = analysis.occurrencesFor(word);
-    final verseReferences = occurrences
-        .take(12)
-        .map((item) => item.count > 1
-            ? '${item.surahNumber}:${item.ayahNumber} ×${item.count}'
-            : '${item.surahNumber}:${item.ayahNumber}')
-        .join(' • ');
     return Card(
       key: ValueKey<String>('result-$word-$count'),
       color: AppColors.surface,
