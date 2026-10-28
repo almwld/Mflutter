@@ -153,3 +153,38 @@ Implemented on the audit branch:
 ### Validation status
 
 The changes have been committed to the audit branch. CI and local Flutter commands have not yet been confirmed for this feature slice; do not treat the tests as passing until the workflow result is inspected.
+
+
+## Target-screen mapping (verified filename-level mapping)
+
+| # | Target | Current implementation / status |
+|---:|---|---|
+| 1 | SplashScreen | `lib/presentation/screens/splash_screen.dart` |
+| 2 | MainNavigation | `lib/presentation/screens/main_navigation.dart`; now a compatibility adapter to canonical `HomeScreen` |
+| 3 | ChatScreen | `lib/presentation/screens/chat/chat_screen.dart` is the main HomeScreen destination; a second legacy `chat_screen.dart` also exists and needs follow-up review |
+| 4 | QuranScreen | `lib/presentation/screens/quran_screen.dart`; the home reading shortcut also opens `quran/mushaf_screen.dart` |
+| 5 | SurahIndexScreen | `lib/presentation/screens/surah_index_screen.dart` |
+| 6 | QuranPageScreen | `lib/presentation/screens/quran_page_screen.dart` |
+| 7 | RecitationScreen | `lib/presentation/screens/recitation_screen.dart` |
+| 8 | QuranBookmarksScreen | No dedicated file found in the inspected filename inventory; `FavoritesScreen` exists but must not be assumed equivalent without reviewing its data model |
+| 9 | AbjadScreen | `lib/presentation/screens/abjad_screen.dart` |
+| 10 | MiraclesScreen | `lib/presentation/screens/miracles_screen.dart`; now backed by local, reproducible word-count calculations |
+| 11 | StatsScreen | `lib/presentation/screens/stats_screen.dart` |
+| 12 | CompareScreen | `lib/presentation/screens/compare_screen.dart` |
+| 13 | NucleusScreen | `lib/presentation/screens/nucleus_screen.dart`; uses the existing nucleus and GGUF runtime services |
+| 14 | AIAdvancedScreen | `lib/presentation/screens/ai_advanced_screen.dart` |
+| 15 | PersonalizationScreen | `lib/presentation/screens/personalization_screen.dart` |
+| 16 | TrainingScreen | `lib/presentation/screens/training_screen.dart`; verify runtime capabilities before describing training as active |
+| 17 | SovereignHubScreen | `lib/presentation/screens/sovereign_hub_screen.dart` |
+| 18 | CosmicServicesScreen | `lib/presentation/screens/cosmic_services_screen.dart` |
+| 19 | PlayerProfileScreen | `lib/presentation/screens/player_profile_screen.dart` |
+| 20 | AdvancedSearchScreen | `lib/presentation/screens/advanced_search_screen.dart` |
+| 21 | FavoritesScreen | `lib/presentation/screens/favorites_screen.dart` |
+| 22 | HelpScreen | `lib/presentation/screens/help_screen.dart` |
+| 23 | AboutScreen | `lib/presentation/screens/about_screen.dart` |
+
+This is a file-to-target mapping, not a claim that every target has passed behavioral testing. The dedicated Quran bookmarks screen remains an explicit gap until the existing favorites/bookmark storage is inspected.
+
+### Navigation consolidation change
+
+`MainNavigation` no longer owns a separate four-tab shell. It delegates to `HomeScreen`, which is the entry destination after `SplashScreen`, and re-exports the existing `MoreScreen` symbol for legacy import compatibility. This removes the duplicate navigation implementation without deleting the HomeScreen tools directory.
