@@ -203,9 +203,18 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       ? const Icon(Icons.check_circle, color: Color(0xFF8C6A2D))
                       : null,
                   onTap: () async {
+                    final previousTheme = _pageTheme;
                     setState(() => _pageTheme = theme);
-                    await QuranPageThemeService.save(theme);
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    try {
+                      await QuranPageThemeService.save(theme);
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    } catch (error) {
+                      if (!mounted) return;
+                      setState(() => _pageTheme = previousTheme);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('تعذر حفظ مظهر المصحف: $error')),
+                      );
+                    }
                   },
                 ),
             ],
