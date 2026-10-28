@@ -25,10 +25,16 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
   }
 
   Future<void> _restoreLastVariantPage() async {
-    final preferences = await SharedPreferences.getInstance();
-    final page = preferences.getInt('mudabbir_mushaf_variant_last_page');
-    if (!mounted || page == null) return;
-    setState(() => _lastVariantPage = MushafSource.normalizePage(page));
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final page = preferences.getInt('mudabbir_mushaf_variant_last_page');
+      if (!mounted || page == null) return;
+      setState(() => _lastVariantPage = MushafSource.normalizePage(page));
+    } catch (error) {
+      // Index browsing remains available if optional resume metadata is corrupt
+      // or local preferences are temporarily inaccessible.
+      debugPrint('Could not restore variant Mushaf page: $error');
+    }
   }
 
   Future<void> _openVariantPage(int page) async {
