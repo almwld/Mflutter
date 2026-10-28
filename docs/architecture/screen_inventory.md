@@ -490,3 +490,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `community_screen.dart`, `challenges_screen.dart`, and `leaderboard_screen.dart` now keep their local summary request in state and provide an actual retry action after load failures, instead of asking users to reopen the screen manually.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (bookmark reference validation)
+
+- `lib/services/bookmark_service.dart`: bookmark insertion and restoration now validate verse references against the bundled QCF/Hafs source, rejecting positive-but-out-of-range ayah numbers that could otherwise crash page navigation from Favorites.
+- No tests, analyzer, formatter, or APK build were run.
