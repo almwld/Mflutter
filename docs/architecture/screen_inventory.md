@@ -380,3 +380,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/abjad_screen.dart`: a successful local Abjad calculation remains visible if optional achievement persistence fails; the failure is reported separately.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (Mushaf page navigation)
+
+- `lib/presentation/screens/quran/mushaf_screen.dart`: page-jump input now accepts Arabic-Indic and Persian digits and rejects invalid/out-of-range values with visible feedback instead of silently normalizing them to the first or last page.
+- No tests, analyzer, formatter, or APK build were run.
