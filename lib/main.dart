@@ -16,12 +16,12 @@ Future<void> _loadBundledKufiFont() async {
     // The font is bundled as base64 text to keep the repository transport-safe;
     // it is decoded locally at startup and requires no network access.
     final encoded = await rootBundle.loadString(
-      'assets/fonts/NotoKufiArabic.ttf.base64',
+      'assets/fonts/Raqq.ttf.base64',
     );
     final bytes = Uint8List.fromList(
       base64Decode(encoded.replaceAll(RegExp(r'\s+'), '')),
     );
-    final loader = FontLoader('NotoKufiArabic')
+    final loader = FontLoader('Raqq')
       ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
     await loader.load();
   } catch (_) {
