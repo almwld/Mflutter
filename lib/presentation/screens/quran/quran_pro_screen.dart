@@ -247,6 +247,27 @@ class _QuranProScreenState extends State<QuranProScreen>
     );
   }
 
+  /// Search normalization is presentation-only; the canonical Quran text
+  /// remains untouched. It allows matches regardless of tashkeel, tatweel,
+  /// common alef variants, and Arabic/Persian digit keyboards.
+  String _normalizeSearchText(String value) => value
+      .replaceAllMapped(
+        RegExp(r'[٠-٩۰-۹]'),
+        (match) {
+          final code = match.group(0)!.codeUnitAt(0);
+          final digit = code >= 0x06F0 && code <= 0x06F9
+              ? code - 0x06F0
+              : code - 0x0660;
+          return String.fromCharCode(0x30 + digit);
+        },
+      )
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
   Future<void> _searchCurrentSurah() async {
     if (_currentVerses.isEmpty) return;
     final controller = TextEditingController();
@@ -255,14 +276,17 @@ class _QuranProScreenState extends State<QuranProScreen>
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
-          final normalized = query.trim();
+          final normalized = _normalizeSearchText(query);
           final matches = <int>[];
           for (var i = 0; i < _currentVerses.length; i++) {
             final verse = _currentVerses[i];
             final text = verse is Map ? (verse['text']?.toString() ?? '') : '';
+            final normalizedVerse = _normalizeSearchText(text);
             final numberMatches = normalized.isNotEmpty &&
                 (i + 1).toString() == normalized;
-            if (normalized.isEmpty || text.contains(normalized) || numberMatches) {
+            if (normalized.isEmpty ||
+                normalizedVerse.contains(normalized) ||
+                numberMatches) {
               matches.add(i);
             }
           }
