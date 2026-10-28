@@ -25,12 +25,14 @@ class AgentChatProvider extends ChangeNotifier {
   bool _cancelled = false;
   int _executionGeneration = 0;
   bool _initialized = false;
+  String? _initializationError;
   String? _selectedAgent;
 
   AgentTask? get activeTask => _activeTask;
   List<String> get messages => List.unmodifiable(_messages);
   bool get paused => _paused;
   bool get initialized => _initialized;
+  String? get initializationError => _initializationError;
   String? get selectedAgent => _selectedAgent;
   int get agentCount => AgentRegistry.all.length;
   int get indexedDocumentCount => _knowledge.documentCount;
@@ -57,19 +59,29 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   Future<void> _initializeOnce() async {
-    final ayahs = await QuranLoaderService.loadAllAyahs();
-    QuranicSearchEngine.indexVerses(ayahs
-        .map((a) => {
-              'id': a.id.toString(),
-              'surah': a.surahName,
-              'ayah': a.ayahNumber.toString(),
-              'text': a.text,
-            })
-        .toList(growable: false));
-    await _knowledge.initialize();
-    _initialized = true;
-    _initializing = null;
-    notifyListeners();
+    try {
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      QuranicSearchEngine.indexVerses(ayahs
+          .map((a) => {
+                'id': a.id.toString(),
+                'surah': a.surahName,
+                'ayah': a.ayahNumber.toString(),
+                'text': a.text,
+              })
+          .toList(growable: false));
+      await _knowledge.initialize();
+      _initialized = true;
+      _initializationError = null;
+    } catch (error) {
+      // Startup is initiated by the screen without awaiting a Future. Keep
+      // initialization failures visible in provider state instead of leaking
+      // an unhandled async exception; executeTask checks readiness before work.
+      _initialized = false;
+      _initializationError = error.toString();
+    } finally {
+      _initializing = null;
+      notifyListeners();
+    }
   }
 
   void selectAgent(String? id) {
@@ -121,6 +133,11 @@ class AgentChatProvider extends ChangeNotifier {
 
     try {
       await initialize();
+      if (!_initialized) {
+        throw StateError(
+          'تعذر تهيئة المعرفة المحلية: ${_initializationError ?? 'خطأ غير محدد'}',
+        );
+      }
       for (var i = 0; i < agents.length; i++) {
         if (_isCancelledFor(generation)) {
           _markCancelledIfCurrent(task);
