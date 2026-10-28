@@ -669,13 +669,29 @@ class _QuranProScreenState extends State<QuranProScreen> {
             );
           },
           onLongPress: () async {
-            await Clipboard.setData(ClipboardData(text: text.toString()));
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('تم نسخ الآية $verseNumber من سورة $_surahName'),
-              ),
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+            });
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
             );
+            try {
+              await Clipboard.setData(ClipboardData(text: text.toString()));
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('تم نسخ الآية $verseNumber من سورة $_surahName'),
+                ),
+              );
+            } catch (error) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('تعذر نسخ الآية: $error')),
+              );
+            }
           },
           child: Container(
             key: verseKey,
