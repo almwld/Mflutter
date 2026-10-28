@@ -502,3 +502,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/screens/device/gaze_tracking_screen.dart`: camera/detector release errors are isolated so one native resource cannot prevent cleanup of the other. Initialization now catches failures from pre-initialization cleanup and disposes partially initialized resources on failure or lifecycle cancellation.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (reading statistics integrity)
+
+- `lib/services/reading_progress_service.dart`: reading-day history now filters malformed calendar keys, impossible dates, duplicates, and future dates before counting or recalculating streaks. Writes normalize legacy history to a canonical sorted list so corrupt entries cannot inflate all-time reading-day statistics.
+- No tests, analyzer, formatter, or APK build were run.
