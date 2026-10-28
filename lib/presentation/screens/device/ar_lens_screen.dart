@@ -27,7 +27,6 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
   String? _error;
   String? _capturedPath;
   String? _recognizedText;
-  String? _translatedText;
   String? _analysisError;
   List<QuranLensMatch> _matches = const [];
   List<ObjectLensLabel> _labels = const [];
@@ -144,7 +143,6 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
     setState(() {
       _mode = mode;
       _recognizedText = null;
-      _translatedText = null;
       _analysisError = null;
       _matches = const [];
       _labels = const [];
@@ -158,8 +156,7 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
       _processing = true;
       _analysisError = null;
       _recognizedText = null;
-      _translatedText = null;
-      _matches = const [];
+        _matches = const [];
       _labels = const [];
     });
     try {
@@ -328,7 +325,6 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
                     ),
                   ],
                   if (_recognizedText != null) _buildTextResult(theme),
-                  if (_translatedText != null) _buildInfoCard('الترجمة الإنجليزية', _translatedText!, Icons.translate_rounded),
                   if (_mode == _LensMode.text && (_recognizedText?.isNotEmpty ?? false))
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
