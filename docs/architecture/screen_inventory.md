@@ -822,3 +822,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Numerical analysis results now label their source accurately: bundled-asset calculations identify `assets/unified_quran.json`, while caller-supplied JSON defaults to `provided JSON`.
+
+
+- Legacy capsule migration now isolates capacity/storage failures, still loads the already-migrated capsule list, surfaces a warning, and keeps the legacy source for an idempotent retry rather than blocking the entire services screen.
