@@ -111,9 +111,32 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         await temp.delete();
         throw const FormatException('فشل التحقق من نسخة GGUF بعد الاستيراد.');
       }
-      if (await target.exists()) await target.delete();
-      await temp.rename(target.path);
-      await _selectModel(sourceName);
+      final backup = File('${target.path}.previous');
+      final hadPrevious = await target.exists();
+      if (await backup.exists()) await backup.delete();
+      if (hadPrevious) await target.rename(backup.path);
+
+      try {
+        // Keep the previous valid model recoverable until both the validated
+        // file replacement and the selected-model marker have succeeded.
+        await temp.rename(target.path);
+        await _selectModel(sourceName);
+      } catch (_) {
+        if (await target.exists()) await target.delete();
+        if (hadPrevious && await backup.exists()) {
+          await backup.rename(target.path);
+        }
+        rethrow;
+      }
+
+      if (await backup.exists()) {
+        try {
+          await backup.delete();
+        } catch (_) {
+          // A stale backup is harmless; do not turn a successful import into
+          // a reported failure solely because cleanup was denied.
+        }
+      }
       _status = 'تم استيراد النموذج $sourceName إلى مساحة التطبيق الخاصة.';
       return target;
     } catch (error) {
