@@ -105,6 +105,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       // Explicit destinations (bookmark/search/index) are genuine reading
       // activity even when the PageView starts directly on that page.
       unawaited(ReadingProgressService.saveLastPage(page));
+      unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     }
     _restorePageTheme();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -209,6 +210,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     // Opening the restored page is real local reading activity even when it
     // matches the PageController's initial index and emits no page-change event.
     unawaited(ReadingProgressService.saveLastPage(last));
+    unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     if (last == _currentPage.value) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _goToPage(last);
