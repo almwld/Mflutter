@@ -789,3 +789,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - The local dream journal now supports deleting an individual saved note through `DreamJournalService.removeDream`; the UI reloads persisted entries after deletion and reports storage failures rather than removing only the visible row.
+
+
+- Time capsules now have a persisted deletion path in `TimeCapsuleService.removeCapsule` and a delete control in the capsule list. Users can free local capacity without clearing the entire store.
