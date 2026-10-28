@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
@@ -6,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/mushaf_source.dart';
 import '../../../core/themes/font_manager.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/quran_fonts_service.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
@@ -57,6 +60,12 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _restorePageTheme();
     _restoreDisplayMode();
+    _loadQuranFonts();
+  }
+
+  Future<void> _loadQuranFonts() async {
+    await QuranFontsService.load();
+    if (mounted) setState(() {});
   }
 
   Future<void> _persistCurrentPage(int page) async {
@@ -103,11 +112,15 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.musnad:
         return TextTransformer.toMusnad(text);
       case MushafVariantMode.dotless:
-        return TextTransformer.toDotlessPreservingMarks(text);
+        return FontManager.isRaqqFontLoaded
+            ? text
+            : TextTransformer.toDotlessPreservingMarks(text);
       case MushafVariantMode.dotlessPlain:
-        return TextTransformer.toDotless(text);
+        return FontManager.isRaqqFontLoaded
+            ? TextTransformer.removeArabicMarks(text)
+            : TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
-        return TextTransformer.transform(text, 'kufi');
+        return text;
       case MushafVariantMode.hieroglyphic:
         return TextTransformer.toHieroglyphic(text);
     }
@@ -327,9 +340,9 @@ class _VariantPage extends StatelessWidget {
         return 'Musnad';
       case MushafVariantMode.dotless:
       case MushafVariantMode.dotlessPlain:
-        return 'Amiri';
+        return FontManager.isRaqqFontLoaded ? 'Raqq' : 'Amiri';
       case MushafVariantMode.kufi:
-        return 'Raqq';
+        return FontManager.isRaqqFontLoaded ? 'Raqq' : 'Amiri';
       case MushafVariantMode.hieroglyphic:
         return 'NotoSansEgyptianHieroglyphs';
     }
@@ -387,6 +400,11 @@ class _VariantPage extends StatelessWidget {
                                 line: lines[lineIndex],
                                 transform: transform,
                                 fontFamily: _fontFamily,
+                                fontFeatures: FontManager.isRaqqFontLoaded &&
+                                        (mode == MushafVariantMode.dotless ||
+                                            mode == MushafVariantMode.dotlessPlain)
+                                    ? const [FontFeature.enable('ss01')]
+                                    : const [],
                                 gold: gold,
                                 sequenceWordCount: sequenceWordCount,
                                 sequenceWordOffset: lines.take(lineIndex).fold<int>(
@@ -411,6 +429,7 @@ class _FixedMushafLine extends StatelessWidget {
     required this.line,
     required this.transform,
     required this.fontFamily,
+    required this.fontFeatures,
     required this.gold,
     required this.sequenceWordCount,
     required this.sequenceWordOffset,
@@ -419,6 +438,7 @@ class _FixedMushafLine extends StatelessWidget {
   final MushafVariantLine line;
   final String Function(String) transform;
   final String fontFamily;
+  final List<FontFeature> fontFeatures;
   final Color gold;
   final int sequenceWordCount;
   final int sequenceWordOffset;
@@ -484,6 +504,7 @@ class _FixedMushafLine extends StatelessWidget {
       builder: (context, constraints) {
         final style = TextStyle(
           fontFamily: fontFamily,
+          fontFeatures: fontFeatures,
           fontSize: 21,
           fontWeight: FontWeight.w700,
           color: gold,
