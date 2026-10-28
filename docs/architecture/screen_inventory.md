@@ -265,3 +265,16 @@ These changes are code-level implementation notes only. No tests/builds were run
 
 ### More-directory reachability
 - Added searchable entries for the Quran word explorer, Advanced Tech, the detailed Abjad screen, and the symbolic elements/numbers/zodiac screens. These routes reuse the canonical widgets and wrap provider-dependent Abjad screens with their required provider.
+
+
+## UI continuation — 2026-10-29
+
+### Implemented in this continuation
+
+- `lib/presentation/screens/compare_screen.dart`: replaced fixed sample verses and hard-coded numeric/symbolic interpretations with a reference-driven comparison using `QuranLoaderService.loadAllAyahs()`. The screen accepts Latin, Arabic-Indic, and Persian digits; validates references against loaded local data; renders original verse text unchanged; and computes a clearly labelled lexical overlap using normalization only for comparison.
+- `lib/presentation/screens/quran_screen.dart`: removed an unused repeating animation and sensor listener from the reader, added a visible loading failure/retry state, made surah changes reset the page, connected previous/next controls to the actual `PageView`, and updates the verse counter as the page changes. Removed the unsupported fixed Jummal/axis label from the verse card.
+- `lib/presentation/screens/help_screen.dart`: expanded the short help list into an Arabic guide covering navigation, Quran reading, recitation, bookmarks, search, local agents/GGUF, personalization, training limits, comparison, reading stats, profile tracking, nearby P2P, local persistence, privacy, and About. The guide explicitly distinguishes local persistence from cloud sync and registered agents from active execution.
+
+### Validation status for this continuation
+
+Per the user's current instruction, no tests, formatter, analyzer, or APK build were run. These changes are committed to the audit branch but remain unverified by compilation/runtime checks. Continue the screen-by-screen behavioral audit; do not mark the 23-screen specification complete based on the file mapping alone.
