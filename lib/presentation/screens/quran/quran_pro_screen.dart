@@ -546,40 +546,42 @@ class _QuranProScreenState extends State<QuranProScreen> {
             await Clipboard.setData(ClipboardData(text: text.toString()));
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('تم نسخ الآية $verseNumber من سورة $_surahName')),
+              SnackBar(
+                content: Text('تم نسخ الآية $verseNumber من سورة $_surahName'),
+              ),
             );
           },
           child: Container(
             key: verseKey,
             margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.03),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _goldColor.withOpacity(0.1)),
-            boxShadow: [
-              if (_showFrame)
-                BoxShadow(
-                  color: _goldColor.withOpacity(0.05),
-                  blurRadius: 10,
-                  spreadRadius: 1,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _goldColor.withOpacity(0.1)),
+              boxShadow: [
+                if (_showFrame)
+                  BoxShadow(
+                    color: _goldColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                QuranWaveText(
+                  text: transformed,
+                  importanceText: text.toString(),
+                  style: _textStyle(),
+                  enabled: _waveEnabled,
+                  textAlign: WrapAlignment.end,
                 ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              QuranWaveText(
-                text: transformed,
-                importanceText: text.toString(),
-                style: _textStyle(),
-                enabled: _waveEnabled,
-                textAlign: WrapAlignment.end,
-              ),
-              const SizedBox(height: 8),
-              _buildVerseNumber(verseNumber),
-            ],
-          ),
+                const SizedBox(height: 8),
+                _buildVerseNumber(verseNumber),
+              ],
+            ),
           ),
         );
       },
