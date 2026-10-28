@@ -642,3 +642,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/providers/agent_chat_provider.dart`: asynchronous native generation-stop failures during explicit task cancellation are now caught and logged, so a plugin/runtime stop error cannot become an unhandled future while the provider marks the task cancelled.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Theme preference loading now uses a revision guard so a slow startup read cannot overwrite palette/font changes made by the user before the read completes.
