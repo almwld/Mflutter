@@ -33,8 +33,9 @@ class _DivineNamesScreenState extends State<DivineNamesScreen> {
   @override
   Widget build(BuildContext context) {
     final query = _normalize(_searchController.text);
-    final names = AbjadConstants.divineNames
-        .where((name) => query.isEmpty || _normalize(name).contains(query))
+    final names = AbjadConstants.divineNames.asMap().entries
+        .where((entry) =>
+            query.isEmpty || _normalize(entry.value).contains(query))
         .toList(growable: false);
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
@@ -100,7 +101,8 @@ class _DivineNamesScreenState extends State<DivineNamesScreen> {
                 childAspectRatio: 1.12,
               ),
               itemBuilder: (context, index) {
-                final name = names[index];
+                final entry = names[index];
+                final name = entry.value;
                 return Card(
                   color: AppColors.primaryNavy.withOpacity(0.6),
                   child: Padding(
@@ -109,7 +111,7 @@ class _DivineNamesScreenState extends State<DivineNamesScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '${index + 1}',
+                          '${entry.key + 1}',
                           style: const TextStyle(
                             color: Colors.white38,
                             fontSize: 10,
