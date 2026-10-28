@@ -20,10 +20,15 @@ class MushafScreen extends StatefulWidget {
   const MushafScreen({
     super.key,
     this.initialPage = 1,
+    this.initialSurah,
+    this.initialAyah,
     this.restoreLastPage = true,
   });
 
   final int initialPage;
+  final int? initialSurah;
+  final int? initialAyah;
+
   /// Set false when opening a specific verse/page from search, favorites, or index.
   final bool restoreLastPage;
 
@@ -60,6 +65,25 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _mushafZoomController = TransformationController();
+
+    final targetSurah = widget.initialSurah;
+    final targetAyah = widget.initialAyah;
+    if (targetSurah != null &&
+        targetAyah != null &&
+        targetSurah >= 1 &&
+        targetSurah <= 114 &&
+        targetAyah >= 1) {
+      _highlights = [
+        HighlightVerse(
+          surah: targetSurah,
+          verseNumber: targetAyah,
+          page: page,
+          color: _quranGoldLight,
+        ),
+      ];
+      _startLivingEffects();
+    }
+
     if (widget.restoreLastPage) _restoreLastPage();
     _restorePageTheme();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
