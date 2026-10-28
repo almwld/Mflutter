@@ -173,8 +173,12 @@ class MultiUserService {
       'avatar': rawAvatar is String
           ? (rawAvatar.length > 32 ? rawAvatar.substring(0, 32) : rawAvatar)
           : '',
-      'level': rawLevel is num ? rawLevel.toInt().clamp(1, 100000) : 1,
-      'xp': rawXp is num ? rawXp.toInt().clamp(0, 0x7fffffff) : 0,
+      'level': rawLevel is num && rawLevel.isFinite
+          ? rawLevel.toInt().clamp(1, 100000)
+          : 1,
+      'xp': rawXp is num && rawXp.isFinite
+          ? rawXp.toInt().clamp(0, 0x7fffffff)
+          : 0,
       'createdAt': parsedDate?.toIso8601String() ??
           DateTime.now().toIso8601String(),
     };
