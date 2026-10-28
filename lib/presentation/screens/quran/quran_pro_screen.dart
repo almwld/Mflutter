@@ -331,9 +331,19 @@ class _QuranProScreenState extends State<QuranProScreen> {
                     autofocus: true,
                     textDirection: TextDirection.rtl,
                     onChanged: (value) => setDialogState(() => query = value),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'اكتب كلمة أو رقم الآية',
-                      prefixIcon: Icon(Icons.search_rounded),
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'مسح البحث',
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () {
+                                controller.clear();
+                                setDialogState(() => query = '');
+                              },
+                            ),
                     ),
                   ),
                   const SizedBox(height: 10),
