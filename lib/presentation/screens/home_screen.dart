@@ -489,10 +489,13 @@ class _MoreScreenState extends State<MoreScreen> {
 
   String _normalizeSearchText(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
       .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
       .replaceAll(RegExp(r'[ؤئ]'), 'ء')
-      .replaceAll('ى', 'ي');
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   @override
   Widget build(BuildContext context) {
