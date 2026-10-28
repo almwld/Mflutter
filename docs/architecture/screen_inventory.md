@@ -846,3 +846,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Arabic search consistency: `NucleusScreen` now uses the shared agent-knowledge normalizer for agent name/ID/layer/description queries, and `CompareScreen` removes the extended Quranic annotation marks before lexical-overlap comparison. Neither operation mutates canonical verse text.
+
+
+- Opening a knowledge-domain detail in `NucleusScreen` remains successful even if the optional local achievement write fails; the screen now reports the persistence failure instead of leaving an unhandled asynchronous error.
