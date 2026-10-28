@@ -81,6 +81,24 @@ class TimeCapsuleService {
     return _read(prefs);
   }
 
+  static Future<void> removeCapsule(String id) {
+    final normalizedId = id.trim();
+    if (normalizedId.isEmpty) {
+      throw ArgumentError('معرّف الكبسولة غير صالح.');
+    }
+    return _enqueueWrite(() async {
+      final prefs = await SharedPreferences.getInstance();
+      final capsules = _read(prefs);
+      final updated = capsules
+          .where((capsule) => capsule['id'] != normalizedId)
+          .toList(growable: false);
+      if (updated.length == capsules.length) return;
+      if (!await prefs.setString(_key, jsonEncode(updated))) {
+        throw StateError('تعذر حذف الكبسولة من التخزين المحلي.');
+      }
+    });
+  }
+
   static Future<void> _enqueueWrite(Future<void> Function() operation) {
     _writeQueue = _writeQueue
         .catchError((Object _) {})
