@@ -438,3 +438,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/presentation/providers/training_provider.dart` and `lib/presentation/screens/training_screen.dart`: the model checkpoint check now exposes an initialization state, avoids offering a duplicate retry while a check is in flight, and displays a distinct progress message.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (search-to-Mushaf context)
+
+- `lib/presentation/screens/advanced_search_screen.dart`: opening a search result now passes the exact surah and ayah to the canonical Mushaf in addition to the page, so the target verse can be highlighted and shared Quran context updated.
+- No tests, analyzer, formatter, or APK build were run.
