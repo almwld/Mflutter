@@ -20,6 +20,12 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       );
       return;
     }
+    if (!RegExp(r'[\u0600-\u06FF]').hasMatch(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب أن يحتوي النص على حروف عربية.')),
+      );
+      return;
+    }
     context.read<AbjadProvider>().calculateAbjad(text);
     await AchievementsService.recordAbjadCalculation();
   }
