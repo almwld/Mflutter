@@ -285,3 +285,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `lib/presentation/screens/advanced_search_screen.dart`: added explicit index-loading/error/retry states, query clearing, no-match feedback, and support for Arabic-Indic/Persian digits in verse references. Search normalizes text only for matching; the displayed Quran verse text remains unchanged. Added an explicit search action while typing.
 - `lib/presentation/screens/about_screen.dart`: removed unsupported numerical claims about neural networks/features and blanket claims that the complete application works offline. The page now describes the actual feature boundaries, notes that local-model availability depends on importing/loading a compatible GGUF model, and distinguishes local persistence from encryption or cloud synchronization.
 - Validation remains intentionally deferred: no tests, analyzer, formatter, or build were run in this continuation, per the user's instruction.
+
+## UI continuation — 2026-10-29 (runtime recovery and metrics)
+
+- Nucleus initialization can be retried after bundled-data fallback or knowledge-index initialization failure; the screen labels fallback/degraded state and exposes a retry action. A loaded GGUF model remains independent of nucleus metadata readiness.
+- Reading statistics now labels the seven-day value as pages read, matching the underlying `getPagesReadInLast7Days()` source rather than incorrectly describing it as days.
+- Recitation completion handling now refuses to advance when playback has been stopped by the user or is paused, reducing a race between player completion and user controls.
+- These changes were committed without running tests or builds, per the current execution instruction. They are not a substitute for runtime verification.
