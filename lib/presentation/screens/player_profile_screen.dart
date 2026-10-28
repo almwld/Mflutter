@@ -24,15 +24,46 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _saveLocalCheckpoint() async {
+    final saved = await CloudSyncService.sync();
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          saved
+              ? 'تم حفظ نقطة محلية على الجهاز؛ لا توجد مزامنة سحابية مهيأة.'
+              : CloudSyncService.status,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = MultiUserService.activeProfile;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(title: Text('الملف الشخصي', style: TextStyle(color: AppColors.primaryGold)), backgroundColor: AppColors.primaryNavy, actions: [
-        IconButton(icon: Icon(Icons.sync, color: CloudSyncService.isSyncing ? AppColors.primaryGold : Colors.white54), onPressed: () async { await CloudSyncService.sync(); setState(() {}); }),
-      ]),
+      appBar: AppBar(
+        title: const Text(
+          'الملف الشخصي',
+          style: TextStyle(color: AppColors.primaryGold),
+        ),
+        backgroundColor: AppColors.primaryNavy,
+        actions: [
+          IconButton(
+            tooltip: 'حفظ نقطة محلية',
+            icon: Icon(
+              Icons.save_outlined,
+              color: CloudSyncService.isSyncing
+                  ? AppColors.primaryGold
+                  : Colors.white54,
+            ),
+            onPressed: CloudSyncService.isSyncing ? null : _saveLocalCheckpoint,
+          ),
+        ],
+      ),
       body: ListView(padding: EdgeInsets.all(16), children: [
         // رأس الملف
         Card(color: AppColors.surface, child: Padding(padding: EdgeInsets.all(24), child: Column(children: [
@@ -71,14 +102,32 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
             trailing: a['unlocked'] ? Icon(Icons.check_circle, color: AppColors.primaryGold) : null,
           )),
         ]))),
-        // المزامنة
-        Card(color: AppColors.surface, child: ListTile(
-          leading: Icon(Icons.cloud, color: CloudSyncService.lastSync != null ? AppColors.primaryGold : Colors.white54),
-          title: Text('المزامنة السحابية', style: TextStyle(color: Colors.white)),
-          subtitle: Text(CloudSyncService.lastSync != null ? 'آخر مزامنة: ${CloudSyncService.lastSync.toString().substring(0, 16)}' : 'لم تتم المزامنة بعد', style: TextStyle(color: Colors.white54)),
-          trailing: CloudSyncService.isSyncing ? CircularProgressIndicator(color: AppColors.primaryGold) : Icon(Icons.sync),
-          onTap: () async { await CloudSyncService.sync(); setState(() {}); },
-        )),
+        // Local checkpoint only; no remote sync backend is configured.
+        Card(
+          color: AppColors.surface,
+          child: ListTile(
+            leading: Icon(
+              Icons.save_outlined,
+              color: CloudSyncService.lastSync != null
+                  ? AppColors.primaryGold
+                  : Colors.white54,
+            ),
+            title: const Text(
+              'نقطة حفظ محلية',
+              style: TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              CloudSyncService.lastSync != null
+                  ? 'آخر حفظ محلي: ${CloudSyncService.lastSync.toString().substring(0, 16)} • ${CloudSyncService.status}'
+                  : CloudSyncService.status,
+              style: const TextStyle(color: Colors.white54),
+            ),
+            trailing: CloudSyncService.isSyncing
+                ? const CircularProgressIndicator(color: AppColors.primaryGold)
+                : const Icon(Icons.save_outlined),
+            onTap: CloudSyncService.isSyncing ? null : _saveLocalCheckpoint,
+          ),
+        ),
       ]),
     );
   }
