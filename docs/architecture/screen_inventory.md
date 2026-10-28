@@ -417,3 +417,10 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/mushaf_variant_layout_service.dart`: missing/empty page metadata now raises a recoverable data error instead of silently rendering a page of blank line slots. The existing screen error state can offer a retry and does not misrepresent absent layout as a valid page.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (training checkpoint recovery)
+
+- `lib/presentation/providers/training_provider.dart`: concurrent model initialization requests are coalesced; a missing or invalid starter checkpoint remains non-blocking for supervised training and can be explicitly retried later.
+- `lib/presentation/screens/training_screen.dart`: added a retry action for local classifier checkpoint loading, separate from the dataset-driven training action.
+- No tests, analyzer, formatter, or APK build were run.
