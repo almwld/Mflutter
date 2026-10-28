@@ -457,3 +457,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - Follow-up source inspection found that the legacy `getPagesReadInLast7Days()` method actually counted distinct reading days, not pages. Added the accurately named `getReadingDaysInLast7Days()`, retained the old name as a deprecated compatibility alias, and updated `stats_screen.dart` to display “أيام القراءة آخر 7 أيام” with day units. This supersedes the earlier inventory note that described the metric as pages.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- Additional correction in `lib/services/reading_progress_service.dart`: total reading days are now counted as distinct dates so duplicate legacy preference entries cannot inflate the summary.
