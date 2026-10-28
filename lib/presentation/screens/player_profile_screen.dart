@@ -19,9 +19,17 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   }
 
   Future<void> _loadStreak() async {
-    await DailyStreakService.initialize();
-    await AchievementsService.refreshFromLocalActivity();
-    if (mounted) setState(() {});
+    try {
+      await DailyStreakService.initialize();
+      await AchievementsService.refreshFromLocalActivity();
+      await CloudSyncService.restore();
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تحميل بيانات الملف المحلي: $error')),
+      );
+    }
   }
 
   Future<void> _saveLocalCheckpoint() async {
