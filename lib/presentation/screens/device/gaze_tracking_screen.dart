@@ -78,35 +78,46 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
 
   Future<void> _initialize() async {
     final generation = ++_generation;
+    CameraController? pendingCamera;
+    FaceDetector? pendingDetector;
     if (mounted) setState(() { _loading = true; _error = null; });
     try {
       await _releaseCamera();
       if (!mounted || generation != _generation) return;
       await _fusion.load();
-      final detector = await FaceDetector.create(model: FaceDetectionModel.frontCamera);
+      pendingDetector = await FaceDetector.create(model: FaceDetectionModel.frontCamera);
       final cameras = await availableCameras();
       final front = cameras.where((c) => c.lensDirection == CameraLensDirection.front);
       final info = front.isNotEmpty ? front.first : (cameras.isEmpty ? null : cameras.first);
       if (info == null) throw StateError('لم يتم العثور على كاميرا.');
-      final camera = CameraController(
+      pendingCamera = CameraController(
         info,
         ResolutionPreset.medium,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );
-      await camera.initialize();
-      if (!mounted || generation != _generation) {
-        await camera.dispose();
-        await detector.dispose();
-        return;
-      }
-      _camera = camera;
-      _detector = detector;
+      await pendingCamera.initialize();
+      if (!mounted || generation != _generation) return;
+      _camera = pendingCamera;
+      _detector = pendingDetector;
+      pendingCamera = null;
+      pendingDetector = null;
       setState(() => _loading = false);
       if (_tracking) await _startStream();
     } catch (error) {
       if (mounted && generation == _generation) {
         setState(() { _loading = false; _error = 'تعذر تهيئة تتبع النظر المحلي: $error'; });
+      }
+    } finally {
+      try {
+        await pendingCamera?.dispose();
+      } catch (error) {
+        debugPrint('Could not release incomplete gaze camera: $error');
+      }
+      try {
+        await pendingDetector?.dispose();
+      } catch (error) {
+        debugPrint('Could not release incomplete gaze detector: $error');
       }
     }
   }
