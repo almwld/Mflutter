@@ -550,3 +550,9 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - `lib/services/agent_memory_service.dart`: recent-run reads now handle non-positive limits safely; malformed legacy JSON/maps are treated as an empty recoverable store; failed writes to run history or the knowledge vault now raise explicit persistence errors instead of being silently reported as success.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+## UI continuation — 2026-10-29 (comparison source recovery)
+
+- `lib/presentation/screens/compare_screen.dart`: canonical Quran corpus loading now exposes a retry action and resets loading/error state before a retry, instead of leaving the comparison screen on an unrecoverable error message.
+- No tests, analyzer, formatter, or APK build were run.
