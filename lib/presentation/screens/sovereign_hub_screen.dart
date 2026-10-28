@@ -14,18 +14,42 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
   bool _scanning = false;
   String _status = '';
 
+  Future<void> _discoverPeers() async {
+    if (_scanning) return;
+    setState(() {
+      _scanning = true;
+      _status = '';
+    });
+    try {
+      await P2PMeshService.instance.discover();
+      if (!mounted) return;
+      final peers = Map<String, String>.from(P2PMeshService.instance.peers);
+      setState(() {
+        _peers = peers;
+        _status = peers.isEmpty
+            ? 'اكتمل البحث؛ لم يُعثر على أجهزة متاحة.'
+            : 'اكتمل البحث عن الأجهزة: ${peers.length} جهاز.';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _status = 'تعذر اكتشاف أجهزة الشبكة المحلية: $error');
+    } finally {
+      if (mounted) setState(() => _scanning = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(title: Text('مركز السيادة', style: TextStyle(color: AppColors.primaryGold)), backgroundColor: AppColors.primaryNavy),
       body: ListView(padding: EdgeInsets.all(16), children: [
-        _buildCard('🌐 شبكة P2P', _scanning ? 'جاري المسح...' : '${_peers.length} أجهزة قريبة', Icons.hub, () async {
-          setState(() => _scanning = true);
-          await P2PMeshService.instance.discover();
-          _peers = Map<String, String>.from(P2PMeshService.instance.peers);
-          setState(() => _scanning = false);
-        }),
+        _buildCard(
+          '🌐 شبكة P2P',
+          _scanning ? 'جاري المسح...' : '${_peers.length} أجهزة قريبة',
+          Icons.hub,
+          _discoverPeers,
+        ),
         _buildCard('🔐 التحقق الصوتي', 'غير مهيأ', Icons.fingerprint, () {
           setState(() => _status = 'التحقق الصوتي يحتاج محرك بصمة صوتية حقيقي مهيأ.');
         }),
@@ -35,10 +59,14 @@ class _SovereignHubScreenState extends State<SovereignHubScreen> {
             return;
           }
           try {
-            final result = await IoTSanctuaryService.instance.discover();
-            setState(() => _status = 'تم اكتشاف أجهزة إنترنت الأشياء: ${result['devices'] ?? result.length}');
-          } catch (e) {
-            setState(() => _status = 'تعذر اكتشاف أجهزة إنترنت الأشياء: $e');
+            try {
+              final result = await IoTSanctuaryService.instance.discover();
+              if (!mounted) return;
+              setState(() => _status = 'تم اكتشاف أجهزة إنترنت الأشياء: ${result['devices'] ?? result.length}');
+            } catch (e) {
+              if (!mounted) return;
+              setState(() => _status = 'تعذر اكتشاف أجهزة إنترنت الأشياء: $e');
+            }
           }
         }),
         if (_status.isNotEmpty) Container(margin: EdgeInsets.only(top: 16), padding: EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12)), child: Text(_status, style: TextStyle(color: Colors.white70))),
