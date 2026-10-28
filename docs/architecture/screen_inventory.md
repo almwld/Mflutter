@@ -839,3 +839,7 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `TafsirGeneratorService`: missing-entry errors no longer call the limited local dataset “verified”.
 - `AgentConsoleScreen`: registry count is labeled as registered definitions, not a count of independent running agents; the UI explains this distinction and describes local retrieval as an indexed knowledge source rather than “verified” search.
 - No tests, analyzer, formatter, or APK build were run.
+
+
+- `AbjadCalculatorScreen` no longer records a calculation achievement when input contains Arabic-block characters but no letters recognized by the Abjad table.
+- `StatsScreen` now labels the numerator as distinct pages visited and the percentage as page coverage. It no longer declares a khatmah complete merely because 604 unique page numbers were stored; sequential completion is not represented by this ledger.
