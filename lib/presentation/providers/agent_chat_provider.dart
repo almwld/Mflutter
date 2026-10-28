@@ -8,6 +8,7 @@ import '../../services/agent_knowledge_service.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_registry.dart';
+import '../../services/achievements_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
@@ -243,6 +244,7 @@ class AgentChatProvider extends ChangeNotifier {
         // separately while preserving the actual result and task status.
         _messages.add('تنبيه: اكتملت المهمة، لكن تعذر حفظ سجلها محليًا: $memoryError');
       }
+      await AchievementsService.recordCompletedInsight();
       _notifySafely();
     } catch (error) {
       // Cancellation wins over an initialization/generation error. A native
