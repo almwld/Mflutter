@@ -831,3 +831,11 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Surah-index search now removes the same extended Quranic mark range while retaining Arabic/Persian digit normalization and canonical surah names.
+
+
+## Knowledge interface continuation — 2026-10-29
+
+- `AIAdvancedScreen`: search scores are now labeled as relative lexical similarity scores, not percentages of correctness. Its limited local notes are explicitly described as fixed summaries rather than sourced tafsir text or AI-generated interpretation.
+- `TafsirGeneratorService`: missing-entry errors no longer call the limited local dataset “verified”.
+- `AgentConsoleScreen`: registry count is labeled as registered definitions, not a count of independent running agents; the UI explains this distinction and describes local retrieval as an indexed knowledge source rather than “verified” search.
+- No tests, analyzer, formatter, or APK build were run.
