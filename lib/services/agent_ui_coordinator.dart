@@ -110,6 +110,45 @@ class AgentUiCoordinator {
   }
 
 
+  /// Wraps a schema assembled by a trusted domain service for universal
+  /// rendering. Callers must pass actual service output; this method does not
+  /// calculate metrics, create Quran text, or synthesize missing values.
+  AgentUiIntent? resolveSchemaPayload({
+    required String templateId,
+    required String title,
+    required String domain,
+    required List<Map<String, dynamic>> blocks,
+    required String source,
+    String? originalQuery,
+  }) {
+    const supportedTemplates = <String>{
+      'generic_template',
+      'reader_template',
+      'analytics_template',
+      'comparison_template',
+      'graph_template',
+      'cosmic_template',
+      'abjad_template',
+      'agent_template',
+    };
+    if (!supportedTemplates.contains(templateId) || blocks.isEmpty) {
+      return null;
+    }
+    return _intent(
+      target: 'template_renderer',
+      template: templateId,
+      query: originalQuery ?? title,
+      payload: {
+        'schema_version': 1,
+        'title': title,
+        'domain': domain,
+        'blocks': blocks,
+        'source': source,
+        'empty_message': 'لم تُرجع الخدمة بيانات قابلة للعرض.',
+      },
+    );
+  }
+
   /// Extracts only explicit lexical targets. It deliberately does not guess
   /// a word from an arbitrary question, so the analytics screen never reports
   /// a count for an unrelated default word.
