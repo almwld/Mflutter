@@ -230,9 +230,7 @@ class AgentChatProvider extends ChangeNotifier {
     ).firstMatch(normalized);
     if (countMatch != null) {
       final requested = countMatch.group(1) ?? '';
-      List<Ayah> canonical;
-      try {
-        canonical = await QuranLoaderService.loadAllAyahs();
+      final canonical = await _loadCanonicalAyahsForPresentation();
       } catch (error) {
         return _uiCoordinator.resolveSchemaPayload(
           templateId: 'analytics_template',
