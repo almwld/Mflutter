@@ -111,7 +111,7 @@ class _PersonalizationScreenState extends State<PersonalizationScreen> {
                               child: Text(exchange, textDirection: TextDirection.rtl, style: const TextStyle(color: Colors.white70)),
                             ),
                           )),
-                        ],,
+                        ],
                       ]),
                     ),
                     const SizedBox(height: 12),
