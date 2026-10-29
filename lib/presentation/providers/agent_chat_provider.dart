@@ -356,7 +356,8 @@ class AgentChatProvider extends ChangeNotifier {
     return null;
   }
 
-  /// through to the generic knowledge-search handler.
+  /// Selects only registered agents; invalid or stale IDs never silently
+  /// fall through to the generic knowledge-search handler.
   void selectAgent(String? id) {
     if (id == null) {
       _selectedAgent = null;
