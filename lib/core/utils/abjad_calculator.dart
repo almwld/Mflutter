@@ -103,7 +103,7 @@ class AbjadCalculator {
   /// normalized while ta marbuta remains distinct (value 400 in this convention).
   static String normalizeArabic(String text) {
     return text
-        .replaceAll(RegExp(r'[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]'), '')
+        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
         .replaceAll('ـ', '')
         .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
         .replaceAll('ؤ', 'و')
