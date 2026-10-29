@@ -21,10 +21,14 @@ class ClaimEvidence {
     required this.limitations,
   });
 
-  bool get hasSource =>
-      sourceTitle.trim().isNotEmpty &&
-      Uri.tryParse(sourceUrl)?.hasScheme == true &&
-      (sourceUrl.startsWith('https://') || sourceUrl.startsWith('http://'));
+  bool get hasSource {
+    if (sourceTitle.trim().isEmpty) return false;
+    final uri = Uri.tryParse(sourceUrl.trim());
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty;
+  }
 
   bool get isReadyForPublication =>
       claimId.trim().isNotEmpty &&
@@ -35,7 +39,9 @@ class ClaimEvidence {
       strength != EvidenceStrength.unreviewed;
 
   String get publicationStatus {
-    if (!hasSource) return 'يتطلب مصدرًا قابلًا للتحقق';
+    if (claimId.trim().isEmpty) return 'يتطلب معرّفًا ثابتًا للادعاء';
+    if (claimText.trim().isEmpty) return 'يتطلب نصًا محددًا للادعاء';
+    if (!hasSource) return 'يتطلب مصدرًا موثوقًا بعنوان HTTPS صالح';
     if (sourceDate.trim().isEmpty) return 'يتطلب تاريخ المصدر';
     if (limitations.trim().isEmpty) return 'يتطلب بيان حدود الدليل';
     switch (strength) {
