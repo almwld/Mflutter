@@ -124,9 +124,30 @@ compose the shared atomic blocks and use `MudabbirDesignTokens` for styling. Reg
 rejects duplicate or blank identifiers. Unknown template ids fail closed into an explicit
 empty/error state. Keep domain computation and data access outside the renderer.
 
-## Agent integration
+## Current live integrations
+
+The agent provider now creates schema blocks from these local sources for matching
+explicit requests:
+
+- **Quran word count**: loads the canonical corpus through `QuranLoaderService`,
+  applies `QuranicSearchEngine.normalize`, counts exact normalized word tokens, and
+  lists the actual surah/ayah references. This is lexical token counting, not root analysis.
+- **Abjad**: uses `AbjadConstants.normalizeArabic`, `calculateTotal`, and
+  `abjadSquare` to show the configured arithmetic and per-letter values. It does not
+  make astrological, spiritual, or predictive claims.
+- **Nucleus status**: reads the live `NucleusService` initialization/error state,
+  model runtime state, registered-agent count, indexed document count, and loaded sources.
+
+If the Quran corpus fails to load, the provider surfaces the source error rather than
+inventing a count. The existing generic intent routing remains as a fallback for requests
+not recognized by these explicit schema handlers.
+
+## Agent integration and remaining domains
 
 `AgentConsoleScreen` sends payloads containing a `blocks` list to
 `UniversalTemplateRenderer`. Existing agent intents without this schema keep their
-current domain-screen behavior, avoiding a silent migration to blank screens. The next
-integration step for each domain is to construct blocks from its real service response.
+current domain-screen behavior, avoiding a silent migration to blank screens.
+
+Astronomy/planetary measurements, morphological Quran root analysis, deeper live agent
+execution traces, and full migration of all legacy domain screens still require their
+own real domain services and have not been implemented by these integrations.
