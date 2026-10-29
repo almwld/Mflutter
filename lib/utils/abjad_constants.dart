@@ -213,6 +213,17 @@ class AbjadConstants {
     'القوس', 'الجدي', 'الدلو', 'الحوت'
   ];
 
+  /// Canonical text normalization used by all Abjad entry points.
+  /// Diacritics and tatweel are removed; equivalent alif/hamza forms are
+  /// normalized while ta marbuta is deliberately preserved.
+  static String normalizeArabic(String text) => text
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+      .replaceAll('ـ', '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll('ؤ', 'و')
+      .replaceAll('ئ', 'ي')
+      .replaceAll('ى', 'ي');
+
   /// الحصول على قيمة الحرف (النظام المربع)
   static int getValue(String letter) {
     return abjadSquare[letter] ?? 0;
@@ -225,9 +236,10 @@ class AbjadConstants {
 
   /// حساب المجموع
   static int calculateTotal(String text) {
-    int total = 0;
-    for (int i = 0; i < text.length; i++) {
-      total += getValue(text[i]);
+    final normalized = normalizeArabic(text);
+    var total = 0;
+    for (final rune in normalized.runes) {
+      total += getValue(String.fromCharCode(rune));
     }
     return total;
   }
