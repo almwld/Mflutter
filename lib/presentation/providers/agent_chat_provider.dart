@@ -1305,7 +1305,7 @@ class AgentChatProvider extends ChangeNotifier {
         ? evidence
         : evidence + '\n\nالسياق المحدد في المصحف (' +
             contextSurahNumber.toString() + ':' +
-            contextAyahNumber.toString() + '):\n' + contextVerseText!;
+            contextAyahNumber.toString() + '):\n' + contextVerseText;
     final sourceList = <String>{
       ..._knowledge.loadedSources,
       if (verseSource != null) verseSource,
