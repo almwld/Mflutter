@@ -235,7 +235,6 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
     return <Widget>[
       _metric(context, 'الكتلة بالنسبة للأرض', planet.massInEarthMasses.toStringAsFixed(3)),
       _metric(context, 'الاستطالة المدارية', planet.orbitalEccentricity.toStringAsFixed(4)),
-      _metric(context, 'الفترة المدارية المرجعية', '${planet.orbitalPeriodDays.toStringAsFixed(2)} يومًا'),
       Padding(
         padding: const EdgeInsets.only(top: 4),
         child: Text(
