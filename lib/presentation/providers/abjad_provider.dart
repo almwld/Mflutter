@@ -10,6 +10,12 @@ class AbjadProvider extends ChangeNotifier {
   AbjadResult? get lastResult => _lastResult;
   String get inputText => _inputText;
 
+  void clear() {
+    _inputText = '';
+    _lastResult = null;
+    notifyListeners();
+  }
+
   void calculateAbjad(String text, {bool alphabetical = false}) {
     _inputText = text;
     var major = 0;
