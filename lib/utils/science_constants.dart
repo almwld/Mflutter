@@ -11,7 +11,7 @@ class ScienceConstants {
     ScienceInfo(id: 1, name: 'علم الحروف', nameEn: 'Science of Letters', icon: 'abc', count: 28, description: 'دراسة الحروف العربية وأنظمتها وقيمها في السياقات اللغوية والتاريخية والرمزية'),
     ScienceInfo(id: 2, name: 'علم الأعداد', nameEn: 'Science of Numbers', icon: 'numbers', count: 10, description: 'دراسة الأنظمة العددية وطرق الحساب والتفسيرات الرمزية في سياقها التاريخي'),
     ScienceInfo(id: 3, name: 'علم العناصر', nameEn: 'Science of Elements', icon: 'science', count: 5, description: 'عرض تاريخي لتقسيم العناصر الأربعة في الفلسفة القديمة؛ لا يطابق تصنيف الكيمياء الحديثة'),
-    ScienceInfo(id: 4, name: 'علم الكواكب', nameEn: 'Science of Planets', icon: 'public', count: 7, description: 'دراسة خصائص الكواكب ومداراتها الفيزيائية في النظام الشمسي'),
+    ScienceInfo(id: 4, name: 'علم الكواكب', nameEn: 'Science of Planets', icon: 'public', count: 8, description: 'دراسة خصائص الكواكب ومداراتها الفيزيائية في النظام الشمسي'),
     ScienceInfo(id: 5, name: 'علم الأبراج', nameEn: 'Science of Zodiac', icon: 'star', count: 12, description: 'دراسة التقسيمات الاثني عشر في تقاليد التنجيم الغربي بوصفها موروثًا ثقافيًا لا أداة تنبؤ علمية'),
     ScienceInfo(id: 6, name: 'علم الأسماء', nameEn: 'Science of Names', icon: 'badge', count: 99, description: 'دراسة الأسماء الحسنى'),
 
