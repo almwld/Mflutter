@@ -151,12 +151,10 @@ class TimeCapsuleService {
         });
       }
       return capsules.take(maxCapsules).toList(growable: true);
-    } on FormatException {
-      return [];
-    } on TypeError {
-      return [];
-    } on ArgumentError {
-      return [];
+    } on FormatException catch (error) {
+      // Never turn corrupted storage into an empty list: a subsequent write
+      // could otherwise silently overwrite recoverable user data.
+      throw StateError('تعذر قراءة الكبسولات المحفوظة؛ لم تُستبدل البيانات الموجودة. التفاصيل: $error');
     }
   }
 }
