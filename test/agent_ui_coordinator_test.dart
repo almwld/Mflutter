@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mflutter/services/agent_ui_coordinator.dart';
+import '../lib/services/agent_ui_coordinator.dart';
 
 void main() {
   const coordinator = AgentUiCoordinator();
