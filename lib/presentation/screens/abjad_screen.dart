@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/abjad_provider.dart';
 import '../../services/achievements_service.dart';
+import '../../domain/entities/abjad_result.dart';
 
 class AbjadCalculatorScreen extends StatefulWidget {
   const AbjadCalculatorScreen({super.key});
@@ -12,6 +14,33 @@ class AbjadCalculatorScreen extends StatefulWidget {
 class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   final _controller = TextEditingController();
   bool _alphabetical = false;
+
+  Future<void> _copyResult(AbjadResult result) async {
+    final letters = result.letterResults
+        .map((letter) => '${letter.letter}=${letter.value}')
+        .join('، ');
+    final summary = [
+      'النص: ${_controller.text.trim()}',
+      'جدول القيم: ${_alphabetical ? 'الترتيب الهجائي' : 'أبجد الكبير'}',
+      'المجموع: ${result.kabir}',
+      'متوسط القيم: ${result.saghir}',
+      'نصف المجموع: ${result.wasat}',
+      'تفصيل الحروف: $letters',
+      'الارتباطات الرمزية ليست قياسات علمية أو تنبؤات.',
+    ].join('\n');
+    try {
+      await Clipboard.setData(ClipboardData(text: summary));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('نُسخت نتيجة الحساب.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر نسخ النتيجة: $error')),
+      );
+    }
+  }
 
   Future<void> _calculate() async {
     final text = _controller.text.trim();
@@ -120,8 +149,19 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
             textDirection: TextDirection.rtl,
             style: theme.textTheme.bodyLarge,
             maxLength: 120,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'أدخل النص لحساب الجمل...',
+              suffixIcon: _controller.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح النص والنتيجة',
+                      onPressed: () {
+                        _controller.clear();
+                        context.read<AbjadProvider>().clear();
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.clear_rounded),
+                    ),
               prefixIcon: Icon(Icons.calculate_outlined),
               helperText: 'تُحسب الحروف الموجودة في الجدول المختار؛ تُتجاهل المسافات والرموز والحروف غير المدرجة.',
             ),
@@ -144,6 +184,14 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: IconButton(
+                          tooltip: 'نسخ النتيجة',
+                          onPressed: () => _copyResult(r),
+                          icon: const Icon(Icons.copy_all_rounded),
+                        ),
+                      ),
                       _ResultRow(
                         label: _alphabetical ? 'مجموع القيم الهجائية' : 'مجموع أبجد الكبير',
                         value: r.kabir.toString(),
