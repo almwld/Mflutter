@@ -11,6 +11,20 @@ void main() {
     expect(intent?.payload['requires_verified_counts'], isTrue);
   });
 
+
+  test('passes an explicit single word to the analytics template', () {
+    final intent = coordinator.resolve('كم مرة ذكرت كلمة الرحمن');
+    expect(intent?.targetScreen, 'miracles_screen');
+    expect(intent?.payload['first_word'], 'الرحمن');
+    expect(intent?.payload['second_word'], isNull);
+  });
+
+  test('passes both explicit words for a paired count request', () {
+    final intent = coordinator.resolve('كم مرة ذكرت الحياة والموت');
+    expect(intent?.payload['first_word'], 'الحياة');
+    expect(intent?.payload['second_word'], 'الموت');
+  });
+
   test('routes agent status requests to nucleus graph screen', () {
     final intent = coordinator.resolve('اعرض حالة الوكلاء وتفاعل النواة');
     expect(intent?.targetScreen, 'nucleus_screen');
