@@ -151,3 +151,28 @@ current domain-screen behavior, avoiding a silent migration to blank screens.
 Astronomy/planetary measurements, morphological Quran root analysis, deeper live agent
 execution traces, and full migration of all legacy domain screens still require their
 own real domain services and have not been implemented by these integrations.
+
+
+## Strict payload contract (schema version 1)
+
+The renderer validates the payload envelope before rendering. A payload must carry
+a registered `ui_template` (or `template_id`), integer `schema_version: 1`,
+and a `blocks` list. Optional `title`, `domain`, and `empty_message` values
+must be strings when present. Unsupported versions and invalid envelope fields
+fail closed to an explicit validation state rather than silently rendering.
+
+Atomic blocks are validated by type before they reach widgets:
+- `text` and `quran_verse`: non-empty text.
+- `metric`: a non-null primitive value (string, number, or boolean).
+- `section`: string text and recursively valid children, with a bounded nesting depth.
+- `list`: a list of strings.
+- `table`: non-empty string columns and rows with simple cells matching column count.
+- `bar_chart`: items with string labels and numeric values.
+- `status`: optional string status/message fields.
+
+Malformed blocks are excluded individually, and the UI displays validation details
+alongside any remaining valid blocks. The registry includes the actual service
+templates used by local integrations: `analytics_template`, `abjad_template`,
+and `graph_template`. These checks validate presentation shape only; they do not
+establish the truth of the underlying data, which remains the responsibility of
+the domain service and its source metadata.
