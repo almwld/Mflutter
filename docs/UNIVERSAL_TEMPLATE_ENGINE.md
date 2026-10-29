@@ -161,7 +161,7 @@ and a `blocks` list. Optional `title`, `domain`, and `empty_message` values
 must be strings when present. Unsupported versions and invalid envelope fields
 fail closed to an explicit validation state rather than silently rendering.
 
-Optional `source` metadata must be a non-empty string when supplied. The renderer preserves it and displays it in the template header so the user can see the declared provenance. Source labels are descriptive metadata, not independent proof that a claim is true. Block and nested-block maps with non-string keys are rejected safely instead of causing a parser exception.
+The agent coordinator requires non-empty `title`, `domain`, and `source` values for service-created intents. The renderer also accepts legacy/direct payloads with omitted `source`, but validates it as a non-empty string when present. It preserves supplied provenance and displays it in the template header. Source labels are descriptive metadata, not independent proof that a claim is true. Block and nested-block maps with non-string keys are rejected safely instead of causing a parser exception.
 
 Atomic blocks are validated by type before they reach widgets:
 - `text` and `quran_verse`: non-empty text.
