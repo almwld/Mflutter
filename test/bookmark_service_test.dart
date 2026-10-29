@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getVerse;
 import 'package:mudabbir_al_asrar/services/bookmark_service.dart';
 
 void main() {
@@ -17,7 +18,7 @@ void main() {
     expect(saved, hasLength(1));
     expect(saved.single['surah'], 2);
     expect(saved.single['ayah'], 255);
-    expect(saved.single['text'], 'sample verse');
+    expect(saved.single['text'], getVerse(2, 255, verseEndSymbol: false).trim());
 
     await BookmarkService.removeBookmark(2, 255);
     expect(await BookmarkService.isBookmarked(2, 255), isFalse);
@@ -30,16 +31,16 @@ void main() {
 
     final saved = await BookmarkService.getBookmarks();
     expect(saved, hasLength(1));
-    expect(saved.single['text'], 'updated');
+    expect(saved.single['text'], getVerse(1, 1, verseEndSymbol: false).trim());
   });
 
   test('rejects invalid Quran references', () async {
-    await expectLater(
-      BookmarkService.addBookmark(115, 1, 'invalid'),
+    expect(
+      () => BookmarkService.addBookmark(115, 1, 'invalid'),
       throwsArgumentError,
     );
-    await expectLater(
-      BookmarkService.addBookmark(1, 0, 'invalid'),
+    expect(
+      () => BookmarkService.addBookmark(1, 0, 'invalid'),
       throwsArgumentError,
     );
   });
