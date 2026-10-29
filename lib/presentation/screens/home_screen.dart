@@ -526,7 +526,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('فهرس السور', Icons.list_alt_rounded, const SurahIndexScreen()),
       ('صفحة المصحف', Icons.menu_book_outlined, const QuranPageScreen(surahNumber: 1, surahName: 'الفاتحة')),
       ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
-      ('تحليل أبجد', Icons.functions_rounded, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadScreen())),
+      ('تحليل أبجد', Icons.functions_rounded, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
       ('العناصر الرمزية', Icons.category_outlined, const ElementsScreen()),
       ('الأعداد الرمزية', Icons.pin_outlined, const NumbersScreen()),
       ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
