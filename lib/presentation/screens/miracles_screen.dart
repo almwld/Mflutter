@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -28,11 +30,14 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
       QuranNumericalAnalysisService();
   final TextEditingController _searchController =
       TextEditingController(text: 'الله');
+  final TextEditingController _comparisonController =
+      TextEditingController(text: 'الرحمن');
 
   QuranWordAnalysis? _analysis;
   Object? _error;
   bool _loading = true;
   String _query = 'الله';
+  String _comparisonWord = 'الرحمن';
 
   @override
   void initState() {
@@ -43,6 +48,7 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _comparisonController.dispose();
     super.dispose();
   }
 
@@ -265,6 +271,22 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
           child: _buildSearchResult(analysis, normalizedQuery),
         ),
         const SizedBox(height: 22),
+        _sectionTitle('قارن كلمتين من النص المحلي'),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _comparisonController,
+          textDirection: TextDirection.rtl,
+          onChanged: (value) => setState(() => _comparisonWord = value),
+          decoration: const InputDecoration(
+            labelText: 'الكلمة الثانية للمقارنة',
+            helperText: 'أدخل كلمة عربية واحدة؛ يتم احتساب العدد من الملف المحلي.',
+            prefixIcon: Icon(Icons.compare_arrows_rounded),
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildWordComparison(analysis, _query, _comparisonWord),
+        const SizedBox(height: 22),
         _sectionTitle('مقارنة تكرار كلمات مختارة'),
         const SizedBox(height: 6),
         const Text(
@@ -312,6 +334,79 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
                 style: TextStyle(color: Colors.white70, height: 1.6),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWordComparison(
+    QuranWordAnalysis analysis,
+    String firstInput,
+    String secondInput,
+  ) {
+    final firstTokens = QuranNumericalAnalysisService.tokenize(firstInput);
+    final secondTokens = QuranNumericalAnalysisService.tokenize(secondInput);
+    if (firstTokens.length != 1 || secondTokens.length != 1) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(14),
+          child: Text(
+            'اكتب كلمتين عربيتين مفردتين في حقلي البحث والمقارنة لعرض مقارنة قابلة لإعادة الحساب.',
+            textDirection: TextDirection.rtl,
+          ),
+        ),
+      );
+    }
+    final first = firstTokens.single;
+    final second = secondTokens.single;
+    final firstCount = analysis.countWord(first);
+    final secondCount = analysis.countWord(second);
+    final maxCount = math.max(1, math.max(firstCount, secondCount));
+    return Card(
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _comparisonBar(first, firstCount, maxCount),
+            const SizedBox(height: 12),
+            _comparisonBar(second, secondCount, maxCount),
+            const Divider(color: Colors.white12, height: 24),
+            Text(
+              firstCount == secondCount
+                  ? 'العددان متساويان وفق قاعدة التطبيع الحالية.'
+                  : 'فرق العدّ: ${(firstCount - secondCount).abs()} ظهورًا.',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: Colors.white70),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _comparisonBar(String word, int count, int maxCount) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(children: [
+          Expanded(
+            child: Text(word, textDirection: TextDirection.rtl,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+          Text('$count', style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+        ]),
+        const SizedBox(height: 5),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: count / maxCount,
+            minHeight: 8,
+            backgroundColor: Colors.white12,
+            valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
           ),
         ),
       ],
