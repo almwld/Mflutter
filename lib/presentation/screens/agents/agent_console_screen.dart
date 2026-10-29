@@ -69,13 +69,16 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
         'nucleus_screen': 'graph_template',
         'quran_page_screen': 'reader_template',
       };
-      if (allowedTemplates[intent.targetScreen] != intent.templateId) {
+      final Map<String, dynamic> payload = intent.payload;
+      final hasSchemaBlocks = payload['blocks'] is List;
+      if (hasSchemaBlocks) {
+        if (TemplateRegistry.lookup(intent.templateId) == null) return;
+      } else if (allowedTemplates[intent.targetScreen] != intent.templateId) {
         return;
       }
-      final Map<String, dynamic> payload = intent.payload;
       // New schema-driven payloads render through the universal engine.
       // Legacy intents without a blocks schema retain their domain screens.
-      if (payload['blocks'] is List) {
+      if (hasSchemaBlocks) {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
             settings: RouteSettings(
