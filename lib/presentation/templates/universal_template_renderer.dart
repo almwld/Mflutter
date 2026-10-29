@@ -245,8 +245,11 @@ abstract final class TemplateFactory {
     required TemplatePayloadSchema schema,
   }) {
     if (!schema.envelopeValid) {
+      final details = schema.validationErrors.isEmpty
+          ? 'راجع إصدار المخطط والحقول المطلوبة.'
+          : schema.validationErrors.join('\n');
       return TemplateEmptyState(
-        message: 'تعذر عرض البيانات لأن مخطط القالب غير صالح. راجع إصدار المخطط والحقول المطلوبة.',
+        message: 'تعذر عرض البيانات لأن مخطط القالب غير صالح.\n$details',
       );
     }
     final builder = TemplateRegistry.lookup(schema.templateId);
@@ -304,6 +307,10 @@ class _SchemaDocument extends StatelessWidget {
           children: <Widget>[
             if (schema.title.isNotEmpty || schema.domain != null)
               _GlassHeader(title: schema.title, subtitle: schema.domain),
+            if (schema.validationErrors.isNotEmpty)
+              TemplateEmptyState(
+                message: 'تم استبعاد بيانات غير صالحة من العرض:\n${schema.validationErrors.join('\n')}',
+              ),
             if (blocks.isEmpty)
               TemplateEmptyState(message: schema.emptyMessage)
             else
