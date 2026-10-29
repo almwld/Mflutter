@@ -506,7 +506,7 @@ class AgentChatProvider extends ChangeNotifier {
     if (!isVisualRequest) return false;
 
     // Quran-related requests must remain on canonical deterministic handlers.
-    if (RegExp(r'قران|مصحف|ايه|سوره|تفسير').hasMatch(normalized)) return false;
+    if (RegExp(r'قران|مصحف|ايه|سوره|تفسير|quran|quranic').hasMatch(normalized)) return false;
 
     try {
       var candidate = generated.trim();
