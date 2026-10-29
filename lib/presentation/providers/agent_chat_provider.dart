@@ -230,7 +230,26 @@ class AgentChatProvider extends ChangeNotifier {
     ).firstMatch(normalized);
     if (countMatch != null) {
       final requested = countMatch.group(1) ?? '';
-      final canonical = await QuranLoaderService.loadAllAyahs();
+      List<Ayah> canonical;
+      try {
+        canonical = await QuranLoaderService.loadAllAyahs();
+      } catch (error) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تعذر إكمال العدّ القرآني',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'مصدر البيانات',
+              'status': 'error',
+              'message': 'تعذر تحميل المصحف المحلي والتحقق منه: $error',
+            },
+          ],
+        );
+      }
       final target = QuranicSearchEngine.normalize(requested);
       if (target.isEmpty) return null;
       var occurrences = 0;
