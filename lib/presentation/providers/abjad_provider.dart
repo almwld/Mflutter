@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/utils/abjad_calculator.dart' as core;
 import '../../domain/entities/abjad_result.dart';
-import '../../services/achievements_service.dart';
 import '../../utils/abjad_constants.dart';
 
 class AbjadProvider extends ChangeNotifier {
@@ -67,11 +66,6 @@ class AbjadProvider extends ChangeNotifier {
       letterResults: letterResults,
     );
 
-    // Record only a completed, non-empty calculation. Persistence failure
-    // must never block the calculator UI.
-    if (hasLetters) {
-      AchievementsService.recordAbjadCalculation();
-    }
     notifyListeners();
   }
 }
