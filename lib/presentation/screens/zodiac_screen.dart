@@ -28,8 +28,6 @@ class _ZodiacScreenState extends State<ZodiacScreen> {
   ];
 
   _ZodiacSign _forDate(DateTime date) {
-    final dayOfYear = DateTime(date.year, date.month, date.day)
-        .difference(DateTime(date.year)).inDays;
     // Compare month/day tuples; this handles the Capricorn year boundary.
     for (final sign in _signs) {
       final afterStart = date.month > sign.startMonth ||
@@ -61,7 +59,8 @@ class _ZodiacScreenState extends State<ZodiacScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final current = _selected ?? _forDate(_birthDate);
+    final birthSign = _forDate(_birthDate);
+    final current = _selected ?? birthSign;
     final elements = <String, Color>{
       'النار': const Color(0xFFD96C55),
       'التراب': const Color(0xFF7A9B68),
@@ -85,11 +84,11 @@ class _ZodiacScreenState extends State<ZodiacScreen> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(color: current.color.withOpacity(.12), borderRadius: BorderRadius.circular(16), border: Border.all(color: current.color.withOpacity(.55))),
               child: Column(children: [
-                Text(current.symbol, style: TextStyle(fontSize: 42, color: current.color)),
-                Text(current.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                Text('${_birthDate.year}-${_birthDate.month.toString().padLeft(2, '0')}-${_birthDate.day.toString().padLeft(2, '0')} • ${current.range}', textAlign: TextAlign.center),
+                Text(birthSign.symbol, style: TextStyle(fontSize: 42, color: birthSign.color)),
+                Text(birthSign.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                Text('${_birthDate.year}-${_birthDate.month.toString().padLeft(2, '0')}-${_birthDate.day.toString().padLeft(2, '0')} • ${birthSign.range}', textAlign: TextAlign.center),
                 const SizedBox(height: 4),
-                Text('العنصر التقليدي: ${current.element} • الجودة: ${current.quality}', textAlign: TextAlign.center),
+                Text('العنصر التقليدي: ${birthSign.element} • الجودة: ${birthSign.quality}', textAlign: TextAlign.center),
               ]),
             ),
           ],
