@@ -105,26 +105,30 @@ class OccultDataService {
       final decoded = jsonDecode(raw);
       final records = _extractRecords(decoded);
       for (var i = 0; i < records.length; i++) {
-        final entry = OccultEntry.fromJson(records[i]);
-        if (entry.name.trim().isEmpty || entry.description.trim().isEmpty) {
+        try {
+          final entry = OccultEntry.fromJson(records[i]);
+          if (entry.name.trim().isEmpty || entry.description.trim().isEmpty) {
+            continue;
+          }
+          final id = entry.id.trim().isEmpty
+              ? 'asset-entry-$i'
+              : entry.id.trim();
+          byId[id] = OccultEntry(
+            id: id,
+            name: entry.name,
+            category: entry.category,
+            description: entry.description,
+            properties: entry.properties,
+            abjadValue: entry.abjadValue,
+            source: entry.source ?? 'assets/all_knowledge.json',
+          );
+        } catch (_) {
+          // Skip one malformed record without discarding other valid records.
           continue;
         }
-        final id = entry.id.trim().isEmpty
-            ? 'asset-entry-$i'
-            : entry.id.trim();
-        byId[id] = OccultEntry(
-          id: id,
-          name: entry.name,
-          category: entry.category,
-          description: entry.description,
-          properties: entry.properties,
-          abjadValue: entry.abjadValue,
-          source: entry.source ?? 'assets/all_knowledge.json',
-        );
       }
     } catch (_) {
-      // A missing or malformed optional asset must not block offline use.
-      return _starterEntries;
+      // Keep bundled starter entries when the optional asset cannot be read.
     }
 
     final result = byId.values.toList()
