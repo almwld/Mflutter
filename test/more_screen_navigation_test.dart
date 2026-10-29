@@ -32,12 +32,6 @@ void main() {
 
     for (final label in labels) {
       final finder = find.text(label);
-      await tester.scrollUntilVisible(
-        finder,
-        280,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.pumpAndSettle();
       expect(finder, findsOneWidget, reason: 'Missing More entry: $label');
     }
   });
@@ -49,7 +43,8 @@ void main() {
     await tester.enterText(search, 'القران');
     await tester.pumpAndSettle();
     expect(find.text('القرآن التفاعلي'), findsOneWidget);
-    expect(find.text('1 نتيجة'), findsOneWidget);
+    // The broad Quran query also matches the Quran font-variants screen.
+    expect(find.text('2 نتيجة'), findsOneWidget);
 
     await tester.enterText(search, 'التَّدريب');
     await tester.pumpAndSettle();
@@ -76,16 +71,8 @@ void main() {
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
 
-    // Filtering a lazy list can preserve an offset beyond the restored
-    // content's extent. Scroll to the expected item instead of assuming one
-    // drag is sufficient to reset the scroll position.
-    final firstTool = find.text('القرآن التفاعلي');
-    await tester.scrollUntilVisible(
-      firstTool,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(firstTool, findsOneWidget);
+    // MoreScreen uses an eager children list, so the restored item remains
+    // present in the widget tree even when it is outside the viewport.
+    expect(find.text('القرآن التفاعلي'), findsOneWidget);
   });
 }
