@@ -62,6 +62,15 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       provider.consumeUiIntent(intent.id);
+      const allowedTemplates = <String, String>{
+        'miracles_screen': 'analytics_template',
+        'compare_screen': 'comparison_template',
+        'nucleus_screen': 'graph_template',
+        'quran_page_screen': 'reader_template',
+      };
+      if (allowedTemplates[intent.targetScreen] != intent.templateId) {
+        return;
+      }
       final Map<String, dynamic> payload = intent.payload;
       final Widget? destination;
       switch (intent.targetScreen) {
