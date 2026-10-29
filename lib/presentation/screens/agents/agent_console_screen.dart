@@ -11,6 +11,9 @@ import '../../../services/nucleus_service.dart';
 import '../../providers/agent_chat_provider.dart';
 import '../../../services/external_asset_service.dart';
 import '../nucleus_screen.dart';
+import '../miracles_screen.dart';
+import '../compare_screen.dart';
+import '../quran_page_screen.dart';
 
 class AgentConsoleScreen extends StatelessWidget {
   const AgentConsoleScreen({super.key});
@@ -36,6 +39,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
   late bool _modelLoaded;
   String _agentQuery = '';
   String _layer = 'الكل';
+  String? _scheduledUiIntentId;
 
   @override
   void initState() {
@@ -49,6 +53,48 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
     if (mounted && loaded != _modelLoaded) {
       setState(() => _modelLoaded = loaded);
     }
+  }
+
+  void _scheduleAdaptiveNavigation(AgentChatProvider provider) {
+    final intent = provider.pendingUiIntent;
+    if (intent == null || intent.id == _scheduledUiIntentId) return;
+    _scheduledUiIntentId = intent.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      provider.consumeUiIntent(intent.id);
+      final Map<String, dynamic> payload = intent.payload;
+      final Widget? destination;
+      switch (intent.targetScreen) {
+        case 'miracles_screen':
+          destination = const MiraclesScreen();
+          break;
+        case 'compare_screen':
+          destination = const CompareScreen();
+          break;
+        case 'nucleus_screen':
+          destination = const NucleusScreen();
+          break;
+        case 'quran_page_screen':
+          final surah = (payload['surah_number'] as num?)?.toInt() ?? 1;
+          destination = QuranPageScreen(
+            surahNumber: surah,
+            surahName: surah == 1 ? 'الفاتحة' : 'السورة $surah',
+          );
+          break;
+        default:
+          destination = null;
+      }
+      if (destination == null) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          settings: RouteSettings(
+            name: '/agent-adaptive/${intent.targetScreen}',
+            arguments: intent.toJson(),
+          ),
+          builder: (_) => destination!,
+        ),
+      );
+    });
   }
 
   Future<void> _importOptionalAssets() async {
@@ -78,6 +124,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
   Widget build(BuildContext context) {
     final provider = context.watch<AgentChatProvider>();
     final task = provider.activeTask;
+    _scheduleAdaptiveNavigation(provider);
     final layers = <String>{'الكل', ...AgentRegistry.all.map((a) => a.layer)};
     final normalizedAgentQuery = AgentKnowledgeService.normalize(_agentQuery);
     final agents = AgentRegistry.all.where((agent) {
