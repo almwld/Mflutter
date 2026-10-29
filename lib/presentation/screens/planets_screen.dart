@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../services/planetary_catalog_service.dart';
+
 /// Offline reference for Solar System bodies. Distances and physical values
 /// are rounded educational averages, not live ephemeris data.
 class PlanetsScreen extends StatefulWidget {
@@ -159,7 +161,7 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
                           const SizedBox(height: 3),
                           Text(body.kind, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
                           const SizedBox(height: 5),
-                          Text(body.distanceAu == 0 ? 'مركز النظام' : '${body.distanceAu} AU',
+                          Text(body.kind == 'قمر طبيعي' ? 'قمر الأرض' : (body.distanceAu == 0 ? 'مركز النظام' : '${body.distanceAu} AU'),
                             style: theme.textTheme.labelSmall),
                         ],
                       ),
@@ -200,10 +202,12 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
             const Divider(height: 24),
             _metric(context, 'التصنيف', body.kind),
             _metric(context, 'القطر التقريبي', '${body.diameterKm.toStringAsFixed(0)} كم'),
-            _metric(context, 'متوسط البعد عن الشمس', body.distanceAu == 0 ? 'مركز النظام الشمسي' : '${body.distanceAu} وحدة فلكية'),
             if (body.kind == 'قمر طبيعي')
-              _metric(context, 'متوسط البعد عن الأرض', '384,400 كم تقريبًا'),
+              _metric(context, 'متوسط البعد عن الأرض', '384,400 كم تقريبًا')
+            else
+              _metric(context, 'متوسط البعد عن الشمس', body.distanceAu == 0 ? 'مركز النظام الشمسي' : '${body.distanceAu} وحدة فلكية'),
             _metric(context, 'الجاذبية السطحية التقريبية', '${body.gravity} م/ث²'),
+            ..._catalogMetrics(context, body),
             _metric(context, 'الدوران', body.day),
             _metric(context, 'السنة / المدار', body.year),
             Text('الأرقام تقريبية ومناسبة للتعريف العام؛ تختلف بعض القيم باختلاف التعريف والمرجع.',
@@ -212,6 +216,25 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
         ),
       ),
     );
+  }
+
+  List<Widget> _catalogMetrics(BuildContext context, _CelestialBody body) {
+    final matches = PlanetaryCatalogService.planets
+        .where((planet) => planet.nameAr == body.name);
+    if (matches.isEmpty) return const <Widget>[];
+    final planet = matches.first;
+    return <Widget>[
+      _metric(context, 'الاستطالة المدارية', planet.orbitalEccentricity.toStringAsFixed(4)),
+      _metric(context, 'الفترة المدارية المرجعية', '${planet.orbitalPeriodDays.toStringAsFixed(2)} يومًا'),
+      Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          'مرجع البيانات المدارية: ${PlanetaryCatalogService.sourceName}. القيم مقربة وليست إحداثيات آنية.',
+          textDirection: TextDirection.rtl,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+    ];
   }
 
   Widget _weightCard(BuildContext context) {
