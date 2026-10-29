@@ -44,6 +44,46 @@ void main() {
     expect(intent?.payload['ayah_number'], 255);
   });
 
+  test('wraps trusted service output as a schema-driven template intent', () {
+    final intent = coordinator.resolveSchemaPayload(
+      templateId: 'cosmic_template',
+      title: 'خصائص جرم',
+      domain: 'astronomy',
+      source: 'local_astronomy_service',
+      blocks: const [
+        {'type': 'metric', 'title': 'نصف القطر', 'value': 123},
+      ],
+    );
+
+    expect(intent?.targetScreen, 'template_renderer');
+    expect(intent?.templateId, 'cosmic_template');
+    expect(intent?.payload['source'], 'local_astronomy_service');
+    expect(intent?.payload['blocks'], hasLength(1));
+  });
+
+  test('rejects unknown template ids and missing schema data', () {
+    expect(
+      coordinator.resolveSchemaPayload(
+        templateId: 'unregistered_template',
+        title: 'Unknown',
+        domain: 'test',
+        source: 'test_service',
+        blocks: const [{'type': 'metric', 'value': 1}],
+      ),
+      isNull,
+    );
+    expect(
+      coordinator.resolveSchemaPayload(
+        templateId: 'abjad_template',
+        title: 'Empty',
+        domain: 'abjad',
+        source: 'abjad_service',
+        blocks: const [],
+      ),
+      isNull,
+    );
+  });
+
   test('does not navigate for ordinary questions', () {
     expect(coordinator.resolve('اشرح معنى الصبر'), isNull);
   });
