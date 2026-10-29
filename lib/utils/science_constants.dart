@@ -8,11 +8,11 @@ class ScienceConstants {
   /// العلوم الأساسية (42 علماً)
   static const List<ScienceInfo> sciences = [
     // علم الحروف
-    ScienceInfo(id: 1, name: 'علم الحروف', nameEn: 'Science of Letters', icon: 'abc', count: 28, description: 'دراسة أسرار الحروف العربية وتأثيرها'),
-    ScienceInfo(id: 2, name: 'علم الأعداد', nameEn: 'Science of Numbers', icon: 'numbers', count: 10, description: 'دراسة أسرار الأرقام ومعانيها'),
-    ScienceInfo(id: 3, name: 'علم العناصر', nameEn: 'Science of Elements', icon: 'science', count: 5, description: 'دراسة العناصر الأربعة والروح'),
-    ScienceInfo(id: 4, name: 'علم الكواكب', nameEn: 'Science of Planets', icon: 'public', count: 7, description: 'دراسة تأثير الكواكب السبعة'),
-    ScienceInfo(id: 5, name: 'علم الأبراج', nameEn: 'Science of Zodiac', icon: 'star', count: 12, description: 'دراسة الأبراج الإثني عشر'),
+    ScienceInfo(id: 1, name: 'علم الحروف', nameEn: 'Science of Letters', icon: 'abc', count: 28, description: 'دراسة الحروف العربية وأنظمتها وقيمها في السياقات اللغوية والتاريخية والرمزية'),
+    ScienceInfo(id: 2, name: 'علم الأعداد', nameEn: 'Science of Numbers', icon: 'numbers', count: 10, description: 'دراسة الأنظمة العددية وطرق الحساب والتفسيرات الرمزية في سياقها التاريخي'),
+    ScienceInfo(id: 3, name: 'علم العناصر', nameEn: 'Science of Elements', icon: 'science', count: 5, description: 'عرض تاريخي لتقسيم العناصر الأربعة في الفلسفة القديمة؛ لا يطابق تصنيف الكيمياء الحديثة'),
+    ScienceInfo(id: 4, name: 'علم الكواكب', nameEn: 'Science of Planets', icon: 'public', count: 7, description: 'دراسة خصائص الكواكب ومداراتها الفيزيائية في النظام الشمسي'),
+    ScienceInfo(id: 5, name: 'علم الأبراج', nameEn: 'Science of Zodiac', icon: 'star', count: 12, description: 'دراسة التقسيمات الاثني عشر في تقاليد التنجيم الغربي بوصفها موروثًا ثقافيًا لا أداة تنبؤ علمية'),
     ScienceInfo(id: 6, name: 'علم الأسماء', nameEn: 'Science of Names', icon: 'badge', count: 99, description: 'دراسة الأسماء الحسنى'),
 
     // علوم القرآن
@@ -36,11 +36,11 @@ class ScienceConstants {
     ScienceInfo(id: 18, name: 'علم المعاني', nameEn: 'Semantics', icon: 'text_fields', count: 10, description: 'علم المعاني'),
 
     // علوم روحانية
-    ScienceInfo(id: 19, name: 'علم الأسرار', nameEn: 'Science of Secrets', icon: 'visibility', count: 7, description: 'أسرار العلوم الربانية'),
-    ScienceInfo(id: 20, name: 'علم الأوفاق', nameEn: 'Science of Squares', icon: 'grid_on', count: 100, description: 'بناء الأوفاق'),
+    ScienceInfo(id: 19, name: 'علم الأسرار', nameEn: 'Science of Secrets', icon: 'visibility', count: 7, description: 'فهرسة تاريخية للموروثات الرمزية والمصطلحات المنسوبة إلى علوم الأسرار'),
+    ScienceInfo(id: 20, name: 'علم الأوفاق', nameEn: 'Science of Squares', icon: 'grid_on', count: 100, description: 'دراسة تاريخية للأوفاق والجداول العددية في المخطوطات والتقاليد الرمزية'),
 
     // علوم طبيعية
-    ScienceInfo(id: 21, name: 'علم الفلك', nameEn: 'Astronomy', icon: 'nights_stay', count: 12, description: 'علم الفلك'),
+    ScienceInfo(id: 21, name: 'علم الفلك', nameEn: 'Astronomy', icon: 'nights_stay', count: 12, description: 'دراسة الأجرام السماوية وحركتها وخصائصها بالقياس والنماذج الفيزيائية'),
     ScienceInfo(id: 22, name: 'علم الطبيعة', nameEn: 'Natural Sciences', icon: 'eco', count: 50, description: 'علوم الطبيعة'),
 
     // علوم رياضية
