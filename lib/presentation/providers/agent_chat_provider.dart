@@ -227,7 +227,7 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     final pairCountMatch = RegExp(
-      r'(?:كم\\s+مره\\s+(?:وردت?|ذكرت?|تكررت?)\\s+)([\\u0621-\\u064A]{2,})\\s+و([\\u0621-\\u064A]{2,})(?:\\s+(?:في\\s+)?القران(?:\\s+الكريم)?)?',
+      r'(?:كم\s+مره\s+(?:وردت?|ذكرت?|تكررت?)\s+)([\u0621-\u064A]{2,})\s+و([\u0621-\u064A]{2,})(?:\s+(?:في\s+)?القران(?:\s+الكريم)?)?',
     ).firstMatch(normalized);
     if (pairCountMatch != null) {
       final firstWord = pairCountMatch.group(1) ?? '';
