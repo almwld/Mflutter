@@ -235,3 +235,27 @@ The current specialist visuals are deliberately honest and lightweight:
 - Timeline and expandable reflection cards render only supplied text and metadata.
 
 No astronomical ephemeris, actual P2P transport, AR camera pipeline, IoT control, or local embedding extraction is implied by registering these templates. Those capabilities must be connected to their own real services before the UI labels them as live or operational.
+
+## Advanced component library
+
+Reusable atomic widgets live under `lib/presentation/templates/components/`:
+
+- `BaseUniversalBlock` supplies the shared glass surface, bounded visual styling,
+  a repaint boundary, and a synchronous build-error fallback for a single block.
+  It does not install global Flutter error hooks or claim to catch asynchronous,
+  layout, or paint failures.
+- `BlockRegistry` is an explicit allowlist and factory. Duplicate identifiers are
+  rejected, and unknown component types return `null` so the caller can keep its
+  existing safe renderer path.
+- `MetricCardBlock` renders a service-supplied value and optional unit/description;
+  it does not calculate or infer values.
+- `SpatialMapBlock` uses a lightweight `CustomPainter` and normalized 2D points.
+  It is a static projection, not a 3D scene, live map, or astronomical observation.
+- `BlockEventBus` provides a typed, canvas-scoped broadcast primitive for future
+  cross-block selection events. The bus is infrastructure only; table-to-graph
+  highlighting is not yet connected to it.
+
+The universal renderer now delegates metric and spatial coordinate block types to
+`BlockRegistry`. Repaint boundaries and bounded point counts reduce avoidable
+repaint work, but do not guarantee 60 FPS on every device. Measure frame pacing and
+memory on representative target hardware before claiming a frame-rate target.
