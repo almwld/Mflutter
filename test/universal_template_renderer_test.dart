@@ -95,6 +95,49 @@ void main() {
       expect(schema.hasRenderableBlocks, isTrue);
     });
 
+    test('Quran verse blocks require a canonical reference and no supplied text', () {
+      final missingReference = TemplatePayloadSchema.fromMap({
+        'ui_template': 'reader_template',
+        'schema_version': 1,
+        'blocks': [
+          {'type': 'quran_verse', 'title': 'Verse', 'text': 'payload text'},
+        ],
+      });
+      expect(missingReference.blocks, isEmpty);
+      expect(missingReference.validationErrors, isNotEmpty);
+
+      final suppliedText = TemplatePayloadSchema.fromMap({
+        'ui_template': 'reader_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'quran_verse',
+            'title': 'Verse',
+            'surah_number': 1,
+            'ayah_number': 1,
+            'text': 'payload text',
+          },
+        ],
+      });
+      expect(suppliedText.blocks, isEmpty);
+      expect(suppliedText.validationErrors, isNotEmpty);
+
+      final canonicalReference = TemplatePayloadSchema.fromMap({
+        'ui_template': 'reader_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'quran_verse',
+            'title': 'Verse',
+            'surah_number': 1,
+            'ayah_number': 1,
+          },
+        ],
+      });
+      expect(canonicalReference.blocks, hasLength(1));
+      expect(canonicalReference.validationErrors, isEmpty);
+    });
+
     test('requires table rows to match the declared columns', () {
       final schema = TemplatePayloadSchema.fromMap({
         'ui_template': 'generic_template',
