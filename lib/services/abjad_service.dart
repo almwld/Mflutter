@@ -10,7 +10,7 @@ class AbjadService {
   AbjadService._internal();
 
   model.AbjadResult calculate(String text) {
-    final normalized = _normalizeArabic(text);
+    final normalized = core.AbjadCalculator.normalizeArabic(text);
     final canonical = core.AbjadCalculator.calculateAll(normalized);
     final letters = core.AbjadCalculator.calculateLetterByLetter(normalized)
         .map((entry) => model.LetterResult(
