@@ -162,7 +162,7 @@ class TemplatePayloadSchema {
 /// Strict field-level validation for the renderer's atomic block contract.
 abstract final class TemplateBlockSchema {
   static const supportedTypes = <String>{
-    'text', 'metric', 'section', 'list', 'table',
+    'text', 'metric', 'metric_card', 'section', 'list', 'table',
     'quran_verse', 'bar_chart', 'status',
     'hero_header_block', 'timeline_block', 'relation_graph_block',
     'code_math_block', 'audio_frequency_block', 'spatial_map_block',
@@ -200,6 +200,18 @@ abstract final class TemplateBlockSchema {
     }
     if (block['title'] != null && block['title'] is! String) {
       errors.add('title يجب أن يكون نصًا.');
+    }
+    if (block['id'] != null &&
+        (block['id'] is! String ||
+            (block['id'] as String).trim().isEmpty ||
+            (block['id'] as String).length > 80)) {
+      errors.add('id يجب أن يكون معرّفًا نصيًا غير فارغ لا يتجاوز 80 حرفًا.');
+    }
+    if (block['target_block_id'] != null &&
+        (block['target_block_id'] is! String ||
+            (block['target_block_id'] as String).trim().isEmpty ||
+            (block['target_block_id'] as String).length > 80)) {
+      errors.add('target_block_id يجب أن يكون معرّفًا نصيًا صالحًا.');
     }
     switch (type) {
       case 'text':
@@ -283,6 +295,13 @@ abstract final class TemplateBlockSchema {
             rows.whereType<List>().any((row) => row.length != columns.length)) {
           errors.add('عدد خلايا كل صف يجب أن يطابق عدد الأعمدة.');
         }
+        final rowIds = block['row_ids'];
+        if (rowIds != null &&
+            (rowIds is! List ||
+                rowIds.length != (rows is List ? rows.length : -1) ||
+                rowIds.any((id) => id is! String || id.trim().isEmpty))) {
+          errors.add('row_ids يجب أن تحتوي معرّفًا نصيًا غير فارغ لكل صف.');
+        }
         break;
       case 'bar_chart':
         final items = block['items'];
@@ -333,6 +352,8 @@ abstract final class TemplateBlockSchema {
             points.any((point) => point is! Map ||
                 point['x'] is! num || point['y'] is! num ||
                 (point['label'] != null && point['label'] is! String) ||
+                (point['id'] != null && point['id'] is! String) ||
+                (point['node_id'] != null && point['node_id'] is! String) ||
                 !(point['x'] as num).isFinite || !(point['y'] as num).isFinite ||
                 (point['x'] as num) < 0 || (point['x'] as num) > 1 ||
                 (point['y'] as num) < 0 || (point['y'] as num) > 1)) {
