@@ -304,6 +304,9 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                   paper: _pageBackground,
                   gold: gold,
                   transform: _transform,
+                  onRetry: () {
+                    if (mounted) setState(() {});
+                  },
                 ),
               ),
             ),
@@ -449,6 +452,7 @@ class _VariantPage extends StatelessWidget {
     required this.paper,
     required this.gold,
     required this.transform,
+    required this.onRetry,
   });
 
   final int page;
@@ -456,6 +460,7 @@ class _VariantPage extends StatelessWidget {
   final Color paper;
   final Color gold;
   final String Function(String) transform;
+  final VoidCallback onRetry;
 
   static int _wordCount(String text) => text.trim().isEmpty ? 0 : text.trim().split(' ').where((word) => word.isNotEmpty).length;
 
@@ -499,7 +504,7 @@ class _VariantPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   TextButton.icon(
-                    onPressed: () => setState(() {}),
+                    onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
                     label: const Text('إعادة المحاولة'),
                   ),
