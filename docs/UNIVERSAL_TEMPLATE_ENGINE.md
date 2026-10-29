@@ -270,3 +270,27 @@ fallback ID. Event targets must match those IDs. Repaint boundaries and bounded 
 counts reduce avoidable repaint work, but do not guarantee 60 FPS on every device.
 Measure frame pacing and memory on representative target hardware before claiming a
 frame-rate target.
+
+
+## Local sensor-guided star tracker
+
+The `star_tracker_block` is registered through `BlockRegistry` and uses
+`sensors_plus` for device motion, `geolocator` only after the user requests
+a location fix, and a bundled small bright-star catalog. `CelestialEngine`
+calculates Julian Date, approximate Greenwich/local sidereal time, and
+horizontal altitude/azimuth locally. It can publish `selection_changed` to
+the canvas-scoped `BlockEventBus` when a star is tapped.
+
+Important accuracy boundaries:
+
+- Catalog coordinates are approximate J2000 values and do not include proper
+  motion, atmospheric refraction, precession/nutation, or a precision planetary
+  ephemeris.
+- Magnetometer heading depends on device calibration and nearby interference;
+  orientation-to-screen alignment is approximate.
+- The widget is a sensor-guided sky chart, **not** a camera AR overlay and not
+  a professional planetarium replacement.
+- Location is optional. Without a valid observer latitude/longitude, the widget
+  does not invent a location or claim that displayed positions are live.
+- Sensor subscriptions and the clock timer are cancelled when the block is
+  disposed. No sensor/location data is uploaded by this component.
