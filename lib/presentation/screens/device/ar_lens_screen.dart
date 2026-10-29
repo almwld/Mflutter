@@ -204,7 +204,6 @@ class _ARLensScreenState extends State<ARLensScreen> with WidgetsBindingObserver
     setState(() {
       _capturedPath = null;
       _recognizedText = null;
-      _translatedText = null;
       _analysisError = null;
       _matches = const [];
       _labels = const [];
