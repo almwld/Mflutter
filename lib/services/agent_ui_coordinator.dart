@@ -131,7 +131,8 @@ class AgentUiCoordinator {
       'abjad_template',
       'agent_template',
     };
-    if (!supportedTemplates.contains(templateId.trim()) ||
+    final normalizedTemplateId = templateId.trim();
+    if (!supportedTemplates.contains(normalizedTemplateId) ||
         title.trim().isEmpty ||
         domain.trim().isEmpty ||
         source.trim().isEmpty ||
@@ -140,7 +141,7 @@ class AgentUiCoordinator {
     }
     return _intent(
       target: 'template_renderer',
-      template: templateId,
+      template: normalizedTemplateId,
       query: originalQuery ?? title,
       payload: {
         'schema_version': 1,
