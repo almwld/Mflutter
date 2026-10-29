@@ -125,7 +125,7 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
             _fact(context, 'الميل السماوي', '${solar.declinationDegrees.toStringAsFixed(3)}°'),
             _fact(context, 'معادلة الزمن', '${solar.equationOfTimeMinutes.toStringAsFixed(2)} دقيقة'),
             const SizedBox(height: 5),
-            Text('حساب شمسي منخفض الدقة للتعلم فقط؛ لا يصلح للملاحة أو توجيه التلسكوبات أو توقيت الكسوفات. مصدر الطريقة: معادلات شمسية تقريبية من عائلة NOAA/Meeus.',
+            Text('حساب شمسي منخفض الدقة للتعلم فقط؛ لا يصلح للملاحة أو توجيه التلسكوبات أو توقيت الكسوفات. تستخدم الشاشة معادلات شمسية تقريبية وتعرض حدود الدقة صراحةً.',
               textDirection: TextDirection.rtl,
               style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.65))),
           ],
