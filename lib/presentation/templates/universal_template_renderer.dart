@@ -89,6 +89,23 @@ class TemplatePayloadSchema {
           continue;
         }
         final block = Map<String, dynamic>.from(item);
+        final rawData = block.remove('data');
+        block.remove('style_hints');
+        if (rawData != null && rawData is! Map) {
+          errors.add('الكتلة رقم ${index + 1}: data يجب أن يكون كائنًا.');
+          continue;
+        }
+        if (rawData is Map) {
+          if (rawData.keys.any((key) => key is! String)) {
+            errors.add('الكتلة رقم ${index + 1}: data يحتوي مفاتيح غير نصية.');
+            continue;
+          }
+          for (final entry in rawData.entries) {
+            if (entry.key != 'type' && entry.key != 'title') {
+              block.putIfAbsent(entry.key as String, () => entry.value);
+            }
+          }
+        }
         final blockErrors = TemplateBlockSchema.validate(block);
         if (blockErrors.isEmpty) {
           blocks.add(block);
@@ -128,6 +145,10 @@ abstract final class TemplateBlockSchema {
   static const supportedTypes = <String>{
     'text', 'metric', 'section', 'list', 'table',
     'quran_verse', 'bar_chart', 'status',
+    'hero_header_block', 'timeline_block', 'relation_graph_block',
+    'code_math_block', 'audio_frequency_block', 'spatial_map_block',
+    'star_map_block', 'vector_space_block', 'quantum_particle_block',
+    'interactive_card_block',
   };
 
   static bool isSupported(Map<String, dynamic> block) =>
@@ -229,6 +250,67 @@ abstract final class TemplateBlockSchema {
           errors.add('message يجب أن يكون نصًا.');
         }
         break;
+      case 'hero_header_block':
+        if (block['subtitle'] != null && block['subtitle'] is! String) errors.add('subtitle يجب أن يكون نصًا.');
+        break;
+      case 'timeline_block':
+        final events = block['events'];
+        if (events is! List || events.isEmpty || events.any((event) =>
+            event is! Map || event['label'] is! String ||
+            (event['date'] != null && event['date'] is! String) ||
+            (event['details'] != null && event['details'] is! String))) {
+          errors.add('events يجب أن تكون قائمة أحداث موصوفة بنصوص.');
+        }
+        break;
+      case 'relation_graph_block':
+        final nodes = block['nodes'];
+        final edges = block['edges'];
+        if (nodes is! List || nodes.isEmpty || nodes.any((node) =>
+            node is! Map || node['id'] is! String || node['label'] is! String)) {
+          errors.add('nodes يجب أن تحتوي معرّفًا واسمًا نصيين لكل عقدة.');
+        }
+        if (edges is! List || edges.any((edge) =>
+            edge is! Map || edge['from'] is! String || edge['to'] is! String)) {
+          errors.add('edges يجب أن تربط عقدًا باستخدام from وto نصيين.');
+        }
+        break;
+      case 'star_map_block':
+      case 'vector_space_block':
+      case 'spatial_map_block':
+      case 'quantum_particle_block':
+        final points = block['points'] ?? block['particles'] ?? block['stars'];
+        if (points is! List || points.isEmpty || points.length > 250 ||
+            points.any((point) => point is! Map ||
+                point['x'] is! num || point['y'] is! num ||
+                (point['label'] != null && point['label'] is! String) ||
+                (point['x'] as num) < 0 || (point['x'] as num) > 1 ||
+                (point['y'] as num) < 0 || (point['y'] as num) > 1)) {
+          errors.add('يجب أن تحتوي النقاط على إحداثيات x/y بين 0 و1، وبحد أقصى 250 نقطة.');
+        }
+        if (type == 'quantum_particle_block') {
+          final links = block['links'];
+          if (links != null && (links is! List || links.any((link) =>
+              link is! List || link.length != 2 ||
+              link.any((index) => index is! int || index < 0)))) {
+            errors.add('links يجب أن تكون أزواج فهارس صحيحة للجسيمات.');
+          }
+        }
+        break;
+      case 'code_math_block':
+        if (block['expression'] is! String || (block['expression'] as String).trim().isEmpty) errors.add('expression مطلوب كنص.');
+        if (block['explanation'] != null && block['explanation'] is! String) errors.add('explanation يجب أن يكون نصًا.');
+        break;
+      case 'audio_frequency_block':
+        final samples = block['samples'];
+        if (samples is! List || samples.length < 2 || samples.length > 512 ||
+            samples.any((sample) => sample is! num || sample < -1 || sample > 1)) {
+          errors.add('samples يجب أن تكون بين 2 و512 قيمة رقمية ضمن المجال -1 إلى 1.');
+        }
+        if (block['frequency_hz'] != null && block['frequency_hz'] is! num) errors.add('frequency_hz يجب أن يكون رقمًا.');
+        break;
+      case 'interactive_card_block':
+        if (block['front'] is! String || block['details'] is! String) errors.add('front وdetails مطلوبان كنصين.');
+        break;
     }
     return errors;
   }
@@ -253,6 +335,21 @@ class TemplateRegistry {
     'cosmic_template': _buildDocument,
     'abjad_template': _buildDocument,
     'agent_template': _buildDocument,
+    'universal_dynamic_canvas': _buildDocument,
+    'dashboard_template': _buildDocument,
+    'chat_template': _buildDocument,
+    'library_template': _buildDocument,
+    'player_template': _buildDocument,
+    'settings_template': _buildDocument,
+    'search_template': _buildDocument,
+    'profile_template': _buildDocument,
+    'lab_template': _buildDocument,
+    'service_hub_template': _buildDocument,
+    'cosmic_celestial_template': _buildDocument,
+    'quantum_mesh_template': _buildDocument,
+    'vector_embedding_template': _buildDocument,
+    'dream_journal_template': _buildDocument,
+    'sovereign_ar_iot_template': _buildDocument,
   };
 
   static Set<String> get registeredIds =>
@@ -660,6 +757,105 @@ class _AtomicBlock extends StatelessWidget {
             ],
           ),
         );
+      case 'hero_header_block':
+        return _GlassCard(
+          title: title,
+          child: Text(_string('subtitle'), textDirection: TextDirection.rtl,
+              style: theme.textTheme.bodyLarge),
+        );
+      case 'timeline_block':
+        final events = (block['events'] as List).whereType<Map>().toList();
+        return _GlassCard(
+          title: title,
+          child: Column(children: [
+            for (var i = 0; i < events.length; i++)
+              ListTile(
+                dense: true,
+                leading: CircleAvatar(radius: 13, child: Text('${i + 1}')),
+                title: Text(events[i]['label'] as String, textDirection: TextDirection.rtl),
+                subtitle: Text([
+                  if (events[i]['date'] is String) events[i]['date'] as String,
+                  if (events[i]['details'] is String) events[i]['details'] as String,
+                ].join(' · '), textDirection: TextDirection.rtl),
+              ),
+          ]),
+        );
+      case 'relation_graph_block':
+        final nodes = (block['nodes'] as List).whereType<Map>().toList();
+        final edges = (block['edges'] as List).whereType<Map>().toList();
+        return _GlassCard(
+          title: title,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              for (final node in nodes)
+                Chip(avatar: const Icon(Icons.hub_outlined, size: 16),
+                    label: Text(node['label'] as String)),
+            ]),
+            if (edges.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              for (final edge in edges.take(80))
+                Text('${edge['from']}  ↔  ${edge['to']}', textDirection: TextDirection.rtl),
+            ],
+          ]),
+        );
+      case 'star_map_block':
+      case 'vector_space_block':
+      case 'spatial_map_block':
+      case 'quantum_particle_block':
+        final rawPoints = block['points'] ?? block['particles'] ?? block['stars'];
+        final points = (rawPoints as List).whereType<Map>().toList();
+        final isStars = type == 'star_map_block';
+        final isQuantum = type == 'quantum_particle_block';
+        final links = <(int, int)>[];
+        if (isQuantum && block['links'] is List) {
+          for (final pair in block['links'] as List) {
+            if (pair is List && pair.length == 2 && pair[0] is int && pair[1] is int) {
+              final a = pair[0] as int, b = pair[1] as int;
+              if (a >= 0 && b >= 0 && a < points.length && b < points.length) links.add((a, b));
+            }
+          }
+        }
+        return _GlassCard(
+          title: title,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SizedBox(height: 240, child: CustomPaint(
+              painter: _CoordinateFieldPainter(points: points, links: links,
+                  mode: isStars ? 'stars' : (isQuantum ? 'mesh' : 'points')),
+              child: const SizedBox.expand(),
+            )),
+            const SizedBox(height: 8),
+            Text(isStars
+                ? 'تمثيل بصري للإحداثيات المقدمة؛ ليس رصدًا فلكيًا حيًا.'
+                : isQuantum
+                    ? 'رسم توضيحي للروابط المقدمة؛ لا يمثل تشابكًا كميًا حقيقيًا.'
+                    : 'إسقاط إحداثي ثنائي الأبعاد للبيانات المقدمة، وليس مشهدًا ثلاثي الأبعاد.',
+                textDirection: TextDirection.rtl, style: theme.textTheme.bodySmall),
+            for (final point in points.where((p) => p['label'] is String).take(12))
+              Text('• ${point['label']}', textDirection: TextDirection.rtl),
+          ]),
+        );
+      case 'code_math_block':
+        return _GlassCard(title: title, child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SelectableText(_string('expression'), textAlign: TextAlign.left,
+                style: theme.textTheme.titleLarge?.copyWith(fontFamily: 'monospace')),
+            if (_string('explanation').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(_string('explanation'), textDirection: TextDirection.rtl),
+            ],
+          ],
+        ));
+      case 'audio_frequency_block':
+        final samples = (block['samples'] as List).map((sample) => (sample as num).toDouble()).toList();
+        return _GlassCard(title: title, child: Column(children: [
+          SizedBox(height: 100, child: CustomPaint(
+            painter: _WaveformPainter(samples), child: const SizedBox.expand())),
+          if (block['frequency_hz'] is num)
+            Text('التردد المقدم من المصدر: ${block['frequency_hz']} Hz', textDirection: TextDirection.rtl),
+          const Text('شكل الموجة تمثيل للعينات المرفقة، وليس قياسًا مستقلًا.', textDirection: TextDirection.rtl),
+        ]));
+      case 'interactive_card_block':
+        return _ExpansionCard(title: title, front: _string('front'), details: _string('details'));
       case 'status':
         final status = _string('status', 'unknown');
         final message = _string('message', 'لم يرد وصف حالة من المصدر.');
@@ -686,6 +882,75 @@ class _AtomicBlock extends StatelessWidget {
         return const SizedBox.shrink();
     }
   }
+}
+
+class _ExpansionCard extends StatelessWidget {
+  const _ExpansionCard({required this.title, required this.front, required this.details});
+  final String title;
+  final String front;
+  final String details;
+  @override
+  Widget build(BuildContext context) => _GlassCard(
+    title: title,
+    child: ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: Text(front, textDirection: TextDirection.rtl),
+      children: [Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(details, textDirection: TextDirection.rtl),
+      )],
+    ),
+  );
+}
+
+class _CoordinateFieldPainter extends CustomPainter {
+  const _CoordinateFieldPainter({required this.points, required this.links, required this.mode});
+  final List<Map> points;
+  final List<(int, int)> links;
+  final String mode;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()..color = MudabbirDesignTokens.glassBorder..style = PaintingStyle.stroke..strokeWidth = 1;
+    final nodePaint = Paint()
+      ..color = mode == 'stars' ? MudabbirDesignTokens.goldBright : MudabbirDesignTokens.teal
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(12)), linePaint);
+    for (final link in links) {
+      final a = points[link.$1], b = points[link.$2];
+      canvas.drawLine(
+        Offset((a['x'] as num).toDouble() * size.width, (a['y'] as num).toDouble() * size.height),
+        Offset((b['x'] as num).toDouble() * size.width, (b['y'] as num).toDouble() * size.height),
+        linePaint,
+      );
+    }
+    for (final point in points) {
+      canvas.drawCircle(Offset(
+        (point['x'] as num).toDouble() * size.width,
+        (point['y'] as num).toDouble() * size.height,
+      ), mode == 'stars' ? 2.8 : 4.2, nodePaint);
+    }
+  }
+  @override
+  bool shouldRepaint(covariant _CoordinateFieldPainter oldDelegate) =>
+      oldDelegate.points != points || oldDelegate.links != links || oldDelegate.mode != mode;
+}
+
+class _WaveformPainter extends CustomPainter {
+  const _WaveformPainter(this.samples);
+  final List<double> samples;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = MudabbirDesignTokens.teal..style = PaintingStyle.stroke..strokeWidth = 1.8;
+    final path = Path();
+    for (var i = 0; i < samples.length; i++) {
+      final x = samples.length <= 1 ? 0.0 : i * size.width / (samples.length - 1);
+      final y = size.height / 2 - samples[i] * size.height * .42;
+      if (i == 0) { path.moveTo(x, y); } else { path.lineTo(x, y); }
+    }
+    canvas.drawPath(path, paint);
+  }
+  @override
+  bool shouldRepaint(covariant _WaveformPainter oldDelegate) => oldDelegate.samples != samples;
 }
 
 class _GlassCard extends StatelessWidget {
