@@ -3,15 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/presentation/screens/home_screen.dart';
 
 void main() {
-  Future<void> useTallViewport(WidgetTester tester) async {
-    tester.view.physicalSize = const Size(800, 6000);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-  }
-
   testWidgets('More screen exposes previously orphaned screens', (tester) async {
-    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
     const labels = <String>[
@@ -40,6 +32,15 @@ void main() {
 
     for (final label in labels) {
       final finder = find.text(label);
+      await tester.scrollUntilVisible(
+        finder,
+        280,
+        scrollable: find.descendant(
+          of: find.byType(ListView),
+          matching: find.byType(Scrollable),
+        ).first,
+      );
+      await tester.pumpAndSettle();
       expect(finder, findsOneWidget, reason: 'Missing More entry: $label');
     }
   });
@@ -81,6 +82,16 @@ void main() {
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
 
-    expect(find.text('القرآن التفاعلي'), findsOneWidget);
+    final firstTool = find.text('القرآن التفاعلي');
+    await tester.scrollUntilVisible(
+      firstTool,
+      200,
+      scrollable: find.descendant(
+        of: find.byType(ListView),
+        matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.pumpAndSettle();
+    expect(firstTool, findsOneWidget);
   });
 }
