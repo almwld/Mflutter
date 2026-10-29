@@ -109,23 +109,10 @@ class TemplatePayloadSchema {
           errors.add('الكتلة رقم ${index + 1} تحتوي مفاتيح غير نصية.');
           continue;
         }
-        final block = Map<String, dynamic>.from(item);
-        final rawData = block.remove('data');
-        block.remove('style_hints');
-        if (rawData != null && rawData is! Map) {
-          errors.add('الكتلة رقم ${index + 1}: data يجب أن يكون كائنًا.');
+        final block = TemplateBlockSchema.normalize(item);
+        if (block == null) {
+          errors.add('الكتلة رقم ${index + 1}: بيانات الكتلة أو data غير صالحة.');
           continue;
-        }
-        if (rawData is Map) {
-          if (rawData.keys.any((key) => key is! String)) {
-            errors.add('الكتلة رقم ${index + 1}: data يحتوي مفاتيح غير نصية.');
-            continue;
-          }
-          for (final entry in rawData.entries) {
-            if (entry.key != 'type' && entry.key != 'title') {
-              block.putIfAbsent(entry.key as String, () => entry.value);
-            }
-          }
         }
         final blockErrors = TemplateBlockSchema.validate(block);
         if (blockErrors.isEmpty) {
@@ -144,7 +131,9 @@ class TemplatePayloadSchema {
         (rawTitle == null || rawTitle is String) &&
         (rawDomain == null || rawDomain is String) &&
         (rawSubtitle == null || rawSubtitle is String) &&
-        (rawMetadata == null || (rawMetadata is Map && !metadata.keys.any((key) => key is! String))) &&
+        (rawMetadata == null || (rawMetadata is Map &&
+            !metadata.keys.any((key) => key is! String) &&
+            (metadata['generated_at'] == null || metadata['generated_at'] is String))) &&
         (rawSource == null || (rawSource is String && rawSource.trim().isNotEmpty)) &&
         (rawEmptyMessage == null || rawEmptyMessage is String);
     return TemplatePayloadSchema(
@@ -178,6 +167,25 @@ abstract final class TemplateBlockSchema {
 
   static bool isSupported(Map<String, dynamic> block) =>
       block['type'] is String && supportedTypes.contains(block['type']);
+
+  /// Normalizes the public {type, title, data} form without allowing data to
+  /// replace envelope-owned fields. Returns null for malformed map shapes.
+  static Map<String, dynamic>? normalize(Map raw) {
+    if (raw.keys.any((key) => key is! String)) return null;
+    final block = Map<String, dynamic>.from(raw);
+    final rawData = block.remove('data');
+    block.remove('style_hints');
+    if (rawData != null && rawData is! Map) return null;
+    if (rawData is Map) {
+      if (rawData.keys.any((key) => key is! String)) return null;
+      for (final entry in rawData.entries) {
+        if (entry.key != 'type' && entry.key != 'title') {
+          block.putIfAbsent(entry.key as String, () => entry.value);
+        }
+      }
+    }
+    return block;
+  }
 
   static List<String> validate(Map<String, dynamic> block, {int depth = 0}) {
     final errors = <String>[];
@@ -232,8 +240,13 @@ abstract final class TemplateBlockSchema {
               } else if (child.keys.any((key) => key is! String)) {
                 errors.add('العنصر الفرعي رقم ${i + 1} يحتوي مفاتيح غير نصية.');
               } else {
-                errors.addAll(validate(Map<String, dynamic>.from(child), depth: depth + 1)
-                    .map((error) => 'العنصر الفرعي رقم ${i + 1}: $error'));
+                final normalizedChild = normalize(child);
+                if (normalizedChild == null) {
+                  errors.add('العنصر الفرعي رقم ${i + 1}: بيانات الكتلة أو data غير صالحة.');
+                } else {
+                  errors.addAll(validate(normalizedChild, depth: depth + 1)
+                      .map((error) => 'العنصر الفرعي رقم ${i + 1}: $error'));
+                }
               }
             }
           }
@@ -658,7 +671,9 @@ class _AtomicBlock extends StatelessWidget {
       case 'section':
         final children = block['children'];
         final nested = children is List
-            ? children.whereType<Map>().map((m) => Map<String, dynamic>.from(m))
+            ? children.whereType<Map>()
+                .map(TemplateBlockSchema.normalize)
+                .whereType<Map<String, dynamic>>()
                 .where(TemplateBlockSchema.isSupported).toList()
             : <Map<String, dynamic>>[];
         return _GlassCard(
