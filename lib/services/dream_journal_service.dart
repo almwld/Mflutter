@@ -69,9 +69,14 @@ class DreamJournalService {
     }
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! List) return <Map<String, dynamic>>[];
+      if (decoded is! List) {
+        throw StateError('بنية سجل الأحلام ليست قائمة صالحة؛ لم تُستبدل البيانات الموجودة.');
+      }
       final entries = <Map<String, dynamic>>[];
-      for (final item in decoded.whereType<Map>()) {
+      for (final item in decoded) {
+        if (item is! Map) {
+          throw StateError('يحتوي سجل الأحلام على سجل غير صالح؛ أُوقف الحفظ لحماية البيانات.');
+        }
         final text = item['text'];
         final createdAt = item['createdAt'];
         if (text is! String ||
@@ -79,7 +84,7 @@ class DreamJournalService {
             text.length > maxDreamLength ||
             createdAt is! String ||
             DateTime.tryParse(createdAt) == null) {
-          continue;
+          throw StateError('يحتوي سجل الأحلام على حقول غير صالحة؛ أُوقف الحفظ لحماية البيانات.');
         }
         final emotions = item['emotions'];
         entries.add(<String, dynamic>{
