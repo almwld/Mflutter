@@ -498,6 +498,7 @@ class AgentChatProvider extends ChangeNotifier {
     required String generated,
     required String evidence,
   }) {
+    if (evidence.trim().isEmpty) return false;
     final normalized = AgentKnowledgeService.normalize(query);
     final isVisualRequest = RegExp(
       r'(?:صمم|صمم لي|اعرض|لوحه|قالب|مخطط|رسم|واجهه|عرض بصري|تصور بصري|dashboard|diagram|visual layout)',
