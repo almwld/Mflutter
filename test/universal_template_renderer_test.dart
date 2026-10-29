@@ -113,6 +113,46 @@ void main() {
       expect(schema.validationErrors, isNotEmpty);
     });
 
+    test('preserves source provenance and rejects malformed source metadata', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'analytics_template',
+        'schema_version': 1,
+        'title': 'نتائج محلية',
+        'source': 'QuranLoaderService',
+        'blocks': [
+          {'type': 'metric', 'title': 'عدد الآيات', 'value': 6236},
+        ],
+      });
+      expect(schema.envelopeValid, isTrue);
+      expect(schema.source, 'QuranLoaderService');
+
+      final malformedSource = TemplatePayloadSchema.fromMap({
+        'ui_template': 'analytics_template',
+        'schema_version': 1,
+        'source': 17,
+        'blocks': [
+          {'type': 'metric', 'value': 1},
+        ],
+      });
+      expect(malformedSource.envelopeValid, isFalse);
+      expect(malformedSource.validationErrors, isNotEmpty);
+    });
+
+    test('rejects non-string keys without throwing while parsing blocks', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'generic_template',
+        'schema_version': 1,
+        'blocks': [
+          {7: 'unexpected', 'type': 'text', 'text': 'يجب استبعاد هذه الكتلة'},
+          {'type': 'metric', 'value': 3},
+        ],
+      });
+      expect(schema.envelopeValid, isTrue);
+      expect(schema.blocks, hasLength(1));
+      expect(schema.blocks.single['value'], 3);
+      expect(schema.validationErrors, isNotEmpty);
+    });
+
     test('registers every domain template used by trusted local services', () {
       expect(TemplateRegistry.lookup('analytics_template'), isNotNull);
       expect(TemplateRegistry.lookup('abjad_template'), isNotNull);
