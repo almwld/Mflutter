@@ -79,6 +79,14 @@ class _ZodiacScreenState extends State<ZodiacScreen> {
             const SizedBox(height: 12),
             SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: _pickDate, icon: const Icon(Icons.calendar_month_rounded), label: const Text('اختيار تاريخ الميلاد'))),
             const SizedBox(height: 8),
+            Text(
+              'التاريخ الظاهر افتراضي للمعاينة؛ اختر تاريخ ميلادك للحصول على النتيجة الخاصة به.',
+              textDirection: TextDirection.rtl,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurface.withOpacity(.65),
+              ),
+            ),
+            const SizedBox(height: 8),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(14),
