@@ -947,3 +947,7 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - The knowledge explorer's offline starter dataset now includes astronomy fundamentals (AU, lunar phases, Kepler's orbital relation), factual Earth/Mars reference entries, and a clearly labeled historical/cultural entry on the twelve-sign zodiac. The category chips have Arabic labels/icons for astronomy, planets, zodiac, physics, and history-related records; these records remain available if the optional knowledge asset cannot be loaded.
 - Cosmic Services migration now preserves its legacy capsule source when malformed legacy records are encountered, and the dream-journal list can scroll through all saved entries rather than truncating the visible collection to four.
+
+
+- Follow-up hardening: astronomy calculators now expose validation messages for invalid numeric input; the planet weight calculator checks nullable mass inline before arithmetic; planet search normalizes Arabic diacritics and common letter variants. The knowledge loader skips malformed individual records and retains valid records plus the bundled starter catalogue instead of discarding all optional-asset content after one bad row.
+- Home's tools section now links directly to both the interactive planetary reference and the dedicated astronomy calculator.
