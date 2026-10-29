@@ -202,6 +202,111 @@ void main() {
       expect(TemplateRegistry.lookup('graph_template'), isNotNull);
     });
 
+    test('supports the universal metadata envelope and block data object', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'template_id': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'metadata': {
+          'title': 'لوحة عامة',
+          'subtitle': 'عرض محلي',
+          'topic_category': 'Science',
+          'source': 'LocalDemoService',
+          'generated_at': '2026-10-29T00:00:00Z',
+        },
+        'blocks': [
+          {
+            'type': 'metric',
+            'title': 'عدد موثّق',
+            'data': {'value': 8},
+            'style_hints': {'color_theme': 'untrusted-custom-color'},
+          },
+        ],
+      });
+
+      expect(schema.envelopeValid, isTrue);
+      expect(schema.templateId, 'universal_dynamic_canvas');
+      expect(schema.title, 'لوحة عامة');
+      expect(schema.subtitle, 'عرض محلي');
+      expect(schema.domain, 'Science');
+      expect(schema.source, 'LocalDemoService');
+      expect(schema.blocks.single['value'], 8);
+      expect(schema.blocks.single.containsKey('style_hints'), isFalse);
+      expect(TemplateRegistry.lookup(schema.templateId), isNotNull);
+    });
+
+    test('registers the specialist template ecosystem', () {
+      const ids = [
+        'dashboard_template', 'reader_template', 'chat_template',
+        'library_template', 'analytics_template', 'graph_template',
+        'player_template', 'settings_template', 'search_template',
+        'profile_template', 'lab_template', 'service_hub_template',
+        'cosmic_celestial_template', 'quantum_mesh_template',
+        'vector_embedding_template', 'dream_journal_template',
+        'sovereign_ar_iot_template', 'universal_dynamic_canvas',
+      ];
+      for (final id in ids) {
+        expect(TemplateRegistry.lookup(id), isNotNull, reason: id);
+      }
+    });
+
+    test('validates coordinate blocks and rejects unbounded point payloads', () {
+      final valid = TemplatePayloadSchema.fromMap({
+        'ui_template': 'cosmic_celestial_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'star_map_block',
+            'title': 'Coordinate demonstration',
+            'data': {
+              'stars': [
+                {'x': 0.2, 'y': 0.4, 'label': 'A'},
+                {'x': 0.8, 'y': 0.6, 'label': 'B'},
+              ],
+            },
+          },
+        ],
+      });
+      expect(valid.blocks, hasLength(1));
+      expect(valid.validationErrors, isEmpty);
+
+      final invalid = TemplatePayloadSchema.fromMap({
+        'ui_template': 'vector_embedding_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'vector_space_block',
+            'points': [
+              {'x': 1.2, 'y': 0.4},
+            ],
+          },
+        ],
+      });
+      expect(invalid.blocks, isEmpty);
+      expect(invalid.validationErrors, isNotEmpty);
+    });
+
+    test('validates timeline and interactive card blocks', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'dream_journal_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'timeline_block',
+            'events': [
+              {'label': 'Entry saved', 'date': '2026-10-29'},
+            ],
+          },
+          {
+            'type': 'interactive_card_block',
+            'front': 'Reflection',
+            'details': 'User-provided reflection details',
+          },
+        ],
+      });
+      expect(schema.blocks, hasLength(2));
+      expect(schema.validationErrors, isEmpty);
+    });
+
     test('registry rejects duplicate identifiers and accepts new modules', () {
       const id = 'test_dynamic_module';
       expect(
