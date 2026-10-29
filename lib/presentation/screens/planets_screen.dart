@@ -233,6 +233,7 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
     if (matches.isEmpty) return const <Widget>[];
     final planet = matches.first;
     return <Widget>[
+      _metric(context, 'الكتلة بالنسبة للأرض', planet.massInEarthMasses.toStringAsFixed(3)),
       _metric(context, 'الاستطالة المدارية', planet.orbitalEccentricity.toStringAsFixed(4)),
       _metric(context, 'الفترة المدارية المرجعية', '${planet.orbitalPeriodDays.toStringAsFixed(2)} يومًا'),
       Padding(
