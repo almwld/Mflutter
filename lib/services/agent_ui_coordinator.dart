@@ -43,14 +43,15 @@ class AgentUiCoordinator {
       'اعجاز عددي',
       'الحياه والموت',
     ])) {
+      final words = _extractCountWords(query);
       return _intent(
         target: 'miracles_screen',
         template: 'analytics_template',
         query: rawQuery,
         payload: {
           'analysis_query': rawQuery,
-          'first_word': query.contains('الحياه والموت') ? 'الحياة' : null,
-          'second_word': query.contains('الحياه والموت') ? 'الموت' : null,
+          'first_word': words.$1,
+          'second_word': words.$2,
           'source': 'local_quran_corpus',
           'requires_verified_counts': true,
         },
@@ -106,6 +107,32 @@ class AgentUiCoordinator {
     }
 
     return null;
+  }
+
+
+  /// Extracts only explicit lexical targets. It deliberately does not guess
+  /// a word from an arbitrary question, so the analytics screen never reports
+  /// a count for an unrelated default word.
+  (String?, String?) _extractCountWords(String normalizedQuery) {
+    if (normalizedQuery.contains('الحياه والموت')) {
+      return ('الحياة', 'الموت');
+    }
+
+    final explicit = RegExp(
+      r'(?:كلمه|لفظ|لفظه)\s+([\u0621-\u064A]{2,})',
+    ).firstMatch(normalizedQuery);
+    if (explicit != null) return (explicit.group(1), null);
+
+    final pair = RegExp(
+      r'(?:ذكر|ورد|ظهور|ظهرت|تكرار)\s+([\u0621-\u064A]{2,})\s+و([\u0621-\u064A]{2,})',
+    ).firstMatch(normalizedQuery);
+    if (pair != null) return (pair.group(1), pair.group(2));
+
+    final verbTarget = RegExp(
+      r'(?:ذكر|ورد|ظهور|ظهرت|تكرار)\s+(?:كلمه\s+)?([\u0621-\u064A]{2,})',
+    ).firstMatch(normalizedQuery);
+    if (verbTarget != null) return (verbTarget.group(1), null);
+    return (null, null);
   }
 
   AgentUiIntent _intent({
