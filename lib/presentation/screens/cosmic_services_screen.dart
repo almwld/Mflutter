@@ -65,7 +65,12 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
           final text = (legacy['text'] ?? '').toString().trim();
           final rawUnlock = (legacy['unlockAt'] ?? '').toString();
           final unlock = DateTime.tryParse(rawUnlock);
-          if (text.isEmpty || unlock == null) continue;
+          if (text.isEmpty || unlock == null) {
+            decodeWarning ??=
+                'تحتوي بعض الكبسولات القديمة على نص أو تاريخ غير صالح؛ احتُفظ بسجل الترحيل للمراجعة.';
+            migrationComplete = false;
+            continue;
+          }
           final alreadyExists = capsules.any((capsule) =>
               (capsule['content'] ?? '').toString() == text &&
               DateTime.tryParse((capsule['unlockDate'] ?? '').toString()) ==
@@ -212,9 +217,9 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
               ),
               if (_dreams.isNotEmpty)
                 SizedBox(
-                  height: 110,
+                  height: 180,
                   child: ListView.builder(
-                    itemCount: _dreams.length.clamp(0, 4).toInt(),
+                    itemCount: _dreams.length,
                     itemBuilder: (_, index) => ListTile(
                       dense: true,
                       title: Text(
