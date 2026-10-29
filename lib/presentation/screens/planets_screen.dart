@@ -208,7 +208,6 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
     final theme = Theme.of(context);
     final body = _selected;
     final mass = double.tryParse(_mass.text.trim());
-    final valid = mass != null && mass.isFinite && mass > 0 && mass <= 1000000;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -227,7 +226,11 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
               decoration: const InputDecoration(labelText: 'الكتلة (كغ)', border: OutlineInputBorder()),
             ),
             const SizedBox(height: 8),
-            if (valid && body != null)
+            if (mass != null &&
+                mass.isFinite &&
+                mass > 0 &&
+                mass <= 1000000 &&
+                body != null)
               Text('على ${body.name}: ${(mass * body.gravity).toStringAsFixed(2)} نيوتن تقريبًا',
                 textDirection: TextDirection.rtl, style: theme.textTheme.titleMedium)
             else
