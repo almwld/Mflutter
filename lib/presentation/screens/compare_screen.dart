@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
+import '../templates/mudabbir_templates.dart';
 
 /// Compares references against the canonical local Quran corpus.
 /// Source verse text remains unchanged; normalization is only for lexical overlap.
@@ -150,7 +151,7 @@ class _CompareScreenState extends State<CompareScreen> {
                     ),
                   ),
                 )
-              : ListView(
+              : ComparisonTemplate(
                   padding: const EdgeInsets.all(16),
                   children: [
                     if (widget.agentQuery?.trim().isNotEmpty == true) ...[
