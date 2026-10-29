@@ -10,17 +10,20 @@ payload text. Missing or unsupported data is rendered as an explicit empty/error
 
 ```json
 {
-  "ui_template": "analytics_template",
+  "template_id": "universal_dynamic_canvas",
   "schema_version": 1,
-  "domain": "quran",
-  "title": "تحليل موثق",
-  "empty_message": "لم تُرجع خدمة التحليل بيانات.",
+  "metadata": {
+    "title": "لوحة ديناميكية",
+    "subtitle": "ملخص مجال محدد",
+    "topic_category": "Science",
+    "source": "VerifiedLocalService",
+    "generated_at": "2026-10-29T00:00:00Z"
+  },
   "blocks": [
-    {"type": "metric", "title": "عدد النتائج", "value": 12},
-    {"type": "bar_chart", "title": "التوزيع", "items": [
-      {"label": "الفئة أ", "value": 3},
-      {"label": "الفئة ب", "value": 9}
-    ]}
+    {"type": "metric", "title": "عدد النتائج", "data": {"value": 12}},
+    {"type": "timeline_block", "title": "المراحل", "data": {
+      "events": [{"label": "مرحلة موثقة", "date": "2026-10-29"}]
+    }}
   ]
 }
 ```
@@ -35,6 +38,16 @@ payload text. Missing or unsupported data is rendered as an explicit empty/error
 - `table`: `title`, `columns: string[]`, `rows: string[][]`
 - `bar_chart`: `title`, `items: [{label: string, value: number}]`
 - `status`: `title`, `status`, `message` supplied by the service being monitored
+- `hero_header_block`: optional `subtitle`
+- `timeline_block`: bounded `events: [{label, date?, details?}]`
+- `relation_graph_block`: bounded `nodes: [{id, label}]` and `edges: [{from, to}]`
+- `star_map_block`, `vector_space_block`, `spatial_map_block`: up to 250 normalized `points/stars: [{x, y, label?}]`
+- `quantum_particle_block`: normalized `particles: [{x, y, label?}]` and optional index-pair `links`
+- `code_math_block`: `expression` and optional `explanation`
+- `audio_frequency_block`: 2–512 normalized `samples` in [-1, 1], optional source-provided `frequency_hz`
+- `interactive_card_block`: `front`, `details`
+
+The renderer accepts either legacy flat block fields or the extensible `{type, title, data}` form. `style_hints` is discarded; the model cannot override app theme colors or widget styling. The payload is bounded to 300 top-level blocks, 200 timeline events, 250 graph nodes/coordinate points, and 500 graph edges/list items. Unknown block types fail closed. Add a new block only by implementing its validator and renderer, then cover it with tests.
 
 ## Domain payload examples
 
@@ -196,3 +209,27 @@ A `quran_verse` block carries only a surah number and ayah number. The schema re
 The renderer uses local widgets, bounded nested sections, and repaint boundaries rather than video or remote rendering. This architecture reduces avoidable work, but it does not itself prove a sustained 60+ FPS on every device. Frame pacing and memory must be measured on target devices before making a performance guarantee.
 
 These controls provide defined failure behavior; they do not constitute a claim of absolute or mathematically perfect safety. The canonical corpus, loader validation, and device-level verification remain important parts of the trust boundary.
+
+
+## Universal canvas and specialist template identifiers
+
+The registry now accepts the universal canvas identifier and the requested specialist aliases:
+
+- `universal_dynamic_canvas`
+- `dashboard_template`, `reader_template`, `chat_template`, `library_template`
+- `analytics_template`, `graph_template`, `player_template`, `settings_template`
+- `search_template`, `profile_template`, `lab_template`, `service_hub_template`
+- `cosmic_celestial_template`, `quantum_mesh_template`, `vector_embedding_template`
+- `dream_journal_template`, `sovereign_ar_iot_template`
+
+These identifiers reuse the same schema renderer and atomic block library; they are not 17 independent screen implementations. New topics can compose existing blocks without a new screen. A genuinely new visual primitive requires a code-reviewed validator/renderer implementation and registration, so the system is extensible rather than literally infinite or able to execute arbitrary model-authored UI code.
+
+The current specialist visuals are deliberately honest and lightweight:
+
+- Star and vector fields are normalized **2D coordinate visualizations**, not live astronomical observations or 3D embedding engines.
+- Quantum-particle links are **illustrative topology diagrams**, not physical quantum entanglement.
+- Audio waveforms depict provided samples; they do not claim to measure audio or generate a frequency.
+- Relation graphs currently show labeled nodes and edge pairs in a bounded layout, not a force-directed physics simulation.
+- Timeline and expandable reflection cards render only supplied text and metadata.
+
+No astronomical ephemeris, actual P2P transport, AR camera pipeline, IoT control, or local embedding extraction is implied by registering these templates. Those capabilities must be connected to their own real services before the UI labels them as live or operational.
