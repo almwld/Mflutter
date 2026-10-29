@@ -925,3 +925,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AgentKnowledgeService.search` now returns an empty immutable result immediately for blank queries or nonpositive limits, avoiding unnecessary initialization and invalid take limits.
+
+
+- `AgentKnowledgeService.initialize` now reuses a successfully initialized index and preserves single-flight ordering for concurrent callers. Repeated searches no longer append another full Quran corpus to the in-memory knowledge list each time.
