@@ -251,11 +251,22 @@ Reusable atomic widgets live under `lib/presentation/templates/components/`:
   it does not calculate or infer values.
 - `SpatialMapBlock` uses a lightweight `CustomPainter` and normalized 2D points.
   It is a static projection, not a 3D scene, live map, or astronomical observation.
-- `BlockEventBus` provides a typed, canvas-scoped broadcast primitive for future
-  cross-block selection events. The bus is infrastructure only; table-to-graph
-  highlighting is not yet connected to it.
+- `BlockEventBus` is instantiated once per `UniversalTemplateRenderer` and exposed
+  through `BlockEventScope`; it is closed when the canvas is disposed.
+- Selectable `table` rows publish `selection_changed` with a stable `selection_id`,
+  source block ID, optional target block ID, row index, and display label. Use
+  `row_ids` to map rows to domain IDs and `target_block_id` to route to a graph/map.
+- `relation_graph_block` subscribes only to events targeting its own block ID and
+  highlights the matching node. `SpatialMapBlock` similarly highlights the matching
+  point by `id`, `node_id`, or `label`. Metric cards can publish the same event when
+  supplied both `selection_id` and `target_block_id`.
+- Haptic selection feedback is emitted by selectable table rows and metric cards.
+  Subscriptions are cancelled when the receiving widget is disposed; separate
+  canvases have separate buses, preventing cross-canvas event leakage.
 
 The universal renderer now delegates metric and spatial coordinate block types to
-`BlockRegistry`. Repaint boundaries and bounded point counts reduce avoidable
-repaint work, but do not guarantee 60 FPS on every device. Measure frame pacing and
-memory on representative target hardware before claiming a frame-rate target.
+`BlockRegistry` and assigns each top-level block an explicit `id` or deterministic
+fallback ID. Event targets must match those IDs. Repaint boundaries and bounded point
+counts reduce avoidable repaint work, but do not guarantee 60 FPS on every device.
+Measure frame pacing and memory on representative target hardware before claiming a
+frame-rate target.
