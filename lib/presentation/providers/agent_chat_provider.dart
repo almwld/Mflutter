@@ -118,7 +118,13 @@ class AgentChatProvider extends ChangeNotifier {
               })
           .toList(growable: false));
       await _knowledge.initialize();
-      await _restoreLatestTask();
+      try {
+        await _restoreLatestTask();
+      } catch (storageError) {
+        // Task recovery is optional for boot: a platform storage failure must
+        // not prevent the local Quran index and knowledge engine from starting.
+        debugPrint('AgentChatProvider: task recovery unavailable: $storageError');
+      }
       _initialized = true;
       _initializationError = null;
     } catch (error) {
