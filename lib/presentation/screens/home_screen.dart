@@ -530,6 +530,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('العناصر الرمزية', Icons.category_outlined, const ElementsScreen()),
       ('الأعداد الرمزية', Icons.pin_outlined, const NumbersScreen()),
       ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
       ('علم الفلك', Icons.nights_stay_rounded, const AstronomyScreen()),
       ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
