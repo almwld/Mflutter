@@ -159,23 +159,6 @@ class ComparisonTemplate extends StatelessWidget {
       );
 }
 
-class ComparisonTemplate extends StatelessWidget {
-  const ComparisonTemplate({
-    super.key,
-    required this.children,
-    this.padding = const EdgeInsets.all(16),
-  });
-
-  final List<Widget> children;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) => ListView(
-        padding: padding,
-        children: children,
-      );
-}
-
 class GraphTemplate extends StatelessWidget {
   const GraphTemplate({
     super.key,
