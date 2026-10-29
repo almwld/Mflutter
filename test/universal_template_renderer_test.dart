@@ -285,6 +285,39 @@ void main() {
       expect(invalid.validationErrors, isNotEmpty);
     });
 
+    test('normalizes nested data blocks and caps oversized envelopes', () {
+      final nested = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'section',
+            'title': 'Section',
+            'children': [
+              {
+                'type': 'metric',
+                'title': 'Nested metric',
+                'data': {'value': 17},
+              },
+            ],
+          },
+        ],
+      });
+      expect(nested.blocks, hasLength(1));
+      final child = (nested.blocks.single['children'] as List).single as Map;
+      final normalizedChild = TemplateBlockSchema.normalize(child);
+      expect(normalizedChild?['value'], 17);
+      expect(TemplateBlockSchema.validate(normalizedChild!), isEmpty);
+
+      final oversized = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': List.generate(301, (_) => {'type': 'metric', 'value': 1}),
+      });
+      expect(oversized.envelopeValid, isFalse);
+      expect(oversized.validationErrors, isNotEmpty);
+    });
+
     test('validates timeline and interactive card blocks', () {
       final schema = TemplatePayloadSchema.fromMap({
         'ui_template': 'dream_journal_template',
