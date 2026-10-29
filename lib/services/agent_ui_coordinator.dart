@@ -7,7 +7,7 @@ class AgentUiCoordinator {
   const AgentUiCoordinator();
 
   static final RegExp _verseReference =
-      RegExp(r'([0-9]{1,3})\\s*[:/]\\s*([0-9]{1,3})');
+      RegExp(r'([0-9]{1,3})\s*[:/]\s*([0-9]{1,3})');
 
   AgentUiIntent? resolve(
     String rawQuery, {
@@ -128,7 +128,7 @@ class AgentUiCoordinator {
 
   String _normalize(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
@@ -140,6 +140,6 @@ class AgentUiCoordinator {
           return String.fromCharCode(0x30 + digit);
         },
       )
-      .replaceAll(RegExp(r'\\s+'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 }
