@@ -11,7 +11,10 @@ import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
 
 class MiraclesScreen extends StatefulWidget {
-  const MiraclesScreen({super.key});
+  final String? initialQuery;
+  final String? initialComparisonQuery;
+
+  const MiraclesScreen({super.key, this.initialQuery, this.initialComparisonQuery});
 
   @override
   State<MiraclesScreen> createState() => _MiraclesScreenState();
@@ -28,10 +31,8 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
 
   final QuranNumericalAnalysisService _service =
       QuranNumericalAnalysisService();
-  final TextEditingController _searchController =
-      TextEditingController(text: 'الله');
-  final TextEditingController _comparisonController =
-      TextEditingController(text: 'الرحمن');
+  late final TextEditingController _searchController;
+  late final TextEditingController _comparisonController;
 
   QuranWordAnalysis? _analysis;
   Object? _error;
@@ -42,6 +43,14 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
   @override
   void initState() {
     super.initState();
+    _query = widget.initialQuery?.trim().isNotEmpty == true
+        ? widget.initialQuery!.trim()
+        : 'الله';
+    _comparisonWord = widget.initialComparisonQuery?.trim().isNotEmpty == true
+        ? widget.initialComparisonQuery!.trim()
+        : 'الرحمن';
+    _searchController = TextEditingController(text: _query);
+    _comparisonController = TextEditingController(text: _comparisonWord);
     _loadAnalysis();
   }
 
