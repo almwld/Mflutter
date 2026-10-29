@@ -226,6 +226,104 @@ class AgentChatProvider extends ChangeNotifier {
       );
     }
 
+    final pairCountMatch = RegExp(
+      r'(?:كم\\s+مره\\s+(?:وردت?|ذكرت?|تكررت?)\\s+)([\\u0621-\\u064A]{2,})\\s+و([\\u0621-\\u064A]{2,})(?:\\s+(?:في\\s+)?القران(?:\\s+الكريم)?)?',
+    ).firstMatch(normalized);
+    if (pairCountMatch != null) {
+      final firstWord = pairCountMatch.group(1) ?? '';
+      final secondWord = pairCountMatch.group(2) ?? '';
+      try {
+        final canonical = await QuranLoaderService.loadAllAyahs();
+        QuranicSearchEngine.indexVerses(canonical
+            .map((ayah) => <String, String>{
+                  'id': ayah.id.toString(),
+                  'surah': ayah.surahName,
+                  'surah_number': ayah.surahNumber.toString(),
+                  'ayah': ayah.ayahNumber.toString(),
+                  'text': ayah.text,
+                })
+            .toList(growable: false));
+        final firstResult = QuranicSearchEngine.countExactWord(firstWord);
+        final secondResult = QuranicSearchEngine.countExactWord(secondWord);
+        if (firstResult == null || secondResult == null) {
+          return _uiCoordinator.resolveSchemaPayload(
+            templateId: 'analytics_template',
+            title: 'تعذر التحقق من العدّ المقارن',
+            domain: 'quran_analytics',
+            source: 'QuranicSearchEngine',
+            originalQuery: query,
+            blocks: <Map<String, dynamic>>[
+              <String, dynamic>{
+                'type': 'status',
+                'title': 'حالة التحقق',
+                'status': 'error',
+                'message': 'تعذّر التحقق من إحدى الكلمتين عبر الفهرس القرآني المحلي؛ لم تُنشأ أرقام بديلة.',
+              },
+            ],
+          );
+        }
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'مقارنة التكرار اللفظي',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine.countExactWord',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'table',
+              'title': 'النتائج المحسوبة من الفهرس المحلي',
+              'columns': <String>['الكلمة', 'عدد المطابقات', 'عدد الآيات'],
+              'rows': <List<String>>[
+                <String>[firstWord, firstResult.occurrenceCount.toString(), firstResult.ayahReferences.length.toString()],
+                <String>[secondWord, secondResult.occurrenceCount.toString(), secondResult.ayahReferences.length.toString()],
+              ],
+            },
+            <String, dynamic>{
+              'type': 'section',
+              'title': 'مراجع الكلمة الأولى: $firstWord',
+              'children': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'list',
+                  'items': firstResult.ayahReferences,
+                },
+              ],
+            },
+            <String, dynamic>{
+              'type': 'section',
+              'title': 'مراجع الكلمة الثانية: $secondWord',
+              'children': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'list',
+                  'items': secondResult.ayahReferences,
+                },
+              ],
+            },
+            <String, dynamic>{
+              'type': 'text',
+              'title': 'منهجية العد',
+              'text': 'مقارنة بين مطابقات لفظية بعد التطبيع؛ لا تمثل تحليلًا للجذور أو إثباتًا لدلالة تفسيرية.',
+            },
+          ],
+        );
+      } catch (error) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تعذر إكمال العدّ المقارن',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'مصدر البيانات',
+              'status': 'error',
+              'message': 'تعذر تحميل المصحف المحلي أو التحقق من فهرسه: $error. لم يتم إنشاء أرقام بديلة.',
+            },
+          ],
+        );
+      }
+    }
+
     final countMatch = RegExp(
       r'(?:كم\s+مره\s+(?:وردت?|ذكرت?|تكررت?)\s+(?:كلمه\s+)?|عدد\s+(?:مرات\s+)?(?:ورود|ذكر)\s+(?:كلمه\s+)?)([\u0621-\u064A]{2,})\s+(?:في\s+)?القران(?:\s+الكريم)?',
     ).firstMatch(normalized);
@@ -308,6 +406,26 @@ class AgentChatProvider extends ChangeNotifier {
           ],
         );
       }
+    }
+
+    final unresolvedCountIntent = _uiCoordinator.resolve(query);
+    if (unresolvedCountIntent?.targetScreen == 'miracles_screen' &&
+        unresolvedCountIntent?.templateId == 'analytics_template') {
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: 'تعذر التحقق من طلب العدّ',
+        domain: 'quran_analytics',
+        source: 'QuranicSearchEngine',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'لم يُصدر المحرك رقمًا',
+            'status': 'error',
+            'message': 'تعذّر استخراج هدف لفظي واضح أو التحقق من نتيجة رقمية من الفهرس المحلي. أعد صياغة السؤال بكلمة محددة؛ لم يتم اختلاق أي عدد.',
+          },
+        ],
+      );
     }
 
     if (normalized.contains('حاله النواه') ||
