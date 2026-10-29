@@ -362,7 +362,7 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     final second = secondTokens.single;
     final firstCount = analysis.countWord(first);
     final secondCount = analysis.countWord(second);
-    final maxCount = math.max(1, math.max(firstCount, secondCount));
+    final maxCount = math.max(1, math.max(firstCount, secondCount)).toInt();
     return Card(
       color: AppColors.surface,
       child: Padding(
