@@ -165,7 +165,7 @@ class _StarTrackerContentState extends State<_StarTrackerContent> {
         );
         if (horizontal.altitudeDegrees < 0) continue;
         final deltaAz = ((horizontal.azimuthDegrees - _heading + 540) % 360) - 180;
-        final deltaAlt = horizontal.altitudeDegrees - (_pitch * 180 / math.pi);
+        final deltaAlt = horizontal.altitudeDegrees - (-_pitch * 180 / math.pi);
         if (deltaAz.abs() > 35 || deltaAlt.abs() > 35) continue;
         visible.add(_ProjectedStar(star: star, x: 0.5 + deltaAz / 70, y: 0.5 - deltaAlt / 70));
       }
