@@ -131,7 +131,7 @@ renderer may only perform the bounded canonical Quran reference lookup described
 The agent provider now creates schema blocks from these local sources for matching
 explicit requests:
 
-- **Quran word count**: loads the validated local corpus through `QuranLoaderService`, indexes that corpus in `QuranicSearchEngine`, then uses `countExactWord` to return exact normalized-token occurrences and unique numeric verse references. If the corpus cannot load or the engine cannot verify a single-word request, the provider returns a visible error status rather than a numeric guess. This is lexical token counting, not root analysis.
+- **Quran word count**: loads the validated local corpus through `QuranLoaderService`, indexes that corpus in `QuranicSearchEngine`, then uses `countExactWord` to return exact normalized-token occurrences and unique numeric verse references. It supports explicit single-word and paired-word comparisons. Unrecognized numerical requests that would otherwise route to the legacy numerical screen fail closed with a visible error status rather than a numeric guess. This is lexical token counting, not root analysis.
 - **Abjad**: uses `AbjadConstants.normalizeArabic`, `calculateTotal`, and
   `abjadSquare` to show the configured arithmetic and per-letter values. It does not
   make astrological, spiritual, or predictive claims.
