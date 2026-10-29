@@ -202,6 +202,9 @@ jobs:
       - name: Test More screen navigation
         run: flutter test test/more_screen_navigation_test.dart
 
+      - name: Test advanced component library
+        run: flutter test test/advanced_component_library_test.dart
+
       - name: Test shared templates
         run: flutter test test/mudabbir_templates_test.dart
 
