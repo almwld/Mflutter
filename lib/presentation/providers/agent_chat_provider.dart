@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/agent_task.dart';
+import '../../domain/entities/agent_ui_intent.dart';
 import '../../services/agent_knowledge_service.dart';
+import '../../services/agent_ui_coordinator.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
 import '../../services/agent_task_store.dart';
@@ -23,6 +25,8 @@ class AgentChatProvider extends ChangeNotifier {
   final AgentTaskStore _taskStore = AgentTaskStore.instance;
 
   AgentTask? _activeTask;
+  final AgentUiCoordinator _uiCoordinator = const AgentUiCoordinator();
+  AgentUiIntent? _pendingUiIntent;
   final List<String> _messages = [];
   final Map<String, int> _attemptsByAgent = {};
   bool _paused = false;
@@ -76,6 +80,14 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   AgentTask? get activeTask => _activeTask;
+  AgentUiIntent? get pendingUiIntent => _pendingUiIntent;
+
+  /// Consume a UI action exactly once so provider rebuilds cannot navigate twice.
+  void consumeUiIntent(String id) {
+    if (_pendingUiIntent?.id != id) return;
+    _pendingUiIntent = null;
+    _notifySafely();
+  }
   List<String> get messages => List.unmodifiable(_messages);
   bool get paused => _paused || _activeTask?.status == TaskStatus.paused;
   bool get initialized => _initialized;
@@ -184,6 +196,12 @@ class AgentChatProvider extends ChangeNotifier {
   Future<void> _runTask(String query, {AgentTask? resumeFrom}) async {
     final clean = query.trim();
     if (clean.isEmpty) return;
+    final nucleusContext = NucleusService();
+    _pendingUiIntent = _uiCoordinator.resolve(
+      clean,
+      currentSurahNumber: nucleusContext.currentSurahNumber,
+      currentAyahNumber: nucleusContext.currentAyahNumber,
+    );
     final oldStatus = _activeTask?.status;
     if (resumeFrom == null &&
         (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
