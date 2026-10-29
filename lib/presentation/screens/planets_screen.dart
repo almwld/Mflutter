@@ -26,7 +26,7 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
     _CelestialBody(name: 'زحل', symbol: '♄', kind: 'عملاق غازي', distanceAu: 9.537, diameterKm: 116460, gravity: 10.44, day: 'نحو 10 ساعات و33 دقيقة', year: '29.45 سنة أرضية', description: 'يشتهر بنظام حلقاته الواسع المكوّن أساسًا من جليد وجسيمات صخرية.', color: Color(0xFFE6C98E)),
     _CelestialBody(name: 'أورانوس', symbol: '⛢', kind: 'عملاق جليدي', distanceAu: 19.19, diameterKm: 50724, gravity: 8.69, day: 'نحو 17 ساعة و14 دقيقة', year: '84 سنة أرضية تقريبًا', description: 'عملاق جليدي يميل محور دورانه بشدة، لذلك تبدو فصوله طويلة وغير مألوفة.', color: Color(0xFF70C7D5)),
     _CelestialBody(name: 'نبتون', symbol: '♆', kind: 'عملاق جليدي', distanceAu: 30.07, diameterKm: 49244, gravity: 11.15, day: 'نحو 16 ساعة', year: '164.8 سنة أرضية', description: 'أبعد الكواكب الثمانية عن الشمس، ويشتهر برياح شديدة السرعة في غلافه الجوي.', color: Color(0xFF4569D4)),
-    _CelestialBody(name: 'القمر', symbol: '☾', kind: 'قمر طبيعي', distanceAu: 0.00257, diameterKm: 3475, gravity: 1.62, day: 'نحو 27.3 يومًا للدوران النجمي', year: 'يدور حول الأرض في نحو 27.3 يومًا', description: 'القمر الطبيعي للأرض؛ متوسط المسافة بين مركزيه ومركز الأرض نحو 384,400 كيلومتر.', color: Color(0xFFBFC7D5)),
+    _CelestialBody(name: 'القمر', symbol: '☾', kind: 'قمر طبيعي', distanceAu: 1.0, diameterKm: 3475, gravity: 1.62, day: 'نحو 27.3 يومًا للدوران النجمي', year: 'يدور حول الأرض في نحو 27.3 يومًا', description: 'القمر الطبيعي للأرض؛ متوسط المسافة بين مركزيه ومركز الأرض نحو 384,400 كيلومتر.', color: Color(0xFFBFC7D5)),
   ];
 
   @override
@@ -191,6 +191,8 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
             _metric(context, 'التصنيف', body.kind),
             _metric(context, 'القطر التقريبي', '${body.diameterKm.toStringAsFixed(0)} كم'),
             _metric(context, 'متوسط البعد عن الشمس', body.distanceAu == 0 ? 'مركز النظام الشمسي' : '${body.distanceAu} وحدة فلكية'),
+            if (body.kind == 'قمر طبيعي')
+              _metric(context, 'متوسط البعد عن الأرض', '384,400 كم تقريبًا'),
             _metric(context, 'الجاذبية السطحية التقريبية', '${body.gravity} م/ث²'),
             _metric(context, 'الدوران', body.day),
             _metric(context, 'السنة / المدار', body.year),
