@@ -77,7 +77,7 @@ class AgentChatProvider extends ChangeNotifier {
 
   AgentTask? get activeTask => _activeTask;
   List<String> get messages => List.unmodifiable(_messages);
-  bool get paused => _paused;
+  bool get paused => _paused || _activeTask?.status == TaskStatus.paused;
   bool get initialized => _initialized;
   String? get initializationError => _initializationError;
   String? get selectedAgent => _selectedAgent;
@@ -364,6 +364,13 @@ class AgentChatProvider extends ChangeNotifier {
     if (task == null ||
         (task.status != TaskStatus.running &&
             task.status != TaskStatus.paused)) {
+      return;
+    }
+    // A restored checkpoint has paused task status but no live execution loop.
+    // Route that case through the resumable runner instead of merely flipping
+    // a boolean that no loop is waiting on.
+    if (task.status == TaskStatus.paused && !_paused) {
+      unawaited(resumeTask());
       return;
     }
     _paused = !_paused;
