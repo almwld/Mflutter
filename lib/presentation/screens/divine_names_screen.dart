@@ -9,8 +9,6 @@ class DivineNamesScreen extends StatefulWidget {
 
   @override
   State<DivineNamesScreen> createState() => _DivineNamesScreenState();
-
-;
 }
 
 class _DivineNamesScreenState extends State<DivineNamesScreen> {
