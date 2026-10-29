@@ -327,7 +327,10 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
 
   void _showDetails(OccultEntry entry) {
     // Count a distinct knowledge topic only when the user opens its details.
-    unawaited(AchievementsService.recordScienceExplored(entry.id));
+    unawaited(AchievementsService.recordScienceExplored(
+      entry.id,
+      legacyName: entry.name,
+    ));
     final colors = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
