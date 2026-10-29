@@ -70,6 +70,9 @@ class TemplatePayloadSchema {
     if (rawSubtitle != null && rawSubtitle is! String) {
       errors.add('حقل subtitle يجب أن يكون نصًا.');
     }
+    if (metadata['generated_at'] != null && metadata['generated_at'] is! String) {
+      errors.add('metadata.generated_at يجب أن يكون نص ISO-8601 عند توفيره.');
+    }
     final rawSource = payload['source'] ?? metadata['source'];
     final source = rawSource is String && rawSource.trim().isNotEmpty
         ? rawSource.trim()
@@ -93,7 +96,10 @@ class TemplatePayloadSchema {
     if (rawBlocks is! List) {
       errors.add('حقل blocks مطلوب ويجب أن يكون قائمة.');
     } else {
-      for (var index = 0; index < rawBlocks.length; index++) {
+      if (rawBlocks.length > 300) {
+        errors.add('عدد الكتل تجاوز الحد الأقصى 300 كتلة في الحمولة الواحدة.');
+      }
+      for (var index = 0; index < rawBlocks.length && index < 300; index++) {
         final item = rawBlocks[index];
         if (item is! Map) {
           errors.add('الكتلة رقم ${index + 1} ليست كائنًا.');
@@ -134,6 +140,7 @@ class TemplatePayloadSchema {
         version == 1 &&
         rawVersion is int &&
         rawBlocks is List &&
+        rawBlocks.length <= 300 &&
         (rawTitle == null || rawTitle is String) &&
         (rawDomain == null || rawDomain is String) &&
         (rawSubtitle == null || rawSubtitle is String) &&
@@ -234,7 +241,7 @@ abstract final class TemplateBlockSchema {
         break;
       case 'list':
         final items = block['items'];
-        if (items is! List || items.any((item) => item is! String)) {
+        if (items is! List || items.length > 500 || items.any((item) => item is! String)) {
           errors.add('items يجب أن تكون قائمة من النصوص.');
         }
         break;
@@ -273,7 +280,7 @@ abstract final class TemplateBlockSchema {
         break;
       case 'timeline_block':
         final events = block['events'];
-        if (events is! List || events.isEmpty || events.any((event) =>
+        if (events is! List || events.isEmpty || events.length > 200 || events.any((event) =>
             event is! Map || event['label'] is! String ||
             (event['date'] != null && event['date'] is! String) ||
             (event['details'] != null && event['details'] is! String))) {
@@ -283,11 +290,11 @@ abstract final class TemplateBlockSchema {
       case 'relation_graph_block':
         final nodes = block['nodes'];
         final edges = block['edges'];
-        if (nodes is! List || nodes.isEmpty || nodes.any((node) =>
+        if (nodes is! List || nodes.isEmpty || nodes.length > 250 || nodes.any((node) =>
             node is! Map || node['id'] is! String || node['label'] is! String)) {
           errors.add('nodes يجب أن تحتوي معرّفًا واسمًا نصيين لكل عقدة.');
         }
-        if (edges is! List || edges.any((edge) =>
+        if (edges is! List || edges.length > 500 || edges.any((edge) =>
             edge is! Map || edge['from'] is! String || edge['to'] is! String)) {
           errors.add('edges يجب أن تربط عقدًا باستخدام from وto نصيين.');
         }
