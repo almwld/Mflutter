@@ -49,6 +49,8 @@ class AgentUiCoordinator {
         query: rawQuery,
         payload: {
           'analysis_query': rawQuery,
+          'first_word': query.contains('الحياه والموت') ? 'الحياة' : null,
+          'second_word': query.contains('الحياه والموت') ? 'الموت' : null,
           'source': 'local_quran_corpus',
           'requires_verified_counts': true,
         },
