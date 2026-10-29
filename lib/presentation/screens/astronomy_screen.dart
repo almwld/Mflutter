@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../../services/astronomy_calculations_service.dart';
+
 /// Offline astronomy calculators; lunar phase values are approximate.
 class AstronomyScreen extends StatefulWidget {
   const AstronomyScreen({super.key});
@@ -63,6 +65,9 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final age = _moonAge(_date);
+    final solar = AstronomyCalculationsService.solarCoordinates(
+      DateTime.utc(_date.year, _date.month, _date.day, 12),
+    );
     final illumination = (1 - math.cos(2 * math.pi * age / 29.530588853)) / 2;
     final years = math.sqrt(_semiMajorAxis * _semiMajorAxis * _semiMajorAxis);
     return Scaffold(
@@ -103,6 +108,24 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
         Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            Text('إحداثيات الشمس التقريبية', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('اليوم المرجعي عند 12:00 UTC: ${solar.julianDay.toStringAsFixed(5)} يوم يولياني',
+              textDirection: TextDirection.rtl),
+            _fact(context, 'الطول الكسوفي الظاهري', '${solar.eclipticLongitudeDegrees.toStringAsFixed(3)}°'),
+            _fact(context, 'المطلع المستقيم', '${solar.rightAscensionDegrees.toStringAsFixed(3)}°'),
+            _fact(context, 'الميل السماوي', '${solar.declinationDegrees.toStringAsFixed(3)}°'),
+            _fact(context, 'معادلة الزمن', '${solar.equationOfTimeMinutes.toStringAsFixed(2)} دقيقة'),
+            const SizedBox(height: 5),
+            Text('حساب شمسي منخفض الدقة للتعلم فقط؛ لا يصلح للملاحة أو توجيه التلسكوبات أو توقيت الكسوفات. مصدر الطريقة: معادلات شمسية تقريبية من عائلة NOAA/Meeus.',
+              textDirection: TextDirection.rtl,
+              style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.65))),
+          ],
+        ))),
+        const SizedBox(height: 12),
+        Card(child: Padding(padding: const EdgeInsets.all(18), child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
             Text('زمن انتقال الضوء', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             const Text('أدخل المسافة عن الشمس بوحدات فلكية؛ يستخدم الحساب 8.316746 دقيقة لكل وحدة فلكية.', textDirection: TextDirection.rtl),
@@ -119,7 +142,7 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
               });
             }),
             const SizedBox(height: 8),
-            Text(_distanceAu * 8.316746 >= 60
+            if (_distanceError == null) Text(_distanceAu * 8.316746 >= 60
               ? 'زمن الضوء: ${(_distanceAu * 8.316746 / 60).toStringAsFixed(2)} ساعة تقريبًا'
               : 'زمن الضوء: ${(_distanceAu * 8.316746).toStringAsFixed(2)} دقيقة تقريبًا',
               style: theme.textTheme.titleMedium, textDirection: TextDirection.rtl),
@@ -145,7 +168,7 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
               });
             }),
             const SizedBox(height: 8),
-            Text('الفترة المدارية النظرية: ${years.toStringAsFixed(3)} سنة أرضية', style: theme.textTheme.titleMedium, textDirection: TextDirection.rtl),
+            if (_axisError == null) Text('الفترة المدارية النظرية: ${years.toStringAsFixed(3)} سنة أرضية', style: theme.textTheme.titleMedium, textDirection: TextDirection.rtl),
             Text('تقريب لجسم كتلته مهملة مقارنة بالشمس ومداره حولها؛ لا يشمل اضطرابات الكواكب.', style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.65)), textDirection: TextDirection.rtl),
           ],
         ))),
