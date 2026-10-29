@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../services/astronomy_calculations_service.dart';
+import '../../services/achievements_service.dart';
 
 /// Offline astronomy calculators; lunar phase values are approximate.
 class AstronomyScreen extends StatefulWidget {
@@ -18,6 +20,12 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
   double _semiMajorAxis = 1;
   String? _distanceError;
   String? _axisError;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(AchievementsService.recordScienceExplored('astronomy'));
+  }
 
   @override
   void dispose() { _distance.dispose(); _axis.dispose(); super.dispose(); }
