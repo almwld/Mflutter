@@ -11,6 +11,7 @@ class TemplatePayloadSchema {
     required this.title,
     required this.blocks,
     this.domain,
+    this.source,
     this.emptyMessage = 'لا توجد بيانات موثوقة لعرضها بعد.',
     this.validationErrors = const <String>[],
     this.envelopeValid = true,
@@ -20,6 +21,7 @@ class TemplatePayloadSchema {
   final int version;
   final String title;
   final String? domain;
+  final String? source;
   final List<Map<String, dynamic>> blocks;
   final String emptyMessage;
   final List<String> validationErrors;
@@ -51,6 +53,16 @@ class TemplatePayloadSchema {
     if (rawDomain != null && rawDomain is! String) {
       errors.add('حقل domain يجب أن يكون نصًا.');
     }
+    final rawSource = payload['source'];
+    final source = rawSource is String && rawSource.trim().isNotEmpty
+        ? rawSource.trim()
+        : null;
+    if (rawSource != null && rawSource is! String) {
+      errors.add('حقل source يجب أن يكون نصًا.');
+    } else if (rawSource is String && rawSource.trim().isEmpty) {
+      errors.add('حقل source لا يجوز أن يكون نصًا فارغًا عند توفيره.');
+    }
+
     final rawEmptyMessage = payload['empty_message'];
     final emptyMessage = rawEmptyMessage is String && rawEmptyMessage.trim().isNotEmpty
         ? rawEmptyMessage
@@ -70,6 +82,10 @@ class TemplatePayloadSchema {
           errors.add('الكتلة رقم ${index + 1} ليست كائنًا.');
           continue;
         }
+        if (item.keys.any((key) => key is! String)) {
+          errors.add('الكتلة رقم ${index + 1} تحتوي مفاتيح غير نصية.');
+          continue;
+        }
         final block = Map<String, dynamic>.from(item);
         final blockErrors = TemplateBlockSchema.validate(block);
         if (blockErrors.isEmpty) {
@@ -86,12 +102,14 @@ class TemplatePayloadSchema {
         rawBlocks is List &&
         (rawTitle == null || rawTitle is String) &&
         (rawDomain == null || rawDomain is String) &&
+        (rawSource == null || (rawSource is String && rawSource.trim().isNotEmpty)) &&
         (rawEmptyMessage == null || rawEmptyMessage is String);
     return TemplatePayloadSchema(
       templateId: templateId.isEmpty ? 'generic_template' : templateId,
       version: version < 0 ? 0 : version,
       title: title,
       domain: domain,
+      source: source,
       blocks: List<Map<String, dynamic>>.unmodifiable(blocks),
       emptyMessage: emptyMessage,
       validationErrors: List<String>.unmodifiable(errors),
@@ -283,6 +301,7 @@ class UniversalTemplateRenderer extends StatelessWidget {
       version: schema.version,
       title: schema.title.isEmpty ? (fallbackTitle ?? '') : schema.title,
       domain: schema.domain,
+      source: schema.source,
       blocks: schema.blocks,
       emptyMessage: schema.emptyMessage,
       validationErrors: schema.validationErrors,
@@ -307,7 +326,11 @@ class _SchemaDocument extends StatelessWidget {
           padding: EdgeInsets.all(wide ? 24 : 16),
           children: <Widget>[
             if (schema.title.isNotEmpty || schema.domain != null)
-              _GlassHeader(title: schema.title, subtitle: schema.domain),
+              _GlassHeader(
+                title: schema.title,
+                subtitle: schema.domain,
+                source: schema.source,
+              ),
             if (schema.validationErrors.isNotEmpty)
               TemplateEmptyState(
                 message: 'تم استبعاد بيانات غير صالحة من العرض:\n${schema.validationErrors.join('\n')}',
@@ -327,10 +350,11 @@ class _SchemaDocument extends StatelessWidget {
 }
 
 class _GlassHeader extends StatelessWidget {
-  const _GlassHeader({required this.title, this.subtitle});
+  const _GlassHeader({required this.title, this.subtitle, this.source});
 
   final String title;
   final String? subtitle;
+  final String? source;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -355,6 +379,25 @@ class _GlassHeader extends StatelessWidget {
               Text(subtitle!,
                   textDirection: TextDirection.rtl,
                   style: Theme.of(context).textTheme.bodySmall),
+            ],
+            if (source != null && source!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.verified_outlined,
+                      size: 14, color: MudabbirDesignTokens.textMuted),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      'المصدر: $source',
+                      textDirection: TextDirection.rtl,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: MudabbirDesignTokens.textMuted,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ],
         ),
