@@ -43,6 +43,7 @@ import 'community_screen.dart';
 import 'challenges_screen.dart';
 import 'leaderboard_screen.dart';
 import 'planets_screen.dart';
+import 'astronomy_screen.dart';
 import 'letters_screen.dart';
 import 'advanced_tech_screen.dart';
 
@@ -526,7 +527,8 @@ class _MoreScreenState extends State<MoreScreen> {
       ('تحليل أبجد', Icons.functions_rounded, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadScreen())),
       ('العناصر الرمزية', Icons.category_outlined, const ElementsScreen()),
       ('الأعداد الرمزية', Icons.pin_outlined, const NumbersScreen()),
-      ('الأبراج الرمزية', Icons.public_outlined, const ZodiacScreen()),
+      ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('علم الفلك', Icons.nights_stay_rounded, const AstronomyScreen()),
       ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
       ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
