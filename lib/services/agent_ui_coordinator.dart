@@ -131,7 +131,11 @@ class AgentUiCoordinator {
       'abjad_template',
       'agent_template',
     };
-    if (!supportedTemplates.contains(templateId) || blocks.isEmpty) {
+    if (!supportedTemplates.contains(templateId.trim()) ||
+        title.trim().isEmpty ||
+        domain.trim().isEmpty ||
+        source.trim().isEmpty ||
+        blocks.isEmpty) {
       return null;
     }
     return _intent(
