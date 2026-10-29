@@ -161,6 +161,8 @@ and a `blocks` list. Optional `title`, `domain`, and `empty_message` values
 must be strings when present. Unsupported versions and invalid envelope fields
 fail closed to an explicit validation state rather than silently rendering.
 
+Optional `source` metadata must be a non-empty string when supplied. The renderer preserves it and displays it in the template header so the user can see the declared provenance. Source labels are descriptive metadata, not independent proof that a claim is true. Block and nested-block maps with non-string keys are rejected safely instead of causing a parser exception.
+
 Atomic blocks are validated by type before they reach widgets:
 - `text` and `quran_verse`: non-empty text.
 - `metric`: a non-null primitive value (string, number, or boolean).
