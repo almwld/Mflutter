@@ -39,13 +39,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   ]
 }
 
-الكتل المتاحة فقط: text, metric, section, list, table, bar_chart, status,
-hero_header_block, timeline_block, relation_graph_block, code_math_block,
-audio_frequency_block, spatial_map_block, star_map_block, vector_space_block,
-quantum_particle_block, interactive_card_block.
+في الحمولة التي تولّدها بنفسك استخدم فقط كتل العرض النصية الآمنة:
+text, section, list, hero_header_block, interactive_card_block.
 استخدم شكل {type,title,data}. لا تضف JavaScript أو كود واجهة أو مفاتيح أسلوب حرة.
-لا تُنشئ أرقامًا أو إحصاءات أو حالات تشغيل أو تواريخ أو مراجع مصدرية من عندك؛
-لا تعرض metric/table/chart/status أو إحداثيات إلا إذا كانت قيمها صريحة في الأدلة المقدمة.
+الكتل الرقمية والرسوم والخرائط والحالة (metric, table, bar_chart, status,
+timeline_block, relation_graph_block, code_math_block, audio_frequency_block,
+spatial_map_block, star_map_block, vector_space_block, quantum_particle_block)
+محجوزة لمعالجات التطبيق والخدمات المحلية التي تملك بياناتها؛ لا تُصدرها أنت.
+لا تُنشئ أرقامًا أو إحصاءات أو حالات تشغيل أو تواريخ أو مراجع مصدرية من عندك.
 عند غياب الأدلة، استخدم نصًا يوضح أن البيانات غير متاحة ولا تخترع قيمة.
 أي خريطة نجوم أو فضاء متجهي أو شبكة جسيمات هي رسم توضيحي فقط ما لم توفر خدمة
 حقيقية بياناتها؛ لا تدّعِ رصدًا فلكيًا حيًا أو تشابكًا كميًا حقيقيًا أو فضاء 3D حقيقيًا.
