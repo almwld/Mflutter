@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/presentation/templates/components/block_event_bus.dart';
-import '../lib/presentation/templates/components/block_registry.dart';
-import '../lib/presentation/templates/components/metric_card_block.dart';
-import '../lib/presentation/templates/components/spatial_map_block.dart';
-import '../lib/presentation/templates/universal_template_renderer.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/block_event_bus.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/block_registry.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/metric_card_block.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/spatial_map_block.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/universal_template_renderer.dart';
 
 void main() {
   group('Advanced component library', () {
