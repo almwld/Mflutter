@@ -931,3 +931,15 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `CompareScreen` now normalizes hamza-on-waw/yaa like the shared lexical search services before computing unique-word overlap, so comparisons and searches apply the same variant handling.
+
+
+## Knowledge and cosmic interface implementation — 2026-10-29
+
+- `PlanetsScreen` is now an interactive local Solar System reference with search/category filters, rounded physical facts for the Sun, eight planets and Earth's Moon, per-body details, and a mass-to-weight calculator using the selected body's surface gravity. It distinguishes the Moon's distance from Earth from its approximate solar distance and labels values as rounded educational averages.
+- Added `AstronomyScreen` and linked it from More. It calculates an approximate lunar phase/illumination for a selected date, light-travel time from an AU distance, and an approximate orbital period using Kepler's third law. It explicitly does not claim live ephemerides, local rise/set times, or precise lunar predictions.
+- `ZodiacScreen` now lets the user select a birth date to determine the conventional Western tropical sign, browse all twelve signs, and read the traditional element/quality metadata. It distinguishes the birthday result from the separately browsed sign and explains that date boundaries are approximate and astrology is not evidence-based personality or prediction.
+- `AbjadProvider` and `AbjadCalculatorScreen` now expose both the traditional large Abjad table and the project's alphabetical letter-value table. The screen recalculates against the selected table and identifies derived planet/zodiac/element mappings as symbolic conventions rather than scientific findings.
+- `MiraclesScreen` retains reproducible counts from the validated local Quran asset and now compares two user-supplied Arabic words, with counts and relative bars computed from the same normalization pipeline.
+- `CosmicServicesScreen` now routes astronomy to the working offline astronomy tools, connects the existing local stereo-tone generator with play/stop and clear non-therapeutic labeling, and provides a small qubit/Born-rule probability demonstration instead of presenting the previous placeholder card as a working physical simulator. Existing local dream notes, time capsules, and gaze-tracking route are retained.
+- `OccultExplorerScreen` search now normalizes Arabic diacritics/orthographic variants and searches entry names, descriptions, categories, source labels, and structured properties. Exploration achievements use stable entry IDs.
+- No tests, analyzer, formatter, or Android build were run during this implementation slice.
