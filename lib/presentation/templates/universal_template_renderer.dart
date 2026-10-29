@@ -83,6 +83,7 @@ class TemplatePayloadSchema {
     final envelopeValid = templateId.isNotEmpty &&
         version == 1 &&
         rawVersion is int &&
+        rawBlocks is List &&
         (rawTitle == null || rawTitle is String) &&
         (rawDomain == null || rawDomain is String) &&
         (rawEmptyMessage == null || rawEmptyMessage is String);
