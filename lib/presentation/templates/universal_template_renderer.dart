@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
+import 'components/block_registry.dart';
 
 /// Versioned payload contract shared by domain services and UI templates.
 /// Invalid envelopes fail closed; malformed blocks are excluded and reported.
@@ -649,6 +650,17 @@ class _AtomicBlock extends StatelessWidget {
     final type = _string('type');
     final title = _string('title');
     final theme = Theme.of(context);
+    final componentData = Map<String, dynamic>.fromEntries(
+      block.entries.where(
+        (entry) => entry.key != 'type' && entry.key != 'title',
+      ),
+    );
+    final registeredComponent = BlockRegistry.buildBlock(
+      type: type,
+      title: title,
+      data: componentData,
+    );
+    if (registeredComponent != null) return registeredComponent;
     switch (type) {
       case 'text':
         final text = _string('text');
