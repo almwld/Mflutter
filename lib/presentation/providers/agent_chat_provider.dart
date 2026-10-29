@@ -88,6 +88,31 @@ class AgentChatProvider extends ChangeNotifier {
     _pendingUiIntent = null;
     _notifySafely();
   }
+
+  /// Publishes a presentation schema built from trusted domain-service results.
+  /// This is the hand-off point for Quran, astronomy, abjad, and nucleus services.
+  /// It intentionally accepts prepared values and performs no data fabrication.
+  bool presentSchemaPayload({
+    required String templateId,
+    required String title,
+    required String domain,
+    required List<Map<String, dynamic>> blocks,
+    required String source,
+    String? originalQuery,
+  }) {
+    final intent = _uiCoordinator.resolveSchemaPayload(
+      templateId: templateId,
+      title: title,
+      domain: domain,
+      blocks: blocks,
+      source: source,
+      originalQuery: originalQuery,
+    );
+    if (intent == null) return false;
+    _pendingUiIntent = intent;
+    _notifySafely();
+    return true;
+  }
   List<String> get messages => List.unmodifiable(_messages);
   bool get paused => _paused || _activeTask?.status == TaskStatus.paused;
   bool get initialized => _initialized;
