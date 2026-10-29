@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../services/astronomy_calculations_service.dart';
+import '../../services/zodiac_astronomy_guide.dart';
+
 /// Historical overview of the twelve signs used in Western tropical astrology.
 /// Date ranges are conventional approximations, not astronomical calculations.
 class ZodiacScreen extends StatefulWidget {
@@ -101,6 +104,46 @@ class _ZodiacScreenState extends State<ZodiacScreen> {
             ),
           ],
         ))),
+        const SizedBox(height: 12),
+        Builder(builder: (context) {
+          final noonUtc = DateTime.utc(_birthDate.year, _birthDate.month, _birthDate.day, 12);
+          final solar = AstronomyCalculationsService.solarCoordinates(noonUtc);
+          final calculatedSector = ZodiacAstronomyGuide.tropicalSignFromLongitude(
+            solar.eclipticLongitudeDegrees,
+          );
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('الفلك الرصدي والتنجيم: فرق المنهج',
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text(ZodiacAstronomyGuide.astronomyExplanation,
+                    textDirection: TextDirection.rtl, textAlign: TextAlign.right),
+                  const SizedBox(height: 6),
+                  Text(ZodiacAstronomyGuide.astrologyExplanation,
+                    textDirection: TextDirection.rtl, textAlign: TextAlign.right),
+                  const Divider(height: 22),
+                  Text('حساب شمسي تقديري للتاريخ المختار',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 5),
+                  Text('عند 12:00 UTC تقريبًا: طول الشمس الكسوفي ${solar.eclipticLongitudeDegrees.toStringAsFixed(2)}°، والقطاع الاستوائي الحسابي: $calculatedSector.',
+                    textDirection: TextDirection.rtl, textAlign: TextAlign.right),
+                  const SizedBox(height: 5),
+                  Text(ZodiacAstronomyGuide.zodiacConventionNote,
+                    textDirection: TextDirection.rtl, textAlign: TextAlign.right,
+                    style: theme.textTheme.bodySmall),
+                  const SizedBox(height: 5),
+                  Text(ZodiacAstronomyGuide.calculationLimit,
+                    textDirection: TextDirection.rtl, textAlign: TextAlign.right,
+                    style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurface.withOpacity(.65))),
+                ],
+              ),
+            ),
+          );
+        }),
         const SizedBox(height: 12),
         Wrap(spacing: 8, runSpacing: 8, children: _signs.map((sign) => SizedBox(
           width: (MediaQuery.sizeOf(context).width - 48) / (MediaQuery.sizeOf(context).width >= 700 ? 3 : 2),
