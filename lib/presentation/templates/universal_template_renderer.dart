@@ -99,6 +99,7 @@ class TemplatePayloadSchema {
 
     final rawBlocks = payload['blocks'];
     final blocks = <Map<String, dynamic>>[];
+    final seenBlockIds = <String>{};
     if (rawBlocks is! List) {
       errors.add('حقل blocks مطلوب ويجب أن يكون قائمة.');
     } else {
@@ -121,11 +122,19 @@ class TemplatePayloadSchema {
           continue;
         }
         final blockErrors = TemplateBlockSchema.validate(block);
-        if (blockErrors.isEmpty) {
-          blocks.add(block);
-        } else {
+        if (blockErrors.isNotEmpty) {
           errors.addAll(blockErrors.map((error) => 'الكتلة رقم ${index + 1}: $error'));
+          continue;
         }
+        final rawId = block['id'];
+        final blockId = rawId is String && rawId.trim().isNotEmpty
+            ? rawId.trim()
+            : '${block['type']}-$index';
+        if (!seenBlockIds.add(blockId)) {
+          errors.add('الكتلة رقم ${index + 1}: معرّف id مكرر داخل اللوحة ($blockId).');
+          continue;
+        }
+        blocks.add(block);
       }
     }
 
