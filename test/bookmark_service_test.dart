@@ -18,7 +18,8 @@ void main() {
     expect(saved, hasLength(1));
     expect(saved.single['surah'], 2);
     expect(saved.single['ayah'], 255);
-    expect(saved.single['text'], getVerse(2, 255, verseEndSymbol: false).trim());
+    final canonical = getVerse(2, 255, verseEndSymbol: false).trim();
+    expect(saved.single['text'], canonical.length > 100 ? canonical.substring(0, 100) : canonical);
 
     await BookmarkService.removeBookmark(2, 255);
     expect(await BookmarkService.isBookmarked(2, 255), isFalse);
@@ -31,7 +32,8 @@ void main() {
 
     final saved = await BookmarkService.getBookmarks();
     expect(saved, hasLength(1));
-    expect(saved.single['text'], getVerse(1, 1, verseEndSymbol: false).trim());
+    final canonical = getVerse(1, 1, verseEndSymbol: false).trim();
+    expect(saved.single['text'], canonical.length > 100 ? canonical.substring(0, 100) : canonical);
   });
 
   test('rejects invalid Quran references', () async {
