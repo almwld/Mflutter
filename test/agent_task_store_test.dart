@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mudabbir_al_asrar/domain/entities/agent_task.dart';
 import 'package:mudabbir_al_asrar/services/agent_task_store.dart';
+import 'package:mudabbir_al_asrar/presentation/providers/agent_chat_provider.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
