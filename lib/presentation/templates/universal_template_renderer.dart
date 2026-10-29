@@ -301,7 +301,7 @@ abstract final class TemplateBlockSchema {
                 !(cell == null || cell is String || cell is bool ||
                     (cell is num && cell.isFinite))))) {
           errors.add('rows يجب أن تكون قائمة صفوف بخلايا بسيطة.');
-        } else if (columns is List && rows is List &&
+        } else if (columns is List &&
             rows.whereType<List>().any((row) => row.length != columns.length)) {
           errors.add('عدد خلايا كل صف يجب أن يطابق عدد الأعمدة.');
         }
