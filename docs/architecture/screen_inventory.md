@@ -954,3 +954,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - Knowledge-exploration achievement records now migrate the previously stored display-name key to the stable entry ID when a user opens that topic, preventing old progress from being counted twice after the identifier change.
+
+
+- `ScienceConstants` descriptions for planets and astronomy now use physical/orbital study language; zodiac, elements, abjad, and related historical categories are explicitly framed as cultural or symbolic traditions rather than scientifically validated influence or prediction claims.
