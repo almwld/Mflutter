@@ -40,6 +40,7 @@ void main() {
     test('does not classify unsupported block types as renderable', () {
       final schema = TemplatePayloadSchema.fromMap({
         'ui_template': 'generic_template',
+        'schema_version': 1,
         'blocks': [
           {'type': 'invented_chart', 'value': 99},
           {'type': 'metric', 'title': 'Verified', 'value': 7},
