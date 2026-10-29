@@ -34,6 +34,7 @@ class QuranicSearchEngine {
     final signature = Object.hashAll(
       verses.map((verse) => Object.hash(
         verse['surah'],
+        verse['surah_number'],
         verse['ayah'],
         verse['text'],
       )),
