@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mudabbir_al_asrar/presentation/templates/components/block_event_bus.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/celestial_engine.dart';
+import 'package:mudabbir_al_asrar/presentation/templates/components/star_tracker_block.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/components/block_registry.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/components/metric_card_block.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/components/spatial_map_block.dart';
@@ -136,6 +138,30 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('تم تحديد العنصر: point-2'), findsOneWidget);
+    });
+
+
+    test('local sidereal time is normalized and horizontal coordinates are finite', () {
+      final utc = DateTime.utc(2026, 10, 29, 18);
+      final sidereal = CelestialEngine.localSiderealDegrees(utc, 44.2);
+      expect(sidereal, inInclusiveRange(0.0, 360.0));
+      final horizontal = CelestialEngine.toHorizontal(
+        star: CelestialEngine.brightStars.first,
+        utc: utc,
+        latitudeDegrees: 15.35,
+        longitudeDegrees: 44.2,
+      );
+      expect(horizontal.altitudeDegrees.isFinite, isTrue);
+      expect(horizontal.azimuthDegrees, inInclusiveRange(0.0, 360.0));
+    });
+
+    test('registry resolves star tracker to the sensor-guided block', () {
+      final widget = BlockRegistry.buildBlock(
+        type: 'star_tracker_block',
+        title: 'مرصد محلي',
+        data: const <String, dynamic>{'latitude': 15.35, 'longitude': 44.2},
+      );
+      expect(widget, isA<StarTrackerBlock>());
     });
 
     test('event bus delivers typed events and closes safely', () async {
