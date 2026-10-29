@@ -928,3 +928,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AgentKnowledgeService.initialize` now reuses a successfully initialized index and preserves single-flight ordering for concurrent callers. Repeated searches no longer append another full Quran corpus to the in-memory knowledge list each time.
+
+
+- `CompareScreen` now normalizes hamza-on-waw/yaa like the shared lexical search services before computing unique-word overlap, so comparisons and searches apply the same variant handling.
