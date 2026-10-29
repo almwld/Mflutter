@@ -271,7 +271,8 @@ abstract final class TemplateBlockSchema {
         }
         if (rows is! List || rows.length > 500 || rows.any((row) =>
             row is! List || row.length > 50 || row.any((cell) =>
-                !(cell == null || cell is String || cell is num || cell is bool)))) {
+                !(cell == null || cell is String || cell is bool ||
+                    (cell is num && cell.isFinite))))) {
           errors.add('rows يجب أن تكون قائمة صفوف بخلايا بسيطة.');
         } else if (columns is List && rows is List &&
             rows.whereType<List>().any((row) => row.length != columns.length)) {
@@ -280,8 +281,9 @@ abstract final class TemplateBlockSchema {
         break;
       case 'bar_chart':
         final items = block['items'];
-        if (items is! List || items.isEmpty || items.any((item) =>
-            item is! Map || item['label'] is! String || item['value'] is! num)) {
+        if (items is! List || items.isEmpty || items.length > 500 || items.any((item) =>
+            item is! Map || item['label'] is! String || item['value'] is! num ||
+            (item['value'] is num && !(item['value'] as num).isFinite))) {
           errors.add('items يجب أن تحتوي عناصر لها label نصي وvalue رقمي.');
         }
         break;
