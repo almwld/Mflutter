@@ -46,7 +46,6 @@ void main() {
   });
 
   testWidgets('Arabic search ignores hamza variants and tashkeel', (tester) async {
-    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
     final search = find.byType(TextField);
 
@@ -63,7 +62,6 @@ void main() {
   });
 
   testWidgets('More screen search filters tools and can be cleared', (tester) async {
-    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
     final search = find.byType(TextField);
