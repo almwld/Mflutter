@@ -143,9 +143,10 @@ class AbjadCalculator {
 
   /// حساب جميع أنواع الجمل
   static AbjadResult calculateAll(String text) {
-    final kabir = calculateKabir(text);
-    final saghir = calculateSaghir(text);
-    final wasat = calculateWasat(text);
+    final normalizedText = normalizeArabic(text);
+    final kabir = calculateKabir(normalizedText);
+    final saghir = calculateSaghir(normalizedText);
+    final wasat = calculateWasat(normalizedText);
     final element = _getElement(kabir);
     final planet = _getPlanet(kabir);
     final zodiac = _getZodiac(kabir);
@@ -153,7 +154,7 @@ class AbjadCalculator {
     final color = _getColor(kabir);
 
     return AbjadResult(
-      text: text,
+      text: normalizedText,
       kabir: kabir,
       saghir: saghir,
       wasat: wasat,
@@ -198,7 +199,7 @@ class AbjadCalculator {
   // دوال مساعدة
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// الحصول على العنصر
+  /// قيمة رمزية اصطلاحية مشتقة من المجموع، وليست وصفًا علميًا للنص.
   static ElementType _getElement(int value) {
     if (value < 1) return ElementType.unknown;
     const order = [
@@ -253,7 +254,7 @@ class AbjadCalculator {
     return AbjadConstants.divineNames[index];
   }
 
-  /// الحصول على اللون
+  /// لون رمزي اصطلاحي فقط؛ لا يمثل خاصية فيزيائية أو قياسًا علميًا.
   static String _getColor(int value) {
     if (value < 1) return 'غير محدد';
     final index = (value - 1) % 7;
