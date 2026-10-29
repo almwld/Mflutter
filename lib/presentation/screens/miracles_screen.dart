@@ -100,7 +100,7 @@ class _MiraclesScreenState extends State<MiraclesScreen> {
     return Scaffold(
       backgroundColor: MudabbirDesignTokens.cosmicBackground,
       appBar: AppBar(
-        title: const Text('التحليل العددي للنص'),
+        title: const Text('الإعجاز والتحليل العددي للنص'),
         backgroundColor: MudabbirDesignTokens.cosmicDeepBackground,
         foregroundColor: MudabbirDesignTokens.goldBright,
         actions: [
