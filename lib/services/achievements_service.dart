@@ -103,7 +103,10 @@ class AchievementsService {
   }
 
   /// Counts distinct science topics whose detail view the user opened.
-  static Future<void> recordScienceExplored(String scienceId) {
+  static Future<void> recordScienceExplored(
+    String scienceId, {
+    String? legacyName,
+  }) {
     final normalizedId = scienceId.trim();
     if (normalizedId.isEmpty) return Future<void>.value();
     return _enqueueEvent(() async {
@@ -113,6 +116,10 @@ class AchievementsService {
             (preferences.getStringList('mudabbir_explored_sciences') ??
                     const <String>[])
                 .toSet();
+        final previousName = legacyName?.trim();
+        if (previousName != null && previousName.isNotEmpty) {
+          explored.remove(previousName);
+        }
         explored.add(normalizedId);
         if (!await preferences.setStringList(
           'mudabbir_explored_sciences',
