@@ -150,6 +150,7 @@ class AgentChatProvider extends ChangeNotifier {
           .map((a) => {
                 'id': a.id.toString(),
                 'surah': a.surahName,
+                'surah_number': a.surahNumber.toString(),
                 'ayah': a.ayahNumber.toString(),
                 'text': a.text,
               })
@@ -230,67 +231,83 @@ class AgentChatProvider extends ChangeNotifier {
     ).firstMatch(normalized);
     if (countMatch != null) {
       final requested = countMatch.group(1) ?? '';
-      final canonical = await QuranLoaderService.loadAllAyahs();
+      try {
+        final canonical = await QuranLoaderService.loadAllAyahs();
+        // Index only the validated local corpus. The search engine returns null
+        // when it cannot verify a single-token query from this index.
+        QuranicSearchEngine.indexVerses(canonical
+            .map((ayah) => <String, String>{
+                  'id': ayah.id.toString(),
+                  'surah': ayah.surahName,
+                  'surah_number': ayah.surahNumber.toString(),
+                  'ayah': ayah.ayahNumber.toString(),
+                  'text': ayah.text,
+                })
+            .toList(growable: false));
+        final result = QuranicSearchEngine.countExactWord(requested);
+        if (result == null) {
+          return _uiCoordinator.resolveSchemaPayload(
+            templateId: 'analytics_template',
+            title: 'تعذر التحقق من العدّ القرآني',
+            domain: 'quran_analytics',
+            source: 'QuranicSearchEngine',
+            originalQuery: query,
+            blocks: <Map<String, dynamic>>[
+              <String, dynamic>{
+                'type': 'status',
+                'title': 'حالة التحقق',
+                'status': 'error',
+                'message': 'لم يتمكن محرك البحث القرآني من التحقق من كلمة مفردة في الفهرس المحلي. لم يُنشأ رقم بديل.',
+              },
+            ],
+          );
+        }
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تكرار «$requested» في القرآن',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine.countExactWord',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'metric',
+              'title': 'عدد المطابقات اللفظية بعد التطبيع',
+              'value': result.occurrenceCount,
+            },
+            <String, dynamic>{
+              'type': 'metric',
+              'title': 'عدد الآيات التي وردت فيها الكلمة',
+              'value': result.ayahReferences.length,
+            },
+            <String, dynamic>{
+              'type': 'list',
+              'title': 'مراجع الآيات (سورة:آية)',
+              'items': result.ayahReferences,
+            },
+            <String, dynamic>{
+              'type': 'text',
+              'title': 'منهجية العد',
+              'text': 'عدّ لفظي مطابق للكلمة بعد تطبيع علامات التشكيل وبعض أشكال الحروف؛ ليس تحليلاً للجذور الصرفية. تم الحصول على العدد والمراجع من QuranicSearchEngine بعد تحميل المصحف المحلي والتحقق منه.',
+            },
+          ],
+        );
       } catch (error) {
         return _uiCoordinator.resolveSchemaPayload(
           templateId: 'analytics_template',
           title: 'تعذر إكمال العدّ القرآني',
           domain: 'quran_analytics',
-          source: 'QuranLoaderService',
+          source: 'QuranLoaderService + QuranicSearchEngine',
           originalQuery: query,
           blocks: <Map<String, dynamic>>[
             <String, dynamic>{
               'type': 'status',
               'title': 'مصدر البيانات',
               'status': 'error',
-              'message': 'تعذر تحميل المصحف المحلي والتحقق منه: $error',
+              'message': 'تعذر تحميل المصحف المحلي أو التحقق من فهرسه: $error. لم يتم إنشاء رقم بديل.',
             },
           ],
         );
       }
-      final target = QuranicSearchEngine.normalize(requested);
-      if (target.isEmpty) return null;
-      var occurrences = 0;
-      final references = <String>[];
-      for (final ayah in canonical) {
-        final words = QuranicSearchEngine.normalize(ayah.text)
-            .split(' ')
-            .where((word) => word.isNotEmpty);
-        final inAyah = words.where((word) => word == target).length;
-        if (inAyah > 0) {
-          occurrences += inAyah;
-          references.add(ayah.surahNumber.toString() + ':' + ayah.ayahNumber.toString());
-        }
-      }
-      return _uiCoordinator.resolveSchemaPayload(
-        templateId: 'analytics_template',
-        title: 'تكرار «$requested» في القرآن',
-        domain: 'quran_analytics',
-        source: 'QuranLoaderService + QuranicSearchEngine.normalize',
-        originalQuery: query,
-        blocks: <Map<String, dynamic>>[
-          <String, dynamic>{
-            'type': 'metric',
-            'title': 'عدد المطابقات اللفظية بعد التطبيع',
-            'value': occurrences,
-          },
-          <String, dynamic>{
-            'type': 'metric',
-            'title': 'عدد الآيات التي وردت فيها الكلمة',
-            'value': references.length,
-          },
-          <String, dynamic>{
-            'type': 'list',
-            'title': 'مراجع الآيات (سورة:آية)',
-            'items': references,
-          },
-          <String, dynamic>{
-            'type': 'text',
-            'title': 'منهجية العد',
-            'text': 'عدّ لفظي مطابق للكلمة بعد تطبيع علامات التشكيل وبعض أشكال الحروف؛ ليس تحليلاً للجذور الصرفية. المصدر هو المصحف المحلي المحمّل عبر QuranLoaderService.',
-          },
-        ],
-      );
     }
 
     if (normalized.contains('حاله النواه') ||
