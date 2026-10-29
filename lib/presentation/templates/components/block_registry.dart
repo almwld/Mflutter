@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'metric_card_block.dart';
 import 'spatial_map_block.dart';
+import 'star_tracker_block.dart';
 
 typedef BlockBuilder = Widget Function({
   required String title,
@@ -18,6 +19,7 @@ abstract final class BlockRegistry {
     'star_map_block': _buildSpatial,
     'vector_space_block': _buildSpatial,
     'quantum_particle_block': _buildSpatial,
+    'star_tracker_block': _buildStarTracker,
   };
 
   static Set<String> get registeredTypes =>
@@ -45,6 +47,12 @@ abstract final class BlockRegistry {
     required Map<String, dynamic> data,
   }) =>
       MetricCardBlock(title: title, data: data);
+
+  static Widget _buildStarTracker({
+    required String title,
+    required Map<String, dynamic> data,
+  }) =>
+      StarTrackerBlock(title: title, data: data);
 
   static Widget _buildSpatial({
     required String title,
