@@ -15,6 +15,8 @@ class AchievementsService {
     {'id': 'seven_sciences', 'title': 'مستكشف المعرفة', 'desc': 'فتح تفاصيل ٧ موضوعات معرفية مميزة', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'فتح التطبيق بين 20:00 و04:59 بالتوقيت المحلي', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'dream_journal', 'title': 'مدوّن الأحلام', 'desc': 'حفظ أول مذكرة في سجل الأحلام', 'icon': '📝', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'time_capsule', 'title': 'رسالة إلى المستقبل', 'desc': 'حفظ أول كبسولة زمنية', 'icon': '⏳', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': true},
   ];
 
@@ -56,6 +58,14 @@ class AchievementsService {
         'night_mode',
         preferences.getBool('mudabbir_night_use') == true ? 1 : 0,
       );
+      _setProgress(
+        'dream_journal',
+        preferences.getBool('mudabbir_dream_journal_used') == true ? 1 : 0,
+      );
+      _setProgress(
+        'time_capsule',
+        preferences.getBool('mudabbir_time_capsule_used') == true ? 1 : 0,
+      );
     } catch (_) {
       // Keep previously loaded achievement state if preference reads fail.
     }
@@ -90,6 +100,28 @@ class AchievementsService {
           // A profile/achievement persistence issue must not block the calculator.
         }
       });
+
+  /// Records the first successful local dream-journal save.
+  static Future<void> recordDreamSaved() => _recordFirstUse(
+        'mudabbir_dream_journal_used',
+        'dream_journal',
+      );
+
+  /// Records the first successfully sealed local time capsule.
+  static Future<void> recordTimeCapsuleSealed() => _recordFirstUse(
+        'mudabbir_time_capsule_used',
+        'time_capsule',
+      );
+
+  static Future<void> _recordFirstUse(String key, String achievementId) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!await preferences.setBool(key, true)) return;
+      _setProgress(achievementId, 1);
+    } catch (_) {
+      // Core storage actions must not fail because achievement storage failed.
+    }
+  }
 
   /// Records a verse share only after the platform reports a successful share.
   static Future<void> recordVerseShared() async {
