@@ -34,6 +34,7 @@ class AgentChatProvider extends ChangeNotifier {
   bool _cancelled = false;
   int _executionGeneration = 0;
   bool _initialized = false;
+  Future<void>? _initializing;
   String? _initializationError;
   String? _selectedAgent;
   String? _selectionError;
