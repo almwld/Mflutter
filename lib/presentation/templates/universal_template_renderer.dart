@@ -327,7 +327,7 @@ class _SchemaDocument extends StatelessWidget {
         return ListView(
           padding: EdgeInsets.all(wide ? 24 : 16),
           children: <Widget>[
-            if (schema.title.isNotEmpty || schema.domain != null)
+            if (schema.title.isNotEmpty || schema.domain != null || schema.source != null)
               _GlassHeader(
                 title: schema.title,
                 subtitle: schema.domain,
@@ -387,14 +387,14 @@ class _GlassHeader extends StatelessWidget {
               Row(
                 children: [
                   Icon(Icons.verified_outlined,
-                      size: 14, color: MudabbirDesignTokens.textMuted),
+                      size: 14, color: Colors.white54),
                   const SizedBox(width: 5),
                   Expanded(
                     child: Text(
                       'المصدر: $source',
                       textDirection: TextDirection.rtl,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: MudabbirDesignTokens.textMuted,
+                            color: Colors.white54,
                           ),
                     ),
                   ),
