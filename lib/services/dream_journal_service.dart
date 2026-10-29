@@ -94,12 +94,14 @@ class DreamJournalService {
         });
       }
       return entries.take(maxEntries).toList(growable: true);
-    } on FormatException {
-      return <Map<String, dynamic>>[];
-    } on TypeError {
-      return <Map<String, dynamic>>[];
-    } on ArgumentError {
-      return <Map<String, dynamic>>[];
+    } on FormatException catch (error) {
+      // Fail closed: an unreadable journal must not be treated as empty,
+      // because the next add operation could erase recoverable entries.
+      throw StateError('تعذر قراءة سجل الأحلام؛ لم تُستبدل البيانات الموجودة. التفاصيل: $error');
+    } on TypeError catch (error) {
+      throw StateError('بنية سجل الأحلام غير صالحة؛ لم تُستبدل البيانات الموجودة. التفاصيل: $error');
+    } on ArgumentError catch (error) {
+      throw StateError('تعذر تفسير سجل الأحلام؛ لم تُستبدل البيانات الموجودة. التفاصيل: $error');
     }
   }
 
