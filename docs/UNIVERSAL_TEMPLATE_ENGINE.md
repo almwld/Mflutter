@@ -27,7 +27,7 @@ The caller must obtain values from the relevant local/domain service and pass th
 ## Supported atomic blocks
 
 - `text`: `title`, `text`
-- `quran_verse`: `title`, `text` supplied by the canonical Quran service
+- `quran_verse`: `title`, integer `surah_number`, integer `ayah_number`; the renderer loads the verse text from `QuranLoaderService` and rejects payload-supplied `text`
 - `metric`: `title`, `value` supplied by a service
 - `section`: `title`, optional `text`, or nested `children`
 - `list`: `title`, `items: string[]`
@@ -49,7 +49,7 @@ values only with service results before rendering.
   "domain": "quran",
   "title": "الآية المطلوبة",
   "blocks": [
-    {"type": "quran_verse", "title": "النص العثماني", "text": "<canonical verse text from QuranLoaderService>"},
+    {"type": "quran_verse", "title": "النص العثماني", "surah_number": 2, "ayah_number": 255},
     {"type": "section", "title": "تحليل لغوي", "children": [
       {"type": "text", "title": "الجذر", "text": "<verified root result from a lexical service>"}
     ]}
@@ -129,9 +129,7 @@ empty/error state. Keep domain computation and data access outside the renderer.
 The agent provider now creates schema blocks from these local sources for matching
 explicit requests:
 
-- **Quran word count**: loads the canonical corpus through `QuranLoaderService`,
-  applies `QuranicSearchEngine.normalize`, counts exact normalized word tokens, and
-  lists the actual surah/ayah references. This is lexical token counting, not root analysis.
+- **Quran word count**: loads the validated local corpus through `QuranLoaderService`, indexes that corpus in `QuranicSearchEngine`, then uses `countExactWord` to return exact normalized-token occurrences and unique numeric verse references. If the corpus cannot load or the engine cannot verify a single-word request, the provider returns a visible error status rather than a numeric guess. This is lexical token counting, not root analysis.
 - **Abjad**: uses `AbjadConstants.normalizeArabic`, `calculateTotal`, and
   `abjadSquare` to show the configured arithmetic and per-letter values. It does not
   make astrological, spiritual, or predictive claims.
@@ -164,7 +162,8 @@ fail closed to an explicit validation state rather than silently rendering.
 The agent coordinator requires non-empty `title`, `domain`, and `source` values for service-created intents. The renderer also accepts legacy/direct payloads with omitted `source`, but validates it as a non-empty string when present. It preserves supplied provenance and displays it in the template header. Source labels are descriptive metadata, not independent proof that a claim is true. Block and nested-block maps with non-string keys are rejected safely instead of causing a parser exception.
 
 Atomic blocks are validated by type before they reach widgets:
-- `text` and `quran_verse`: non-empty text.
+- `text`: non-empty text.
+- `quran_verse`: numeric surah/ayah reference only; arbitrary payload text is rejected, and the widget resolves the displayed text from the canonical local Quran corpus. A failed lookup displays an error state without substitute text.
 - `metric`: a non-null primitive value (string, number, or boolean).
 - `section`: string text and recursively valid children, with a bounded nesting depth.
 - `list`: a list of strings.
@@ -178,3 +177,20 @@ templates used by local integrations: `analytics_template`, `abjad_template`,
 and `graph_template`. These checks validate presentation shape only; they do not
 establish the truth of the underlying data, which remains the responsibility of
 the domain service and its source metadata.
+
+
+## Integrity and runtime guarantees
+
+### Quran text is reference-based, not model-authored
+
+A `quran_verse` block carries only a surah number and ayah number. The schema rejects a `text` field on that block, and the renderer obtains the displayed verse from `QuranLoaderService.loadAllAyahs()`. If the local corpus fails to load or the reference is absent, the renderer shows a quiet error/empty state and does not display model-provided substitute text. Search normalization is used for matching/counting only; it does not rewrite the stored verse text.
+
+### No fabricated counts
+
+`QuranicSearchEngine.countExactWord` returns a result only when the local index is ready and the query normalizes to one token. A verified zero is represented as zero; an unavailable/invalid query is represented by `null`. The provider converts that unavailable result or a corpus/index exception into an explicit status block. Counts are exact normalized lexical-token counts, not roots or semantic occurrences.
+
+### Local and lightweight by design
+
+The renderer uses local widgets, bounded nested sections, and repaint boundaries rather than video or remote rendering. This architecture reduces avoidable work, but it does not itself prove a sustained 60+ FPS on every device. Frame pacing and memory must be measured on target devices before making a performance guarantee.
+
+These controls provide defined failure behavior; they do not constitute a claim of absolute or mathematically perfect safety. The canonical corpus, loader validation, and device-level verification remain important parts of the trust boundary.
