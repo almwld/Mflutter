@@ -14,6 +14,8 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
   DateTime _date = DateTime.now();
   double _distanceAu = 1;
   double _semiMajorAxis = 1;
+  String? _distanceError;
+  String? _axisError;
 
   @override
   void dispose() { _distance.dispose(); _axis.dispose(); super.dispose(); }
@@ -105,9 +107,16 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
             const SizedBox(height: 6),
             const Text('أدخل المسافة عن الشمس بوحدات فلكية؛ يستخدم الحساب 8.316746 دقيقة لكل وحدة فلكية.', textDirection: TextDirection.rtl),
             const SizedBox(height: 10),
-            TextField(controller: _distance, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'المسافة (AU)', border: OutlineInputBorder()), onChanged: (value) {
+            TextField(controller: _distance, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: 'المسافة (AU)', errorText: _distanceError, border: const OutlineInputBorder()), onChanged: (value) {
               final parsed = double.tryParse(value);
-              if (parsed != null && parsed.isFinite && parsed >= 0 && parsed <= 100000) setState(() => _distanceAu = parsed);
+              setState(() {
+                if (parsed != null && parsed.isFinite && parsed >= 0 && parsed <= 100000) {
+                  _distanceAu = parsed;
+                  _distanceError = null;
+                } else {
+                  _distanceError = 'أدخل رقمًا من 0 إلى 100000.';
+                }
+              });
             }),
             const SizedBox(height: 8),
             Text(_distanceAu * 8.316746 >= 60
@@ -124,9 +133,16 @@ class _AstronomyScreenState extends State<AstronomyScreen> {
             const SizedBox(height: 6),
             const Text('للأجرام التي تدور حول الشمس تقريبًا: الفترة بالسنوات الأرضية ≈ الجذر التربيعي لمكعب نصف المحور الأكبر بوحدة AU.', textDirection: TextDirection.rtl),
             const SizedBox(height: 10),
-            TextField(controller: _axis, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'نصف المحور الأكبر (AU)', border: OutlineInputBorder()), onChanged: (value) {
+            TextField(controller: _axis, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: 'نصف المحور الأكبر (AU)', errorText: _axisError, border: const OutlineInputBorder()), onChanged: (value) {
               final parsed = double.tryParse(value);
-              if (parsed != null && parsed.isFinite && parsed > 0 && parsed <= 100000) setState(() => _semiMajorAxis = parsed);
+              setState(() {
+                if (parsed != null && parsed.isFinite && parsed > 0 && parsed <= 100000) {
+                  _semiMajorAxis = parsed;
+                  _axisError = null;
+                } else {
+                  _axisError = 'أدخل رقمًا أكبر من صفر وحتى 100000.';
+                }
+              });
             }),
             const SizedBox(height: 8),
             Text('الفترة المدارية النظرية: ${years.toStringAsFixed(3)} سنة أرضية', style: theme.textTheme.titleMedium, textDirection: TextDirection.rtl),
