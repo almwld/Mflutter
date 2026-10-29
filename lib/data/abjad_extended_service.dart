@@ -13,15 +13,8 @@ class AbjadExtendedService {
   /// Remove Arabic marks and normalize equivalent spellings consistently.
   /// Ta marbuta is intentionally preserved: traditional mappings may assign it
   /// 400, so silently converting it to ه would change the selected convention.
-  static String normalize(String text) {
-    return text
-        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
-        .replaceAll('ـ', '')
-        .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
-        .replaceAll('ؤ', 'و')
-        .replaceAll('ئ', 'ي')
-        .replaceAll('ى', 'ي');
-  }
+  static String normalize(String text) =>
+      AbjadCalculator.normalizeArabic(text);
 
   /// Canonical large-Abjad sum. Uses the same implementation as the main UI.
   static int calculate(String text) =>
