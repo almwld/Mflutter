@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/time_capsule_service.dart';
 import '../../services/dream_journal_service.dart';
+import '../../services/audio_synthesis_service.dart';
+import 'astronomy_screen.dart';
 import 'device/gaze_tracking_screen.dart';
 
 class CosmicServicesScreen extends StatefulWidget {
@@ -22,6 +26,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
   List<Map<String, dynamic>> _capsules = [];
   bool _loading = true;
   String? _error;
+  bool _audioBusy = false;
 
   @override
   void initState() {
@@ -393,6 +398,123 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     }
   }
 
+  Future<void> _playTone(Future<void> Function() play) async {
+    if (_audioBusy) return;
+    setState(() => _audioBusy = true);
+    try {
+      await play();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('بدأ تشغيل صوت تجريبي محلي لمدة قصيرة؛ لا توجد فائدة علاجية مثبتة.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر تشغيل الصوت: $error')),
+      );
+    } finally {
+      if (mounted) setState(() => _audioBusy = false);
+    }
+  }
+
+  Future<void> _openAudioControls() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('الصوت والتركيز'),
+        content: const Text(
+          'توليد محلي قصير لنغمتين قريبتين في قناتي الاستريو. الرقم المسمّى هو فرق التردد بين القناتين، وليس نغمة مسموعة منفردة ولا علاجًا أو ضمانًا لتحسين التركيز.',
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playTranquility),
+            icon: const Icon(Icons.spa_outlined),
+            label: const Text('هدوء · 7.83 Hz'),
+          ),
+          TextButton.icon(
+            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playFocus),
+            icon: const Icon(Icons.center_focus_strong),
+            label: const Text('تركيز · 14 Hz'),
+          ),
+          TextButton.icon(
+            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playDeepMeditation),
+            icon: const Icon(Icons.self_improvement),
+            label: const Text('تأمل · 4 Hz'),
+          ),
+          TextButton.icon(
+            onPressed: () async {
+              try {
+                await AudioSynthesisService.stop();
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              } catch (error) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('تعذر إيقاف الصوت: $error')),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.stop_circle_outlined),
+            label: const Text('إيقاف الصوت'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openQuantumDemo() async {
+    var angle = 90.0;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final probability = math.pow(math.sin(angle * math.pi / 360), 2).toDouble();
+          return AlertDialog(
+            title: const Text('نموذج كيوبت تعليمي مبسّط'),
+            content: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'يمثل النموذج حالة نظرية cos(θ/2)|0⟩ + sin(θ/2)|1⟩. وفق قاعدة بورن، احتمال قياس الحالة |1⟩ هو sin²(θ/2). هذا حساب رياضي توضيحي وليس محاكاة جهاز كمومي أو تجربة فيزيائية.',
+                    textDirection: TextDirection.rtl,
+                  ),
+                  const SizedBox(height: 18),
+                  Text('زاوية التحضير: ${angle.round()}°'),
+                  Slider(
+                    value: angle,
+                    min: 0,
+                    max: 180,
+                    divisions: 180,
+                    label: '${angle.round()}°',
+                    onChanged: (value) => setDialogState(() => angle = value),
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(value: probability, minHeight: 10),
+                  const SizedBox(height: 8),
+                  Text('احتمال |1⟩: ${(probability * 100).toStringAsFixed(1)}٪'),
+                  Text('احتمال |0⟩: ${((1 - probability) * 100).toStringAsFixed(1)}٪'),
+                  const SizedBox(height: 8),
+                  const Text('لا يستخدم هذا النموذج بيانات حساسات أو عتادًا كموميًا.', textDirection: TextDirection.rtl),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('إغلاق')),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _showHonestStatus(String title, String message) async {
     await showDialog<void>(
       context: context,
@@ -407,6 +529,14 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    unawaited(AudioSynthesisService.stop().catchError((Object error) {
+      debugPrint('Could not stop cosmic audio during dispose: $error');
+    }));
+    super.dispose();
   }
 
   @override
@@ -441,32 +571,24 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
             ),
           ),
           _buildCard(
-            'محاكاة الترابط الكمي',
-            'شرح تعليمي فقط؛ لا يوجد محرك فيزيائي',
+            'محاكاة كمومية تعليمية',
+            'نموذج كيوبت واحتمالات قياس وفق قاعدة بورن',
             Icons.hub_outlined,
-            () => _showHonestStatus(
-              'محاكاة تعليمية',
-              'هذه الشاشة لا تنفّذ محاكاة كمومية أو قياسات فيزيائية. '
-              'يمكن إضافة نموذج رياضي موثّق لاحقًا، ولا ينبغي تفسير هذا الوصف على أنه تجربة علمية.',
-            ),
+            _openQuantumDemo,
           ),
           _buildCard(
             'الصوت والتركيز',
-            'لا يوجد مولّد ترددات علاجي مفعّل',
+            _audioBusy ? 'جارٍ بدء الصوت التجريبي…' : 'نغمات استريو محلية قصيرة مع زر إيقاف',
             Icons.graphic_eq_rounded,
-            () => _showHonestStatus(
-              'الصوت والتركيز',
-              'لا يتم توليد ترددات أو ادعاء تأثير علاجي في هذه الشاشة. '
-              'يمكن استخدام مشغل التلاوة الموجود في التطبيق للاستماع إلى التلاوات المتاحة.',
-            ),
+            _openAudioControls,
           ),
           _buildCard(
             'المعلومات الفلكية',
-            'مصدر بيانات فلكية غير مهيأ',
+            'طور القمر التقريبي وزمن الضوء والفترات المدارية',
             Icons.public_rounded,
-            () => _showHonestStatus(
-              'المعلومات الفلكية',
-              'لم يتم إعداد مصدر إحداثيات أو تقويم فلكي موثوق هنا؛ لذلك لا تُعرض مواقع كواكب أو مزامنات مفترضة.',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AstronomyScreen()),
             ),
           ),
           _buildCard(
