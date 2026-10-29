@@ -230,7 +230,9 @@ abstract final class TemplateBlockSchema {
         if (children != null && children is! List) {
           errors.add('children يجب أن تكون قائمة.');
         } else if (children is List) {
-          if (depth >= 5 && children.isNotEmpty) {
+          if (children.length > 100) {
+            errors.add('عدد الكتل الفرعية تجاوز الحد الأقصى 100.');
+          } else if (depth >= 5 && children.isNotEmpty) {
             errors.add('تجاوزت الأقسام الحد الأقصى للتداخل.');
           } else {
             for (var i = 0; i < children.length; i++) {
@@ -261,11 +263,12 @@ abstract final class TemplateBlockSchema {
       case 'table':
         final columns = block['columns'];
         final rows = block['rows'];
-        if (columns is! List || columns.isEmpty || columns.any((item) => item is! String)) {
-          errors.add('columns يجب أن تكون قائمة غير فارغة من النصوص.');
+        if (columns is! List || columns.isEmpty || columns.length > 50 ||
+            columns.any((item) => item is! String)) {
+          errors.add('columns يجب أن تكون قائمة من 1 إلى 50 نصًا.');
         }
-        if (rows is! List || rows.any((row) =>
-            row is! List || row.any((cell) =>
+        if (rows is! List || rows.length > 500 || rows.any((row) =>
+            row is! List || row.length > 50 || row.any((cell) =>
                 !(cell == null || cell is String || cell is num || cell is bool)))) {
           errors.add('rows يجب أن تكون قائمة صفوف بخلايا بسيطة.');
         } else if (columns is List && rows is List &&
@@ -327,9 +330,10 @@ abstract final class TemplateBlockSchema {
         }
         if (type == 'quantum_particle_block') {
           final links = block['links'];
-          if (links != null && (links is! List || links.any((link) =>
+          final pointCount = points is List ? points.length : 0;
+          if (links != null && (links is! List || links.length > 500 || links.any((link) =>
               link is! List || link.length != 2 ||
-              link.any((index) => index is! int || index < 0)))) {
+              link.any((index) => index is! int || index < 0 || index >= pointCount)))) {
             errors.add('links يجب أن تكون أزواج فهارس صحيحة للجسيمات.');
           }
         }
