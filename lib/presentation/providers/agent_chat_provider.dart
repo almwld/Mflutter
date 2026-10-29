@@ -7,6 +7,7 @@ import '../../domain/entities/agent_task.dart';
 import '../../services/agent_knowledge_service.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
+import '../../services/agent_task_store.dart';
 import '../../services/agent_registry.dart';
 import '../../services/achievements_service.dart';
 import '../../utils/abjad_constants.dart';
@@ -19,6 +20,7 @@ import '../../services/quranic_search_engine.dart';
 class AgentChatProvider extends ChangeNotifier {
   final AgentKnowledgeService _knowledge = AgentKnowledgeService.instance;
   final AgentMemoryService _memory = AgentMemoryService.instance;
+  final AgentTaskStore _taskStore = AgentTaskStore.instance;
 
   AgentTask? _activeTask;
   final List<String> _messages = [];
@@ -36,6 +38,31 @@ class AgentChatProvider extends ChangeNotifier {
 
   void _notifySafely() {
     if (!_disposed) notifyListeners();
+  }
+
+  void _setActiveTask(AgentTask task) {
+    _activeTask = task;
+    unawaited(_taskStore.save(task).catchError((Object error) {
+      debugPrint('AgentChatProvider: task checkpoint save failed: $error');
+    }));
+  }
+
+  Future<void> _restoreLatestTask() async {
+    if (_activeTask != null) return;
+    final restored = await _taskStore.loadLatest();
+    if (restored == null) return;
+    _activeTask = restored;
+    if (restored.status == TaskStatus.paused) {
+      _messages.add('استُعيدت مهمة محلية غير مكتملة. يمكنك استئنافها من نقطة التوقف؛ الخطوة التي كانت تعمل ستُعاد بأمان.');
+      unawaited(_taskStore.save(restored).catchError((Object error) {
+        debugPrint('AgentChatProvider: recovered checkpoint save failed: $error');
+      }));
+    } else if (restored.status == TaskStatus.completed && restored.finalAnswer != null) {
+      _messages.add('مُدَبِّر: ${restored.finalAnswer}');
+    } else if (restored.status == TaskStatus.failed) {
+      _messages.add('استُعيد سجل مهمة سابقة فشلت: ${restored.error ?? 'سبب غير مسجل'}.');
+    }
+    _notifySafely();
   }
 
   @override
@@ -91,6 +118,7 @@ class AgentChatProvider extends ChangeNotifier {
               })
           .toList(growable: false));
       await _knowledge.initialize();
+      await _restoreLatestTask();
       _initialized = true;
       _initializationError = null;
     } catch (error) {
@@ -137,11 +165,22 @@ class AgentChatProvider extends ChangeNotifier {
     _notifySafely();
   }
 
-  Future<void> executeTask(String query) async {
+  Future<void> executeTask(String query) => _runTask(query);
+
+  /// Resumes the most recent paused checkpoint. Completed steps are preserved;
+  /// only pending/paused/in-flight steps are executed again.
+  Future<void> resumeTask() async {
+    final task = _activeTask;
+    if (task == null || task.status != TaskStatus.paused) return;
+    await _runTask(task.userQuery, resumeFrom: task);
+  }
+
+  Future<void> _runTask(String query, {AgentTask? resumeFrom}) async {
     final clean = query.trim();
     if (clean.isEmpty) return;
     final oldStatus = _activeTask?.status;
-    if (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused) return;
+    if (resumeFrom == null &&
+        (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
 
     final generation = ++_executionGeneration;
     final nucleusAtStart = NucleusService();
@@ -159,8 +198,19 @@ class AgentChatProvider extends ChangeNotifier {
     _paused = false;
     _attemptsByAgent.clear();
 
-    final agents = _route(clean);
-    var task = AgentTask(
+    final agents = resumeFrom == null
+        ? _route(clean)
+        : resumeFrom.steps
+            .map((step) => AgentRegistry.byId(step.agentName))
+            .whereType<AgentDefinition>()
+            .toList(growable: false);
+    if (resumeFrom != null &&
+        (agents.length != resumeFrom.steps.length || agents.isEmpty)) {
+      _selectionError = 'تعذر استئناف المهمة: أحد الوكلاء المحفوظين لم يعد مسجلًا.';
+      _notifySafely();
+      return;
+    }
+    var task = resumeFrom ?? AgentTask(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       userQuery: clean,
       createdAt: DateTime.now(),
@@ -174,8 +224,13 @@ class AgentChatProvider extends ChangeNotifier {
               ))
           .toList(),
     );
-    _activeTask = task;
-    _messages.add('المستخدم: $clean');
+    task = task.copyWith(status: TaskStatus.running);
+    _setActiveTask(task);
+    if (resumeFrom == null) {
+      _messages.add('المستخدم: $clean');
+    } else {
+      _messages.add('استئناف المهمة المحفوظة: $clean');
+    }
     _notifySafely();
 
     try {
@@ -186,6 +241,8 @@ class AgentChatProvider extends ChangeNotifier {
         );
       }
       for (var i = 0; i < agents.length; i++) {
+        // Keep completed checkpoint steps immutable during resume.
+        if (task.steps[i].status == StepStatus.done) continue;
         if (_isCancelledFor(generation)) {
           _markCancelledIfCurrent(task);
           return;
@@ -204,7 +261,7 @@ class AgentChatProvider extends ChangeNotifier {
           startedAt: DateTime.now(),
         );
         task = task.copyWith(steps: _replaceStep(task.steps, i, step));
-        _activeTask = task;
+        _setActiveTask(task);
         _notifySafely();
 
         try {
@@ -217,7 +274,7 @@ class AgentChatProvider extends ChangeNotifier {
             completedAt: DateTime.now(),
           );
           task = task.copyWith(steps: _replaceStep(task.steps, i, step));
-          _activeTask = task;
+          _setActiveTask(task);
           _notifySafely();
         } catch (error) {
           // The runtime may throw when stopGeneration interrupts native
@@ -241,7 +298,7 @@ class AgentChatProvider extends ChangeNotifier {
             steps: _replaceStep(task.steps, i, step),
             error: error.toString(),
           );
-          _activeTask = task;
+          _setActiveTask(task);
           _notifySafely();
           return;
         }
@@ -265,7 +322,7 @@ class AgentChatProvider extends ChangeNotifier {
         completedAt: DateTime.now(),
         finalAnswer: answer,
       );
-      _activeTask = task;
+      _setActiveTask(task);
       _messages.add('مُدَبِّر: $answer');
       try {
         await _memory.saveRun(
@@ -296,7 +353,7 @@ class AgentChatProvider extends ChangeNotifier {
         return;
       }
       task = task.copyWith(status: TaskStatus.failed, error: error.toString());
-      _activeTask = task;
+      _setActiveTask(task);
       _messages.add('تعذر إكمال المهمة: $error');
       _notifySafely();
     }
@@ -312,9 +369,9 @@ class AgentChatProvider extends ChangeNotifier {
     _paused = !_paused;
     // This cooperative pause takes effect at the next step boundary; an
     // already-running local lookup/inference is not falsely marked as stopped.
-    _activeTask = task.copyWith(
+    _setActiveTask(task.copyWith(
       status: _paused ? TaskStatus.paused : TaskStatus.running,
-    );
+    ));
     _notifySafely();
   }
 
@@ -340,11 +397,11 @@ class AgentChatProvider extends ChangeNotifier {
         completedAt: now,
       );
     }).toList(growable: false);
-    _activeTask = current.copyWith(
+    _setActiveTask(current.copyWith(
       status: TaskStatus.cancelled,
       steps: steps,
       completedAt: now,
-    );
+    ));
     _notifySafely();
   }
 
