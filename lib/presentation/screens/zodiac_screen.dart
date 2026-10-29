@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../services/astronomy_calculations_service.dart';
 import '../../services/zodiac_astronomy_guide.dart';
+import '../../services/achievements_service.dart';
 
 /// Historical overview of the twelve signs used in Western tropical astrology.
 /// Date ranges are conventional approximations, not astronomical calculations.
@@ -14,6 +17,12 @@ class ZodiacScreen extends StatefulWidget {
 class _ZodiacScreenState extends State<ZodiacScreen> {
   DateTime _birthDate = DateTime(2000, 1, 1);
   _ZodiacSign? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(AchievementsService.recordScienceExplored('zodiac_astrology'));
+  }
 
   static const List<_ZodiacSign> _signs = [
     _ZodiacSign(name: 'الحمل', symbol: '♈', element: 'النار', quality: 'أساسي', range: '21 مارس – 19 أبريل', startMonth: 3, startDay: 21, endMonth: 4, endDay: 19, color: Color(0xFFD96C55), note: 'أول الأبراج في الترتيب الاصطلاحي الشائع للأبراج الاستوائية.'),
