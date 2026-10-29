@@ -951,3 +951,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - Follow-up hardening: astronomy calculators now expose validation messages for invalid numeric input; the planet weight calculator checks nullable mass inline before arithmetic; planet search normalizes Arabic diacritics and common letter variants. The knowledge loader skips malformed individual records and retains valid records plus the bundled starter catalogue instead of discarding all optional-asset content after one bad row.
 - Home's tools section now links directly to both the interactive planetary reference and the dedicated astronomy calculator.
+
+
+- Knowledge-exploration achievement records now migrate the previously stored display-name key to the stable entry ID when a user opens that topic, preventing old progress from being counted twice after the identifier change.
