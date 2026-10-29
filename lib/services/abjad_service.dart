@@ -52,10 +52,8 @@ class AbjadService {
         .toList(growable: false);
   }
 
-  String _normalizeArabic(String text) => text
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED\u0610-\u061A]'), '')
-      .replaceAll('ـ', '')
-      .replaceAll(RegExp(r'[أإآٱ]'), 'ا');
+  String _normalizeArabic(String text) =>
+      core.AbjadCalculator.normalizeArabic(text);
 
   int _getColor(int value) {
     if (value < 1) return 0xFF808080;
