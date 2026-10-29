@@ -130,6 +130,21 @@ class AgentUiCoordinator {
       'cosmic_template',
       'abjad_template',
       'agent_template',
+      'universal_dynamic_canvas',
+      'dashboard_template',
+      'chat_template',
+      'library_template',
+      'player_template',
+      'settings_template',
+      'search_template',
+      'profile_template',
+      'lab_template',
+      'service_hub_template',
+      'cosmic_celestial_template',
+      'quantum_mesh_template',
+      'vector_embedding_template',
+      'dream_journal_template',
+      'sovereign_ar_iot_template',
     };
     final normalizedTemplateId = templateId.trim();
     if (!supportedTemplates.contains(normalizedTemplateId) ||
