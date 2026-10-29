@@ -810,8 +810,10 @@ class _AtomicBlock extends StatelessWidget {
         final rows = (block['rows'] is List)
             ? (block['rows'] as List)
                 .whereType<List>()
-                .map((row) => row.map((cell) => cell?.toString() ?? '—').toList())
-                .toList()
+                .map<List<String>>((row) => row
+                    .map<String>((cell) => cell?.toString() ?? '—')
+                    .toList(growable: false))
+                .toList(growable: false)
             : <List<String>>[];
         final rowIds = block['row_ids'] is List
             ? (block['row_ids'] as List).whereType<String>().toList(growable: false)
