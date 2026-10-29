@@ -174,7 +174,7 @@ abstract final class TemplateBlockSchema {
   static const supportedTypes = <String>{
     'text', 'metric', 'metric_card', 'section', 'list', 'table',
     'quran_verse', 'bar_chart', 'status',
-    'hero_header_block', 'timeline_block', 'relation_graph_block',
+    'hero_header_block', 'timeline_block', 'relation_graph_block', 'star_tracker_block',
     'code_math_block', 'audio_frequency_block', 'spatial_map_block',
     'star_map_block', 'vector_space_block', 'quantum_particle_block',
     'interactive_card_block',
