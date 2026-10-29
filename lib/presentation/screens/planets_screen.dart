@@ -29,6 +29,16 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
     _CelestialBody(name: 'القمر', symbol: '☾', kind: 'قمر طبيعي', distanceAu: 1.0, diameterKm: 3475, gravity: 1.62, day: 'نحو 27.3 يومًا للدوران النجمي', year: 'يدور حول الأرض في نحو 27.3 يومًا', description: 'القمر الطبيعي للأرض؛ متوسط المسافة بين مركزيه ومركز الأرض نحو 384,400 كيلومتر.', color: Color(0xFFBFC7D5)),
   ];
 
+  String _normalizeSearch(String value) => value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
   @override
   void dispose() {
     _search.dispose();
@@ -40,7 +50,7 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final query = _query.trim().toLowerCase();
+    final query = _normalizeSearch(_query);
     final filtered = _bodies.where((body) {
       final categoryMatches = _filter == 'الكل' ||
           (_filter == 'الكواكب' && body.kind.startsWith('كوكب')) ||
@@ -48,9 +58,9 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
           (_filter == 'النجوم' && body.kind == 'نجم');
       return categoryMatches &&
           (query.isEmpty ||
-              body.name.toLowerCase().contains(query) ||
-              body.kind.toLowerCase().contains(query) ||
-              body.description.toLowerCase().contains(query));
+              _normalizeSearch(body.name).contains(query) ||
+              _normalizeSearch(body.kind).contains(query) ||
+              _normalizeSearch(body.description).contains(query));
     }).toList(growable: false);
 
     return Scaffold(
@@ -87,7 +97,7 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
                   TextField(
                     controller: _search,
                     textDirection: TextDirection.rtl,
-                    onChanged: (value) => setState(() => _query = value),
+                    onChanged: (value) => setState(() => _query = _normalizeSearch(value)),
                     decoration: const InputDecoration(
                       hintText: 'ابحث عن جرم أو نوعه أو وصفه',
                       prefixIcon: Icon(Icons.search_rounded),
