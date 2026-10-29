@@ -66,10 +66,15 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
       final Widget? destination;
       switch (intent.targetScreen) {
         case 'miracles_screen':
-          destination = const MiraclesScreen();
+          destination = MiraclesScreen(
+            initialQuery: payload['first_word']?.toString(),
+            initialComparisonQuery: payload['second_word']?.toString(),
+          );
           break;
         case 'compare_screen':
-          destination = const CompareScreen();
+          destination = CompareScreen(
+            agentQuery: payload['comparison_query']?.toString(),
+          );
           break;
         case 'nucleus_screen':
           destination = const NucleusScreen();
@@ -79,6 +84,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
           destination = QuranPageScreen(
             surahNumber: surah,
             surahName: surah == 1 ? 'الفاتحة' : 'السورة $surah',
+            initialAyahNumber: (payload['ayah_number'] as num?)?.toInt() ?? 1,
           );
           break;
         default:
