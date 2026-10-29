@@ -52,6 +52,8 @@ class _StarTrackerContentState extends State<_StarTrackerContent> {
   String? _selectedStarId;
   DateTime _now = DateTime.now().toUtc();
   Timer? _clock;
+  Timer? _orientationFrame;
+  double _pendingPitch = 0, _pendingRoll = 0, _pendingHeading = 0;
 
   @override
   void initState() {
@@ -95,10 +97,22 @@ class _StarTrackerContentState extends State<_StarTrackerContent> {
     final yh = _magX * math.sin(roll) * math.sin(pitch) +
         _magY * math.cos(roll) - _magZ * math.sin(roll) * math.cos(pitch);
     final heading = (math.atan2(-yh, xh) * 180 / math.pi + 360) % 360;
+    _pendingPitch = pitch;
+    _pendingRoll = roll;
+    _pendingHeading = heading;
     if ((pitch - _pitch).abs() < 0.008 &&
         (roll - _roll).abs() < 0.008 &&
         (heading - _heading).abs() < 0.8) return;
-    setState(() { _pitch = pitch; _roll = roll; _heading = heading; });
+    // Coalesce high-rate sensor streams to at most ~30 UI updates per second.
+    if (_orientationFrame?.isActive ?? false) return;
+    _orientationFrame = Timer(const Duration(milliseconds: 33), () {
+      if (!mounted) return;
+      setState(() {
+        _pitch = _pendingPitch;
+        _roll = _pendingRoll;
+        _heading = _pendingHeading;
+      });
+    });
   }
 
   Future<void> _requestLocation() async {
@@ -151,6 +165,7 @@ class _StarTrackerContentState extends State<_StarTrackerContent> {
     unawaited(_accelerometerSub?.cancel());
     unawaited(_magnetometerSub?.cancel());
     _clock?.cancel();
+    _orientationFrame?.cancel();
     super.dispose();
   }
 
