@@ -23,8 +23,8 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       'النص: ${_controller.text.trim()}',
       'جدول القيم: ${_alphabetical ? 'الترتيب الهجائي' : 'أبجد الكبير'}',
       'المجموع: ${result.kabir}',
-      'متوسط القيم: ${result.saghir}',
-      'نصف المجموع: ${result.wasat}',
+      _alphabetical ? 'متوسط القيم الهجائية: ${result.saghir}' : 'مجموع اختزال قيم الحروف (الجمل الصغير): ${result.saghir}',
+      _alphabetical ? 'نصف المجموع الهجائي: ${result.wasat}' : 'مجموع رتب الحروف (الجمل الأوسط الاصطلاحي): ${result.wasat}',
       'تفصيل الحروف: $letters',
       'الارتباطات الرمزية ليست قياسات علمية أو تنبؤات.',
     ].join('\n');
@@ -198,12 +198,12 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                         color: colors.primary,
                       ),
                       _ResultRow(
-                        label: 'متوسط قيم الحروف',
+                        label: _alphabetical ? 'متوسط قيم الحروف الهجائية' : 'مجموع اختزال قيم الحروف (الجمل الصغير)',
                         value: r.saghir.toString(),
                         color: colors.onSurface,
                       ),
                       _ResultRow(
-                        label: 'نصف المجموع',
+                        label: _alphabetical ? 'نصف المجموع الهجائي' : 'مجموع رتب الحروف (الجمل الأوسط الاصطلاحي)',
                         value: r.wasat.toString(),
                         color: colors.onSurface,
                       ),
