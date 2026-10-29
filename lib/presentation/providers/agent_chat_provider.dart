@@ -177,13 +177,166 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
 
-  /// Builds schema blocks only from real local domain services. This is kept
-  /// separate from the generic intent classifier so ordinary chat is unaffected.
+  /// Builds schema blocks only from real local domain services.
   Future<AgentUiIntent?> _resolveTrustedSchemaIntent(String query) async {
     final normalized = AgentKnowledgeService.normalize(query);
 
     final abjadMatch = RegExp(
-      r'(?:احسب|حساب|قيمة)\s+(?:الجمل|ابجد|ابجدي)\s+(?:لكلمه\s+|لكلمة\s+|للاسم\s+|للاسم\s*)?(.+)
+      r'(?:احسب|حساب|قيمة)\s+(?:الجمل|ابجد|ابجدي)\s+(?:لكلمه\s+|لكلمة\s+|للاسم\s+)?(.+)$',
+    ).firstMatch(normalized);
+    if (abjadMatch != null) {
+      final input = abjadMatch.group(1)?.trim() ?? '';
+      final cleaned = AbjadConstants.normalizeArabic(input)
+          .replaceAll(RegExp(r'[^\u0621-\u064A]'), '');
+      if (cleaned.isEmpty) return null;
+      final letters = cleaned.runes
+          .map(String.fromCharCode)
+          .where(AbjadConstants.abjadSquare.containsKey)
+          .toList(growable: false);
+      if (letters.isEmpty) return null;
+      final rows = <List<String>>[
+        for (final letter in letters)
+          <String>[letter, AbjadConstants.getValue(letter).toString()],
+      ];
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'abjad_template',
+        title: 'حساب الجُمّل: $input',
+        domain: 'abjad',
+        source: 'AbjadConstants.abjadSquare',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'المجموع وفق جدول القيم المربّع',
+            'value': AbjadConstants.calculateTotal(cleaned),
+          },
+          <String, dynamic>{
+            'type': 'table',
+            'title': 'تفصيل الحروف والقيم',
+            'columns': <String>['الحرف', 'القيمة'],
+            'rows': rows,
+          },
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'منهجية الحساب',
+            'text': 'مجموع قيم الحروف وفق جدول القيم المربّع في التطبيق. هذه عملية حسابية ولا تثبت علاقة غيبية أو تنبؤاً.',
+          },
+        ],
+      );
+    }
+
+    final countMatch = RegExp(
+      r'(?:كم\s+مره\s+(?:وردت?|ذكر|تكررت?)\s+(?:كلمه\s+)?|عدد\s+(?:مرات\s+)?(?:ورود|ذكر)\s+(?:كلمه\s+)?)([\u0621-\u064A]{2,})\s+(?:في\s+)?القران(?:\s+الكريم)?',
+    ).firstMatch(normalized);
+    if (countMatch != null) {
+      final requested = countMatch.group(1) ?? '';
+      final canonical = await QuranLoaderService.loadAllAyahs();
+      final target = QuranicSearchEngine.normalize(requested);
+      if (target.isEmpty) return null;
+      var occurrences = 0;
+      final references = <String>[];
+      for (final ayah in canonical) {
+        final words = QuranicSearchEngine.normalize(ayah.text)
+            .split(' ')
+            .where((word) => word.isNotEmpty);
+        final inAyah = words.where((word) => word == target).length;
+        if (inAyah > 0) {
+          occurrences += inAyah;
+          references.add(ayah.surahNumber.toString() + ':' + ayah.ayahNumber.toString());
+        }
+      }
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: 'تكرار «$requested» في القرآن',
+        domain: 'quran_analytics',
+        source: 'QuranLoaderService + QuranicSearchEngine.normalize',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'عدد المطابقات اللفظية بعد التطبيع',
+            'value': occurrences,
+          },
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'عدد الآيات التي وردت فيها الكلمة',
+            'value': references.length,
+          },
+          <String, dynamic>{
+            'type': 'list',
+            'title': 'مراجع الآيات (سورة:آية)',
+            'items': references,
+          },
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'منهجية العد',
+            'text': 'عدّ لفظي مطابق للكلمة بعد تطبيع علامات التشكيل وبعض أشكال الحروف؛ ليس تحليلاً للجذور الصرفية. المصدر هو المصحف المحلي المحمّل عبر QuranLoaderService.',
+          },
+        ],
+      );
+    }
+
+    if (normalized.contains('حاله النواه') ||
+        normalized.contains('حاله النظام') ||
+        normalized.contains('حاله الوكلاء')) {
+      final nucleus = NucleusService();
+      await nucleus.initialize();
+      final sourceError = nucleus.error;
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'graph_template',
+        title: 'الحالة الفعلية للنواة',
+        domain: 'nucleus',
+        source: nucleus.source,
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'تهيئة النواة',
+            'status': nucleus.isInitialized && sourceError == null
+                ? 'ready'
+                : sourceError != null
+                    ? 'error'
+                    : 'unknown',
+            'message': sourceError ??
+                (nucleus.isInitialized
+                    ? 'تمت تهيئة بيانات النواة.'
+                    : 'حالة التهيئة غير مؤكدة.'),
+          },
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'النموذج المحلي',
+            'status': nucleus.isModelLoaded
+                ? 'ready'
+                : nucleus.isModelBusy
+                    ? 'busy'
+                    : 'unknown',
+            'message': nucleus.isModelLoaded
+                ? 'النموذج محمّل: ' + (nucleus.loadedModelPath ?? 'المسار غير معلن') + '.'
+                : nucleus.isModelBusy
+                    ? 'النموذج مشغول حالياً.'
+                    : 'لا يوجد نموذج محمّل وفق حالة مشغّل النموذج.',
+          },
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'الوكلاء المسجلون',
+            'value': nucleus.registeredAgentCount,
+          },
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'مستندات المعرفة المفهرسة',
+            'value': nucleus.indexedDocumentCount,
+          },
+          <String, dynamic>{
+            'type': 'list',
+            'title': 'مصادر المعرفة المحمّلة',
+            'items': nucleus.loadedKnowledgeSources,
+          },
+        ],
+      );
+    }
+    return null;
+  }
+
   /// through to the generic knowledge-search handler.
   void selectAgent(String? id) {
     if (id == null) {
