@@ -220,6 +220,8 @@ abstract final class TemplateBlockSchema {
         final value = block['value'];
         if (value == null || !(value is String || value is num || value is bool)) {
           errors.add('value مطلوب ويجب أن يكون قيمة بسيطة (نصًا أو رقمًا أو منطقيًا).');
+        } else if (value is num && !value.isFinite) {
+          errors.add('value الرقمي يجب أن يكون محدودًا وليس NaN أو Infinity.');
         }
         break;
       case 'section':
@@ -324,6 +326,7 @@ abstract final class TemplateBlockSchema {
             points.any((point) => point is! Map ||
                 point['x'] is! num || point['y'] is! num ||
                 (point['label'] != null && point['label'] is! String) ||
+                !(point['x'] as num).isFinite || !(point['y'] as num).isFinite ||
                 (point['x'] as num) < 0 || (point['x'] as num) > 1 ||
                 (point['y'] as num) < 0 || (point['y'] as num) > 1)) {
           errors.add('يجب أن تحتوي النقاط على إحداثيات x/y بين 0 و1، وبحد أقصى 250 نقطة.');
@@ -345,10 +348,13 @@ abstract final class TemplateBlockSchema {
       case 'audio_frequency_block':
         final samples = block['samples'];
         if (samples is! List || samples.length < 2 || samples.length > 512 ||
-            samples.any((sample) => sample is! num || sample < -1 || sample > 1)) {
+            samples.any((sample) => sample is! num || !sample.isFinite || sample < -1 || sample > 1)) {
           errors.add('samples يجب أن تكون بين 2 و512 قيمة رقمية ضمن المجال -1 إلى 1.');
         }
-        if (block['frequency_hz'] != null && block['frequency_hz'] is! num) errors.add('frequency_hz يجب أن يكون رقمًا.');
+        if (block['frequency_hz'] != null &&
+            (block['frequency_hz'] is! num || !(block['frequency_hz'] as num).isFinite)) {
+          errors.add('frequency_hz يجب أن يكون رقمًا محدودًا صادرًا عن مصدر موثوق.');
+        }
         break;
       case 'interactive_card_block':
         if (block['front'] is! String || block['details'] is! String) errors.add('front وdetails مطلوبان كنصين.');
