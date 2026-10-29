@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/utils/abjad_calculator.dart' as core;
 import '../../domain/entities/abjad_result.dart';
+import '../../services/achievements_service.dart';
 import '../../utils/abjad_constants.dart';
 
 class AbjadProvider extends ChangeNotifier {
@@ -18,42 +20,58 @@ class AbjadProvider extends ChangeNotifier {
 
   void calculateAbjad(String text, {bool alphabetical = false}) {
     _inputText = text;
-    var major = 0;
+    final normalized = core.AbjadCalculator.normalizeArabic(text);
     final letterResults = <LetterResult>[];
+    var total = 0;
 
-    // Use the traditional Abjad table; Unicode code points are not Abjad values.
-    for (final letter in text.split('')) {
+    // The canonical large-Abjad calculator is the default path. The
+    // alphabetical mapping remains an explicitly selected, separate convention.
+    for (final rune in normalized.runes) {
+      final letter = String.fromCharCode(rune);
       final value = alphabetical
           ? AbjadConstants.getAlphabeticalValue(letter)
-          : AbjadConstants.getValue(letter);
+          : core.AbjadCalculator.kabirValues[letter] ?? 0;
       if (value <= 0) continue;
-      major += value;
+      total += value;
       letterResults.add(LetterResult(letter: letter, value: value));
     }
 
-    final average = letterResults.isEmpty
-        ? 0
-        : (major / letterResults.length).round();
-    final halfTotal = (major / 2).round();
+    final canonical = alphabetical
+        ? null
+        : core.AbjadCalculator.calculateAll(normalized);
     final hasLetters = letterResults.isNotEmpty;
+    final average = hasLetters ? (total / letterResults.length).round() : 0;
 
     _lastResult = AbjadResult(
-      major: major,
-      minor: average,
-      middle: halfTotal,
-      element: hasLetters ? AbjadConstants.getElementByNumber(major) : 'غير محدد',
-      planet: hasLetters ? AbjadConstants.getPlanetByNumber(major) : 'غير محدد',
-      zodiac: hasLetters ? AbjadConstants.getZodiacByNumber(major) : 'غير محدد',
-      divineName: hasLetters
-          ? AbjadConstants.getDivineNameByNumber(major)
+      major: total,
+      // In the canonical mode, minor and middle use the shared definitions.
+      // The legacy alphabetical mode retains its previous derived values.
+      minor: canonical?.saghir ?? average,
+      middle: canonical?.wasat ?? (total / 2).round(),
+      element: hasLetters
+          ? AbjadConstants.getElementByNumber(total)
           : 'غير محدد',
-      // No scientifically defined "energy" value is calculated here.
+      planet: hasLetters
+          ? AbjadConstants.getPlanetByNumber(total)
+          : 'غير محدد',
+      zodiac: hasLetters
+          ? AbjadConstants.getZodiacByNumber(total)
+          : 'غير محدد',
+      divineName: hasLetters
+          ? AbjadConstants.getDivineNameByNumber(total)
+          : 'غير محدد',
+      // Abjad does not provide a scientifically defined energy or frequency.
       energy: 0,
       frequency: 0,
       color: 0xFF1A237E,
       letterResults: letterResults,
     );
 
+    // Record only a completed, non-empty calculation. Persistence failure
+    // must never block the calculator UI.
+    if (hasLetters) {
+      AchievementsService.recordAbjadCalculation();
+    }
     notifyListeners();
   }
 }
