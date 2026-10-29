@@ -144,14 +144,25 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       if (widget.initialAyahNumber > 1 &&
           widget.initialAyahNumber <= correctedVerses.length) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final targetContext = _verseKeys[widget.initialAyahNumber]?.currentContext;
-          if (!mounted || targetContext == null) return;
-          Scrollable.ensureVisible(
-            targetContext,
-            alignment: 0.2,
-            duration: const Duration(milliseconds: 320),
-            curve: Curves.easeOutCubic,
-          );
+          if (!mounted || !_scrollController.hasClients) return;
+          // Verse cards have variable heights; this estimate brings a distant
+          // verse into the lazy list, then the keyed target is aligned exactly.
+          final position = _scrollController.position;
+          final estimatedOffset = ((widget.initialAyahNumber - 1) * 180.0)
+              .clamp(0.0, position.maxScrollExtent)
+              .toDouble();
+          _scrollController.jumpTo(estimatedOffset);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final targetContext =
+                _verseKeys[widget.initialAyahNumber]?.currentContext;
+            if (!mounted || targetContext == null) return;
+            Scrollable.ensureVisible(
+              targetContext,
+              alignment: 0.2,
+              duration: const Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+            );
+          });
         });
       }
       await _loadBookmarksForCurrentSurah();
