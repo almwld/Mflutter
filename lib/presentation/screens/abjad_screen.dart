@@ -11,6 +11,7 @@ class AbjadCalculatorScreen extends StatefulWidget {
 
 class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   final _controller = TextEditingController();
+  bool _alphabetical = false;
 
   Future<void> _calculate() async {
     final text = _controller.text.trim();
@@ -27,7 +28,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       return;
     }
     final provider = context.read<AbjadProvider>();
-    provider.calculateAbjad(text);
+    provider.calculateAbjad(text, alphabetical: _alphabetical);
     if (provider.lastResult?.letterResults.isEmpty ?? true) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,7 +71,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Text(
-                'القيمة الأساسية هنا مجموع قيم الحروف وفق جدول أبجد التقليدي. المتوسط ونصف المجموع عمليتان حسابيتان موضحتان بالاسم. ربط الناتج بعنصر أو كوكب أو برج أو اسم من قائمة هو اصطلاح رمزي لا قياس علمي ولا تنبؤ.',
+                'اختر جدول القيم ثم احسب مجموع الحروف. المتوسط ونصف المجموع عمليتان حسابيتان مشتقتان من الحروف المعروفة. أي ربط رمزي بعنصر أو كوكب أو برج أو اسم هو اصطلاح تقليدي قابل للاختلاف، وليس قياسًا علميًا أو تنبؤًا.',
                 textDirection: TextDirection.rtl,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: secondaryText,
@@ -78,6 +79,40 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                 ),
               ),
             ),
+          ),
+          const SizedBox(height: 12),
+          Text('جدول قيم الحروف', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('أبجد الكبير'),
+                selected: !_alphabetical,
+                onSelected: (_) => setState(() {
+                  _alphabetical = false;
+                  if (_controller.text.trim().isNotEmpty) {
+                    context.read<AbjadProvider>().calculateAbjad(
+                      _controller.text,
+                      alphabetical: false,
+                    );
+                  }
+                }),
+              ),
+              ChoiceChip(
+                label: const Text('الترتيب الهجائي'),
+                selected: _alphabetical,
+                onSelected: (_) => setState(() {
+                  _alphabetical = true;
+                  if (_controller.text.trim().isNotEmpty) {
+                    context.read<AbjadProvider>().calculateAbjad(
+                      _controller.text,
+                      alphabetical: true,
+                    );
+                  }
+                }),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           TextField(
@@ -88,7 +123,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
             decoration: const InputDecoration(
               hintText: 'أدخل النص لحساب الجمل...',
               prefixIcon: Icon(Icons.calculate_outlined),
-              helperText: 'تُحسب الحروف المعروفة في جدول أبجد؛ تُتجاهل المسافات والرموز والحروف غير المدرجة.',
+              helperText: 'تُحسب الحروف الموجودة في الجدول المختار؛ تُتجاهل المسافات والرموز والحروف غير المدرجة.',
             ),
             onSubmitted: (_) => _calculate(),
           ),
@@ -110,7 +145,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       _ResultRow(
-                        label: 'مجموع أبجد الكبير',
+                        label: _alphabetical ? 'مجموع القيم الهجائية' : 'مجموع أبجد الكبير',
                         value: r.kabir.toString(),
                         color: colors.primary,
                       ),
@@ -128,7 +163,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
                         child: Text(
-                          'تفصيل قيمة كل حرف',
+                          'تفصيل قيمة كل حرف — ${_alphabetical ? 'الترتيب الهجائي' : 'أبجد الكبير'}',
                           style: theme.textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -150,7 +185,7 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'ارتباطات رمزية تقليدية: العنصر ${r.element} • الكوكب ${r.planet} • البرج ${r.zodiac}',
+                        'ربط رمزي تقليدي مشتق من المجموع (ليس حقيقة علمية): العنصر ${r.element} • الكوكب ${r.planet} • البرج ${r.zodiac}',
                         textDirection: TextDirection.rtl,
                         textAlign: TextAlign.right,
                         style: TextStyle(color: secondaryText),
