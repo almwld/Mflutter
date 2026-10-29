@@ -53,6 +53,71 @@ void main() {
       );
     });
 
+    test('rejects unsupported schema versions and malformed envelope fields', () {
+      final unsupportedVersion = TemplatePayloadSchema.fromMap({
+        'ui_template': 'analytics_template',
+        'schema_version': 2,
+        'title': 'إصدار غير مدعوم',
+        'blocks': [
+          {'type': 'metric', 'title': 'عدد', 'value': 4},
+        ],
+      });
+      expect(unsupportedVersion.envelopeValid, isFalse);
+      expect(unsupportedVersion.hasRenderableBlocks, isFalse);
+      expect(unsupportedVersion.validationErrors, isNotEmpty);
+
+      final malformedEnvelope = TemplatePayloadSchema.fromMap({
+        'ui_template': 'analytics_template',
+        'schema_version': 1,
+        'title': 12,
+        'blocks': [],
+      });
+      expect(malformedEnvelope.envelopeValid, isFalse);
+    });
+
+    test('rejects malformed block fields instead of rendering invented defaults', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'analytics_template',
+        'schema_version': 1,
+        'title': 'بيانات مختبرة',
+        'blocks': [
+          {'type': 'metric', 'title': 'عدد', 'value': null},
+          {'type': 'text', 'text': ''},
+          {'type': 'metric', 'title': 'قيمة صحيحة', 'value': 5},
+        ],
+      });
+
+      expect(schema.envelopeValid, isTrue);
+      expect(schema.blocks, hasLength(1));
+      expect(schema.blocks.single['value'], 5);
+      expect(schema.validationErrors, hasLength(2));
+      expect(schema.hasRenderableBlocks, isTrue);
+    });
+
+    test('requires table rows to match the declared columns', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'generic_template',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'table',
+            'columns': ['الاسم', 'القيمة'],
+            'rows': [['عنصر واحد']],
+          },
+        ],
+      });
+
+      expect(schema.blocks, isEmpty);
+      expect(schema.hasRenderableBlocks, isFalse);
+      expect(schema.validationErrors, isNotEmpty);
+    });
+
+    test('registers every domain template used by trusted local services', () {
+      expect(TemplateRegistry.lookup('analytics_template'), isNotNull);
+      expect(TemplateRegistry.lookup('abjad_template'), isNotNull);
+      expect(TemplateRegistry.lookup('graph_template'), isNotNull);
+    });
+
     test('registry rejects duplicate identifiers and accepts new modules', () {
       const id = 'test_dynamic_module';
       expect(
