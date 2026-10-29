@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:flutter/services.dart';
 
 import '../../core/themes/mudabbir_design_tokens.dart';
 import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
 import 'components/block_registry.dart';
+import 'components/block_event_bus.dart';
+import 'components/block_event_scope.dart';
 
 /// Versioned payload contract shared by domain services and UI templates.
 /// Invalid envelopes fail closed; malformed blocks are excluded and reported.
@@ -448,7 +452,7 @@ abstract final class TemplateFactory {
 
 /// Entry point for agent payloads. The canonical source text/data must be
 /// supplied by domain services; this widget never computes missing facts.
-class UniversalTemplateRenderer extends StatelessWidget {
+class UniversalTemplateRenderer extends StatefulWidget {
   const UniversalTemplateRenderer({
     super.key,
     required this.dataPayload,
@@ -459,12 +463,32 @@ class UniversalTemplateRenderer extends StatelessWidget {
   final String? fallbackTitle;
 
   @override
+  State<UniversalTemplateRenderer> createState() =>
+      _UniversalTemplateRendererState();
+}
+
+class _UniversalTemplateRendererState extends State<UniversalTemplateRenderer> {
+  late final BlockEventBus _eventBus;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventBus = BlockEventBus();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_eventBus.close());
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final schema = TemplatePayloadSchema.fromMap(dataPayload);
+    final schema = TemplatePayloadSchema.fromMap(widget.dataPayload);
     final resolved = TemplatePayloadSchema(
       templateId: schema.templateId,
       version: schema.version,
-      title: schema.title.isEmpty ? (fallbackTitle ?? '') : schema.title,
+      title: schema.title.isEmpty ? (widget.fallbackTitle ?? '') : schema.title,
       domain: schema.domain,
       subtitle: schema.subtitle,
       source: schema.source,
@@ -473,7 +497,10 @@ class UniversalTemplateRenderer extends StatelessWidget {
       validationErrors: schema.validationErrors,
       envelopeValid: schema.envelopeValid,
     );
-    return TemplateFactory.create(context: context, schema: resolved);
+    return BlockEventScope(
+      bus: _eventBus,
+      child: TemplateFactory.create(context: context, schema: resolved),
+    );
   }
 }
 
@@ -504,9 +531,14 @@ class _SchemaDocument extends StatelessWidget {
             if (blocks.isEmpty)
               TemplateEmptyState(message: schema.emptyMessage)
             else
-              for (final block in blocks) ...[
+              for (var index = 0; index < blocks.length; index++) ...[
                 const SizedBox(height: MudabbirDesignTokens.sectionSpacing),
-                RepaintBoundary(child: _AtomicBlock(block: block)),
+                RepaintBoundary(
+                  child: _AtomicBlock(
+                    block: blocks[index],
+                    blockId: _canvasBlockId(blocks[index], index),
+                  ),
+                ),
               ],
           ],
         );
@@ -637,10 +669,18 @@ class _CanonicalQuranVerseBlock extends StatelessWidget {
       );
 }
 
+String _canvasBlockId(Map<String, dynamic> block, int index) {
+  final id = block['id'];
+  if (id is String && id.trim().isNotEmpty) return id.trim();
+  final type = block['type'] is String ? block['type'] as String : 'block';
+  return '$type-$index';
+}
+
 class _AtomicBlock extends StatelessWidget {
-  const _AtomicBlock({required this.block});
+  const _AtomicBlock({required this.block, this.blockId = ''});
 
   final Map<String, dynamic> block;
+  final String blockId;
 
   String _string(String key, [String fallback = '']) =>
       block[key] is String ? block[key] as String : fallback;
@@ -655,6 +695,9 @@ class _AtomicBlock extends StatelessWidget {
         (entry) => entry.key != 'type' && entry.key != 'title',
       ),
     );
+    componentData['_canvas_block_id'] = blockId.isNotEmpty
+        ? blockId
+        : _canvasBlockId(block, 0);
     final registeredComponent = BlockRegistry.buildBlock(
       type: type,
       title: title,
@@ -748,28 +791,24 @@ class _AtomicBlock extends StatelessWidget {
                 .map((row) => row.map((cell) => cell?.toString() ?? '—').toList())
                 .toList()
             : <List<String>>[];
-        return _GlassCard(
-          title: title,
-          child: columns.isEmpty || rows.isEmpty
-              ? const TemplateEmptyState(message: 'بيانات الجدول غير مكتملة.')
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: columns
-                        .map((column) => DataColumn(label: Text(column)))
-                        .toList(),
-                    rows: rows.map((row) {
-                      final cells = List<String>.generate(
-                        columns.length,
-                        (index) => index < row.length ? row[index] : '—',
-                      );
-                      return DataRow(
-                        cells: cells.map((cell) => DataCell(Text(cell))).toList(),
-                      );
-                    }).toList(),
-                  ),
-                ),
-        );
+        final rowIds = block['row_ids'] is List
+            ? (block['row_ids'] as List).whereType<String>().toList(growable: false)
+            : const <String>[];
+        return columns.isEmpty || rows.isEmpty
+            ? _GlassCard(
+                title: title,
+                child: const TemplateEmptyState(message: 'بيانات الجدول غير مكتملة.'),
+              )
+            : _InteractiveTableBlock(
+                title: title,
+                columns: columns,
+                rows: rows,
+                rowIds: rowIds,
+                sourceBlockId: blockId.isNotEmpty ? blockId : _canvasBlockId(block, 0),
+                targetBlockId: block['target_block_id'] is String
+                    ? block['target_block_id'] as String
+                    : null,
+              );
       case 'bar_chart':
         final entries = block['items'];
         final items = entries is List
@@ -848,20 +887,11 @@ class _AtomicBlock extends StatelessWidget {
       case 'relation_graph_block':
         final nodes = (block['nodes'] as List).whereType<Map>().toList();
         final edges = (block['edges'] as List).whereType<Map>().toList();
-        return _GlassCard(
+        return _InteractiveRelationGraph(
           title: title,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              for (final node in nodes)
-                Chip(avatar: const Icon(Icons.hub_outlined, size: 16),
-                    label: Text(node['label'] as String)),
-            ]),
-            if (edges.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              for (final edge in edges.take(80))
-                Text('${edge['from']}  ↔  ${edge['to']}', textDirection: TextDirection.rtl),
-            ],
-          ]),
+          nodes: nodes,
+          edges: edges,
+          blockId: blockId.isNotEmpty ? blockId : _canvasBlockId(block, 0),
         );
       case 'star_map_block':
       case 'vector_space_block':
@@ -947,6 +977,161 @@ class _AtomicBlock extends StatelessWidget {
         return const SizedBox.shrink();
     }
   }
+}
+
+class _InteractiveTableBlock extends StatefulWidget {
+  const _InteractiveTableBlock({
+    required this.title,
+    required this.columns,
+    required this.rows,
+    required this.rowIds,
+    required this.sourceBlockId,
+    this.targetBlockId,
+  });
+
+  final String title;
+  final List<String> columns;
+  final List<List<String>> rows;
+  final List<String> rowIds;
+  final String sourceBlockId;
+  final String? targetBlockId;
+
+  @override
+  State<_InteractiveTableBlock> createState() => _InteractiveTableBlockState();
+}
+
+class _InteractiveTableBlockState extends State<_InteractiveTableBlock> {
+  int? _selectedRow;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      title: widget.title,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          showCheckboxColumn: false,
+          columns: widget.columns.map((column) => DataColumn(label: Text(column))).toList(),
+          rows: List<DataRow>.generate(widget.rows.length, (rowIndex) {
+            final row = widget.rows[rowIndex];
+            final cells = List<String>.generate(
+              widget.columns.length,
+              (columnIndex) => columnIndex < row.length ? row[columnIndex] : '—',
+            );
+            final selectionId = rowIndex < widget.rowIds.length
+                ? widget.rowIds[rowIndex]
+                : (cells.isEmpty ? '$rowIndex' : cells.first);
+            return DataRow(
+              selected: _selectedRow == rowIndex,
+              onSelectChanged: (selected) {
+                if (selected != true) return;
+                setState(() => _selectedRow = rowIndex);
+                HapticFeedback.selectionClick();
+                final bus = BlockEventScope.maybeOf(context);
+                bus?.publish(BlockEvent(
+                  type: 'selection_changed',
+                  sourceBlockId: widget.sourceBlockId,
+                  targetBlockId: widget.targetBlockId,
+                  payload: <String, Object?>{
+                    'selection_id': selectionId,
+                    'row_index': rowIndex,
+                    'label': cells.isEmpty ? selectionId : cells.first,
+                  },
+                ));
+              },
+              cells: cells.map((cell) => DataCell(Text(cell))).toList(),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveRelationGraph extends StatefulWidget {
+  const _InteractiveRelationGraph({
+    required this.title,
+    required this.nodes,
+    required this.edges,
+    required this.blockId,
+  });
+
+  final String title;
+  final List<Map> nodes;
+  final List<Map> edges;
+  final String blockId;
+
+  @override
+  State<_InteractiveRelationGraph> createState() => _InteractiveRelationGraphState();
+}
+
+class _InteractiveRelationGraphState extends State<_InteractiveRelationGraph> {
+  BlockEventBus? _bus;
+  StreamSubscription<BlockEvent>? _subscription;
+  String? _selectedId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextBus = BlockEventScope.maybeOf(context);
+    if (identical(nextBus, _bus)) return;
+    unawaited(_subscription?.cancel());
+    _bus = nextBus;
+    _subscription = nextBus?.events.listen((event) {
+      if (event.type != 'selection_changed' ||
+          event.targetBlockId != widget.blockId ||
+          event.payload['selection_id'] is! String) return;
+      if (!mounted) return;
+      setState(() => _selectedId = event.payload['selection_id'] as String);
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_subscription?.cancel());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => _GlassCard(
+    title: widget.title,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final node in widget.nodes)
+            Builder(builder: (context) {
+              final id = node['id'] is String ? node['id'] as String : '';
+              final selected = id.isNotEmpty && id == _selectedId;
+              return Chip(
+                avatar: Icon(
+                  selected ? Icons.hub : Icons.hub_outlined,
+                  size: 16,
+                  color: selected ? MudabbirDesignTokens.cyan : null,
+                ),
+                backgroundColor: selected
+                    ? MudabbirDesignTokens.cyan.withOpacity(0.18)
+                    : null,
+                side: selected
+                    ? BorderSide(color: MudabbirDesignTokens.cyan)
+                    : null,
+                label: Text(node['label'] as String),
+              );
+            }),
+        ]),
+        if (widget.edges.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          for (final edge in widget.edges.take(80))
+            Text('${edge['from']}  ↔  ${edge['to']}', textDirection: TextDirection.rtl),
+        ],
+        if (_selectedId != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text('العنصر المحدد: $_selectedId', textDirection: TextDirection.rtl),
+          ),
+      ],
+    ),
+  );
 }
 
 class _ExpansionCard extends StatelessWidget {
