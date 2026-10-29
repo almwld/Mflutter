@@ -546,7 +546,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('المجتمع', Icons.groups_rounded, const CommunityScreen()),
       ('التحديات', Icons.flag_outlined, const ChallengesScreen()),
       ('لوحة المتصدرين', Icons.leaderboard_rounded, const LeaderboardScreen()),
-      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+
       ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
     final normalizedQuery = _normalizeSearchText(_query.trim());
