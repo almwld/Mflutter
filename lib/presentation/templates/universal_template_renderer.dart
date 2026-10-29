@@ -129,7 +129,7 @@ class TemplatePayloadSchema {
         final rawId = block['id'];
         final blockId = rawId is String && rawId.trim().isNotEmpty
             ? rawId.trim()
-            : '${block['type']}-$index';
+            : '__canvas_generated__${block['type']}-$index';
         if (!seenBlockIds.add(blockId)) {
           errors.add('الكتلة رقم ${index + 1}: معرّف id مكرر داخل اللوحة ($blockId).');
           continue;
@@ -704,7 +704,7 @@ String _canvasBlockId(Map<String, dynamic> block, int index) {
   final id = block['id'];
   if (id is String && id.trim().isNotEmpty) return id.trim();
   final type = block['type'] is String ? block['type'] as String : 'block';
-  return '$type-$index';
+  return '__canvas_generated__$type-$index';
 }
 
 class _AtomicBlock extends StatelessWidget {
