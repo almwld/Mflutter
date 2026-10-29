@@ -961,3 +961,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 - Abjad calculator usability: added a one-tap reset that clears both the text and computed result, plus a copy action that exports the selected table, totals, per-letter values, and the symbolic-association disclaimer.
 - The miracles screen navigation title now reflects its Quranic numerical-analysis workflow without claiming that raw word-count patterns prove a religious or scientific conclusion.
+
+
+- Final UI polish in this slice: astronomy and planetary tools are discoverable both from the More directory and the Home tools section; educational dialogs scroll on smaller screens; the Abjad calculator can clear its state and copy a complete result summary; the planet count in the science catalogue now matches the eight recognized planets. These changes remain unverified by runtime tests because test/build work is deferred by instruction.
