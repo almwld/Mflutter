@@ -98,12 +98,26 @@ class AbjadCalculator {
     'غ': 28,
   };
 
+  /// Canonical Arabic normalization shared by every calculation entry point.
+  /// Diacritics and tatweel are removed; equivalent alif/hamza forms are
+  /// normalized while ta marbuta remains distinct (value 400 in this convention).
+  static String normalizeArabic(String text) {
+    return text
+        .replaceAll(RegExp(r'[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]'), '')
+        .replaceAll('ـ', '')
+        .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+        .replaceAll('ؤ', 'و')
+        .replaceAll('ئ', 'ي')
+        .replaceAll('ى', 'ي');
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // حساب الجمل
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// حساب الجمل الكبير
   static int calculateKabir(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -114,6 +128,7 @@ class AbjadCalculator {
 
   /// حساب الجمل الصغير
   static int calculateSaghir(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -124,6 +139,7 @@ class AbjadCalculator {
 
   /// حساب الجمل الأوسط
   static int calculateWasat(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -160,6 +176,7 @@ class AbjadCalculator {
 
   /// حساب حرف بحرف
   static List<LetterResult> calculateLetterByLetter(String text) {
+    text = normalizeArabic(text);
     final results = <LetterResult>[];
     int runningTotal = 0;
 
