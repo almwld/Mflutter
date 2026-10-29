@@ -28,6 +28,16 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
     'crystals': 'الأحجار والمعادن', 'hermeticism': 'الهرمسية', 'general': 'عام',
   };
 
+  String _normalizeSearch(String value) => value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED\\u0640]'), '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\\s+'), ' ')
+      .trim();
+
   @override
   void initState() {
     super.initState();
@@ -185,7 +195,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
               prefixIcon: Icon(Icons.search_rounded),
               border: OutlineInputBorder(),
             ),
-            onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+            onChanged: (value) => setState(() => _query = _normalizeSearch(value)),
           ),
           const SizedBox(height: 8),
           FutureBuilder<List<OccultEntry>>(
@@ -223,7 +233,14 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
               final categories = <String>{'all', ...all.map((e) => e.category)}.toList();
               final filtered = all.where((entry) {
                 final categoryMatch = _category == 'all' || entry.category == _category;
-                final queryMatch = _query.isEmpty || entry.name.toLowerCase().contains(_query) || entry.description.toLowerCase().contains(_query);
+                final searchable = _normalizeSearch([
+                  entry.name,
+                  entry.description,
+                  entry.category,
+                  entry.source ?? '',
+                  entry.properties.entries.map((item) => '${item.key} ${item.value}').join(' '),
+                ].join(' '));
+                final queryMatch = _query.isEmpty || searchable.contains(_query);
                 return categoryMatch && queryMatch;
               }).toList();
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -296,7 +313,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
 
   void _showDetails(OccultEntry entry) {
     // Count a distinct knowledge topic only when the user opens its details.
-    unawaited(AchievementsService.recordScienceExplored(entry.name));
+    unawaited(AchievementsService.recordScienceExplored(entry.id));
     final colors = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
