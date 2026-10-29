@@ -32,12 +32,12 @@ class AgentKnowledgeService {
   List<String> get loadedSources => List.unmodifiable(_loadedSources);
 
   Future<void> initialize() async {
-    if (isReady) return;
     final pending = _initializing;
     if (pending != null) {
       await pending;
       return;
     }
+    if (isReady) return;
 
     final attempt = _initialize();
     _initializing = attempt;
