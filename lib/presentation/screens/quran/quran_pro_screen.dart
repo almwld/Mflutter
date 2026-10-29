@@ -174,6 +174,7 @@ class _QuranProScreenState extends State<QuranProScreen> {
       return preferences.setInt('mudabbir_quran_pro_last_surah', n);
     }).catchError((error) {
       debugPrint('QuranProScreen: could not save last surah: $error');
+      return false;
     }));
     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     // A newly opened surah has no selected verse yet; do not leave the nucleus
