@@ -520,30 +520,6 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     );
   }
 
-  Future<void> _showHonestStatus(String title, String message) async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: Text(message, textDirection: TextDirection.rtl),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('حسنًا'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    unawaited(AudioSynthesisService.stop().catchError((Object error) {
-      debugPrint('Could not stop cosmic audio during dispose: $error');
-    }));
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
