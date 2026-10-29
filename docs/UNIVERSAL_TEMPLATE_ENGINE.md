@@ -224,6 +224,8 @@ The registry now accepts the universal canvas identifier and the requested speci
 
 These identifiers reuse the same schema renderer and atomic block library; they are not 17 independent screen implementations. New topics can compose existing blocks without a new screen. A genuinely new visual primitive requires a code-reviewed validator/renderer implementation and registration, so the system is extensible rather than literally infinite or able to execute arbitrary model-authored UI code.
 
+The local GGUF runtime now receives a visual-orchestration system instruction. On explicit visual requests, `AgentChatProvider` attempts to parse the model response as JSON, validates it with `TemplatePayloadSchema`, and routes it to the same renderer only if the entire envelope and every block pass validation. Model-generated payloads are restricted to `hero_header_block`, `text`, `section`, `list`, and `interactive_card_block`; numeric, Quranic, status, chart, timeline, graph, spatial, and audio blocks are rejected from this untrusted path and remain reserved for deterministic app handlers. The source label is overwritten by the application to disclose that the layout is model-generated and not independently verified. Invalid JSON stays a normal text response; it is never partially executed as a UI specification.
+
 The current specialist visuals are deliberately honest and lightweight:
 
 - Star and vector fields are normalized **2D coordinate visualizations**, not live astronomical observations or 3D embedding engines.
