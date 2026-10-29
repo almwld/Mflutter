@@ -61,6 +61,29 @@ void main() {
     expect(intent?.payload['blocks'], hasLength(1));
   });
 
+  test('accepts specialist template ids through the same versioned contract', () {
+    final intent = coordinator.resolveSchemaPayload(
+      templateId: 'quantum_mesh_template',
+      title: 'رسم شبكة توضيحي',
+      domain: 'network_visualization',
+      source: 'LocalMeshDiagnostics',
+      blocks: const [
+        {
+          'type': 'quantum_particle_block',
+          'title': 'Illustrative topology',
+          'points': [
+            {'x': 0.2, 'y': 0.3},
+            {'x': 0.8, 'y': 0.7},
+          ],
+          'links': [[0, 1]],
+        },
+      ],
+    );
+    expect(intent?.targetScreen, 'template_renderer');
+    expect(intent?.templateId, 'quantum_mesh_template');
+    expect(intent?.payload['schema_version'], 1);
+  });
+
   test('rejects unknown template ids and missing schema data', () {
     expect(
       coordinator.resolveSchemaPayload(
