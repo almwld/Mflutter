@@ -3,7 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/presentation/screens/home_screen.dart';
 
 void main() {
+  Future<void> useTallViewport(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(800, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+  }
+
   testWidgets('More screen exposes previously orphaned screens', (tester) async {
+    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
     const labels = <String>[
@@ -37,6 +45,7 @@ void main() {
   });
 
   testWidgets('Arabic search ignores hamza variants and tashkeel', (tester) async {
+    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
     final search = find.byType(TextField);
 
@@ -53,6 +62,7 @@ void main() {
   });
 
   testWidgets('More screen search filters tools and can be cleared', (tester) async {
+    await useTallViewport(tester);
     await tester.pumpWidget(const MaterialApp(home: MoreScreen()));
 
     final search = find.byType(TextField);
@@ -71,8 +81,6 @@ void main() {
     await tester.enterText(search, '');
     await tester.pumpAndSettle();
 
-    // MoreScreen uses an eager children list, so the restored item remains
-    // present in the widget tree even when it is outside the viewport.
     expect(find.text('القرآن التفاعلي'), findsOneWidget);
   });
 }
