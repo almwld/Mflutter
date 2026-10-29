@@ -157,6 +157,9 @@ abstract final class TemplateBlockSchema {
         if (ayahNumber is! int || ayahNumber < 1) {
           errors.add('ayah_number يجب أن يكون عددًا صحيحًا موجبًا.');
         }
+        if (block.containsKey('text')) {
+          errors.add('كتلة quran_verse لا تقبل نصًا حرًا؛ يُحمّل النص من المصحف المحلي حسب المرجع.');
+        }
         // Deliberately do not accept free-form verse text from a model payload.
         break;
       case 'metric':
