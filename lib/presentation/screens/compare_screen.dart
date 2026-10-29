@@ -7,7 +7,9 @@ import '../../services/quran_loader_service.dart';
 /// Compares references against the canonical local Quran corpus.
 /// Source verse text remains unchanged; normalization is only for lexical overlap.
 class CompareScreen extends StatefulWidget {
-  const CompareScreen({super.key});
+  final String? agentQuery;
+
+  const CompareScreen({super.key, this.agentQuery});
   @override
   State<CompareScreen> createState() => _CompareScreenState();
 }
@@ -151,6 +153,19 @@ class _CompareScreenState extends State<CompareScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    if (widget.agentQuery?.trim().isNotEmpty == true) ...[
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Text(
+                            'طلب الوكيل: ${widget.agentQuery}',
+                            textDirection: TextDirection.rtl,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
