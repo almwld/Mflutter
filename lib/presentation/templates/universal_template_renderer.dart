@@ -13,6 +13,7 @@ class TemplatePayloadSchema {
     required this.title,
     required this.blocks,
     this.domain,
+    this.subtitle,
     this.source,
     this.emptyMessage = 'لا توجد بيانات موثوقة لعرضها بعد.',
     this.validationErrors = const <String>[],
@@ -23,6 +24,7 @@ class TemplatePayloadSchema {
   final int version;
   final String title;
   final String? domain;
+  final String? subtitle;
   final String? source;
   final List<Map<String, dynamic>> blocks;
   final String emptyMessage;
@@ -45,17 +47,30 @@ class TemplatePayloadSchema {
       errors.add('إصدار المخطط غير مدعوم: $version.');
     }
 
-    final rawTitle = payload['title'];
+    final rawMetadata = payload['metadata'];
+    final metadata = rawMetadata is Map ? rawMetadata : const <String, dynamic>{};
+    if (rawMetadata != null && rawMetadata is! Map) {
+      errors.add('حقل metadata يجب أن يكون كائنًا.');
+    }
+    if (metadata.keys.any((key) => key is! String)) {
+      errors.add('حقل metadata يحتوي مفاتيح غير نصية.');
+    }
+    final rawTitle = payload['title'] ?? metadata['title'];
     final title = rawTitle is String ? rawTitle : '';
     if (rawTitle != null && rawTitle is! String) {
       errors.add('حقل title يجب أن يكون نصًا.');
     }
-    final rawDomain = payload['domain'];
+    final rawDomain = payload['domain'] ?? metadata['topic_category'];
     final domain = rawDomain is String ? rawDomain : null;
     if (rawDomain != null && rawDomain is! String) {
-      errors.add('حقل domain يجب أن يكون نصًا.');
+      errors.add('حقل domain/topic_category يجب أن يكون نصًا.');
     }
-    final rawSource = payload['source'];
+    final rawSubtitle = payload['subtitle'] ?? metadata['subtitle'];
+    final subtitle = rawSubtitle is String ? rawSubtitle : null;
+    if (rawSubtitle != null && rawSubtitle is! String) {
+      errors.add('حقل subtitle يجب أن يكون نصًا.');
+    }
+    final rawSource = payload['source'] ?? metadata['source'];
     final source = rawSource is String && rawSource.trim().isNotEmpty
         ? rawSource.trim()
         : null;
@@ -121,6 +136,8 @@ class TemplatePayloadSchema {
         rawBlocks is List &&
         (rawTitle == null || rawTitle is String) &&
         (rawDomain == null || rawDomain is String) &&
+        (rawSubtitle == null || rawSubtitle is String) &&
+        (rawMetadata == null || (rawMetadata is Map && !metadata.keys.any((key) => key is! String))) &&
         (rawSource == null || (rawSource is String && rawSource.trim().isNotEmpty)) &&
         (rawEmptyMessage == null || rawEmptyMessage is String);
     return TemplatePayloadSchema(
@@ -128,6 +145,7 @@ class TemplatePayloadSchema {
       version: version < 0 ? 0 : version,
       title: title,
       domain: domain,
+      subtitle: subtitle,
       source: source,
       blocks: List<Map<String, dynamic>>.unmodifiable(blocks),
       emptyMessage: emptyMessage,
@@ -415,6 +433,7 @@ class UniversalTemplateRenderer extends StatelessWidget {
       version: schema.version,
       title: schema.title.isEmpty ? (fallbackTitle ?? '') : schema.title,
       domain: schema.domain,
+      subtitle: schema.subtitle,
       source: schema.source,
       blocks: schema.blocks,
       emptyMessage: schema.emptyMessage,
@@ -439,10 +458,10 @@ class _SchemaDocument extends StatelessWidget {
         return ListView(
           padding: EdgeInsets.all(wide ? 24 : 16),
           children: <Widget>[
-            if (schema.title.isNotEmpty || schema.domain != null || schema.source != null)
+            if (schema.title.isNotEmpty || schema.domain != null || schema.subtitle != null || schema.source != null)
               _GlassHeader(
                 title: schema.title,
-                subtitle: schema.domain,
+                subtitle: schema.subtitle ?? schema.domain,
                 source: schema.source,
               ),
             if (schema.validationErrors.isNotEmpty)
