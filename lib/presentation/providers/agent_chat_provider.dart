@@ -196,15 +196,15 @@ class AgentChatProvider extends ChangeNotifier {
   Future<void> _runTask(String query, {AgentTask? resumeFrom}) async {
     final clean = query.trim();
     if (clean.isEmpty) return;
+    final oldStatus = _activeTask?.status;
+    if (resumeFrom == null &&
+        (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
     final nucleusContext = NucleusService();
     _pendingUiIntent = _uiCoordinator.resolve(
       clean,
       currentSurahNumber: nucleusContext.currentSurahNumber,
       currentAyahNumber: nucleusContext.currentAyahNumber,
     );
-    final oldStatus = _activeTask?.status;
-    if (resumeFrom == null &&
-        (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
 
     final generation = ++_executionGeneration;
     final nucleusAtStart = NucleusService();
