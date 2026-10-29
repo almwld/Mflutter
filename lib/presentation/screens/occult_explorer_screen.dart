@@ -24,8 +24,18 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   bool _busy = false;
 
   static const _labels = <String, String>{
-    'all': 'الكل', 'tarot': 'التاروت', 'runes': 'الرونية',
-    'crystals': 'الأحجار والمعادن', 'hermeticism': 'الهرمسية', 'general': 'عام',
+    'all': 'الكل',
+    'tarot': 'التاروت',
+    'runes': 'الرونية',
+    'crystals': 'الأحجار والمعادن',
+    'hermeticism': 'الهرمسية',
+    'general': 'عام',
+    'astronomy': 'علم الفلك',
+    'planets': 'علم الكواكب',
+    'zodiac': 'علم الأبراج',
+    'abjad': 'حساب الجمل',
+    'history': 'تاريخ العلوم',
+    'physics': 'الفيزياء',
   };
 
   String _normalizeSearch(String value) => value
@@ -307,6 +317,10 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
       case 'runes': return Icons.gesture_rounded;
       case 'crystals': return Icons.diamond_outlined;
       case 'hermeticism': return Icons.menu_book_outlined;
+      case 'astronomy': return Icons.nights_stay_outlined;
+      case 'planets': return Icons.public_outlined;
+      case 'zodiac': return Icons.auto_awesome_outlined;
+      case 'physics': return Icons.science_outlined;
       default: return Icons.auto_awesome_outlined;
     }
   }
