@@ -275,8 +275,8 @@ class _CelestialPainter extends CustomPainter {
         textDirection: TextDirection.rtl, maxLines: 1,
       )..layout(maxWidth: size.width * 0.42);
       label.paint(canvas, Offset(
-        (position.dx + 7).clamp(0, size.width - label.width),
-        (position.dy - 16).clamp(0, size.height - label.height)));
+        (position.dx + 7).clamp(0.0, size.width - label.width).toDouble(),
+        (position.dy - 16).clamp(0.0, size.height - label.height).toDouble()));
     }
     final hud = TextPainter(
       text: TextSpan(text: 'AZ ${heading.toStringAsFixed(0)}° · ALT ${(-pitch * 180 / math.pi).toStringAsFixed(0)}°',
