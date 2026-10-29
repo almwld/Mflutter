@@ -338,6 +338,8 @@ class _MushafHome extends StatelessWidget {
       ('علم العناصر', Icons.water_drop_outlined, const ElementsScreen()),
       ('علم الأعداد', Icons.numbers_rounded, const NumbersScreen()),
       ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+      ('علم الفلك', Icons.nights_stay_rounded, const AstronomyScreen()),
       ('التدبر والبصائر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
