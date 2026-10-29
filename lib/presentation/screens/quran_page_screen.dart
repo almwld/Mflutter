@@ -14,11 +14,13 @@ import '../../services/bookmark_service.dart';
 class QuranPageScreen extends StatefulWidget {
   final int surahNumber;
   final String surahName;
+  final int initialAyahNumber;
 
   const QuranPageScreen({
     super.key,
     required this.surahNumber,
     required this.surahName,
+    this.initialAyahNumber = 1,
   });
 
   @override
@@ -33,6 +35,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
   bool _chromeVisible = true;
   Set<int> _bookmarkedAyahs = <int>{};
   final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _verseKeys = <int, GlobalKey>{};
 
   @override
   void initState() {
@@ -138,6 +141,19 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
             ? null
             : 'لم يُعثر على آيات صالحة للسورة المطلوبة داخل مصدر القرآن المحلي.';
       });
+      if (widget.initialAyahNumber > 1 &&
+          widget.initialAyahNumber <= correctedVerses.length) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final targetContext = _verseKeys[widget.initialAyahNumber]?.currentContext;
+          if (!mounted || targetContext == null) return;
+          Scrollable.ensureVisible(
+            targetContext,
+            alignment: 0.2,
+            duration: const Duration(milliseconds: 320),
+            curve: Curves.easeOutCubic,
+          );
+        });
+      }
       await _loadBookmarksForCurrentSurah();
       // Publish the actual selected Quran context to the shared nucleus.
       if (_verses.isNotEmpty) {
@@ -295,8 +311,10 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                   final verse = _verses[index];
                   final text = verse['text'] ?? '';
                   final ayahNum = index + 1;
+                  final verseKey = _verseKeys.putIfAbsent(ayahNum, GlobalKey.new);
 
                   return Container(
+                    key: verseKey,
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
