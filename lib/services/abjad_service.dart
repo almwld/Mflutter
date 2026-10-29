@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import '../core/utils/abjad_calculator.dart' as core;
 import '../domain/entities/abjad_result.dart' as model;
 import '../utils/abjad_constants.dart';
+import 'achievements_service.dart';
 
 /// Compatibility facade for older screens. All arithmetic is delegated to the
 /// canonical AbjadCalculator so screens cannot silently use different formulas.
@@ -12,6 +15,9 @@ class AbjadService {
   model.AbjadResult calculate(String text) {
     final normalized = core.AbjadCalculator.normalizeArabic(text);
     final canonical = core.AbjadCalculator.calculateAll(normalized);
+    if (canonical.kabir > 0) {
+      unawaited(AchievementsService.recordAbjadCalculation());
+    }
     final letters = core.AbjadCalculator.calculateLetterByLetter(normalized)
         .map((entry) => model.LetterResult(
               letter: entry.letter,
