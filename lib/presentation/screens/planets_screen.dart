@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../services/planetary_catalog_service.dart';
+import '../../services/achievements_service.dart';
 
 /// Offline reference for Solar System bodies. Distances and physical values
 /// are rounded educational averages, not live ephemeris data.
@@ -40,6 +43,12 @@ class _PlanetsScreenState extends State<PlanetsScreen> {
       .replaceAll('ة', 'ه')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(AchievementsService.recordScienceExplored('planetary_science'));
+  }
 
   @override
   void dispose() {
