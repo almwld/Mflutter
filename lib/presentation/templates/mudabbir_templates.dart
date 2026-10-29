@@ -141,6 +141,24 @@ class AnalyticsTemplate extends StatelessWidget {
       );
 }
 
+/// Focused list layout for side-by-side Quran reference comparison.
+class ComparisonTemplate extends StatelessWidget {
+  const ComparisonTemplate({
+    super.key,
+    required this.children,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  final List<Widget> children;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) => ListView(
+        padding: padding,
+        children: children,
+      );
+}
+
 class GraphTemplate extends StatelessWidget {
   const GraphTemplate({
     super.key,
