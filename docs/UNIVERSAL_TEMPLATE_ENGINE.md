@@ -1,9 +1,10 @@
 # Universal Dynamic Template Engine
 
-The renderer is a presentation layer. It does not query services, infer missing facts,
-or manufacture Quran text, astronomical measurements, counts, or agent health values.
-The caller must obtain values from the relevant local/domain service and pass them in
-`data_payload`. Missing or unsupported data is rendered as an explicit empty state.
+The renderer is a presentation layer. It does not infer missing facts or calculate
+metrics. Domain services provide computed values in `data_payload`. The one deliberate
+read-only exception is `quran_verse`: it carries only a canonical surah/ayah reference,
+and the renderer loads that exact verse from `QuranLoaderService` rather than trusting
+payload text. Missing or unsupported data is rendered as an explicit empty/error state.
 
 ## Contract
 
@@ -122,7 +123,8 @@ values only with service results before rendering.
 Register a new identifier with `TemplateRegistry.register(id, builder)`. Builders should
 compose the shared atomic blocks and use `MudabbirDesignTokens` for styling. Registration
 rejects duplicate or blank identifiers. Unknown template ids fail closed into an explicit
-empty/error state. Keep domain computation and data access outside the renderer.
+empty/error state. Keep calculations and general domain data access in services; the
+renderer may only perform the bounded canonical Quran reference lookup described above.
 
 ## Current live integrations
 
