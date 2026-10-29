@@ -15,6 +15,7 @@ import '../../services/achievements_service.dart';
 import '../../utils/abjad_constants.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
+import '../templates/universal_template_renderer.dart';
 
 /// Zion-style multi-agent runtime for مُدَبِّر.
 /// Agents execute local tools and cite bundled sources; no remote model or
@@ -487,6 +488,93 @@ class AgentChatProvider extends ChangeNotifier {
       );
     }
     return null;
+  }
+
+  /// Accepts only a conservative, text-oriented layout from local inference.
+  /// Numerical, Quranic, status, chart, spatial, and audio claims must come from
+  /// trusted domain handlers rather than unverified model-authored payloads.
+  bool _tryPublishGeneratedLayout({
+    required String query,
+    required String generated,
+    required String evidence,
+  }) {
+    final normalized = AgentKnowledgeService.normalize(query);
+    final isVisualRequest = RegExp(
+      r'(?:صمم|صمم لي|اعرض|لوحه|قالب|مخطط|رسم|واجهه|عرض بصري|تصور بصري|dashboard|diagram|visual layout)',
+    ).hasMatch(normalized);
+    if (!isVisualRequest) return false;
+
+    // Quran-related requests must remain on canonical deterministic handlers.
+    if (RegExp(r'قران|مصحف|ايه|سوره|تفسير').hasMatch(normalized)) return false;
+
+    try {
+      var candidate = generated.trim();
+      if (candidate.startsWith('```json')) {
+        candidate = candidate.substring(7);
+        if (candidate.endsWith('```')) {
+          candidate = candidate.substring(0, candidate.length - 3);
+        }
+        candidate = candidate.trim();
+      }
+      final decoded = jsonDecode(candidate);
+      if (decoded is! Map || decoded.keys.any((key) => key is! String)) {
+        return false;
+      }
+      final schema = TemplatePayloadSchema.fromMap(
+        Map<String, dynamic>.from(decoded),
+      );
+      if (!schema.envelopeValid ||
+          schema.validationErrors.isNotEmpty ||
+          schema.blocks.isEmpty ||
+          TemplateRegistry.lookup(schema.templateId) == null) {
+        return false;
+      }
+
+      const safeGeneratedTypes = <String>{
+        'hero_header_block',
+        'text',
+        'section',
+        'list',
+        'interactive_card_block',
+      };
+      bool isSafePresentationBlock(Map<String, dynamic> block) {
+        final type = block['type'];
+        if (type is! String || !safeGeneratedTypes.contains(type)) return false;
+        if (type == 'section' && block['children'] is List) {
+          for (final child in block['children'] as List) {
+            if (child is! Map) return false;
+            final normalizedChild = TemplateBlockSchema.normalize(child);
+            if (normalizedChild == null ||
+                !isSafePresentationBlock(normalizedChild)) return false;
+          }
+        }
+        return true;
+      }
+
+      if (schema.blocks.any((block) => !isSafePresentationBlock(block))) {
+        return false;
+      }
+
+      // Model-provided source metadata is not trusted as provenance. Use a
+      // truthful app-generated label and disclose that content is unverified.
+      final intent = _uiCoordinator.resolveSchemaPayload(
+        templateId: schema.templateId,
+        title: schema.title,
+        domain: schema.domain?.trim().isNotEmpty == true
+            ? schema.domain!.trim()
+            : 'general',
+        source: 'Local GGUF: تنسيق مولّد من الأدلة المرفقة؛ الادعاءات غير متحققة آليًا',
+        originalQuery: query,
+        blocks: schema.blocks,
+      );
+      if (intent == null) return false;
+      _pendingUiIntent = intent;
+      return true;
+    } catch (_) {
+      // Invalid/non-JSON model output remains a normal text answer; it is
+      // never partially interpreted as an executable UI specification.
+      return false;
+    }
   }
 
   /// Selects only registered agents; invalid or stale IDs never silently
@@ -1231,6 +1319,14 @@ class AgentChatProvider extends ChangeNotifier {
           evidence: boundedEvidence,
           maxTokens: 512,
         );
+        if (_tryPublishGeneratedLayout(
+          query: task.userQuery,
+          generated: generated,
+          evidence: boundedEvidence,
+        )) {
+          return 'جهّز النموذج المحلي لوحة عرض ديناميكية من الأدلة المرفقة. '
+              'المحتوى النصي مولّد وغير متحقق آليًا؛ راجع مصدر كل ادعاء.';
+        }
         return 'إجابة مولّدة محليًا بواسطة نموذج GGUF المحمّل (ليست نصًا قرآنيًا):\n'
             '$generated\n\n'
             'الأدلة والسياق المحلي المحدد، للرجوع والتحقق:\n$contextualEvidence\n\n'
