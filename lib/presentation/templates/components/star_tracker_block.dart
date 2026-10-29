@@ -185,14 +185,14 @@ class _StarTrackerContentState extends State<_StarTrackerContent> {
           child: GestureDetector(
             onTapUp: (details) {
               if (visible.isEmpty) return;
-              final box = context.findRenderObject() as RenderBox?;
-              if (box == null) return;
-              final local = box.globalToLocal(details.globalPosition);
+              final local = details.localPosition;
+              final chartWidth = (MediaQuery.sizeOf(context).width - 48).clamp(180.0, 1200.0);
+              const chartHeight = 250.0;
               _ProjectedStar? nearest;
               var best = 26.0;
               for (final item in visible) {
-                final dx = item.x * box.size.width - local.dx;
-                final dy = item.y * box.size.height - local.dy;
+                final dx = item.x * chartWidth - local.dx;
+                final dy = item.y * chartHeight - local.dy;
                 final distance = math.sqrt(dx * dx + dy * dy);
                 if (distance < best) { best = distance; nearest = item; }
               }
