@@ -44,6 +44,47 @@ void main() {
     expect(decoded.finalAnswer, 'اكتملت المهمة');
   });
 
+  test('provider resumes a recovered task and preserves completed step output', () async {
+    final store = AgentTaskStore.instance;
+    final now = DateTime.now();
+    await store.save(AgentTask(
+      id: 'resume-task',
+      userQuery: 'اختبار استئناف المهمة',
+      createdAt: now,
+      status: TaskStatus.running,
+      steps: const [
+        AgentStep(
+          number: 1,
+          agentName: 'researcher',
+          title: 'البحث',
+          subtitle: 'استرجاع الأدلة',
+          status: StepStatus.done,
+          progress: 1,
+          result: 'نتيجة البحث السابقة المحفوظة',
+        ),
+        AgentStep(
+          number: 2,
+          agentName: 'critic',
+          title: 'الناقد',
+          subtitle: 'مراجعة النتائج',
+          status: StepStatus.running,
+        ),
+      ],
+    ));
+
+    final provider = AgentChatProvider();
+    addTearDown(provider.dispose);
+    await provider.initialize();
+
+    expect(provider.activeTask?.status, TaskStatus.paused);
+    await provider.resumeTask();
+
+    expect(provider.activeTask?.status, TaskStatus.completed);
+    expect(provider.activeTask?.steps.first.result, 'نتيجة البحث السابقة المحفوظة');
+    expect(provider.activeTask?.steps.first.status, StepStatus.done);
+    expect(provider.activeTask?.steps.last.status, StepStatus.done);
+  });
+
   test('loading an interrupted task recovers it as paused without losing done steps', () async {
     final store = AgentTaskStore.instance;
     final now = DateTime.now();
