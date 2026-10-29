@@ -168,6 +168,8 @@ abstract final class TemplateBlockSchema {
               final child = children[i];
               if (child is! Map) {
                 errors.add('العنصر الفرعي رقم ${i + 1} ليس كائنًا.');
+              } else if (child.keys.any((key) => key is! String)) {
+                errors.add('العنصر الفرعي رقم ${i + 1} يحتوي مفاتيح غير نصية.');
               } else {
                 errors.addAll(validate(Map<String, dynamic>.from(child), depth: depth + 1)
                     .map((error) => 'العنصر الفرعي رقم ${i + 1}: $error'));
