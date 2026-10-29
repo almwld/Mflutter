@@ -122,6 +122,32 @@ void main() {
     expect(QuranicSearchEngine.search('الرحمة'), isNotEmpty);
   });
 
+  test('exact word counts report real occurrences and unique numeric verse references', () {
+    QuranicSearchEngine.indexVerses(const [
+      {
+        'id': '1',
+        'surah': 'الفاتحة',
+        'surah_number': '1',
+        'ayah': '1',
+        'text': 'نور نور منير',
+      },
+      {
+        'id': '2',
+        'surah': 'البقرة',
+        'surah_number': '2',
+        'ayah': '3',
+        'text': 'نور',
+      },
+    ]);
+
+    final result = QuranicSearchEngine.countExactWord('نور');
+    expect(result, isNotNull);
+    expect(result!.occurrenceCount, 3);
+    expect(result.ayahReferences, <String>['1:1', '2:3']);
+    expect(QuranicSearchEngine.countExactWord('منور')!.occurrenceCount, 0);
+    expect(QuranicSearchEngine.countExactWord('نور نور'), isNull);
+  });
+
   test('search normalization removes Quranic tashkeel without changing source text', () {
     const source = 'الرَّحْمَٰنِ';
     QuranicSearchEngine.indexVerses(const [
