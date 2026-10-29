@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/themes/mudabbir_design_tokens.dart';
 
-/// A small, versioned payload contract shared by agent output and UI templates.
-/// Unknown or malformed blocks are ignored rather than filled with fabricated data.
+/// Versioned payload contract shared by domain services and UI templates.
+/// Invalid envelopes fail closed; malformed blocks are excluded and reported.
 class TemplatePayloadSchema {
   const TemplatePayloadSchema({
     required this.templateId,
@@ -12,6 +12,8 @@ class TemplatePayloadSchema {
     required this.blocks,
     this.domain,
     this.emptyMessage = 'لا توجد بيانات موثوقة لعرضها بعد.',
+    this.validationErrors = const <String>[],
+    this.envelopeValid = true,
   });
 
   final String templateId;
@@ -20,50 +22,180 @@ class TemplatePayloadSchema {
   final String? domain;
   final List<Map<String, dynamic>> blocks;
   final String emptyMessage;
+  final List<String> validationErrors;
+  final bool envelopeValid;
+
+  bool get isValid => envelopeValid && validationErrors.isEmpty;
 
   factory TemplatePayloadSchema.fromMap(Map<String, dynamic> payload) {
+    final errors = <String>[];
+    final rawTemplateId = payload['ui_template'] ?? payload['template_id'];
+    final templateId = rawTemplateId is String ? rawTemplateId.trim() : '';
+    if (templateId.isEmpty) errors.add('معرّف القالب مفقود أو غير نصي.');
+
+    final rawVersion = payload['schema_version'];
+    final version = rawVersion is int ? rawVersion : -1;
+    if (rawVersion is! int) {
+      errors.add('إصدار المخطط schema_version يجب أن يكون عددًا صحيحًا.');
+    } else if (version != 1) {
+      errors.add('إصدار المخطط غير مدعوم: $version.');
+    }
+
+    final rawTitle = payload['title'];
+    final title = rawTitle is String ? rawTitle : '';
+    if (rawTitle != null && rawTitle is! String) {
+      errors.add('حقل title يجب أن يكون نصًا.');
+    }
+    final rawDomain = payload['domain'];
+    final domain = rawDomain is String ? rawDomain : null;
+    if (rawDomain != null && rawDomain is! String) {
+      errors.add('حقل domain يجب أن يكون نصًا.');
+    }
+    final rawEmptyMessage = payload['empty_message'];
+    final emptyMessage = rawEmptyMessage is String && rawEmptyMessage.trim().isNotEmpty
+        ? rawEmptyMessage
+        : 'لا توجد بيانات موثوقة لعرضها بعد.';
+    if (rawEmptyMessage != null && rawEmptyMessage is! String) {
+      errors.add('حقل empty_message يجب أن يكون نصًا.');
+    }
+
     final rawBlocks = payload['blocks'];
     final blocks = <Map<String, dynamic>>[];
-    if (rawBlocks is List) {
-      for (final item in rawBlocks) {
-        if (item is Map) {
-          blocks.add(Map<String, dynamic>.from(item));
+    if (rawBlocks is! List) {
+      errors.add('حقل blocks مطلوب ويجب أن يكون قائمة.');
+    } else {
+      for (var index = 0; index < rawBlocks.length; index++) {
+        final item = rawBlocks[index];
+        if (item is! Map) {
+          errors.add('الكتلة رقم ${index + 1} ليست كائنًا.');
+          continue;
+        }
+        final block = Map<String, dynamic>.from(item);
+        final blockErrors = TemplateBlockSchema.validate(block);
+        if (blockErrors.isEmpty) {
+          blocks.add(block);
+        } else {
+          errors.addAll(blockErrors.map((error) => 'الكتلة رقم ${index + 1}: $error'));
         }
       }
     }
+
+    final envelopeValid = templateId.isNotEmpty &&
+        version == 1 &&
+        rawVersion is int &&
+        (rawTitle == null || rawTitle is String) &&
+        (rawDomain == null || rawDomain is String) &&
+        (rawEmptyMessage == null || rawEmptyMessage is String);
     return TemplatePayloadSchema(
-      templateId: payload['ui_template']?.toString() ??
-          payload['template_id']?.toString() ??
-          'generic_template',
-      version: (payload['schema_version'] as num?)?.toInt() ?? 1,
-      title: payload['title']?.toString() ?? '',
-      domain: payload['domain']?.toString(),
+      templateId: templateId.isEmpty ? 'generic_template' : templateId,
+      version: version < 0 ? 0 : version,
+      title: title,
+      domain: domain,
       blocks: List<Map<String, dynamic>>.unmodifiable(blocks),
-      emptyMessage: payload['empty_message']?.toString() ??
-          'لا توجد بيانات موثوقة لعرضها بعد.',
+      emptyMessage: emptyMessage,
+      validationErrors: List<String>.unmodifiable(errors),
+      envelopeValid: envelopeValid,
     );
   }
 
-  bool get hasRenderableBlocks => blocks.any(TemplateBlockSchema.isSupported);
+  bool get hasRenderableBlocks =>
+      envelopeValid && blocks.isNotEmpty && blocks.any(TemplateBlockSchema.isSupported);
 }
 
-/// Strictly recognizes the small set of renderable atomic block types.
-/// This is a presentation schema, not a data source.
+/// Strict field-level validation for the renderer's atomic block contract.
 abstract final class TemplateBlockSchema {
   static const supportedTypes = <String>{
-    'text',
-    'metric',
-    'section',
-    'list',
-    'table',
-    'quran_verse',
-    'bar_chart',
-    'status',
+    'text', 'metric', 'section', 'list', 'table',
+    'quran_verse', 'bar_chart', 'status',
   };
 
   static bool isSupported(Map<String, dynamic> block) =>
-      supportedTypes.contains(block['type']) &&
-      block['type'] is String;
+      block['type'] is String && supportedTypes.contains(block['type']);
+
+  static List<String> validate(Map<String, dynamic> block, {int depth = 0}) {
+    final errors = <String>[];
+    final type = block['type'];
+    if (type is! String || !supportedTypes.contains(type)) {
+      return <String>['نوع الكتلة غير مدعوم.'];
+    }
+    if (block['title'] != null && block['title'] is! String) {
+      errors.add('title يجب أن يكون نصًا.');
+    }
+    switch (type) {
+      case 'text':
+      case 'quran_verse':
+        if (block['text'] is! String || (block['text'] as String).trim().isEmpty) {
+          errors.add('text مطلوب ويجب ألا يكون فارغًا.');
+        }
+        break;
+      case 'metric':
+        final value = block['value'];
+        if (value == null || !(value is String || value is num || value is bool)) {
+          errors.add('value مطلوب ويجب أن يكون قيمة بسيطة (نصًا أو رقمًا أو منطقيًا).');
+        }
+        break;
+      case 'section':
+        if (block['text'] != null && block['text'] is! String) {
+          errors.add('text يجب أن يكون نصًا.');
+        }
+        final children = block['children'];
+        if (children != null && children is! List) {
+          errors.add('children يجب أن تكون قائمة.');
+        } else if (children is List) {
+          if (depth >= 5 && children.isNotEmpty) {
+            errors.add('تجاوزت الأقسام الحد الأقصى للتداخل.');
+          } else {
+            for (var i = 0; i < children.length; i++) {
+              final child = children[i];
+              if (child is! Map) {
+                errors.add('العنصر الفرعي رقم ${i + 1} ليس كائنًا.');
+              } else {
+                errors.addAll(validate(Map<String, dynamic>.from(child), depth: depth + 1)
+                    .map((error) => 'العنصر الفرعي رقم ${i + 1}: $error'));
+              }
+            }
+          }
+        }
+        break;
+      case 'list':
+        final items = block['items'];
+        if (items is! List || items.any((item) => item is! String)) {
+          errors.add('items يجب أن تكون قائمة من النصوص.');
+        }
+        break;
+      case 'table':
+        final columns = block['columns'];
+        final rows = block['rows'];
+        if (columns is! List || columns.isEmpty || columns.any((item) => item is! String)) {
+          errors.add('columns يجب أن تكون قائمة غير فارغة من النصوص.');
+        }
+        if (rows is! List || rows.any((row) =>
+            row is! List || row.any((cell) =>
+                !(cell == null || cell is String || cell is num || cell is bool)))) {
+          errors.add('rows يجب أن تكون قائمة صفوف بخلايا بسيطة.');
+        } else if (columns is List && rows is List &&
+            rows.whereType<List>().any((row) => row.length != columns.length)) {
+          errors.add('عدد خلايا كل صف يجب أن يطابق عدد الأعمدة.');
+        }
+        break;
+      case 'bar_chart':
+        final items = block['items'];
+        if (items is! List || items.isEmpty || items.any((item) =>
+            item is! Map || item['label'] is! String || item['value'] is! num)) {
+          errors.add('items يجب أن تحتوي عناصر لها label نصي وvalue رقمي.');
+        }
+        break;
+      case 'status':
+        if (block['status'] != null && block['status'] is! String) {
+          errors.add('status يجب أن يكون نصًا.');
+        }
+        if (block['message'] != null && block['message'] is! String) {
+          errors.add('message يجب أن يكون نصًا.');
+        }
+        break;
+    }
+    return errors;
+  }
 }
 
 typedef TemplateBuilder = Widget Function(
@@ -112,6 +244,11 @@ abstract final class TemplateFactory {
     required BuildContext context,
     required TemplatePayloadSchema schema,
   }) {
+    if (!schema.envelopeValid) {
+      return TemplateEmptyState(
+        message: 'تعذر عرض البيانات لأن مخطط القالب غير صالح. راجع إصدار المخطط والحقول المطلوبة.',
+      );
+    }
     final builder = TemplateRegistry.lookup(schema.templateId);
     if (builder == null) {
       return TemplateEmptyState(
@@ -144,6 +281,8 @@ class UniversalTemplateRenderer extends StatelessWidget {
       domain: schema.domain,
       blocks: schema.blocks,
       emptyMessage: schema.emptyMessage,
+      validationErrors: schema.validationErrors,
+      envelopeValid: schema.envelopeValid,
     );
     return TemplateFactory.create(context: context, schema: resolved);
   }
