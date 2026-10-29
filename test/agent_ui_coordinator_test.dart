@@ -84,6 +84,33 @@ void main() {
     );
   });
 
+  test('rejects schema intents without truthful provenance metadata', () {
+    expect(
+      coordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: 'نتائج',
+        domain: 'quran',
+        source: ' ',
+        blocks: const [
+          {'type': 'metric', 'title': 'عدد', 'value': 1},
+        ],
+      ),
+      isNull,
+    );
+    expect(
+      coordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: ' ',
+        domain: 'quran',
+        source: 'QuranLoaderService',
+        blocks: const [
+          {'type': 'metric', 'title': 'عدد', 'value': 1},
+        ],
+      ),
+      isNull,
+    );
+  });
+
   test('does not navigate for ordinary questions', () {
     expect(coordinator.resolve('اشرح معنى الصبر'), isNull);
   });
