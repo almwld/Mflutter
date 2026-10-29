@@ -230,7 +230,7 @@ class AgentChatProvider extends ChangeNotifier {
     ).firstMatch(normalized);
     if (countMatch != null) {
       final requested = countMatch.group(1) ?? '';
-      final canonical = await _loadCanonicalAyahsForPresentation();
+      final canonical = await QuranLoaderService.loadAllAyahs();
       } catch (error) {
         return _uiCoordinator.resolveSchemaPayload(
           templateId: 'analytics_template',
@@ -403,7 +403,13 @@ class AgentChatProvider extends ChangeNotifier {
     if (resumeFrom == null &&
         (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
     final nucleusContext = NucleusService();
-    _pendingUiIntent = await _resolveTrustedSchemaIntent(clean) ??
+    AgentUiIntent? schemaIntent;
+    try {
+      schemaIntent = await _resolveTrustedSchemaIntent(clean);
+    } catch (error) {
+      _messages.add('تعذر تجهيز العرض الديناميكي من المصدر المحلي: $error');
+    }
+    _pendingUiIntent = schemaIntent ??
         _uiCoordinator.resolve(
           clean,
           currentSurahNumber: nucleusContext.currentSurahNumber,
