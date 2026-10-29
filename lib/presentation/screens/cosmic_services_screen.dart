@@ -427,42 +427,56 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('الصوت والتركيز'),
-        content: const Text(
-          'توليد محلي قصير لنغمتين قريبتين في قناتي الاستريو. الرقم المسمّى هو فرق التردد بين القناتين، وليس نغمة مسموعة منفردة ولا علاجًا أو ضمانًا لتحسين التركيز.',
-          textDirection: TextDirection.rtl,
+        content: SizedBox(
+          width: 380,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'توليد محلي قصير لنغمتين قريبتين في قناتي الاستريو. الرقم المسمّى هو فرق التردد بين القناتين، وليس نغمة مسموعة منفردة ولا علاجًا أو ضمانًا لتحسين التركيز.',
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () => _playTone(AudioSynthesisService.playTranquility),
+                icon: const Icon(Icons.spa_outlined),
+                label: const Text('هدوء · 7.83 Hz'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _playTone(AudioSynthesisService.playFocus),
+                icon: const Icon(Icons.center_focus_strong),
+                label: const Text('تركيز · 14 Hz'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _playTone(AudioSynthesisService.playDeepMeditation),
+                icon: const Icon(Icons.self_improvement),
+                label: const Text('تأمل · 4 Hz'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: () async {
+                  try {
+                    await AudioSynthesisService.stop();
+                    if (dialogContext.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('تم إيقاف الصوت.')),
+                      );
+                    }
+                  } catch (error) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('تعذر إيقاف الصوت: $error')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.stop_circle_outlined),
+                label: const Text('إيقاف الصوت'),
+              ),
+            ],
+          ),
         ),
         actions: [
-          TextButton.icon(
-            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playTranquility),
-            icon: const Icon(Icons.spa_outlined),
-            label: const Text('هدوء · 7.83 Hz'),
-          ),
-          TextButton.icon(
-            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playFocus),
-            icon: const Icon(Icons.center_focus_strong),
-            label: const Text('تركيز · 14 Hz'),
-          ),
-          TextButton.icon(
-            onPressed: _audioBusy ? null : () => _playTone(AudioSynthesisService.playDeepMeditation),
-            icon: const Icon(Icons.self_improvement),
-            label: const Text('تأمل · 4 Hz'),
-          ),
-          TextButton.icon(
-            onPressed: () async {
-              try {
-                await AudioSynthesisService.stop();
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              } catch (error) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('تعذر إيقاف الصوت: $error')),
-                  );
-                }
-              }
-            },
-            icon: const Icon(Icons.stop_circle_outlined),
-            label: const Text('إيقاف الصوت'),
-          ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('إغلاق'),
