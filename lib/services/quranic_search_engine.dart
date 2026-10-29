@@ -1,3 +1,17 @@
+/// A lexical count produced only when the canonical local index is ready.
+/// A zero count is valid; null means the engine cannot verify the request.
+class QuranWordCountResult {
+  const QuranWordCountResult({
+    required this.normalizedWord,
+    required this.occurrenceCount,
+    required this.ayahReferences,
+  });
+
+  final String normalizedWord;
+  final int occurrenceCount;
+  final List<String> ayahReferences;
+}
+
 class QuranicSearchEngine {
   static final Map<String, List<Map<String, String>>> _index = {};
   static List<Map<String, String>> _indexedVerses =
@@ -45,6 +59,36 @@ class QuranicSearchEngine {
 
     _indexSignature = signature;
     _ready = true;
+  }
+
+  /// Counts exact normalized word tokens in the initialized local Quran index.
+  /// Returns null when the index is unavailable or the request is not one word.
+  /// The count is lexical, not morphological/root-based.
+  static QuranWordCountResult? countExactWord(String query) {
+    if (!_ready) return null;
+    final normalizedWord = normalize(query);
+    if (normalizedWord.isEmpty ||
+        normalizedWord.length < 2 ||
+        normalizedWord.contains(' ') ||
+        normalizedWord.split(' ').length != 1) {
+      return null;
+    }
+
+    final occurrences = _index[normalizedWord] ?? const <Map<String, String>>[];
+    final references = <String>[];
+    final seenReferences = <String>{};
+    for (final verse in occurrences) {
+      final surah = verse['surah_number'] ?? verse['surah'] ?? '';
+      final ayah = verse['ayah'] ?? '';
+      if (surah.isEmpty || ayah.isEmpty) continue;
+      final reference = '$surah:$ayah';
+      if (seenReferences.add(reference)) references.add(reference);
+    }
+    return QuranWordCountResult(
+      normalizedWord: normalizedWord,
+      occurrenceCount: occurrences.length,
+      ayahReferences: List<String>.unmodifiable(references),
+    );
   }
 
   static List<Map<String, String>> search(String query) {
