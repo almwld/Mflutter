@@ -38,13 +38,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'تعذر تحميل إنجازاتك المحلية.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'تعذر تحميل إنجازاتك المحلية.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _retry,
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
                 ),
               ),
             );
