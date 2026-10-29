@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'achievements_service.dart';
+
 /// Device-local personal notes. Entries are records of the user's words, not
 /// dream interpretations, predictions, or generated religious conclusions.
 class DreamJournalService {
@@ -35,6 +37,7 @@ class DreamJournalService {
       if (!await prefs.setString(storageKey, jsonEncode(bounded))) {
         throw StateError('تعذر حفظ مذكرة الحلم محليًا.');
       }
+      await AchievementsService.recordDreamSaved();
     });
   }
 
