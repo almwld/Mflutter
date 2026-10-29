@@ -957,3 +957,7 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `ScienceConstants` descriptions for planets and astronomy now use physical/orbital study language; zodiac, elements, abjad, and related historical categories are explicitly framed as cultural or symbolic traditions rather than scientifically validated influence or prediction claims.
+
+
+- Abjad calculator usability: added a one-tap reset that clears both the text and computed result, plus a copy action that exports the selected table, totals, per-letter values, and the symbolic-association disclaimer.
+- The miracles screen navigation title now reflects its Quranic numerical-analysis workflow without claiming that raw word-count patterns prove a religious or scientific conclusion.
