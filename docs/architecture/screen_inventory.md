@@ -922,3 +922,6 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 
 
 - `AgentKnowledgeService.search` now uses deterministic tie-breakers (source, title, then content) after its lexical score, so repeated identical queries return a stable ordering when several documents score equally.
+
+
+- `AgentKnowledgeService.search` now returns an empty immutable result immediately for blank queries or nonpositive limits, avoiding unnecessary initialization and invalid take limits.
