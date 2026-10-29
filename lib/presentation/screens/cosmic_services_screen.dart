@@ -426,6 +426,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: const Text('الصوت والتركيز'),
         content: SizedBox(
           width: 380,
@@ -494,6 +495,7 @@ class _CosmicServicesScreenState extends State<CosmicServicesScreen> {
         builder: (context, setDialogState) {
           final probability = math.pow(math.sin(angle * math.pi / 360), 2).toDouble();
           return AlertDialog(
+            scrollable: true,
             title: const Text('نموذج كيوبت تعليمي مبسّط'),
             content: SizedBox(
               width: 420,
