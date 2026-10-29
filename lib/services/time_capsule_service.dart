@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'achievements_service.dart';
+
 class TimeCapsuleService {
   static const _key = 'mudabbir.time_capsules';
 
@@ -37,6 +39,7 @@ class TimeCapsuleService {
       if (!await prefs.setString(_key, jsonEncode(capsules))) {
         throw StateError('تعذر حفظ الكبسولة في التخزين المحلي.');
       }
+      await AchievementsService.recordTimeCapsuleSealed();
     });
   }
 
