@@ -943,3 +943,7 @@ Per the user's current instruction, no tests, formatter, analyzer, or APK build 
 - `CosmicServicesScreen` now routes astronomy to the working offline astronomy tools, connects the existing local stereo-tone generator with play/stop and clear non-therapeutic labeling, and provides a small qubit/Born-rule probability demonstration instead of presenting the previous placeholder card as a working physical simulator. Existing local dream notes, time capsules, and gaze-tracking route are retained.
 - `OccultExplorerScreen` search now normalizes Arabic diacritics/orthographic variants and searches entry names, descriptions, categories, source labels, and structured properties. Exploration achievements use stable entry IDs.
 - No tests, analyzer, formatter, or Android build were run during this implementation slice.
+
+
+- The knowledge explorer's offline starter dataset now includes astronomy fundamentals (AU, lunar phases, Kepler's orbital relation), factual Earth/Mars reference entries, and a clearly labeled historical/cultural entry on the twelve-sign zodiac. The category chips have Arabic labels/icons for astronomy, planets, zodiac, physics, and history-related records; these records remain available if the optional knowledge asset cannot be loaded.
+- Cosmic Services migration now preserves its legacy capsule source when malformed legacy records are encountered, and the dream-journal list can scroll through all saved entries rather than truncating the visible collection to four.
