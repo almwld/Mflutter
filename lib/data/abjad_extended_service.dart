@@ -1,32 +1,33 @@
+import '../core/utils/abjad_calculator.dart';
 import '../utils/abjad_constants.dart';
 
+/// One canonical normalization and arithmetic path for all Abjad tools.
+///
+/// The values are conventional letter-number mappings, not scientific
+/// measurements or a basis for predictions. Unsupported characters are ignored.
 class AbjadExtendedService {
   AbjadExtendedService._();
 
-  /// Canonical large-Abjad values shared with the primary calculator.
   static const Map<String, int> values = AbjadConstants.abjadSquare;
 
-  /// Removes harakat and normalizes common Arabic letter variants.
+  /// Remove Arabic marks and normalize equivalent spellings consistently.
+  /// Ta marbuta is intentionally preserved: traditional mappings may assign it
+  /// 400, so silently converting it to ه would change the selected convention.
   static String normalize(String text) {
     return text
         .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll('ـ', '')
         .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
-        .replaceAll('ى', 'ي')
         .replaceAll('ؤ', 'و')
         .replaceAll('ئ', 'ي')
-        .replaceAll('ـ', '');
+        .replaceAll('ى', 'ي');
   }
 
-  /// Abjad al-kabir. Punctuation, spaces, and non-Arabic characters are ignored.
-  static int calculate(String text) {
-    var total = 0;
-    for (final rune in normalize(text).runes) {
-      final letter = String.fromCharCode(rune);
-      total += values[letter] ?? 0;
-    }
-    return total;
-  }
+  /// Canonical large-Abjad sum. Uses the same implementation as the main UI.
+  static int calculate(String text) =>
+      AbjadCalculator.calculateKabir(normalize(text));
 
+  /// Per-letter values from the same map and normalization policy.
   static List<MapEntry<String, int>> analyzeLetters(String text) {
     final result = <MapEntry<String, int>>[];
     for (final rune in normalize(text).runes) {
