@@ -14,6 +14,7 @@ import '../nucleus_screen.dart';
 import '../miracles_screen.dart';
 import '../compare_screen.dart';
 import '../quran_page_screen.dart';
+import '../../templates/universal_template_renderer.dart';
 
 class AgentConsoleScreen extends StatelessWidget {
   const AgentConsoleScreen({super.key});
@@ -72,6 +73,32 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
         return;
       }
       final Map<String, dynamic> payload = intent.payload;
+      // New schema-driven payloads render through the universal engine.
+      // Legacy intents without a blocks schema retain their domain screens.
+      if (payload['blocks'] is List) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            settings: RouteSettings(
+              name: '/agent-adaptive/template',
+              arguments: intent.toJson(),
+            ),
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(
+                payload['title']?.toString().trim().isNotEmpty == true
+                    ? payload['title'].toString()
+                    : 'عرض مُدَبِّر الديناميكي',
+              )),
+              body: UniversalTemplateRenderer(
+                dataPayload: <String, dynamic>{
+                  ...payload,
+                  'ui_template': intent.templateId,
+                },
+              ),
+            ),
+          ),
+        );
+        return;
+      }
       final Widget? destination;
       switch (intent.targetScreen) {
         case 'miracles_screen':
