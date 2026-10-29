@@ -550,9 +550,7 @@ class AgentChatProvider extends ChangeNotifier {
     switch (agent.id) {
       case 'planner':
       case 'muwajjih':
-        return 'الخطة: (1) تحديد النطاق، (2) استرجاع أدلة من assets، '
-            '(3) فحص النواقص والتناقضات، (4) التحقق من المصادر، (5) حفظ ملخص محلي. '
-            'لا تُنفّذ أدوات خارجية غير متاحة.';
+        return _buildExecutionPlan(query);
       case 'safety':
         return 'فحص الأمان: البحث محلي وقراءة فقط؛ لا اتصال بخدمة بعيدة، '
             'ولا ادعاء بتشغيل نموذج توليدي أو أوامر نظام.';
@@ -729,6 +727,40 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   int? _currentStepNumber;
+
+  /// Produces an honest, query-specific execution outline from the same
+  /// deterministic routing rules used by the runner. This is a real plan of
+  /// registered handlers, not a claim that the language model generated it.
+  String _buildExecutionPlan(String query) {
+    final routed = _route(query)
+        .where((agent) =>
+            agent.id != 'planner' &&
+            agent.id != 'muwajjih' &&
+            agent.id != 'safety')
+        .toList(growable: false);
+    if (routed.isEmpty) {
+      return 'تعذر تكوين خطة قابلة للتنفيذ: لم يُنتج موجّه المهام أي معالج مسجل. '
+          'لم يبدأ تنفيذ بديل غير موثق.';
+    }
+
+    final intent = parseVerseReference(query) != null
+        ? 'استرجاع آية محددة والتحقق من مرجعها'
+        : RegExp(r'جمل|ابجد').hasMatch(AgentKnowledgeService.normalize(query))
+            ? 'حساب أبجد وفق الجدول المحلي ومراجعة النتيجة'
+            : RegExp(r'عدد|تكرار|مره|احصاء|كلمه')
+                    .hasMatch(AgentKnowledgeService.normalize(query))
+                ? 'إجراء بحث أو إحصاء نصي من البيانات المحلية'
+                : 'استرجاع أدلة محلية ومراجعة حدود الاستنتاج';
+    final stages = routed.asMap().entries.map((entry) {
+      final agent = entry.value;
+      return '${entry.key + 1}. ${agent.name} (${agent.id}): ${agent.description}';
+    }).join('\n');
+    return 'خطة تنفيذ محلية مبنية على قواعد التوجيه الفعلية.\n'
+        'الهدف المصنّف: $intent.\n'
+        'المعالجات المسجلة التي سيحاول المسار تشغيلها:\n$stages\n'
+        'مصدر الخطة: قواعد التوجيه المحلية وسجل الوكلاء؛ '
+        'لم تُستخدم خدمة تخطيط بعيدة، ولا تعني الخطة أن الخطوات قد نُفّذت بعد.';
+  }
 
   Future<String> _searchKnowledge(AgentDefinition agent, String query) async {
     final includeVariants = RegExp(r'مسند|هيروغليف|عثمان|خط|صيغة').hasMatch(query);
