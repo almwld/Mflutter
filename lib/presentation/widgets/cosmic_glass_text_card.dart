@@ -47,7 +47,7 @@ class _CosmicGlassTextCardState extends State<CosmicGlassTextCard>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (MediaQuery.of(context).disableAnimations) {
       _controller
         ..stop()
         ..value = 1;
@@ -64,7 +64,7 @@ class _CosmicGlassTextCardState extends State<CosmicGlassTextCard>
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return RepaintBoundary(
       child: Center(
