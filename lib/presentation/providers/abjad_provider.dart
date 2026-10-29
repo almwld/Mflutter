@@ -10,14 +10,16 @@ class AbjadProvider extends ChangeNotifier {
   AbjadResult? get lastResult => _lastResult;
   String get inputText => _inputText;
 
-  void calculateAbjad(String text) {
+  void calculateAbjad(String text, {bool alphabetical = false}) {
     _inputText = text;
     var major = 0;
     final letterResults = <LetterResult>[];
 
     // Use the traditional Abjad table; Unicode code points are not Abjad values.
     for (final letter in text.split('')) {
-      final value = AbjadConstants.getValue(letter);
+      final value = alphabetical
+          ? AbjadConstants.getAlphabeticalValue(letter)
+          : AbjadConstants.getValue(letter);
       if (value <= 0) continue;
       major += value;
       letterResults.add(LetterResult(letter: letter, value: value));
