@@ -128,10 +128,14 @@ class TimeCapsuleService {
     if (raw == null || raw.trim().isEmpty) return [];
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! List) return [];
+      if (decoded is! List) {
+        throw StateError('بنية الكبسولات المحفوظة ليست قائمة صالحة؛ لم تُستبدل البيانات الموجودة.');
+      }
       final capsules = <Map<String, dynamic>>[];
       for (final row in decoded) {
-        if (row is! Map) continue;
+        if (row is! Map) {
+          throw StateError('تحتوي الكبسولات المحفوظة على سجل غير صالح؛ أُوقف الحفظ لحماية البيانات.');
+        }
         final content = row['content'];
         final unlockDate = row['unlockDate'];
         if (content is! String ||
@@ -139,7 +143,7 @@ class TimeCapsuleService {
             content.length > maxContentLength ||
             unlockDate is! String ||
             DateTime.tryParse(unlockDate) == null) {
-          continue;
+          throw StateError('تحتوي الكبسولات المحفوظة على حقول غير صالحة؛ أُوقف الحفظ لحماية البيانات.');
         }
         capsules.add(<String, dynamic>{
           'id': (row['id'] is String && (row['id'] as String).isNotEmpty)
