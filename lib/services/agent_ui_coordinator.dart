@@ -1,4 +1,5 @@
 import '../domain/entities/agent_ui_intent.dart';
+import '../presentation/templates/adaptive_template_selector.dart';
 
 /// Deterministic, local-first routing policy for agent-driven presentation.
 /// Only allow-listed screen/template pairs can be emitted. General questions
@@ -121,42 +122,23 @@ class AgentUiCoordinator {
     required String source,
     String? originalQuery,
   }) {
-    const supportedTemplates = <String>{
-      'generic_template',
-      'reader_template',
-      'analytics_template',
-      'comparison_template',
-      'graph_template',
-      'cosmic_template',
-      'abjad_template',
-      'agent_template',
-      'universal_dynamic_canvas',
-      'dashboard_template',
-      'chat_template',
-      'library_template',
-      'player_template',
-      'settings_template',
-      'search_template',
-      'profile_template',
-      'lab_template',
-      'service_hub_template',
-      'cosmic_celestial_template',
-      'quantum_mesh_template',
-      'vector_embedding_template',
-      'dream_journal_template',
-      'sovereign_ar_iot_template',
-    };
     final normalizedTemplateId = templateId.trim();
-    if (!supportedTemplates.contains(normalizedTemplateId) ||
+    if (!AdaptiveTemplateSelector.supportedTemplates.contains(normalizedTemplateId) ||
         title.trim().isEmpty ||
         domain.trim().isEmpty ||
         source.trim().isEmpty ||
         blocks.isEmpty) {
       return null;
     }
+    final selectedTemplateId = AdaptiveTemplateSelector.select(
+      requestedTemplateId: normalizedTemplateId,
+      domain: domain,
+      query: originalQuery ?? title,
+      blocks: blocks,
+    );
     return _intent(
       target: 'template_renderer',
-      template: normalizedTemplateId,
+      template: selectedTemplateId,
       query: originalQuery ?? title,
       payload: {
         'schema_version': 1,
