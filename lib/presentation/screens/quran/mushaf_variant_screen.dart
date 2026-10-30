@@ -333,7 +333,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               child: Text(
                 '$_modeName — صفحة $_page',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   color: _pageTextColor,
                   fontWeight: FontWeight.w800,
                 ),
@@ -399,7 +399,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   leading: Icon(
                     _mode == entry.$1 ? Icons.radio_button_checked : Icons.radio_button_off,
-                    color: _mode == entry.$1 ? gold : const Color(0xFF8A7B61),
+                    color: _mode == entry.$1 ? gold : _pageTextColor.withOpacity(.62),
                   ),
                   title: Text(entry.$2, style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700, color: _pageTextColor)),
                   subtitle: Text(entry.$3, style: TextStyle(fontFamily: 'Amiri', fontSize: 11, color: _pageTextColor.withOpacity(.78))),
