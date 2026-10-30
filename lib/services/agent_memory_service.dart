@@ -11,6 +11,10 @@ class AgentMemoryService {
   static const _historyKey = 'mudabbir_super_agent_history_v1';
   static const _vaultKey = 'mudabbir_super_agent_vault_v1';
 
+  // History and vault share one serialized read-modify-write queue so two
+  // agents saving at nearly the same time cannot overwrite each other's data.
+  Future<dynamic> _writeQueue = Future<dynamic>.value();
+
   Future<List<Map<String, dynamic>>> recentRuns({int limit = 8}) async {
     if (limit <= 0) return const <Map<String, dynamic>>[];
     final prefs = await SharedPreferences.getInstance();
@@ -22,13 +26,24 @@ class AgentMemoryService {
     required String query,
     required String answer,
     required List<String> sources,
+  }) {
+    final operation = _writeQueue.catchError((Object _) {}).then((_) =>
+        _saveRun(query: query, answer: answer, sources: sources));
+    _writeQueue = operation;
+    return operation;
+  }
+
+  Future<void> _saveRun({
+    required String query,
+    required String answer,
+    required List<String> sources,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final rows = _decodeRows(prefs.getString(_historyKey));
     rows.add({
       'query': query.length > 500 ? '${query.substring(0, 500)}…' : query,
       'answer': answer.length > 6000 ? '${answer.substring(0, 6000)}…' : answer,
-      'sources': sources,
+      'sources': sources.take(30).toList(growable: false),
       'savedAt': DateTime.now().toIso8601String(),
     });
     final bounded = rows.length > 20 ? rows.sublist(rows.length - 20) : rows;
@@ -41,14 +56,25 @@ class AgentMemoryService {
     required String title,
     required String content,
     required List<String> sources,
+  }) {
+    final operation = _writeQueue.catchError((Object _) {}).then((_) =>
+        _saveVaultNote(title: title, content: content, sources: sources));
+    _writeQueue = operation;
+    return operation;
+  }
+
+  Future<Map<String, dynamic>> _saveVaultNote({
+    required String title,
+    required String content,
+    required List<String> sources,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final rows = _decodeRows(prefs.getString(_vaultKey));
     final note = <String, dynamic>{
       'id': DateTime.now().microsecondsSinceEpoch.toString(),
-      'title': title,
+      'title': title.length > 300 ? '${title.substring(0, 300)}…' : title,
       'content': content.length > 12000 ? '${content.substring(0, 12000)}…' : content,
-      'sources': sources,
+      'sources': sources.take(30).toList(growable: false),
       'createdAt': DateTime.now().toIso8601String(),
     };
     rows.add(note);
