@@ -25,7 +25,7 @@ class CanvasBlockEntrance extends StatelessWidget {
       curve: Curves.easeOutCubic,
       child: child,
       builder: (context, progress, animatedChild) => Opacity(
-        opacity: progress.clamp(0.0, 1.0),
+        opacity: progress.clamp(0.0, 1.0).toDouble(),
         child: Transform.translate(
           offset: Offset(0, 10 * (1 - progress)),
           child: animatedChild,
