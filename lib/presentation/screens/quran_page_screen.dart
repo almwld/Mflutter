@@ -480,8 +480,11 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                 ],
               ),
             ))
-          : Container(
-              color: _pageColor,
+          : CustomPaint(
+              painter: _ParchmentPagePainter(
+                baseColor: _pageColor,
+                enabled: _paletteKey == 'classic',
+              ),
               child: ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.all(20),
@@ -691,4 +694,63 @@ class _OrnateAyahPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _OrnateAyahPainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.fill != fill;
+}
+
+
+/// Subtle page-only parchment finish. It is painted behind the scroll content,
+/// never over Quran glyphs, verse markers, or interactive controls.
+class _ParchmentPagePainter extends CustomPainter {
+  const _ParchmentPagePainter({
+    required this.baseColor,
+    required this.enabled,
+  });
+
+  final Color baseColor;
+  final bool enabled;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final bounds = Offset.zero & size;
+    canvas.drawRect(bounds, Paint()..color = baseColor);
+    if (!enabled || size.isEmpty) return;
+
+    final wash = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0x18FFF8E8), Color(0x00FFFFFF), Color(0x1A80613B)],
+        stops: [0, .52, 1],
+      ).createShader(bounds);
+    canvas.drawRect(bounds, wash);
+
+    final edge = Paint()
+      ..shader = RadialGradient(
+        center: Alignment.center,
+        radius: 0.88,
+        colors: [
+          const Color(0x00000000),
+          const Color(0x0D684A2B),
+        ],
+        stops: const [0.68, 1],
+      ).createShader(bounds);
+    canvas.drawRect(bounds, edge);
+
+    // Deterministic, very low-contrast fibers avoid random repaint flicker.
+    final fiberPaint = Paint()
+      ..color = const Color(0x126D5030)
+      ..strokeWidth = .45;
+    final count = (size.width * size.height / 5200).clamp(0, 260).toInt();
+    for (var i = 0; i < count; i++) {
+      final xSeed = (i * 73 + 19) % 997 / 997.0;
+      final ySeed = (i * 191 + 47) % 991 / 991.0;
+      final x = xSeed * size.width;
+      final y = ySeed * size.height;
+      final length = 2.0 + (i % 5) * .65;
+      canvas.drawLine(Offset(x, y), Offset(x + length, y + .35), fiberPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParchmentPagePainter oldDelegate) =>
+      oldDelegate.baseColor != baseColor || oldDelegate.enabled != enabled;
 }
