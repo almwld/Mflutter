@@ -436,7 +436,7 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
           widget.surahName,
           style: TextStyle(color: _accentColor, fontFamily: _fontFamily),
         ),
-        backgroundColor: AppColors.primaryNavy,
+        backgroundColor: _surfaceColor,
         actions: [
           IconButton(
             icon: Icon(Icons.text_increase, color: _accentColor),
