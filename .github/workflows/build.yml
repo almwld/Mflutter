@@ -208,6 +208,12 @@ jobs:
       - name: Test shared templates
         run: flutter test test/mudabbir_templates_test.dart
 
+      - name: Test adaptive template selection
+        run: flutter test test/adaptive_template_selector_test.dart
+
+      - name: Test canvas entrance motion
+        run: flutter test test/canvas_block_entrance_test.dart
+
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
 
