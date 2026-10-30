@@ -566,17 +566,12 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.gold,
-                                    Color(0xFFB8860B),
-                                  ],
-                                ),
+                                color: _accentColor,
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 '﴿$ayahNum﴾',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: _pageColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
