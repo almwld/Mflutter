@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../core/constants/app_colors.dart';
 import '../widgets/quran_wave_text.dart';
 import '../../services/quran_source_corrections.dart';
 import '../../services/quran_loader_service.dart';
