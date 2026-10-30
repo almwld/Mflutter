@@ -294,3 +294,23 @@ Important accuracy boundaries:
   does not invent a location or claim that displayed positions are live.
 - Sensor subscriptions and the clock timer are cancelled when the block is
   disposed. No sensor/location data is uploaded by this component.
+
+
+## Adaptive selection and motion
+
+`AdaptiveTemplateSelector` applies a deterministic presentation policy to the
+requested template, domain, query, and already-validated block types. Specialist
+content has priority (canonical Quran verse references, Abjad results, star-tracker,
+quantum-particle, and vector-space blocks); comparison language, astronomy domains,
+relationship graphs, and analytics blocks select their matching layouts. Generic
+content retains the service-requested template. This selector changes presentation
+only: it does not create data, calculate values, or change source provenance.
+
+`CanvasBlockEntrance` adds a restrained opacity/vertical entrance to each
+top-level canvas block. It uses Flutter's built-in animation primitives, isolates
+painting with the existing repaint boundary, and renders immediately when the
+operating-system reduced-motion preference is enabled. The duration is bounded and
+slightly staggered by block position; no blur, shader, or continuously running
+ticker is introduced. This is an interaction-quality improvement, not a claim of
+measured 60 FPS performance. Device profiling is still required before publishing
+frame-rate or memory guarantees.
