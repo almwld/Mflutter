@@ -50,6 +50,26 @@ class NucleusService extends ChangeNotifier {
   bool get isBusy => isModelBusy;
   String get status => modelStatus;
   Future<bool> hasValidModel() => _runtime.hasValidModel();
+
+  /// Restores the previously imported local GGUF on demand.
+  ///
+  /// The selected model marker and validated private-storage file survive app
+  /// restarts, but the native llama.cpp controller does not. Chat calls this
+  /// before composing an answer so a valid imported model is not silently
+  /// bypassed merely because the user has not revisited the model screen.
+  Future<bool> ensureModelLoaded({
+    int threads = 4,
+    int contextSize = 1024,
+  }) async {
+    if (_runtime.isLoaded) return true;
+    if (_runtime.isBusy || _runtime.isGenerating) return false;
+    if (!await _runtime.hasValidModel()) return false;
+    await _runtime.loadModel(
+      threads: threads,
+      contextSize: contextSize,
+    );
+    return _runtime.isLoaded;
+  }
   bool get isGenerating => _runtime.isGenerating;
   String get modelStatus => _runtime.status;
   String? get loadedModelPath => _runtime.loadedPath;
