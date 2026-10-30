@@ -9,6 +9,8 @@ import '../../services/quran_loader_service.dart';
 import 'components/block_registry.dart';
 import 'components/block_event_bus.dart';
 import 'components/block_event_scope.dart';
+import 'adaptive_template_selector.dart';
+import 'components/canvas_block_entrance.dart';
 
 /// Versioned payload contract shared by domain services and UI templates.
 /// Invalid envelopes fail closed; malformed blocks are excluded and reported.
@@ -516,8 +518,18 @@ class _UniversalTemplateRendererState extends State<UniversalTemplateRenderer> {
   @override
   Widget build(BuildContext context) {
     final schema = TemplatePayloadSchema.fromMap(widget.dataPayload);
+    final selectedTemplateId = schema.envelopeValid
+        ? AdaptiveTemplateSelector.select(
+            requestedTemplateId: schema.templateId,
+            domain: schema.domain ?? '',
+            query: widget.dataPayload['original_query'] is String
+                ? widget.dataPayload['original_query'] as String
+                : schema.title,
+            blocks: schema.blocks,
+          )
+        : schema.templateId;
     final resolved = TemplatePayloadSchema(
-      templateId: schema.templateId,
+      templateId: selectedTemplateId,
       version: schema.version,
       title: schema.title.isEmpty ? (widget.fallbackTitle ?? '') : schema.title,
       domain: schema.domain,
@@ -564,10 +576,15 @@ class _SchemaDocument extends StatelessWidget {
             else
               for (var index = 0; index < blocks.length; index++) ...[
                 const SizedBox(height: MudabbirDesignTokens.sectionSpacing),
-                RepaintBoundary(
-                  child: _AtomicBlock(
-                    block: blocks[index],
-                    blockId: _canvasBlockId(blocks[index], index),
+                CanvasBlockEntrance(
+                  duration: Duration(
+                    milliseconds: 260 + (index > 5 ? 225 : index * 45),
+                  ),
+                  child: RepaintBoundary(
+                    child: _AtomicBlock(
+                      block: blocks[index],
+                      blockId: _canvasBlockId(blocks[index], index),
+                    ),
                   ),
                 ),
               ],
