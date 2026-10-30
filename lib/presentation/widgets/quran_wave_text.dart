@@ -201,6 +201,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
                 ? widget.style.copyWith(
                     fontFamily: 'Amiri',
                     fontSize: 15,
+                    foreground: null,
                     color: const Color(0xFF8C6A2D),
                   )
                 : widget.style,
