@@ -1322,7 +1322,7 @@ class AgentChatProvider extends ChangeNotifier {
       );
       if (modelReady) {
         final boundedEvidence = contextualEvidence.length > 12000
-            ? '\${contextualEvidence.substring(0, 12000)}\\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
+            ? '${contextualEvidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
             : contextualEvidence;
         final generated = await runtime.generateGroundedAnswer(
           question: task.userQuery,
@@ -1337,19 +1337,19 @@ class AgentChatProvider extends ChangeNotifier {
           return 'جهّز النموذج المحلي لوحة عرض ديناميكية من الأدلة المرفقة. '
               'المحتوى النصي مولّد وغير متحقق آليًا؛ راجع مصدر كل ادعاء.';
         }
-        return 'إجابة مولّدة محليًا بواسطة نموذج GGUF المحمّل (ليست نصًا قرآنيًا):\\n'
-            '\$generated\\n\\n'
-            'الأدلة والسياق المحلي المحدد، للرجوع والتحقق:\\n\$contextualEvidence\\n\\n'
-            'المصادر المحمّلة: \$sourceList. يجب التحقق من أي استنتاج مولّد مقابل النصوص المصدرية.';
+        return 'إجابة مولّدة محليًا بواسطة نموذج GGUF المحمّل (ليست نصًا قرآنيًا):\n'
+            '$generated\n\n'
+            'الأدلة والسياق المحلي المحدد، للرجوع والتحقق:\n$contextualEvidence\n\n'
+            'المصادر المحمّلة: $sourceList. يجب التحقق من أي استنتاج مولّد مقابل النصوص المصدرية.';
       }
 
-      return 'لا يوجد نموذج GGUF صالح ومتاح للتشغيل حاليًا؛ لم أقدّم مقتطفات الأصول على أنها إجابة مولّدة.\\n\\n'
-          'تقرير الأدلة والسياق المحلي:\\n\$contextualEvidence\\n\\n'
-          'حالة النموذج: \${runtime.modelStatus}\\nالمصادر: \$sourceList.';
+      return 'لا يوجد نموذج GGUF صالح ومتاح للتشغيل حاليًا؛ لم أقدّم مقتطفات الأصول على أنها إجابة مولّدة.\n\n'
+          'تقرير الأدلة والسياق المحلي:\n$contextualEvidence\n\n'
+          'حالة النموذج: ${runtime.modelStatus}\nالمصادر: $sourceList.';
     } catch (error) {
-      return 'تعذر تحميل أو تشغيل النموذج المحلي؛ لم أستبدل ذلك بإجابة مولّدة وهمية.\\n\\n'
-          'تقرير الأدلة والسياق المحلي:\\n\$contextualEvidence\\n\\n'
-          'سبب تعذر النموذج: \$error\\nالمصادر: \$sourceList.';
+      return 'تعذر تحميل أو تشغيل النموذج المحلي؛ لم أستبدل ذلك بإجابة مولّدة وهمية.\n\n'
+          'تقرير الأدلة والسياق المحلي:\n$contextualEvidence\n\n'
+          'سبب تعذر النموذج: $error\nالمصادر: $sourceList.';
     }
   }
 
