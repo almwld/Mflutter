@@ -372,18 +372,18 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB8A98D),
+                  color: _pageTextColor.withOpacity(.32),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'نمط عرض المصحف',
                 style: TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF241A12),
+                  color: _pageTextColor,
                 ),
               ),
               const SizedBox(height: 8),
