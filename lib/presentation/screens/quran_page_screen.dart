@@ -13,7 +13,8 @@ import '../../services/bookmark_service.dart';
 
 /// Presets affect only the Quran page presentation; canonical verse data is untouched.
 const Map<String, Map<String, Color>> _quranDisplayPalettes = {
-  'classic': {'background': Color(0xFF101B2D), 'surface': Color(0xFF19263A), 'text': Color(0xFFFFECB3), 'accent': Color(0xFFD6B36A)},
+  // Default manuscript skin: aged parchment with warm leather undertones.
+  'classic': {'background': Color(0xFFE7D6B5), 'surface': Color(0xFFF1E4C9), 'text': Color(0xFF3B2B1C), 'accent': Color(0xFF9B7846)},
   'paper': {'background': Color(0xFFF4EBD8), 'surface': Color(0xFFFFF9EC), 'text': Color(0xFF493A28), 'accent': Color(0xFF967344)},
   'white': {'background': Color(0xFFFFFFFF), 'surface': Color(0xFFF5F5F5), 'text': Color(0xFF202020), 'accent': Color(0xFF52796F)},
   'ivory': {'background': Color(0xFFFFF8E7), 'surface': Color(0xFFFFFDF5), 'text': Color(0xFF403629), 'accent': Color(0xFF9A7848)},
@@ -30,7 +31,7 @@ const Map<String, Map<String, Color>> _quranDisplayPalettes = {
 };
 
 const Map<String, String> _quranPaletteNames = {
-  'classic': 'ليلي كلاسيكي', 'paper': 'ورق المصحف', 'white': 'أبيض نقي',
+  'classic': 'جلد الرق القديم', 'paper': 'ورق المصحف', 'white': 'أبيض نقي',
   'ivory': 'عاجي دافئ', 'midnight': 'منتصف الليل', 'black': 'أسود خالص',
   'emerald': 'زمردي', 'sage': 'أخضر هادئ', 'ocean': 'أزرق محيطي',
   'lavender': 'لافندر', 'rose': 'وردي داكن', 'sand': 'رملي',
@@ -536,8 +537,26 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                             fontSize: _fontSize.toDouble(),
                             fontFamily: _fontFamily,
                             fontWeight: FontWeight.bold,
-                            color: _textColor,
-                            height: 1.8,
+                            // The historic Musnad/Kufic face keeps its original
+                            // glyph design; only its rendering paint changes.
+                            color: _fontFamily == 'Musnad' ? null : _textColor,
+                            foreground: _fontFamily == 'Musnad'
+                                ? (Paint()
+                                  ..style = PaintingStyle.stroke
+                                  ..strokeWidth = 0.9
+                                  ..strokeJoin = StrokeJoin.round
+                                  ..color = _textColor)
+                                : null,
+                            shadows: [
+                              Shadow(
+                                color: _pageColor.computeLuminance() > 0.5
+                                    ? const Color(0x553B2A1A)
+                                    : const Color(0x88000000),
+                                offset: const Offset(0.35, 0.55),
+                                blurRadius: 0.65,
+                              ),
+                            ],
+                            height: _fontFamily == 'Musnad' ? 1.95 : 1.8,
                           ),
                           ),
                         ),
