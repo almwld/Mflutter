@@ -36,7 +36,7 @@ abstract final class AdaptiveTemplateSelector {
     required List<Map<String, dynamic>> blocks,
   }) {
     if (!supportedTemplates.contains(requestedTemplateId)) {
-      return requestedTemplateId;
+      return 'generic_template';
     }
 
     final normalizedDomain = _normalize(domain);
@@ -46,7 +46,6 @@ abstract final class AdaptiveTemplateSelector {
         .whereType<String>()
         .toSet();
 
-    if (types.contains('quran_verse')) return 'reader_template';
     if (normalizedDomain.contains('abjad')) return 'abjad_template';
     if (types.contains('star_tracker_block')) {
       return 'cosmic_celestial_template';
