@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -560,23 +561,12 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                                 color: _accentColor,
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _accentColor,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                '﴿$ayahNum﴾',
-                                style: TextStyle(
-                                  color: _pageColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
+                            _OrnateAyahNumber(
+                              number: ayahNum,
+                              color: _accentColor,
+                              backgroundColor: _surfaceColor,
+                              textColor: _textColor,
+                              fontFamily: _fontFamily,
                             ),
                           ],
                         ),
@@ -589,4 +579,98 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
       ),
     );
   }
+}
+
+
+/// A consistent Ottoman-inspired circular verse marker shared by every Quran font.
+class _OrnateAyahNumber extends StatelessWidget {
+  final int number;
+  final Color color;
+  final Color backgroundColor;
+  final Color textColor;
+  final String fontFamily;
+
+  const _OrnateAyahNumber({
+    required this.number,
+    required this.color,
+    required this.backgroundColor,
+    required this.textColor,
+    required this.fontFamily,
+  });
+
+  String get _arabicNumber {
+    const digits = '٠١٢٣٤٥٦٧٨٩';
+    return number.toString().split('').map((digit) => digits[int.parse(digit)]).join();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 46,
+      height: 46,
+      child: CustomPaint(
+        painter: _OrnateAyahPainter(color: color, fill: backgroundColor),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(9),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                _arabicNumber,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: fontFamily,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OrnateAyahPainter extends CustomPainter {
+  final Color color;
+  final Color fill;
+
+  const _OrnateAyahPainter({required this.color, required this.fill});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.shortestSide / 2 - 3;
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.35;
+    final fillPaint = Paint()
+      ..color = fill
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(center, radius, fillPaint);
+    canvas.drawCircle(center, radius, stroke);
+    canvas.drawCircle(center, radius - 3.2, stroke..strokeWidth = .8);
+
+    // Eight balanced ornamental beads create the traditional medallion edge.
+    final beadPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    for (var i = 0; i < 8; i++) {
+      final angle = (i * 3.141592653589793 / 4) - 3.141592653589793 / 2;
+      final point = Offset(
+        center.dx + (radius - 1) * math.cos(angle),
+        center.dy + (radius - 1) * math.sin(angle),
+      );
+      canvas.drawCircle(point, 1.65, beadPaint);
+    }
+    canvas.drawCircle(center, radius - 6.2, stroke..strokeWidth = .65);
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrnateAyahPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.fill != fill;
 }
