@@ -46,23 +46,20 @@ abstract final class AdaptiveTemplateSelector {
         .whereType<String>()
         .toSet();
 
-    // Explicit specialist data wins over broad natural-language cues.
     if (types.contains('quran_verse')) return 'reader_template';
     if (normalizedDomain.contains('abjad')) return 'abjad_template';
     if (types.contains('star_tracker_block')) {
       return 'cosmic_celestial_template';
     }
     if (types.contains('quantum_particle_block')) {
-      return requestedTemplateId == 'quantum_mesh_template'
-          ? requestedTemplateId
-          : 'quantum_mesh_template';
+      return 'quantum_mesh_template';
     }
     if (types.contains('vector_space_block')) {
       return 'vector_embedding_template';
     }
 
     if (_containsAny(normalizedQuery, const <String>[
-      'قارن', 'مقارنه', 'الفرق بين', 'مقارنه بين',
+      'قارن', 'مقارنه', 'الفرق بين',
     ])) {
       return 'comparison_template';
     }
@@ -75,14 +72,17 @@ abstract final class AdaptiveTemplateSelector {
 
     if (_containsAny(normalizedDomain, const <String>[
       'network', 'nucleus', 'agent',
-    ]) || types.contains('relation_graph_block') ||
+    ]) ||
+        types.contains('relation_graph_block') ||
         types.contains('spatial_map_block') ||
         types.contains('star_map_block')) {
       return 'graph_template';
     }
 
-    if (types.contains('bar_chart') || types.contains('metric') ||
-        types.contains('metric_card') || types.contains('table')) {
+    if (types.contains('bar_chart') ||
+        types.contains('metric') ||
+        types.contains('metric_card') ||
+        types.contains('table')) {
       return 'analytics_template';
     }
 
@@ -94,10 +94,10 @@ abstract final class AdaptiveTemplateSelector {
 
   static String _normalize(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '')
+      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
-      .replaceAll(RegExp(r'\\s+'), ' ')
+      .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
 }
