@@ -187,7 +187,62 @@ class AgentChatProvider extends ChangeNotifier {
 
     // A standalone canonical reference is resolved only against the bundled
     // Hafs corpus. The returned verse text is copied verbatim from that source.
-    final verseReference = RegExp(r'^\s*(\d{1,3})\s*[:/]\s*(\d{1,3})\s*
+    final verseReference = RegExp(r'^\s*(\d{1,3})\s*[:/]\s*(\d{1,3})\s*$')
+        .firstMatch(query);
+    if (verseReference != null) {
+      final reference = verseReference.group(1)! + ':' + verseReference.group(2)!;
+      final result = await MudabbirUnifiedEngine().analyze(reference);
+      if (result.verses.isEmpty) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'مرجع الآية',
+          domain: 'quran_reference',
+          source: 'assets/quran_full.json',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'تعذر التحقق من المرجع',
+              'status': 'error',
+              'message': result.summary,
+            },
+          ],
+        );
+      }
+      final verse = result.verses.single;
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: verse.surahName + ' ' + verse.reference,
+        domain: 'quran_reference',
+        source: 'assets/quran_full.json via MudabbirUnifiedEngine',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'نص الآية من المصحف المحلي',
+            'text': verse.text,
+          },
+          <String, dynamic>{
+            'type': 'table',
+            'title': 'بيانات موضع الآية',
+            'columns': <String>['البيان', 'القيمة'],
+            'rows': <List<String>>[
+              <String>['السورة', verse.surahName],
+              <String>['رقم السورة', verse.surahNumber.toString()],
+              <String>['رقم الآية', verse.ayahNumber.toString()],
+              <String>['الصفحة', verse.pageNumber.toString()],
+              <String>['الجزء', verse.juzNumber.toString()],
+            ],
+          },
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'حدود النتيجة',
+            'text': 'تم استرجاع النص والموضع من بيانات المصحف المحلية. لا تمثل هذه النتيجة تفسيرًا للآية.',
+          },
+        ],
+      );
+    }
+
     final abjadMatch = RegExp(
       r'(?:احسب|حساب|قيمة)\s+(?:الجمل|ابجد|ابجدي)\s+(?:لكلمه\s+|لكلمة\s+|للاسم\s+)?(.+)$',
     ).firstMatch(normalized);
