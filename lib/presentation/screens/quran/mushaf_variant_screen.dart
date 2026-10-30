@@ -30,7 +30,6 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   int _page = 1;
   MushafVariantMode _mode = MushafVariantMode.uthmani;
 
-  static const _paper = Color(0xFFF8F1E4);
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
   Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
   Color get _headerInk => _pageTheme == QuranPageTheme.paper
@@ -335,7 +334,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 '$_modeName — صفحة $_page',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Color(0xFF241A12),
+                  color: _pageTextColor,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -359,7 +358,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   void _showModeSheet(BuildContext context, Color gold) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: _paper,
+      backgroundColor: _pageBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -402,8 +401,8 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                     _mode == entry.$1 ? Icons.radio_button_checked : Icons.radio_button_off,
                     color: _mode == entry.$1 ? gold : const Color(0xFF8A7B61),
                   ),
-                  title: Text(entry.$2, style: const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700)),
-                  subtitle: Text(entry.$3, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11)),
+                  title: Text(entry.$2, style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700, color: _pageTextColor)),
+                  subtitle: Text(entry.$3, style: TextStyle(fontFamily: 'Amiri', fontSize: 11, color: _pageTextColor.withOpacity(.78))),
                   onTap: () async {
                     await _setDisplayMode(entry.$1);
                     if (sheetContext.mounted) Navigator.pop(sheetContext);
