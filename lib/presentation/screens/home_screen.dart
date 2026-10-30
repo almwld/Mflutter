@@ -10,6 +10,7 @@ import 'quran_bookmarks_screen.dart';
 import 'great_verses_screen.dart';
 import 'stats_screen.dart';
 import 'agents/agents_screen.dart';
+import 'agents/agent_console_screen.dart';
 import 'insight_screen.dart';
 import 'divine_names_screen.dart';
 import 'daily_verse_screen.dart';
@@ -288,7 +289,7 @@ class _MushafHome extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AgentsScreen()),
+            MaterialPageRoute(builder: (_) => const AgentConsoleScreen()),
           ),
           child: Container(
             padding: const EdgeInsets.all(17),
