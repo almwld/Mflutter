@@ -51,19 +51,42 @@ class NucleusService extends ChangeNotifier {
   String get status => modelStatus;
   Future<bool> hasValidModel() => _runtime.hasValidModel();
 
+  Future<bool>? _modelRestore;
+
   /// Restores the previously imported local GGUF on demand.
   ///
   /// The selected model marker and validated private-storage file survive app
-  /// restarts, but the native llama.cpp controller does not. Chat calls this
-  /// before composing an answer so a valid imported model is not silently
-  /// bypassed merely because the user has not revisited the model screen.
+  /// restarts, but the native llama.cpp controller does not. Concurrent chat
+  /// requests share one restore future so they cannot race into two native
+  /// loads of the same model.
   Future<bool> ensureModelLoaded({
     int threads = 4,
     int contextSize = 1024,
+  }) {
+    if (_runtime.isLoaded) return Future<bool>.value(true);
+    final pending = _modelRestore;
+    if (pending != null) return pending;
+
+    final attempt = _restoreModel(
+      threads: threads,
+      contextSize: contextSize,
+    );
+    _modelRestore = attempt;
+    return attempt.whenComplete(() {
+      if (identical(_modelRestore, attempt)) _modelRestore = null;
+    });
+  }
+
+  Future<bool> _restoreModel({
+    required int threads,
+    required int contextSize,
   }) async {
-    if (_runtime.isLoaded) return true;
     if (_runtime.isBusy || _runtime.isGenerating) return false;
     if (!await _runtime.hasValidModel()) return false;
+    // Another explicit UI action may have loaded the model while the file
+    // check was awaiting storage I/O.
+    if (_runtime.isLoaded) return true;
+    if (_runtime.isBusy || _runtime.isGenerating) return false;
     await _runtime.loadModel(
       threads: threads,
       contextSize: contextSize,
