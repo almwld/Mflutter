@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/themes/mudabbir_design_tokens.dart';
-import '../../domain/entities/verse.dart';
-import '../../services/quran_loader_service.dart';
 import 'components/block_registry.dart';
 import 'components/block_event_bus.dart';
 import 'components/block_event_scope.dart';
@@ -175,7 +173,7 @@ class TemplatePayloadSchema {
 abstract final class TemplateBlockSchema {
   static const supportedTypes = <String>{
     'text', 'metric', 'metric_card', 'section', 'list', 'table',
-    'quran_verse', 'bar_chart', 'status',
+    'bar_chart', 'status',
     'hero_header_block', 'timeline_block', 'relation_graph_block', 'star_tracker_block',
     'code_math_block', 'audio_frequency_block', 'spatial_map_block',
     'star_map_block', 'vector_space_block', 'quantum_particle_block',
@@ -230,20 +228,6 @@ abstract final class TemplateBlockSchema {
         if (block['text'] is! String || (block['text'] as String).trim().isEmpty) {
           errors.add('text مطلوب ويجب ألا يكون فارغًا.');
         }
-        break;
-      case 'quran_verse':
-        final surahNumber = block['surah_number'];
-        final ayahNumber = block['ayah_number'];
-        if (surahNumber is! int || surahNumber < 1 || surahNumber > 114) {
-          errors.add('surah_number يجب أن يكون رقم سورة صحيحًا من 1 إلى 114.');
-        }
-        if (ayahNumber is! int || ayahNumber < 1) {
-          errors.add('ayah_number يجب أن يكون عددًا صحيحًا موجبًا.');
-        }
-        if (block.containsKey('text')) {
-          errors.add('كتلة quran_verse لا تقبل نصًا حرًا؛ يُحمّل النص من المصحف المحلي حسب المرجع.');
-        }
-        // Deliberately do not accept free-form verse text from a model payload.
         break;
       case 'metric':
         final value = block['value'];
@@ -650,73 +634,6 @@ class _GlassHeader extends StatelessWidget {
       );
 }
 
-/// Resolves Quran verse text exclusively from the validated bundled corpus.
-/// Any free-form text included in a model payload is intentionally ignored.
-class _CanonicalQuranVerseBlock extends StatelessWidget {
-  const _CanonicalQuranVerseBlock({
-    required this.title,
-    required this.surahNumber,
-    required this.ayahNumber,
-  });
-
-  final String title;
-  final int surahNumber;
-  final int ayahNumber;
-
-  @override
-  Widget build(BuildContext context) => FutureBuilder<List<Ayah>>(
-        future: QuranLoaderService.loadAllAyahs(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const TemplateEmptyState(
-              message: 'تعذّر التحقق من النص القرآني المحلي؛ لم يُعرض نص بديل.',
-            );
-          }
-          if (!snapshot.hasData) {
-            return const TemplateEmptyState(
-              message: 'جارٍ التحقق من النص القرآني المحلي…',
-            );
-          }
-          Ayah? canonicalAyah;
-          for (final ayah in snapshot.data!) {
-            if (ayah.surahNumber == surahNumber && ayah.ayahNumber == ayahNumber) {
-              canonicalAyah = ayah;
-              break;
-            }
-          }
-          if (canonicalAyah == null) {
-            return const TemplateEmptyState(
-              message: 'مرجع الآية غير موجود في المصحف المحلي؛ لم يُعرض نص بديل.',
-            );
-          }
-          return _GlassCard(
-            title: title.isEmpty ? 'النص القرآني المحفوظ' : title,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  canonicalAyah.text,
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontFamily: 'Amiri',
-                        height: 1.9,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${canonicalAyah.surahName} — ${canonicalAyah.surahNumber}:${canonicalAyah.ayahNumber}',
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ],
-            ),
-          );
-        },
-      );
-}
-
 String _canvasBlockId(Map<String, dynamic> block, int index) {
   final id = block['id'];
   if (id is String && id.trim().isNotEmpty) return id.trim();
@@ -763,12 +680,6 @@ class _AtomicBlock extends StatelessWidget {
             textAlign: TextAlign.right,
             style: theme.textTheme.bodyLarge?.copyWith(height: 1.7),
           ),
-        );
-      case 'quran_verse':
-        return _CanonicalQuranVerseBlock(
-          title: title,
-          surahNumber: block['surah_number'] as int,
-          ayahNumber: block['ayah_number'] as int,
         );
       case 'metric':
         final value = block['value'];
