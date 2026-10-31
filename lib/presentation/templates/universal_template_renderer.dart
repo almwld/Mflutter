@@ -178,6 +178,7 @@ abstract final class TemplateBlockSchema {
     'code_math_block', 'audio_frequency_block', 'spatial_map_block',
     'star_map_block', 'vector_space_block', 'quantum_particle_block',
     'interactive_card_block', 'particle_matrix_block', 'connected_nodes_path_block',
+    'physics_sandbox_block',
   };
 
   static bool isSupported(Map<String, dynamic> block) =>
@@ -426,6 +427,13 @@ abstract final class TemplateBlockSchema {
             (block['height'] is! num || !(block['height'] as num).isFinite ||
                 (block['height'] as num) < 120 || (block['height'] as num) > 900)) {
           errors.add('height يجب أن تكون قيمة بين 120 و900.');
+        }
+        break;
+      case 'physics_sandbox_block':
+        final height = block['height'];
+        if (height != null &&
+            (height is! num || !height.isFinite || height < 160 || height > 700)) {
+          errors.add('height يجب أن تكون قيمة رقمية بين 160 و700.');
         }
         break;
       case 'code_math_block':
