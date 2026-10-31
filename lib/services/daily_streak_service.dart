@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'reading_progress_service.dart';
+
 /// Persistent reading streak based on distinct calendar days with real Quran
 /// reading activity. Opening the profile never counts as reading.
 class DailyStreakService {
@@ -10,6 +12,7 @@ class DailyStreakService {
   static Set<String> _activeDates = <String>{};
   static bool _initialized = false;
   static Future<void>? _initializing;
+  static Future<void> _activityQueue = Future<void>.value();
 
   static int get streak => _streak;
   static List<bool> get weekHistory => List<bool>.unmodifiable(_weekHistory);
@@ -27,36 +30,56 @@ class DailyStreakService {
       await attempt;
       _initialized = true;
     } finally {
-      _initializing = null;
+      if (identical(_initializing, attempt)) _initializing = null;
     }
   }
 
   static Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    _activeDates = (prefs.getStringList(_activeDatesKey) ?? const <String>[]).toSet();
+    _activeDates =
+        (prefs.getStringList(_activeDatesKey) ?? const <String>[]).toSet();
     _pruneOldDates();
     _recalculate();
   }
 
   /// Record at most one activity per local calendar day.
-  static Future<void> recordActivity() async {
+  static Future<void> recordActivity() {
+    _activityQueue = _activityQueue
+        .catchError((Object _) {})
+        .then((_) => _recordActivity());
+    return _activityQueue;
+  }
+
+  static Future<void> _recordActivity() async {
     await initialize();
+    // Keep the profile, statistics, and achievement ledgers aligned even when
+    // this calendar day was already recorded in the streak-specific store.
+    await ReadingProgressService.recordReadingDay();
     final today = _dateKey(DateTime.now());
-    if (!_activeDates.add(today)) return;
-    _pruneOldDates();
+    if (_activeDates.contains(today)) return;
+
+    final nextDates = Set<String>.from(_activeDates)..add(today);
+    _pruneOldDates(nextDates);
     final prefs = await SharedPreferences.getInstance();
-    final sorted = _activeDates.toList()..sort();
-    await prefs.setStringList(_activeDatesKey, sorted);
+    final sorted = nextDates.toList()..sort();
+    if (!await prefs.setStringList(_activeDatesKey, sorted)) {
+      throw StateError('تعذر حفظ نشاط القراءة في التخزين المحلي.');
+    }
+    _activeDates = nextDates;
     _recalculate();
   }
 
-  static void _pruneOldDates() {
+  static void _pruneOldDates([Set<String>? dates]) {
+    final target = dates ?? _activeDates;
     final now = DateTime.now();
-    final cutoff = DateTime(now.year, now.month, now.day)
-        .subtract(const Duration(days: 365));
-    _activeDates.removeWhere((key) {
+    final today = DateTime(now.year, now.month, now.day);
+    final cutoff = today.subtract(const Duration(days: 365));
+    target.removeWhere((key) {
       final parsed = DateTime.tryParse(key);
-      return parsed == null || parsed.isBefore(cutoff);
+      return parsed == null ||
+          _dateKey(parsed) != key ||
+          parsed.isBefore(cutoff) ||
+          parsed.isAfter(today);
     });
   }
 

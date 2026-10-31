@@ -1,9 +1,16 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../services/mushaf_source.dart';
+import '../../../core/themes/font_manager.dart';
 import '../../../services/mushaf_variant_layout_service.dart';
+import '../../../services/reading_progress_service.dart';
+import '../../../services/daily_streak_service.dart';
+import '../../../services/quran_fonts_service.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/text_transformer.dart';
 import '../../widgets/quran_wave_text.dart';
@@ -23,24 +30,31 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   int _page = 1;
   MushafVariantMode _mode = MushafVariantMode.uthmani;
 
-  static const _paper = Color(0xFFF8F1E4);
   Color get _pageBackground => QuranPageThemeService.background(_pageTheme);
   Color get _pageTextColor => QuranPageThemeService.text(_pageTheme);
   Color get _headerInk => _pageTheme == QuranPageTheme.paper
       ? const Color(0xFF241A12)
       : _pageTextColor;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
-  bool _systemBarsVisible = false;
+  bool _chromeVisible = true;
+  Future<void> _pagePersistence = Future<void>.value();
 
   Future<void> _setImmersiveMode(bool immersive) async {
-    await SystemChrome.setEnabledSystemUIMode(
-      immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
-    );
-    if (mounted) setState(() => _systemBarsVisible = !immersive);
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        immersive ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      );
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not update system bars: $error');
+    }
   }
 
   Future<void> _toggleSystemBars() async {
-    await _setImmersiveMode(_systemBarsVisible);
+    final showChrome = !_chromeVisible;
+    if (mounted) setState(() => _chromeVisible = showChrome);
+    // Keep the app's reader controls and Android system bars in sync so a
+    // double tap genuinely enters/exits immersive reading.
+    await _setImmersiveMode(!showChrome);
   }
 
   @override
@@ -48,8 +62,51 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     super.initState();
     _page = MushafSource.normalizePage(widget.initialPage);
     _controller = PageController(initialPage: _page - 1);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    _persistCurrentPage(_page);
+    // The controls are visible initially, so keep Android system bars
+    // visible too; the double-tap toggle will switch both layers together.
+    _setImmersiveMode(false);
     _restorePageTheme();
+    _restoreDisplayMode();
+    _loadQuranFonts();
+  }
+
+  Future<void> _loadQuranFonts() async {
+    await QuranFontsService.load();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _persistCurrentPage(int page) {
+    final normalizedPage = MushafSource.normalizePage(page);
+    // Serialize writes so a slow earlier preference write cannot overwrite
+    // the most recently viewed page after rapid swipes.
+    _pagePersistence = _pagePersistence.then((_) async {
+      final preferences = await SharedPreferences.getInstance();
+      try {
+        final saved = await preferences.setInt(
+          'mudabbir_mushaf_variant_last_page',
+          normalizedPage,
+        );
+        if (!saved) {
+          debugPrint('MushafVariantScreen: variant page write was rejected.');
+        }
+      } catch (error) {
+        debugPrint('MushafVariantScreen: variant page save failed: $error');
+      }
+      try {
+        await ReadingProgressService.saveLastPage(normalizedPage);
+      } catch (error) {
+        debugPrint('MushafVariantScreen: shared progress save failed: $error');
+      }
+      try {
+        await DailyStreakService.recordActivity();
+      } catch (error) {
+        debugPrint('MushafVariantScreen: streak activity save failed: $error');
+      }
+    }).catchError((Object error) {
+      debugPrint('MushafVariantScreen: could not save reading page: $error');
+    });
+    return _pagePersistence;
   }
 
   Future<void> _restorePageTheme() async {
@@ -57,10 +114,51 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
     if (mounted) setState(() => _pageTheme = theme);
   }
 
+  Future<void> _restoreDisplayMode() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedIndex = preferences.getInt('mudabbir_mushaf_variant_mode');
+      if (savedIndex == null ||
+          savedIndex < 0 ||
+          savedIndex >= MushafVariantMode.values.length ||
+          !mounted) {
+        return;
+      }
+      setState(() => _mode = MushafVariantMode.values[savedIndex]);
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not restore display mode: $error');
+    }
+  }
+
+  Future<void> _persistVariantPreference(
+    Future<bool> Function(SharedPreferences preferences) write,
+    String setting,
+  ) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await write(preferences);
+      if (!saved) {
+        debugPrint('MushafVariantScreen: preference write rejected: $setting');
+      }
+    } catch (error) {
+      debugPrint('MushafVariantScreen: could not save $setting: $error');
+    }
+  }
+
+  Future<void> _setDisplayMode(MushafVariantMode mode) async {
+    setState(() => _mode = mode);
+    await _persistVariantPreference(
+      (preferences) => preferences.setInt('mudabbir_mushaf_variant_mode', mode.index),
+      'display mode',
+    );
+  }
+
   @override
   void dispose() {
     // Restore the app's normal system bars when leaving Mushaf reading.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafVariantScreen: could not restore system bars on dispose: $error');
+    });
     _controller.dispose();
     super.dispose();
   }
@@ -72,11 +170,15 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.musnad:
         return TextTransformer.toMusnad(text);
       case MushafVariantMode.dotless:
-        return TextTransformer.toDotlessPreservingMarks(text);
+        return FontManager.isRaqqFontLoaded
+            ? text
+            : TextTransformer.toDotlessPreservingMarks(text);
       case MushafVariantMode.dotlessPlain:
-        return TextTransformer.toDotless(text);
+        return FontManager.isRaqqFontLoaded
+            ? TextTransformer.removeArabicMarks(text)
+            : TextTransformer.toDotless(text);
       case MushafVariantMode.kufi:
-        return TextTransformer.transform(text, 'kufi');
+        return text;
       case MushafVariantMode.hieroglyphic:
         return TextTransformer.toHieroglyphic(text);
     }
@@ -93,10 +195,75 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
       case MushafVariantMode.dotlessPlain:
         return 'بدون نقاط أو تشكيل';
       case MushafVariantMode.kufi:
-        return 'كوفي';
+        return FontManager.isRaqqFontLoaded
+            ? 'رَقّ — كوفي مصحفي مبكر'
+            : 'رَقّ — الخط غير متاح';
       case MushafVariantMode.hieroglyphic:
         return 'هيروغليفي';
     }
+  }
+
+  int? _parsePageNumber(String raw) {
+    final normalized = raw.trim().replaceAllMapped(
+      RegExp(r'[٠-٩۰-۹]'),
+      (match) {
+        final code = match.group(0)!.codeUnitAt(0);
+        final digit = code >= 0x06F0 && code <= 0x06F9
+            ? code - 0x06F0
+            : code - 0x0660;
+        return String.fromCharCode(0x30 + digit);
+      },
+    );
+    final page = int.tryParse(normalized);
+    if (page == null || page < 1 || page > MushafSource.totalPages) return null;
+    return page;
+  }
+
+  void _showPagePicker() {
+    final input = TextEditingController(text: '$_page');
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('الانتقال إلى صفحة'),
+        content: TextField(
+          controller: input,
+          keyboardType: TextInputType.number,
+          textDirection: TextDirection.rtl,
+          decoration: const InputDecoration(hintText: '1 - 604'),
+          onSubmitted: (_) {
+            final page = _parsePageNumber(input.text);
+            if (page == null) {
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+              );
+              return;
+            }
+            Navigator.pop(dialogContext);
+            _jump(page);
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('إلغاء'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final page = _parsePageNumber(input.text);
+              if (page == null) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext);
+              _jump(page);
+            },
+            child: const Text('انتقال'),
+          ),
+        ],
+      ),
+    ).whenComplete(input.dispose);
   }
 
   Future<void> _jump(int page) async {
@@ -120,22 +287,29 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
         child: SafeArea(
           child: Column(
           children: [
-            _buildHeader(gold),
+            if (_chromeVisible) _buildHeader(gold),
             Expanded(
               child: PageView.builder(
                 controller: _controller,
                 itemCount: MushafSource.totalPages,
-                onPageChanged: (index) => setState(() => _page = index + 1),
+                onPageChanged: (index) {
+                  final page = index + 1;
+                  setState(() => _page = page);
+                  _persistCurrentPage(page);
+                },
                 itemBuilder: (_, index) => _VariantPage(
                   page: index + 1,
                   mode: _mode,
                   paper: _pageBackground,
                   gold: gold,
                   transform: _transform,
+                  onRetry: () {
+                    if (mounted) setState(() {});
+                  },
                 ),
               ),
             ),
-            _buildNavigation(gold),
+            if (_chromeVisible) _buildNavigation(gold),
           ],
           ),
         ),
@@ -159,11 +333,16 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
               child: Text(
                 '$_modeName — صفحة $_page',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF241A12),
+                style: TextStyle(
+                  color: _pageTextColor,
                   fontWeight: FontWeight.w800,
                 ),
               ),
+            ),
+            IconButton(
+              tooltip: 'الانتقال إلى صفحة',
+              icon: Icon(Icons.find_in_page_rounded, color: _headerInk),
+              onPressed: _showPagePicker,
             ),
             IconButton(
               tooltip: 'اختيار نمط العرض',
@@ -179,7 +358,7 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
   void _showModeSheet(BuildContext context, Color gold) {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: _paper,
+      backgroundColor: _pageBackground,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -193,18 +372,18 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 width: 42,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFB8A98D),
+                  color: _pageTextColor.withOpacity(.32),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'نمط عرض المصحف',
                 style: TextStyle(
                   fontFamily: 'Amiri',
                   fontSize: 19,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF241A12),
+                  color: _pageTextColor,
                 ),
               ),
               const SizedBox(height: 8),
@@ -213,20 +392,20 @@ class _MushafVariantScreenState extends State<MushafVariantScreen> {
                 (MushafVariantMode.musnad, 'المسند', 'حروف المسند مع تثبيت مواضع السطور'),
                 (MushafVariantMode.dotless, 'بدون نقاط مع التشكيل', 'إزالة نقاط الحروف مع إبقاء علامات التشكيل'),
                 (MushafVariantMode.dotlessPlain, 'بدون نقاط أو تشكيل', 'إزالة نقاط الحروف وعلامات التشكيل من العرض فقط'),
-                (MushafVariantMode.kufi, 'كوفي تجريبي', 'عرض تقريبي؛ لا يتوفر ملف خط كوفي مستقل حالياً'),
+                (MushafVariantMode.kufi, 'رَقّ — كوفي مصحفي مبكر', FontManager.isRaqqFontLoaded ? 'خط Raqq المصحفي؛ يتغير العرض فقط ويبقى نص المصدر محفوظًا' : 'تعذر تحميل الخط؛ سيُستخدم خط بديل دون تغيير نص المصدر'),
                 (MushafVariantMode.hieroglyphic, 'هيروغليفي', 'رموز هيروغليفية داخل تخطيط السطور نفسه'),
               ])
                 ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   leading: Icon(
                     _mode == entry.$1 ? Icons.radio_button_checked : Icons.radio_button_off,
-                    color: _mode == entry.$1 ? gold : const Color(0xFF8A7B61),
+                    color: _mode == entry.$1 ? gold : _pageTextColor.withOpacity(.62),
                   ),
-                  title: Text(entry.$2, style: const TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700)),
-                  subtitle: Text(entry.$3, style: const TextStyle(fontFamily: 'Amiri', fontSize: 11)),
-                  onTap: () {
-                    setState(() => _mode = entry.$1);
-                    Navigator.pop(sheetContext);
+                  title: Text(entry.$2, style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.w700, color: _pageTextColor)),
+                  subtitle: Text(entry.$3, style: TextStyle(fontFamily: 'Amiri', fontSize: 11, color: _pageTextColor.withOpacity(.78))),
+                  onTap: () async {
+                    await _setDisplayMode(entry.$1);
+                    if (sheetContext.mounted) Navigator.pop(sheetContext);
                   },
                 ),
             ],
@@ -272,6 +451,7 @@ class _VariantPage extends StatelessWidget {
     required this.paper,
     required this.gold,
     required this.transform,
+    required this.onRetry,
   });
 
   final int page;
@@ -279,6 +459,7 @@ class _VariantPage extends StatelessWidget {
   final Color paper;
   final Color gold;
   final String Function(String) transform;
+  final VoidCallback onRetry;
 
   static int _wordCount(String text) => text.trim().isEmpty ? 0 : text.trim().split(' ').where((word) => word.isNotEmpty).length;
 
@@ -290,9 +471,9 @@ class _VariantPage extends StatelessWidget {
         return 'Musnad';
       case MushafVariantMode.dotless:
       case MushafVariantMode.dotlessPlain:
-        return 'Amiri';
+        return FontManager.isRaqqFontLoaded ? 'Raqq' : 'Amiri';
       case MushafVariantMode.kufi:
-        return 'Amiri';
+        return FontManager.isRaqqFontLoaded ? 'Raqq' : 'Amiri';
       case MushafVariantMode.hieroglyphic:
         return 'NotoSansEgyptianHieroglyphs';
     }
@@ -304,10 +485,30 @@ class _VariantPage extends StatelessWidget {
       future: MushafVariantLayoutService.page(page),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Center(
-            child: Text(
-              'بيانات تخطيط المصحف غير متوفرة بعد. أعد بناء التطبيق لتوليدها.',
-              textAlign: TextAlign.center,
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.menu_book_outlined,
+                    color: Colors.white54,
+                    size: 34,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'تعذر تحميل تخطيط هذه الصفحة. قد تكون بيانات الصفحة غير متاحة أو تالفة.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('إعادة المحاولة'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -350,6 +551,11 @@ class _VariantPage extends StatelessWidget {
                                 line: lines[lineIndex],
                                 transform: transform,
                                 fontFamily: _fontFamily,
+                                fontFeatures: FontManager.isRaqqFontLoaded &&
+                                        (mode == MushafVariantMode.dotless ||
+                                            mode == MushafVariantMode.dotlessPlain)
+                                    ? const [FontFeature.enable('ss01')]
+                                    : const [],
                                 gold: gold,
                                 sequenceWordCount: sequenceWordCount,
                                 sequenceWordOffset: lines.take(lineIndex).fold<int>(
@@ -374,6 +580,7 @@ class _FixedMushafLine extends StatelessWidget {
     required this.line,
     required this.transform,
     required this.fontFamily,
+    required this.fontFeatures,
     required this.gold,
     required this.sequenceWordCount,
     required this.sequenceWordOffset,
@@ -382,6 +589,7 @@ class _FixedMushafLine extends StatelessWidget {
   final MushafVariantLine line;
   final String Function(String) transform;
   final String fontFamily;
+  final List<FontFeature> fontFeatures;
   final Color gold;
   final int sequenceWordCount;
   final int sequenceWordOffset;
@@ -414,7 +622,7 @@ class _FixedMushafLine extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.clip,
               style: TextStyle(
-                fontFamily: 'Amiri',
+                fontFamily: FontManager.isRaqqSuraFontLoaded ? 'RaqqSura' : 'Amiri',
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: gold,
@@ -447,6 +655,7 @@ class _FixedMushafLine extends StatelessWidget {
       builder: (context, constraints) {
         final style = TextStyle(
           fontFamily: fontFamily,
+          fontFeatures: fontFeatures,
           fontSize: 21,
           fontWeight: FontWeight.w700,
           color: gold,

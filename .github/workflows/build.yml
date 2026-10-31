@@ -190,6 +190,36 @@ jobs:
         run: flutter test test/nucleus_service_test.dart
 
 
+      - name: Test Quran numerical analysis
+        run: flutter test test/quran_numerical_analysis_service_test.dart
+
+      - name: Test Quran bookmarks route
+        run: flutter test test/quran_bookmarks_screen_test.dart
+
+      - name: Test bookmark persistence
+        run: flutter test test/bookmark_service_test.dart
+
+      - name: Test More screen navigation
+        run: flutter test test/more_screen_navigation_test.dart
+
+      - name: Test advanced component library
+        run: flutter test test/advanced_component_library_test.dart
+
+      - name: Test shared templates
+        run: flutter test test/mudabbir_templates_test.dart
+
+      - name: Test adaptive template selection
+        run: flutter test test/adaptive_template_selector_test.dart
+
+      - name: Test canvas entrance motion
+        run: flutter test test/canvas_block_entrance_test.dart
+
+      - name: Test physics simulation engine
+        run: flutter test test/physics_world_test.dart
+
+      - name: Test interactive physics sandbox registration
+        run: flutter test test/graphics_blocks_test.dart
+
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
 

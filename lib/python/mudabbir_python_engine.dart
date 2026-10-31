@@ -133,15 +133,19 @@ class MudabbirPythonEngine {
       final biases = (_modelWeights['biases'] as List)
           .map((value) => (value as num).toDouble())
           .toList(growable: false);
-      if (weights.length != 4096 * 10 || biases.length != 10) {
+      final classCount = (_modelWeights['class_count'] as num?)?.toInt() ?? 10;
+      if (classCount < 2 ||
+          classCount > 10 ||
+          weights.length != 4096 * classCount ||
+          biases.length != classCount) {
         throw StateError('أبعاد أوزان المصنف المحلي غير صالحة.');
       }
       final logits = List<double>.from(biases);
       for (var feature = 0; feature < input.length; feature++) {
         final value = input[feature];
         if (value == 0) continue;
-        final offset = feature * 10;
-        for (var category = 0; category < 10; category++) {
+        final offset = feature * classCount;
+        for (var category = 0; category < classCount; category++) {
           logits[category] += value * weights[offset + category];
         }
       }
@@ -191,6 +195,7 @@ class MudabbirPythonEngine {
     required List<List<double>> xTrain,
     required List<int> yTrain,
     int epochs = 100,
+    int classCount = 10,
     double learningRate = 0.001,
     Function(double loss, int epoch)? onProgress,
     bool Function()? shouldCancel,
@@ -201,6 +206,9 @@ class MudabbirPythonEngine {
     if (epochs < 1 || epochs > 500) {
       throw ArgumentError('عدد العصور يجب أن يكون بين 1 و500.');
     }
+    if (classCount < 2 || classCount > 10) {
+      throw ArgumentError('عدد الفئات يجب أن يكون بين 2 و10.');
+    }
     if (!learningRate.isFinite || learningRate <= 0 || learningRate > 1) {
       throw ArgumentError('معدل التعلم يجب أن يكون أكبر من صفر ولا يتجاوز 1.');
     }
@@ -208,17 +216,17 @@ class MudabbirPythonEngine {
       if (xTrain[i].length != 4096 || xTrain[i].any((v) => !v.isFinite)) {
         throw ArgumentError('عينة التدريب رقم ${i + 1} لا تحتوي 4096 ميزة رقمية صالحة.');
       }
-      if (yTrain[i] < 0 || yTrain[i] >= 10) {
-        throw ArgumentError('تصنيف العينة رقم ${i + 1} خارج النطاق 0..9.');
+      if (yTrain[i] < 0 || yTrain[i] >= classCount) {
+        throw ArgumentError('تصنيف العينة رقم ${i + 1} خارج النطاق 0..${classCount - 1}.');
       }
     }
 
     final random = Random(4096 + xTrain.length + epochs);
     final weights = List<double>.generate(
-      4096 * 10,
+      4096 * classCount,
       (_) => (random.nextDouble() * 2 - 1) * 0.002,
     );
-    final biases = List<double>.filled(10, 0);
+    final biases = List<double>.filled(classCount, 0);
     final history = <Map<String, dynamic>>[];
     final activeFeatures = <List<int>>[
       for (final sample in xTrain)
@@ -238,19 +246,19 @@ class MudabbirPythonEngine {
         final logits = List<double>.from(biases);
         for (final feature in activeFeatures[sampleIndex]) {
           final value = sample[feature];
-          final offset = feature * 10;
-          for (var category = 0; category < 10; category++) {
+          final offset = feature * classCount;
+          for (var category = 0; category < classCount; category++) {
             logits[category] += value * weights[offset + category];
           }
         }
         final probabilities = softmax(logits);
         final target = yTrain[sampleIndex];
         totalLoss -= log(max(probabilities[target], 1e-12));
-        for (var category = 0; category < 10; category++) {
+        for (var category = 0; category < classCount; category++) {
           final gradient = probabilities[category] - (category == target ? 1.0 : 0.0);
           biases[category] -= learningRate * gradient;
           for (final feature in activeFeatures[sampleIndex]) {
-            final index = feature * 10 + category;
+            final index = feature * classCount + category;
             weights[index] -= learningRate * xTrain[sampleIndex][feature] * gradient;
           }
         }
@@ -273,7 +281,7 @@ class MudabbirPythonEngine {
       'schema_version': 2,
       'architecture': 'linear_sparse_v2',
       'input_size': 4096,
-      'class_count': 10,
+      'class_count': classCount,
       'weights': weights,
       'biases': biases,
     };
@@ -320,8 +328,13 @@ class MudabbirPythonEngine {
       if (candidate['architecture'] == 'linear_sparse_v2') {
         final weights = candidate['weights'];
         final biases = candidate['biases'];
-        if (weights is! List || weights.length != 4096 * 10 ||
-            biases is! List || biases.length != 10 ||
+        final classCount = (candidate['class_count'] as num?)?.toInt() ?? 10;
+        if (classCount < 2 ||
+            classCount > 10 ||
+            weights is! List ||
+            weights.length != 4096 * classCount ||
+            biases is! List ||
+            biases.length != classCount ||
             weights.any((v) => v is! num || !v.isFinite) ||
             biases.any((v) => v is! num || !v.isFinite)) {
           return false;

@@ -9,11 +9,26 @@ import 'quran_source_corrections.dart';
 
 class QuranService {
   static Map<String, dynamic>? _cachedQuran;
+  static Future<Map<String, dynamic>>? _loadingQuran;
 
-  static Future<Map<String, dynamic>> loadQuran() async {
+  static Future<Map<String, dynamic>> loadQuran() {
     final cached = _cachedQuran;
-    if (cached != null) return cached;
+    if (cached != null) return Future<Map<String, dynamic>>.value(cached);
+    final pending = _loadingQuran;
+    if (pending != null) return pending;
 
+    final loading = _loadQuranOnce();
+    _loadingQuran = loading;
+    return loading.then<Map<String, dynamic>>(
+      (quran) => quran,
+      onError: (Object error, StackTrace stackTrace) {
+        if (identical(_loadingQuran, loading)) _loadingQuran = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+  }
+
+  static Future<Map<String, dynamic>> _loadQuranOnce() async {
     final raw = await rootBundle.loadString('assets/unified_quran.json');
     final decoded = jsonDecode(raw);
     if (decoded is! Map) {
@@ -23,29 +38,52 @@ class QuranService {
     final quran = QuranSourceCorrections.correctQuranMap(
       Map<String, dynamic>.from(decoded),
     );
+    if (quran.length != 114) {
+      throw FormatException(
+        'يجب أن يحتوي unified_quran.json على 114 سورة بالضبط؛ الموجود ${quran.length}.',
+      );
+    }
     var verseCount = 0;
     for (var surah = 1; surah <= 114; surah++) {
       final verses = quran['$surah'];
-      if (verses is! List || verses.isEmpty) {
-        throw FormatException('بيانات السورة $surah مفقودة أو فارغة في unified_quran.json');
+      final expectedCount = QuranLoaderService.canonicalSurahAyahCounts[surah - 1];
+      if (verses is! List || verses.length != expectedCount) {
+        throw FormatException(
+          'عدد آيات السورة $surah غير مطابق للمصحف: المتوقع $expectedCount، '
+          'والموجود ${verses is List ? verses.length : 0}.',
+        );
       }
       for (var index = 0; index < verses.length; index++) {
         final verse = verses[index];
-        if (verse is! Map || verse['text'] is! String || (verse['text'] as String).trim().isEmpty) {
-          throw FormatException('نص الآية $surah:${index + 1} مفقود أو غير صالح');
+        if (verse is! Map ||
+            verse['text'] is! String ||
+            (verse['text'] as String).trim().isEmpty) {
+          throw FormatException(
+            'نص الآية $surah:${index + 1} مفقود أو غير صالح',
+          );
         }
         verseCount++;
       }
     }
 
-    if (verseCount != 6236) {
+    if (verseCount != QuranLoaderService.expectedAyahCount) {
       throw FormatException(
-        'عدد الآيات في unified_quran.json غير صحيح: المتوقع 6236، والموجود $verseCount',
+        'عدد الآيات في unified_quran.json غير صحيح: المتوقع '
+        '${QuranLoaderService.expectedAyahCount}، والموجود $verseCount',
       );
     }
 
-    _cachedQuran = quran;
-    return quran;
+    _cachedQuran = Map<String, dynamic>.unmodifiable({
+      for (var surah = 1; surah <= 114; surah++)
+        '$surah': List<Map<String, dynamic>>.unmodifiable(
+          (quran['$surah'] as List).map(
+            (verse) => Map<String, dynamic>.unmodifiable(
+              Map<String, dynamic>.from(verse as Map),
+            ),
+          ),
+        ),
+    });
+    return _cachedQuran!;
   }
 
   /// Normalizes common Arabic orthographic variants without relying on a
@@ -55,7 +93,7 @@ class QuranService {
         // Uthmani dagger alif represents an alif in common orthography.
         .replaceAll('ٰ', 'ا')
         .replaceAll(
-          RegExp(r'[ًٌٍَُِّْۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+          RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'),
           '',
         )
         .replaceAll('ـ', '')
@@ -71,7 +109,7 @@ class QuranService {
 
   static String _normalizeSearchToken(String value) => value
       .replaceAll(
-        RegExp(r'[ًٌٍَُِّْٰۖۗۘۙۚۛۜ۞ۣ۟۠ۡۢۤۥۦۧۨ۩۪ۭ۫۬]'),
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'),
         '',
       )
       .replaceAll('ـ', '')
@@ -163,9 +201,6 @@ class QuranService {
         .toList(growable: false);
   }
 
-  static const List<int> _verseCounts = [
-    7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6
-  ];
 
   /// Complete 114-surah index. Names and page starts come from the same
   /// QCF source used by the canonical 604-page Mushaf.
@@ -175,7 +210,7 @@ class QuranService {
       number: number,
       nameArabic: getSurahNameArabic(number),
       nameEnglish: '',
-      verseCount: _verseCounts[index],
+      verseCount: QuranLoaderService.canonicalSurahAyahCounts[index],
       revelationType: '',
       pageNumber: getPageNumber(number, 1).clamp(1, 604).toInt(),
     );

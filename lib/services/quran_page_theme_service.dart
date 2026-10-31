@@ -7,14 +7,23 @@ class QuranPageThemeService {
   static const _key = 'quran.page_theme';
 
   static Future<QuranPageTheme> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final index = prefs.getInt(_key) ?? 0;
-    return QuranPageTheme.values[index.clamp(0, QuranPageTheme.values.length - 1).toInt()];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final index = prefs.getInt(_key) ?? 0;
+      return QuranPageTheme.values[
+          index.clamp(0, QuranPageTheme.values.length - 1).toInt()];
+    } catch (error) {
+      debugPrint('QuranPageThemeService: could not load page theme: $error');
+      return QuranPageTheme.paper;
+    }
   }
 
   static Future<void> save(QuranPageTheme theme) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_key, theme.index);
+    final saved = await prefs.setInt(_key, theme.index);
+    if (!saved) {
+      throw StateError('تعذر حفظ مظهر صفحات المصحف محليًا.');
+    }
   }
 
   static Color background(QuranPageTheme theme) {

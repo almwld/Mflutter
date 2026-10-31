@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../services/ollama_service.dart';
 import '../../services/nucleus_service.dart';
+import '../../services/context_memory_service.dart';
+import '../../services/ai_personality_service.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
 
@@ -18,8 +22,13 @@ class ChatProvider extends ChangeNotifier {
   // shared indexing future so consecutive messages do not reload and rebuild
   // the 6,236-verse search index every time.
   Future<void>? _quranIndexFuture;
+  bool _disposed = false;
 
-  void _onGgufChanged() => notifyListeners();
+  void _notifySafely() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _onGgufChanged() => _notifySafely();
 
   bool get hasActiveLocalModel => _core.isModelLoaded || _localAi.isRunning;
 
@@ -75,10 +84,19 @@ class ChatProvider extends ChangeNotifier {
     _messages.add(ChatMessage(text: cleanText, isUser: true));
     _loading = true;
     _error = null;
-    notifyListeners();
+    _notifySafely();
 
     try {
+      // Restore local preferences/memory before composing the prompt. These are
+      // best-effort: a storage failure must not disable otherwise-working chat.
+      try {
+        await Future.wait<void>([
+          ContextMemoryService.loadSavedMemory(),
+          AIPersonalityService.loadSavedPersonality(),
+        ]);
+      } catch (_) {}
       await _ensureQuranIndex();
+      if (_disposed) return;
       final hits = QuranicSearchEngine.search(cleanText).take(5).toList();
       final evidence = hits.isEmpty
           ? 'لم يعثر البحث المحلي على شاهد قرآني مطابق. أجب عن السؤال العام إن أمكن، ولا تقتبس آية أو تنسب نصًا إلى القرآن دون شاهد موثق.'
@@ -94,27 +112,38 @@ class ChatProvider extends ChangeNotifier {
               _core.currentSurahNumber.toString() + ':' +
               _core.currentAyahNumber.toString() + '): ' + verseContext;
 
+      final persona = AIPersonalityService.activeConfig;
+      final recentExchanges = ContextMemoryService.getRecentExchanges(limit: 3);
+      final memoryContext = recentExchanges.isEmpty
+          ? 'لا توجد محادثات سابقة محفوظة.'
+          : recentExchanges.join('\n');
+      final systemInstruction = 'أنت ${persona['name'] ?? 'مُدَبِّر'}، أسلوبك ${persona['style'] ?? 'واضح ومتزن'}. '
+          'أجب بالعربية الفصحى، وميّز بين النص الموثق والاستنتاج، ولا تختلق آيات أو مصادر. '
+          'استخدم ذاكرة السياق للاستمرارية فقط ولا تعاملها كحقيقة موثقة: $memoryContext';
+
       final String generated;
       if (_core.isModelLoaded) {
         generated = await _core.generateGroundedAnswer(
-          question: cleanText,
+          question: '$systemInstruction\n\nسؤال المستخدم: $cleanText',
           evidence: contextualEvidence,
           maxTokens: 512,
         );
       } else {
         generated = await _localAi.generate(
-          'أنت مُدَبِّر الْأَسْرَارِ الْعُلْيَا، مساعد معرفي محلي. '
-          'أجب عن السؤال مباشرة بالعربية الفصحى متى أمكن. عدم العثور على آية مطابقة ليس سببًا لرفض سؤال عام. لا تنسب نصًا إلى القرآن إلا إذا ظهر في الأدلة، '
-          'لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
+          '$systemInstruction '
+          'أجب عن السؤال العام حتى إن لم يوجد شاهد قرآني مطابق. لا تدّعِ امتلاك مصادر غير متاحة محلياً.\n\n'
           'المستخدم: $cleanText\n\nالأدلة المحلية:\n$contextualEvidence\n\nمُدَبِّر:',
         );
       }
       final evidenceNote = hits.isEmpty
           ? 'ملاحظة: لم يُرفق استشهاد قرآني لأن البحث المحلي لم يجد تطابقًا؛ هذا لا يمنع الإجابة عن الأسئلة العامة.'
           : 'الأدلة المحلية للمراجعة (ليست جزءًا من النص المولّد):\n$evidence';
+      if (_disposed) return;
       final reply = '$generated\n\n$evidenceNote';
 
       _messages.add(ChatMessage(text: reply, isUser: false));
+      final topic = _classifyTopic(cleanText);
+      ContextMemoryService.remember(cleanText, generated, topic);
     } catch (e) {
       _error = e.toString();
       _messages.add(ChatMessage(
@@ -125,19 +154,29 @@ class ChatProvider extends ChangeNotifier {
       ));
     } finally {
       _loading = false;
-      notifyListeners();
+      _notifySafely();
     }
+  }
+
+  String _classifyTopic(String text) {
+    final value = text.toLowerCase();
+    if (RegExp(r'قرآن|آية|سورة|تفسير|تدبر|الآيات').hasMatch(value)) return 'القرآن والتدبر';
+    if (RegExp(r'نواة|نموذج|ذكاء اصطناعي|gguf|وكيل').hasMatch(value)) return 'الذكاء الاصطناعي';
+    if (RegExp(r'إحصاء|تقدم|إنجاز|صفحة|قراءة').hasMatch(value)) return 'التقدم والقراءة';
+    return 'عام';
   }
 
   void clearChat() {
     _messages.clear();
     _error = null;
-    notifyListeners();
+    _notifySafely();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _core.removeListener(_onGgufChanged);
+    unawaited(_core.stopGeneration().catchError((_) {}));
     super.dispose();
   }
 }

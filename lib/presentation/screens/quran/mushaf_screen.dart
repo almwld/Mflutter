@@ -12,6 +12,8 @@ import 'mushaf_variant_screen.dart';
 import '../../widgets/quran/living_ayah_painter.dart';
 import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
+import '../../../services/nucleus_service.dart';
+import '../../../services/share_service.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -20,10 +22,15 @@ class MushafScreen extends StatefulWidget {
   const MushafScreen({
     super.key,
     this.initialPage = 1,
+    this.initialSurah,
+    this.initialAyah,
     this.restoreLastPage = true,
   });
 
   final int initialPage;
+  final int? initialSurah;
+  final int? initialAyah;
+
   /// Set false when opening a specific verse/page from search, favorites, or index.
   final bool restoreLastPage;
 
@@ -42,6 +49,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   late final TransformationController _mushafZoomController;
   bool _zoomMode = false;
   bool _readerControlsVisible = true;
+  bool _hasUserNavigated = false;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
 
   static const _paper = Color(0xFFF8F1E4);
@@ -60,23 +68,72 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _livingPulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2400));
     _livingGlow = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     _mushafZoomController = TransformationController();
-    if (widget.restoreLastPage) _restoreLastPage();
+
+    final targetSurah = widget.initialSurah;
+    final targetAyah = widget.initialAyah;
+    if (targetSurah != null &&
+        targetAyah != null &&
+        targetSurah >= 1 &&
+        targetSurah <= 114 &&
+        targetAyah >= 1) {
+      try {
+        final verseText = MushafSource.verse(targetSurah, targetAyah);
+        if (verseText.trim().isNotEmpty) {
+          _highlights = [
+            HighlightVerse(
+              surah: targetSurah,
+              verseNumber: targetAyah,
+              page: page,
+              color: _quranGoldLight,
+            ),
+          ];
+          _startLivingEffects();
+          NucleusService().setQuranContext(
+            surahNumber: targetSurah,
+            ayahNumber: targetAyah,
+            verseText: verseText,
+          );
+        }
+      } catch (_) {
+        // A stale bookmark must not prevent the Mushaf reader from opening.
+      }
+    }
+
+    if (widget.restoreLastPage) {
+      _restoreLastPage();
+    } else {
+      // Explicit destinations (bookmark/search/index) are genuine reading
+      // activity even when the PageView starts directly on that page.
+      unawaited(ReadingProgressService.saveLastPage(page).catchError((error) {
+        debugPrint('MushafScreen: could not save initial page: $error');
+      }));
+      unawaited(DailyStreakService.recordActivity().catchError((_) {}));
+    }
     _restorePageTheme();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafScreen: could not set initial system bars: $error');
+    });
   }
 
   Future<void> _toggleReaderControls() async {
     final show = !_readerControlsVisible;
     if (mounted) setState(() => _readerControlsVisible = show);
-    await SystemChrome.setEnabledSystemUIMode(
-      show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
-    );
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+      );
+    } catch (error) {
+      // Preserve a usable reader even if the platform rejects immersive mode.
+      debugPrint('MushafScreen: could not update system bars: $error');
+    }
   }
 
   @override
   void dispose() {
     // Never leave system status/navigation bars hidden after exiting the reader.
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('MushafScreen: could not restore system bars on dispose: $error');
+    });
     _livingPulse.dispose();
     _livingGlow.dispose();
     _mushafZoomController.dispose();
@@ -146,9 +203,18 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       ? const Icon(Icons.check_circle, color: Color(0xFF8C6A2D))
                       : null,
                   onTap: () async {
+                    final previousTheme = _pageTheme;
                     setState(() => _pageTheme = theme);
-                    await QuranPageThemeService.save(theme);
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    try {
+                      await QuranPageThemeService.save(theme);
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                    } catch (error) {
+                      if (!mounted) return;
+                      setState(() => _pageTheme = previousTheme);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('تعذر حفظ مظهر المصحف: $error')),
+                      );
+                    }
                   },
                 ),
             ],
@@ -159,20 +225,50 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   }
 
   Future<void> _restoreLastPage() async {
-    final last = await ReadingProgressService.getLastPage(fallback: _currentPage.value);
-    if (!mounted || last == _currentPage.value) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _goToPage(last);
-    });
+    try {
+      final last =
+          await ReadingProgressService.getLastPage(fallback: _currentPage.value);
+      if (!mounted || _hasUserNavigated) return;
+      // Opening the restored page is real local reading activity even when it
+      // matches the PageController's initial index and emits no page-change event.
+      unawaited(ReadingProgressService.saveLastPage(last).catchError((error) {
+        debugPrint('MushafScreen: could not save restored page: $error');
+      }));
+      unawaited(DailyStreakService.recordActivity().catchError((_) {}));
+      if (last == _currentPage.value) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _goToPage(last);
+      });
+    } catch (error) {
+      debugPrint('MushafScreen: could not restore last page: $error');
+    }
   }
 
   void _goToPage(int page) {
     final target = MushafSource.normalizePage(page);
+    // Explicit navigation wins over a still-pending asynchronous restore.
+    _hasUserNavigated = true;
     _pageController.animateToPage(
       target - 1,
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
     );
+  }
+
+  int? _parsePageNumber(String raw) {
+    final normalized = raw.trim().replaceAllMapped(
+      RegExp(r'[٠-٩۰-۹]'),
+      (match) {
+        final code = match.group(0)!.codeUnitAt(0);
+        final digit = code >= 0x06F0 && code <= 0x06F9
+            ? code - 0x06F0
+            : code - 0x0660;
+        return String.fromCharCode(0x30 + digit);
+      },
+    );
+    final page = int.tryParse(normalized);
+    if (page == null || page < 1 || page > MushafSource.totalPages) return null;
+    return page;
   }
 
   void _showPagePicker() {
@@ -187,11 +283,15 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           textDirection: TextDirection.rtl,
           decoration: const InputDecoration(hintText: '1 - 604'),
           onSubmitted: (_) {
-            final value = int.tryParse(controller.text);
-            if (value != null) {
-              Navigator.pop(context);
-              _goToPage(value);
+            final value = _parsePageNumber(controller.text);
+            if (value == null) {
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+              );
+              return;
             }
+            Navigator.pop(context);
+            _goToPage(value);
           },
         ),
         actions: [
@@ -201,9 +301,15 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
           ),
           FilledButton(
             onPressed: () {
-              final value = int.tryParse(controller.text);
+              final value = _parsePageNumber(controller.text);
+              if (value == null) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(content: Text('أدخل رقم صفحة صحيحًا من 1 إلى 604.')),
+                );
+                return;
+              }
               Navigator.pop(context);
-              if (value != null) _goToPage(value);
+              _goToPage(value);
             },
             child: const Text('انتقال'),
           ),
@@ -358,6 +464,11 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       ];
     });
     _startLivingEffects();
+    NucleusService().setQuranContext(
+      surahNumber: surah,
+      ayahNumber: ayah,
+      verseText: MushafSource.verse(surah, ayah),
+    );
 
     final overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
     final local = overlay.globalToLocal(position);
@@ -370,17 +481,58 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       ),
       items: const [
         PopupMenuItem(value: 'bookmark', child: Text('حفظ الآية')),
+        PopupMenuItem(value: 'copy', child: Text('نسخ نص الآية')),
+        PopupMenuItem(value: 'share', child: Text('مشاركة الآية')),
         PopupMenuItem(value: 'clear', child: Text('إلغاء التحديد')),
       ],
     ).then((action) async {
       if (!mounted) return;
       if (action == 'bookmark') {
-        final text = MushafSource.verse(surah, ayah);
-        await BookmarkService.addBookmark(surah, ayah, text);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حفظ الآية في العلامات المرجعية')),
+        try {
+          final text = MushafSource.verse(surah, ayah);
+          await BookmarkService.addBookmark(surah, ayah, text);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم حفظ الآية في العلامات المرجعية')),
+            );
+          }
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تعذر حفظ العلامة المرجعية: $error')),
+            );
+          }
+        }
+      } else if (action == 'copy') {
+        try {
+          final text = MushafSource.verse(surah, ayah);
+          await Clipboard.setData(ClipboardData(text: text));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم نسخ نص الآية')),
+            );
+          }
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تعذر نسخ الآية: $error')),
+            );
+          }
+        }
+      } else if (action == 'share') {
+        try {
+          await ShareService.shareVerse(
+            text: MushafSource.verse(surah, ayah),
+            surahNumber: surah,
+            ayahNumber: ayah,
+            surahName: getSurahNameArabic(surah),
           );
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تعذرت مشاركة الآية: $error')),
+            );
+          }
         }
       }
       if (mounted) {
@@ -402,7 +554,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       body: SafeArea(
         child: GestureDetector(
           behavior: HitTestBehavior.translucent,
-          onTap: _toggleReaderControls,
+          onDoubleTap: _toggleReaderControls,
           child: Stack(
           children: [
             const Positioned.fill(
@@ -501,15 +653,25 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                   },
                   onPageChanged: (pageNumber) {
                     final page = MushafSource.normalizePage(pageNumber);
+                    final previousPage = _currentPage.value;
+                    if (page != previousPage) _hasUserNavigated = true;
                     _currentPage.value = page;
                     if (_zoomMode) {
                       _mushafZoomController.value = Matrix4.identity();
                     }
-                    ReadingProgressService.saveLastPage(page);
+                    unawaited(ReadingProgressService.saveLastPage(page).catchError((error) {
+                      debugPrint('MushafScreen: could not save current page: $error');
+                    }));
                     unawaited(DailyStreakService.recordActivity().catchError((_) {}));
-                    if (_highlights.isNotEmpty) {
-                      setState(() => _highlights = const []);
-                      _stopLivingEffects();
+                    if (page != previousPage) {
+                      // The prior verse no longer belongs to the visible page;
+                      // clear its shared context even if a menu already removed
+                      // the temporary visual highlight.
+                      NucleusService().clearQuranContext();
+                      if (_highlights.isNotEmpty) {
+                        setState(() => _highlights = const []);
+                        _stopLivingEffects();
+                      }
                     }
                   },
                   onDoubleTap: (surah, ayah) {
@@ -525,6 +687,14 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                       ];
                     });
                     _startLivingEffects();
+                    NucleusService().setQuranContext(
+                      surahNumber: surah,
+                      ayahNumber: ayah,
+                      verseText: MushafSource.verse(surah, ayah),
+                    );
+                    // The QCF page view owns verse double taps, so toggle
+                    // immersive controls here as well as on blank page space.
+                    unawaited(_toggleReaderControls());
                   },
                   onLongPressStart: (surah, ayah, details) {
                     _saveAyahCoordinate(surah, ayah, details.globalPosition);

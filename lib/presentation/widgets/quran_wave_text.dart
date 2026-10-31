@@ -69,7 +69,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
 
   static String _normalize(String word) {
     return word
-        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
         .replaceAll(RegExp(r'[۞۩،؛؟!.:﴿﴾()\[\]«»"“”]'), '')
         .trim();
   }
@@ -201,6 +201,7 @@ class _QuranWaveTextState extends State<QuranWaveText>
                 ? widget.style.copyWith(
                     fontFamily: 'Amiri',
                     fontSize: 15,
+                    foreground: null,
                     color: const Color(0xFF8C6A2D),
                   )
                 : widget.style,

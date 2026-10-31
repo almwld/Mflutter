@@ -50,6 +50,49 @@ class NucleusService extends ChangeNotifier {
   bool get isBusy => isModelBusy;
   String get status => modelStatus;
   Future<bool> hasValidModel() => _runtime.hasValidModel();
+
+  Future<bool>? _modelRestore;
+
+  /// Restores the previously imported local GGUF on demand.
+  ///
+  /// The selected model marker and validated private-storage file survive app
+  /// restarts, but the native llama.cpp controller does not. Concurrent chat
+  /// requests share one restore future so they cannot race into two native
+  /// loads of the same model.
+  Future<bool> ensureModelLoaded({
+    int threads = 4,
+    int contextSize = 1024,
+  }) {
+    if (_runtime.isLoaded) return Future<bool>.value(true);
+    final pending = _modelRestore;
+    if (pending != null) return pending;
+
+    final attempt = _restoreModel(
+      threads: threads,
+      contextSize: contextSize,
+    );
+    _modelRestore = attempt;
+    return attempt.whenComplete(() {
+      if (identical(_modelRestore, attempt)) _modelRestore = null;
+    });
+  }
+
+  Future<bool> _restoreModel({
+    required int threads,
+    required int contextSize,
+  }) async {
+    if (_runtime.isBusy || _runtime.isGenerating) return false;
+    if (!await _runtime.hasValidModel()) return false;
+    // Another explicit UI action may have loaded the model while the file
+    // check was awaiting storage I/O.
+    if (_runtime.isLoaded) return true;
+    if (_runtime.isBusy || _runtime.isGenerating) return false;
+    await _runtime.loadModel(
+      threads: threads,
+      contextSize: contextSize,
+    );
+    return _runtime.isLoaded;
+  }
   bool get isGenerating => _runtime.isGenerating;
   String get modelStatus => _runtime.status;
   String? get loadedModelPath => _runtime.loadedPath;
@@ -100,7 +143,9 @@ class NucleusService extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    // Allow retry after a fallback or knowledge-index failure. A fully healthy
+    // initialization remains idempotent.
+    if (_initialized && _error == null && _knowledgeReady) return;
     final pending = _initializing;
     if (pending != null) {
       await pending;

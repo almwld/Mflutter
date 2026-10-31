@@ -4,6 +4,7 @@ import '../../domain/entities/verse.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quran_word_index_service.dart';
 import '../../services/mushaf_source.dart';
+import 'quran/mushaf_screen.dart';
 
 /// Interactive, data-derived word and letter coordinates for the Hafs Mushaf.
 class QuranWordExplorerScreen extends StatefulWidget {
@@ -29,6 +30,12 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
   }
 
   Future<void> _initialize() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
       _bySurah = await QuranLoaderService.loadBySurah();
       await _loadVerse();
@@ -60,6 +67,19 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
         _error = 'تعذر تحميل مواضع الآية: ' + error.toString();
       });
     }
+  }
+
+  void _openVerse(int surah, int ayah, int page) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: surah,
+          initialAyah: ayah,
+          restoreLastPage: false,
+        ),
+      ),
+    );
   }
 
   Future<void> _move(int delta) async {
@@ -104,8 +124,23 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(_error!, textAlign: TextAlign.center,
-                        style: TextStyle(color: colors.error)),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(color: colors.error),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: _initialize,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('إعادة تحميل فهرس الكلمات'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : ListView(
@@ -196,6 +231,18 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                       textDirection: TextDirection.rtl,
                                       style: theme.textTheme.bodySmall),
                                   Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: FilledButton.icon(
+                                      onPressed: () => _openVerse(
+                                        word.surahNumber,
+                                        word.ayahNumber,
+                                        word.pageNumber,
+                                      ),
+                                      icon: const Icon(Icons.menu_book_rounded),
+                                      label: const Text('فتح الآية في المصحف'),
+                                    ),
+                                  ),
+                                  Align(
                                     alignment: Alignment.centerLeft,
                                     child: TextButton.icon(
                                       onPressed: () async {
@@ -210,7 +257,15 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                               children: [
                                                 Text('مواضع الكلمة: ' + word.text,
                                                     style: theme.textTheme.titleMedium),
-                                                for (final match in matches)
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  matches.length > 100
+                                                      ? 'عدد المواضع: ${matches.length} • يعرض أول 100 موضع لتخفيف الحمل.'
+                                                      : 'عدد المواضع: ${matches.length}',
+                                                  textDirection: TextDirection.rtl,
+                                                  style: theme.textTheme.bodySmall,
+                                                ),
+                                                for (final match in matches.take(100))
                                                   ListTile(
                                                     title: Text('سورة ' +
                                                         match.surahNumber.toString() +
@@ -221,6 +276,15 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                                         ' • صفحة ' + match.pageNumber.toString() +
                                                         ' • جزء ' + match.juzNumber.toString(),
                                                         textDirection: TextDirection.rtl),
+                                                    trailing: const Icon(Icons.open_in_new_rounded),
+                                                    onTap: () {
+                                                      Navigator.pop(context);
+                                                      _openVerse(
+                                                        match.surahNumber,
+                                                        match.ayahNumber,
+                                                        match.pageNumber,
+                                                      );
+                                                    },
                                                   ),
                                               ],
                                             ),
@@ -228,7 +292,7 @@ class _QuranWordExplorerScreenState extends State<QuranWordExplorerScreen> {
                                         );
                                       },
                                       icon: const Icon(Icons.manage_search),
-                                      label: const Text('عرض جميع مواضع الكلمة'),
+                                      label: const Text('عرض مواضع الكلمة'),
                                     ),
                                   ),
                                 ],

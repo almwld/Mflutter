@@ -8,6 +8,9 @@ class ThemeProvider extends ChangeNotifier {
   String _fontFamily = 'Amiri';
   double _fontSize = 20;
   String _selectedTheme = 'default';
+  String? _persistenceError;
+  int _stateRevision = 0;
+  Future<void> _persistQueue = Future<void>.value();
 
   ThemeMode get themeMode => _themeMode;
   String get fontFamily => _fontFamily;
@@ -15,33 +18,47 @@ class ThemeProvider extends ChangeNotifier {
   String get selectedTheme => _selectedTheme;
   bool get isDark => _themeMode == ThemeMode.dark;
   bool get loaded => _loaded;
+  String? get persistenceError => _persistenceError;
 
   ThemeProvider() {
     _load();
   }
 
   Future<void> _load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedMode = prefs.getString('theme.mode');
-    _themeMode = switch (savedMode) {
-      'light' => ThemeMode.light,
-      'system' => ThemeMode.system,
-      'dark' => ThemeMode.dark,
-      _ => (prefs.getBool('theme.dark') ?? true)
-          ? ThemeMode.dark
-          : ThemeMode.light,
-    };
-    final savedFont = prefs.getString('theme.font') ?? 'Amiri';
-    _fontFamily = savedFont == 'Musnad' ? 'Musnad' : 'Amiri';
-    _fontSize = (prefs.getDouble('theme.font_size') ?? 20)
-        .clamp(14, 36)
-        .toDouble();
-    final savedTheme = prefs.getString('theme.palette') ?? 'default';
-    _selectedTheme = ThemeService.themeNames.contains(savedTheme)
-        ? savedTheme
-        : 'default';
-    _loaded = true;
-    notifyListeners();
+    final revisionAtStart = _stateRevision;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // Do not let a slow initial read overwrite a preference the user changed
+      // while the settings provider was loading.
+      if (_stateRevision != revisionAtStart) {
+        return;
+      }
+      final savedMode = prefs.getString('theme.mode');
+      _themeMode = switch (savedMode) {
+        'light' => ThemeMode.light,
+        'system' => ThemeMode.system,
+        'dark' => ThemeMode.dark,
+        _ => (prefs.getBool('theme.dark') ?? true)
+            ? ThemeMode.dark
+            : ThemeMode.light,
+      };
+      final savedFont = prefs.getString('theme.font') ?? 'Amiri';
+      _fontFamily = savedFont == 'Musnad' ? 'Musnad' : 'Amiri';
+      _fontSize = (prefs.getDouble('theme.font_size') ?? 20)
+          .clamp(14, 36)
+          .toDouble();
+      final savedTheme = prefs.getString('theme.palette') ?? 'default';
+      _selectedTheme = ThemeService.themeNames.contains(savedTheme)
+          ? savedTheme
+          : 'default';
+      _persistenceError = null;
+    } catch (error) {
+      _persistenceError = 'تعذر تحميل تفضيلات المظهر؛ استُخدمت القيم الافتراضية: $error';
+      debugPrint('ThemeProvider: preference load failed: $error');
+    } finally {
+      _loaded = true;
+      notifyListeners();
+    }
   }
 
   void toggleTheme() =>
@@ -52,6 +69,7 @@ class ThemeProvider extends ChangeNotifier {
         _themeMode == mode) {
       return;
     }
+    _stateRevision++;
     _themeMode = mode;
     _persist();
     notifyListeners();
@@ -61,6 +79,7 @@ class ThemeProvider extends ChangeNotifier {
     if (!ThemeService.themeNames.contains(name) || _selectedTheme == name) {
       return;
     }
+    _stateRevision++;
     _selectedTheme = name;
     _persist();
     notifyListeners();
@@ -69,6 +88,7 @@ class ThemeProvider extends ChangeNotifier {
   void setFont(String font) {
     if (font != 'Amiri' && font != 'Musnad') return;
     if (_fontFamily == font) return;
+    _stateRevision++;
     _fontFamily = font;
     _persist();
     notifyListeners();
@@ -77,12 +97,14 @@ class ThemeProvider extends ChangeNotifier {
   void setFontSize(double size) {
     final next = size.clamp(14, 36).toDouble();
     if (_fontSize == next) return;
+    _stateRevision++;
     _fontSize = next;
     _persist();
     notifyListeners();
   }
 
   Future<void> resetToDefaults() async {
+    _stateRevision++;
     _themeMode = ThemeMode.dark;
     _fontFamily = 'Amiri';
     _fontSize = 20;
@@ -92,16 +114,36 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('theme.mode', switch (_themeMode) {
-      ThemeMode.light => 'light',
-      ThemeMode.system => 'system',
-      ThemeMode.dark => 'dark',
+    final mode = _themeMode;
+    final dark = _themeMode != ThemeMode.light;
+    final font = _fontFamily;
+    final size = _fontSize;
+    final palette = _selectedTheme;
+    final operation = _persistQueue.catchError((Object _) {}).then((_) async {
+      final prefs = await SharedPreferences.getInstance();
+      final savedMode = await prefs.setString('theme.mode', switch (mode) {
+        ThemeMode.light => 'light',
+        ThemeMode.system => 'system',
+        ThemeMode.dark => 'dark',
+      });
+      final savedLegacyMode = await prefs.setBool('theme.dark', dark);
+      final savedFont = await prefs.setString('theme.font', font);
+      final savedSize = await prefs.setDouble('theme.font_size', size);
+      final savedPalette = await prefs.setString('theme.palette', palette);
+      if (!savedMode || !savedLegacyMode || !savedFont || !savedSize || !savedPalette) {
+        throw StateError('رفض التخزين المحلي حفظ أحد تفضيلات المظهر.');
+      }
     });
-    // Keep the legacy key so older builds still read the selected mode.
-    await prefs.setBool('theme.dark', _themeMode != ThemeMode.light);
-    await prefs.setString('theme.font', _fontFamily);
-    await prefs.setDouble('theme.font_size', _fontSize);
-    await prefs.setString('theme.palette', _selectedTheme);
+    _persistQueue = operation;
+    try {
+      await operation;
+      final hadError = _persistenceError != null;
+      _persistenceError = null;
+      if (hadError) notifyListeners();
+    } catch (error) {
+      _persistenceError = 'تعذر حفظ تفضيلات المظهر: $error';
+      debugPrint('ThemeProvider: preference save failed: $error');
+      notifyListeners();
+    }
   }
 }

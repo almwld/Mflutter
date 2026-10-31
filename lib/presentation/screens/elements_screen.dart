@@ -16,7 +16,7 @@ class ElementsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.primaryNavy,
         title: const Text(
-          'علم العناصر',
+          'العناصر في التصورات التراثية',
           style: TextStyle(fontFamily: 'Amiri', fontSize: 24),
         ),
       ),
@@ -28,35 +28,35 @@ class ElementsScreen extends StatelessWidget {
           _buildElementCard(
             'النار',
             'العنصر الأول',
-            'الصفة: الحرارة واليبوس',
+            'الصفات التراثية المنسوبة: الحرارة واليبوس',
             Colors.red,
             Icons.local_fire_department,
           ),
           _buildElementCard(
             'الماء',
             'العنصر الثاني',
-            'الصفة: الرطوبة والبرودة',
+            'الصفات التراثية المنسوبة: الرطوبة والبرودة',
             AppColors.primaryNavyLight,
             Icons.water_drop,
           ),
           _buildElementCard(
             'التراب',
             'العنصر الثالث',
-            'الصفة: اليبوسة والبرودة',
+            'الصفات التراثية المنسوبة: اليبوسة والبرودة',
             Colors.brown,
             Icons.landscape,
           ),
           _buildElementCard(
             'الهواء',
             'العنصر الرابع',
-            'الصفة: الحرارة والرطوبة',
+            'الصفات التراثية المنسوبة: الحرارة والرطوبة',
             Colors.grey,
             Icons.air,
           ),
           _buildElementCard(
             'الروح',
-            'العنصر الخامس',
-            'الصفة: الجوهر الإلهي',
+            'تصنيف إضافي في بعض الموروثات',
+            'مفهوم رمزي/فلسفي؛ ليس عنصرًا علميًا ضمن العناصر الأربعة',
             AppColors.gold,
             Icons.auto_awesome,
           ),
@@ -167,7 +167,7 @@ class ElementsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'الروابط بين العناصر',
+            'روابط تصورية في بعض الموروثات',
             style: TextStyle(
               fontFamily: 'Amiri',
               fontSize: 20,
@@ -176,11 +176,17 @@ class ElementsScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppDimensions.paddingSmall),
+          const Text(
+            'تختلف هذه العلاقات باختلاف النظام التراثي، وهي ليست نموذجًا علميًا حديثًا.',
+            textDirection: TextDirection.rtl,
+            style: TextStyle(color: Colors.white60, fontSize: 12, height: 1.5),
+          ),
+          const SizedBox(height: AppDimensions.paddingSmall),
           _buildRelationRow('النار', 'تجفف', 'الماء'),
           _buildRelationRow('الماء', 'يُطفئ', 'النار'),
           _buildRelationRow('التراب', 'يُحيط', 'الماء'),
           _buildRelationRow('الهواء', 'يُحيط', 'النار'),
-          _buildRelationRow('الروح', 'يُحيي', 'everything'),
+          _buildRelationRow('الروح', 'يُرمز بها إلى', 'الحياة'),
         ],
       ),
     );

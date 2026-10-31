@@ -24,6 +24,7 @@ class AgentKnowledgeService {
   final List<AgentKnowledgeDocument> _documents = [];
   final Set<String> _loadedSources = {};
   Future<void>? _initializing;
+  Future<void>? _loadingVariants;
   bool _variantsLoaded = false;
 
   bool get isReady => _loadedSources.contains(_knowledgeAsset);
@@ -36,11 +37,13 @@ class AgentKnowledgeService {
       await pending;
       return;
     }
+    if (isReady) return;
 
     final attempt = _initialize();
     _initializing = attempt;
     try {
       await attempt;
+      if (!isReady) throw StateError('Knowledge asset unavailable: ' + _knowledgeAsset);
     } catch (error, stackTrace) {
       // Do not pin a failed Future forever or leave a half-built index behind.
       _documents.clear();
@@ -52,7 +55,11 @@ class AgentKnowledgeService {
   }
 
   Future<void> _initialize() async {
+    final beforeRequiredKnowledge = _documents.length;
     await _loadJsonAsset(_knowledgeAsset);
+    if (!isReady || _documents.length == beforeRequiredKnowledge) {
+      throw StateError('Required knowledge asset contains no indexable documents: ' + _knowledgeAsset);
+    }
     await _loadJsonAsset(_generalAsset);
     await _loadJsonAsset(_infoAsset);
 
@@ -70,19 +77,29 @@ class AgentKnowledgeService {
   }
 
   Future<void> _loadJsonAsset(String path) async {
+    final before = _documents.length;
     try {
       final raw = await rootBundle.loadString(path);
       final decoded = jsonDecode(raw);
-      final before = _documents.length;
       _collect(decoded, path, path, 0);
       _loadedSources.add(path);
-      if (_documents.length < before) {
-        throw StateError('Invalid document count for $path');
-      }
     } on FlutterError {
       // Optional assets do not prevent the canonical corpus from loading.
+      _rollbackDocuments(before);
     } on FormatException {
       // Do not fabricate replacement data for malformed assets.
+      _rollbackDocuments(before);
+    } on TypeError {
+      // A malformed optional schema must not leave a partially indexed source.
+      _rollbackDocuments(before);
+    } on ArgumentError {
+      _rollbackDocuments(before);
+    }
+  }
+
+  void _rollbackDocuments(int lengthBeforeLoad) {
+    if (_documents.length > lengthBeforeLoad) {
+      _documents.removeRange(lengthBeforeLoad, _documents.length);
     }
   }
 
@@ -146,11 +163,25 @@ class AgentKnowledgeService {
 
   Future<void> _loadVariantsIfNeeded() async {
     if (_variantsLoaded) return;
+    final pending = _loadingVariants;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final attempt = _loadVariantAssets();
+    _loadingVariants = attempt;
+    try {
+      await attempt;
+      _variantsLoaded = true;
+    } finally {
+      if (identical(_loadingVariants, attempt)) _loadingVariants = null;
+    }
+  }
+
+  Future<void> _loadVariantAssets() async {
     for (final path in _variantAssets) {
       await _loadJsonAsset(path);
     }
-    // Mark complete only after every optional source has been attempted.
-    _variantsLoaded = true;
   }
 
   Future<List<AgentKnowledgeDocument>> search(
@@ -158,6 +189,9 @@ class AgentKnowledgeService {
     int limit = 6,
     bool includeScriptVariants = false,
   }) async {
+    if (limit <= 0 || query.trim().isEmpty) {
+      return const <AgentKnowledgeDocument>[];
+    }
     await initialize();
     if (includeScriptVariants) await _loadVariantsIfNeeded();
 
@@ -177,7 +211,15 @@ class AgentKnowledgeService {
       if (haystack.contains(normalizedQuery)) score += 5;
       if (score > 0) ranked.add((document: document, score: score));
     }
-    ranked.sort((a, b) => b.score.compareTo(a.score));
+    ranked.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      final bySource = a.document.source.compareTo(b.document.source);
+      if (bySource != 0) return bySource;
+      final byTitle = a.document.title.compareTo(b.document.title);
+      if (byTitle != 0) return byTitle;
+      return a.document.content.compareTo(b.document.content);
+    });
     final seen = <String>{};
     return ranked
         .where((item) => seen.add('${item.document.source}|${item.document.title}|${item.document.content}'))
@@ -187,8 +229,9 @@ class AgentKnowledgeService {
   }
 
   static String normalize(String value) => value
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
       .replaceAll(RegExp(r'[^\u0600-\u06FFa-zA-Z0-9 ]'), ' ')

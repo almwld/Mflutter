@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qcf_quran_lite/qcf_quran_lite.dart' show getSurahNameArabic;
 
 import '../../services/bookmark_service.dart';
 import '../../services/mushaf_source.dart';
@@ -6,7 +7,9 @@ import 'quran/mushaf_screen.dart';
 
 /// قائمة العلامات المحفوظة، مع فتح الآية في صفحة المصحف الصحيحة.
 class FavoritesScreen extends StatefulWidget {
-  const FavoritesScreen({super.key});
+  final String title;
+
+  const FavoritesScreen({super.key, this.title = 'المفضلة'});
 
   @override
   State<FavoritesScreen> createState() => _FavoritesScreenState();
@@ -64,7 +67,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     final ayah = (bookmark['ayah'] as num).toInt();
     final page = MushafSource.pageForVerse(surah, ayah);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)),
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: surah,
+          initialAyah: ayah,
+          restoreLastPage: false,
+        ),
+      ),
     );
   }
 
@@ -76,7 +86,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('المفضلة'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             tooltip: 'تحديث المفضلة',
@@ -161,7 +171,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              'سورة $surah • الآية $ayah • صفحة ${MushafSource.pageForVerse(surah, ayah)}',
+                              'سورة ${getSurahNameArabic(surah)} • الآية $ayah • صفحة ${MushafSource.pageForVerse(surah, ayah)}',
                               textDirection: TextDirection.rtl,
                               style: TextStyle(color: colors.primary),
                             ),

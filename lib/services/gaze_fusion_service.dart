@@ -59,14 +59,27 @@ class GazeFusionService {
   }
 
   Future<void> clear() async {
-    _yawScale = 1.0; _yawBias = 0.0;
-    _pitchScale = 1.0; _pitchBias = 0.0;
-    _emaX = 0.5; _emaY = 0.5; _calibrated = false;
     final p = await SharedPreferences.getInstance();
-    for (final k in [
-      'gaze_cal_yaw_scale','gaze_cal_yaw_bias',
-      'gaze_cal_pitch_scale','gaze_cal_pitch_bias','gaze_calibrated',
-    ]) { await p.remove(k); }
+    var allRemoved = true;
+    for (final key in [
+      'gaze_cal_yaw_scale',
+      'gaze_cal_yaw_bias',
+      'gaze_cal_pitch_scale',
+      'gaze_cal_pitch_bias',
+      'gaze_calibrated',
+    ]) {
+      if (!await p.remove(key)) allRemoved = false;
+    }
+    if (!allRemoved) {
+      throw StateError('تعذر حذف جميع معاملات المعايرة المحفوظة.');
+    }
+    _yawScale = 1.0;
+    _yawBias = 0.0;
+    _pitchScale = 1.0;
+    _pitchBias = 0.0;
+    _emaX = 0.5;
+    _emaY = 0.5;
+    _calibrated = false;
   }
 
   GazeScreenPoint map({
@@ -142,17 +155,39 @@ class GazeFusionService {
       samples.map((s) => s.targetY).toList(),
     );
 
+    final p = await SharedPreferences.getInstance();
+    try {
+      final saved = <bool>[
+        await p.setDouble('gaze_cal_yaw_scale', yaw.$1),
+        await p.setDouble('gaze_cal_yaw_bias', yaw.$2),
+        await p.setDouble('gaze_cal_pitch_scale', pitch.$1),
+        await p.setDouble('gaze_cal_pitch_bias', pitch.$2),
+        await p.setBool('gaze_calibrated', true),
+      ];
+      if (saved.any((value) => !value)) {
+        throw StateError('رفض التخزين المحلي حفظ معاملات المعايرة كاملة.');
+      }
+    } catch (_) {
+      // Do not leave a mixed calibration that could be mistaken for a valid
+      // persisted profile if only some preference writes succeeded.
+      for (final key in [
+        'gaze_cal_yaw_scale',
+        'gaze_cal_yaw_bias',
+        'gaze_cal_pitch_scale',
+        'gaze_cal_pitch_bias',
+        'gaze_calibrated',
+      ]) {
+        try {
+          await p.remove(key);
+        } catch (_) {}
+      }
+      rethrow;
+    }
     _yawScale = yaw.$1;
     _yawBias = yaw.$2;
     _pitchScale = pitch.$1;
     _pitchBias = pitch.$2;
     _calibrated = true;
-    final p = await SharedPreferences.getInstance();
-    await p.setDouble('gaze_cal_yaw_scale', _yawScale);
-    await p.setDouble('gaze_cal_yaw_bias', _yawBias);
-    await p.setDouble('gaze_cal_pitch_scale', _pitchScale);
-    await p.setDouble('gaze_cal_pitch_bias', _pitchBias);
-    await p.setBool('gaze_calibrated', true);
   }
 
   (double, double) _fitAxis(List<double> input, List<double> target) {

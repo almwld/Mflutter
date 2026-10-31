@@ -23,6 +23,11 @@ class TextTransformer {
     'ه': '𓉔', 'ة': '𓉔', 'و': '𓅱', 'ي': '𓇌', 'ى': '𓇌', 'ؤ': '𓅱', 'ئ': '𓇌',
   };
 
+  /// Remove Arabic combining/annotation marks while preserving every base
+  /// character. This is presentation-only; the canonical source remains intact.
+  static String removeArabicMarks(String text) =>
+      String.fromCharCodes(text.runes.where((rune) => !_isArabicMark(rune)));
+
   /// Arabic combining marks and Quranic annotation marks commonly found in
   /// Uthmani text. This is used only by optional presentation transforms.
   static bool _isArabicMark(int rune) =>

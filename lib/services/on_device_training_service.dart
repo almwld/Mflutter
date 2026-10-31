@@ -63,12 +63,17 @@ class OnDeviceTrainingService {
         }
         classCounts.update(label, (count) => count + 1, ifAbsent: () => 1);
       }
-      if (classCounts.length < 2) {
-        throw const FormatException('لا يمكن تدريب المصنف على فئة واحدة فقط؛ يلزم فئتان على الأقل.');
+      const requiredLabels = <String>{'cosmic', 'tranquil', 'calculation'};
+      final missingLabels = requiredLabels
+          .where((label) => !classCounts.containsKey(label))
+          .toList(growable: false);
+      if (missingLabels.isNotEmpty) {
+        throw FormatException(
+          'يتطلب المصنف ثلاث فئات؛ الفئات المفقودة: ${missingLabels.join(', ')}.',
+        );
       }
-      final underrepresented = classCounts.entries
-          .where((entry) => entry.value < 2)
-          .map((entry) => entry.key)
+      final underrepresented = requiredLabels
+          .where((label) => (classCounts[label] ?? 0) < 2)
           .toList(growable: false);
       if (underrepresented.isNotEmpty) {
         throw FormatException('يلزم عينتان على الأقل لكل فئة مستخدمة: ${underrepresented.join(', ')}.');
@@ -113,6 +118,7 @@ class OnDeviceTrainingService {
         xTrain: xTrain,
         yTrain: yTrain,
         epochs: epochs,
+        classCount: 3,
         learningRate: 0.002,
         shouldCancel: () => _cancelRequested,
         onProgress: (loss, epoch) {

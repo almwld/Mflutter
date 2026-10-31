@@ -1,19 +1,23 @@
-import 'daily_streak_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'local_activity_summary_service.dart';
 
 /// Achievement state is derived from observable local activity. Features that
 /// do not yet emit measurable events remain explicitly untracked instead of
 /// displaying fabricated progress or unlocked badges.
 class AchievementsService {
+  static Future<void> _eventQueue = Future<void>.value();
   static final List<Map<String, dynamic>> _achievements = <Map<String, dynamic>>[
     {'id': 'first_verse', 'title': 'أول صفحة', 'desc': 'فتح صفحة من المصحف', 'icon': '📖', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'ten_verses', 'title': 'حافظ الآيات', 'desc': 'حفظ 10 آيات في المفضلة', 'icon': '📚', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'first_abjad', 'title': 'حاسب الجمل', 'desc': 'استخدام حاسبة الجمل', 'icon': '🔢', 'unlocked': false, 'progress': 0.0, 'tracking': true},
     {'id': 'daily_streak_3', 'title': 'متعهد', 'desc': '٣ أيام قراءة متتالية', 'icon': '🔥', 'unlocked': false, 'progress': 0.0, 'tracking': true},
-    {'id': 'seven_sciences', 'title': 'موسوعي', 'desc': 'استكشاف ٧ علوم', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': false},
-    {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': false},
-    {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'استخدام التطبيق ليلاً', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': false},
-    {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': false},
+    {'id': 'seven_sciences', 'title': 'مستكشف المعرفة', 'desc': 'فتح تفاصيل ٧ موضوعات معرفية مميزة', 'icon': '🔬', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'ten_insights', 'title': 'متدبر', 'desc': '١٠ أسئلة بصيرة', 'icon': '💡', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'night_mode', 'title': 'راهب الليل', 'desc': 'فتح التطبيق بين 20:00 و04:59 بالتوقيت المحلي', 'icon': '🌙', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'dream_journal', 'title': 'مدوّن الأحلام', 'desc': 'حفظ أول مذكرة في سجل الأحلام', 'icon': '📝', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'time_capsule', 'title': 'رسالة إلى المستقبل', 'desc': 'حفظ أول كبسولة زمنية', 'icon': '⏳', 'unlocked': false, 'progress': 0.0, 'tracking': true},
+    {'id': 'share_verse', 'title': 'ناشر النور', 'desc': 'مشاركة آية', 'icon': '📤', 'unlocked': false, 'progress': 0.0, 'tracking': true},
   ];
 
   static List<Map<String, dynamic>> get achievements =>
@@ -23,11 +27,168 @@ class AchievementsService {
       _achievements.where((item) => item['unlocked'] == true).length;
 
   static Future<void> refreshFromLocalActivity() async {
-    await DailyStreakService.initialize();
     final summary = await const LocalActivitySummaryService().load();
-    _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
-    _setProgress('ten_verses', summary.bookmarkCount / 10);
-    _setProgress('daily_streak_3', DailyStreakService.streak / 3);
+    final unavailable = summary.warnings.join(' ');
+    if (!unavailable.contains('الصفحات المقروءة')) {
+      _setProgress('first_verse', summary.pagesRead > 0 ? 1 : 0);
+    }
+    if (!unavailable.contains('العلامات المحفوظة')) {
+      _setProgress('ten_verses', summary.bookmarkCount / 10);
+    }
+    if (!unavailable.contains('سلسلة القراءة')) {
+      _setProgress('daily_streak_3', summary.currentStreak / 3);
+    }
+
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final abjadCalculations =
+          preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+      _setProgress('first_abjad', abjadCalculations > 0 ? 1 : 0);
+      final completedInsights =
+          preferences.getInt('mudabbir_completed_insights') ?? 0;
+      _setProgress('ten_insights', completedInsights / 10);
+      final exploredSciences =
+          preferences.getStringList('mudabbir_explored_sciences') ?? const [];
+      _setProgress('seven_sciences', exploredSciences.toSet().length / 7);
+      _setProgress(
+        'share_verse',
+        preferences.getBool('mudabbir_shared_verse') == true ? 1 : 0,
+      );
+      _setProgress(
+        'night_mode',
+        preferences.getBool('mudabbir_night_use') == true ? 1 : 0,
+      );
+      _setProgress(
+        'dream_journal',
+        preferences.getBool('mudabbir_dream_journal_used') == true ? 1 : 0,
+      );
+      _setProgress(
+        'time_capsule',
+        preferences.getBool('mudabbir_time_capsule_used') == true ? 1 : 0,
+      );
+    } catch (_) {
+      // Keep previously loaded achievement state if preference reads fail.
+    }
+  }
+
+  /// Records app startup during the device's local night window (20:00–04:59).
+  static Future<void> recordNightUseIfApplicable() async {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 20) return;
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!await preferences.setBool('mudabbir_night_use', true)) return;
+      _setProgress('night_mode', 1);
+    } catch (_) {
+      // App startup must not be blocked by achievement persistence.
+    }
+  }
+
+  /// Records a real completed calculation, persisting the event locally.
+  static Future<void> recordAbjadCalculation() =>
+      _enqueueEvent(() async {
+        try {
+          final preferences = await SharedPreferences.getInstance();
+          final previous =
+              preferences.getInt('mudabbir_abjad_calculations') ?? 0;
+          if (!await preferences.setInt(
+            'mudabbir_abjad_calculations',
+            previous + 1,
+          )) return;
+          _setProgress('first_abjad', 1);
+        } catch (_) {
+          // A profile/achievement persistence issue must not block the calculator.
+        }
+      });
+
+  /// Records the first successful local dream-journal save.
+  static Future<void> recordDreamSaved() => _recordFirstUse(
+        'mudabbir_dream_journal_used',
+        'dream_journal',
+      );
+
+  /// Records the first successfully sealed local time capsule.
+  static Future<void> recordTimeCapsuleSealed() => _recordFirstUse(
+        'mudabbir_time_capsule_used',
+        'time_capsule',
+      );
+
+  static Future<void> _recordFirstUse(String key, String achievementId) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!await preferences.setBool(key, true)) return;
+      _setProgress(achievementId, 1);
+    } catch (_) {
+      // Core storage actions must not fail because achievement storage failed.
+    }
+  }
+
+  /// Records a verse share only after the platform reports a successful share.
+  static Future<void> recordVerseShared() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!await preferences.setBool('mudabbir_shared_verse', true)) return;
+      _setProgress('share_verse', 1);
+    } catch (_) {
+      // Sharing itself must not fail because achievement storage is unavailable.
+    }
+  }
+
+  /// Counts distinct science topics whose detail view the user opened.
+  static Future<void> recordScienceExplored(
+    String scienceId, {
+    String? legacyName,
+  }) {
+    final normalizedId = scienceId.trim();
+    if (normalizedId.isEmpty) return Future<void>.value();
+    return _enqueueEvent(() async {
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        final explored =
+            (preferences.getStringList('mudabbir_explored_sciences') ??
+                    const <String>[])
+                .toSet();
+        final previousName = legacyName?.trim();
+        if (previousName != null && previousName.isNotEmpty) {
+          explored.remove(previousName);
+        }
+        explored.add(normalizedId);
+        if (!await preferences.setStringList(
+          'mudabbir_explored_sciences',
+          explored.toList(growable: false),
+        )) return;
+        _setProgress('seven_sciences', explored.length / 7);
+      } catch (_) {
+        // Science browsing remains available if achievement persistence fails.
+      }
+    });
+  }
+
+  /// Counts a successfully completed local agent task, not a submitted prompt.
+  static Future<void> recordCompletedInsight() =>
+      _enqueueEvent(() async {
+        try {
+          final preferences = await SharedPreferences.getInstance();
+          final previous =
+              preferences.getInt('mudabbir_completed_insights') ?? 0;
+          final next = previous + 1;
+          if (!await preferences.setInt(
+            'mudabbir_completed_insights',
+            next,
+          )) return;
+          _setProgress('ten_insights', next / 10);
+        } catch (_) {
+          // The agent's answer remains successful if achievement persistence fails.
+        }
+      });
+
+  static Future<void> _enqueueEvent(
+    Future<void> Function() operation,
+  ) {
+    _eventQueue = _eventQueue
+        .catchError((Object _) {})
+        .then((_) => operation());
+    return _eventQueue;
   }
 
   static void _setProgress(String id, double value) {

@@ -4,12 +4,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/agent_task.dart';
+import '../../domain/entities/agent_ui_intent.dart';
 import '../../services/agent_knowledge_service.dart';
+import '../../services/agent_ui_coordinator.dart';
 import '../../services/nucleus_service.dart';
 import '../../services/agent_memory_service.dart';
+import '../../services/agent_task_store.dart';
 import '../../services/agent_registry.dart';
+import '../../services/achievements_service.dart';
+import '../../utils/abjad_constants.dart';
 import '../../services/quran_loader_service.dart';
 import '../../services/quranic_search_engine.dart';
+import '../../services/mudabbir_unified_engine.dart';
+import '../templates/universal_template_renderer.dart';
 
 /// Zion-style multi-agent runtime for مُدَبِّر.
 /// Agents execute local tools and cite bundled sources; no remote model or
@@ -17,58 +24,783 @@ import '../../services/quranic_search_engine.dart';
 class AgentChatProvider extends ChangeNotifier {
   final AgentKnowledgeService _knowledge = AgentKnowledgeService.instance;
   final AgentMemoryService _memory = AgentMemoryService.instance;
+  final AgentTaskStore _taskStore = AgentTaskStore.instance;
 
   AgentTask? _activeTask;
+  final AgentUiCoordinator _uiCoordinator = const AgentUiCoordinator();
+  AgentUiIntent? _pendingUiIntent;
   final List<String> _messages = [];
   final Map<String, int> _attemptsByAgent = {};
   bool _paused = false;
   bool _cancelled = false;
   int _executionGeneration = 0;
   bool _initialized = false;
+  Future<void>? _initializing;
+  String? _initializationError;
   String? _selectedAgent;
+  String? _selectionError;
+  String? _activeTaskVerseSource;
+
+  bool _disposed = false;
+
+  void _notifySafely() {
+    if (!_disposed) notifyListeners();
+  }
+
+  void _setActiveTask(AgentTask task) {
+    _activeTask = task;
+    unawaited(_taskStore.save(task).catchError((Object error) {
+      debugPrint('AgentChatProvider: task checkpoint save failed: $error');
+    }));
+  }
+
+  Future<void> _restoreLatestTask() async {
+    if (_activeTask != null) return;
+    final restored = await _taskStore.loadLatest();
+    if (restored == null) return;
+    _activeTask = restored;
+    if (restored.status == TaskStatus.paused) {
+      _messages.add('استُعيدت مهمة محلية غير مكتملة. يمكنك استئنافها من نقطة التوقف؛ الخطوة التي كانت تعمل ستُعاد بأمان.');
+      unawaited(_taskStore.save(restored).catchError((Object error) {
+        debugPrint('AgentChatProvider: recovered checkpoint save failed: $error');
+      }));
+    } else if (restored.status == TaskStatus.completed && restored.finalAnswer != null) {
+      _messages.add('مُدَبِّر: ${restored.finalAnswer}');
+    } else if (restored.status == TaskStatus.failed) {
+      _messages.add('استُعيد سجل مهمة سابقة فشلت: ${restored.error ?? 'سبب غير مسجل'}.');
+    }
+    _notifySafely();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _cancelled = true;
+    _paused = false;
+    _executionGeneration++;
+    unawaited(NucleusService().stopGeneration().catchError((_) {}));
+    super.dispose();
+  }
 
   AgentTask? get activeTask => _activeTask;
+  AgentUiIntent? get pendingUiIntent => _pendingUiIntent;
+
+  /// Consume a UI action exactly once so provider rebuilds cannot navigate twice.
+  void consumeUiIntent(String id) {
+    if (_pendingUiIntent?.id != id) return;
+    _pendingUiIntent = null;
+    _notifySafely();
+  }
+
+  /// Publishes a presentation schema built from trusted domain-service results.
+  /// This is the hand-off point for Quran, astronomy, abjad, and nucleus services.
+  /// It intentionally accepts prepared values and performs no data fabrication.
+  bool presentSchemaPayload({
+    required String templateId,
+    required String title,
+    required String domain,
+    required List<Map<String, dynamic>> blocks,
+    required String source,
+    String? originalQuery,
+  }) {
+    final intent = _uiCoordinator.resolveSchemaPayload(
+      templateId: templateId,
+      title: title,
+      domain: domain,
+      blocks: blocks,
+      source: source,
+      originalQuery: originalQuery,
+    );
+    if (intent == null) return false;
+    _pendingUiIntent = intent;
+    _notifySafely();
+    return true;
+  }
   List<String> get messages => List.unmodifiable(_messages);
-  bool get paused => _paused;
+  bool get paused => _paused || _activeTask?.status == TaskStatus.paused;
+  bool get initialized => _initialized;
+  String? get initializationError => _initializationError;
   String? get selectedAgent => _selectedAgent;
+  String? get selectionError => _selectionError;
   int get agentCount => AgentRegistry.all.length;
   int get indexedDocumentCount => _knowledge.documentCount;
   List<String> get loadedKnowledgeSources => _knowledge.loadedSources;
 
   Future<void> initialize() async {
     if (_initialized) return;
-    final ayahs = await QuranLoaderService.loadAllAyahs();
-    QuranicSearchEngine.indexVerses(ayahs
-        .map((a) => {
-              'id': a.id.toString(),
-              'surah': a.surahName,
-              'ayah': a.ayahNumber.toString(),
-              'text': a.text,
-            })
-        .toList());
-    await _knowledge.initialize();
-    _initialized = true;
-    notifyListeners();
+    final pending = _initializing;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+
+    final attempt = _initializeOnce();
+    _initializing = attempt;
+    try {
+      await attempt;
+    } catch (_) {
+      // Do not cache a failed initialization future; the next screen/task
+      // entry must be able to retry loading and indexing the local corpus.
+      if (identical(_initializing, attempt)) _initializing = null;
+      rethrow;
+    }
   }
 
+  Future<void> _initializeOnce() async {
+    try {
+      final ayahs = await QuranLoaderService.loadAllAyahs();
+      QuranicSearchEngine.indexVerses(ayahs
+          .map((a) => {
+                'id': a.id.toString(),
+                'surah': a.surahName,
+                'surah_number': a.surahNumber.toString(),
+                'ayah': a.ayahNumber.toString(),
+                'text': a.text,
+              })
+          .toList(growable: false));
+      await _knowledge.initialize();
+      try {
+        await _restoreLatestTask();
+      } catch (storageError) {
+        // Task recovery is optional for boot: a platform storage failure must
+        // not prevent the local Quran index and knowledge engine from starting.
+        debugPrint('AgentChatProvider: task recovery unavailable: $storageError');
+      }
+      _initialized = true;
+      _initializationError = null;
+    } catch (error) {
+      // Startup is initiated by the screen without awaiting a Future. Keep
+      // initialization failures visible in provider state instead of leaking
+      // an unhandled async exception; executeTask checks readiness before work.
+      _initialized = false;
+      _initializationError = error.toString();
+    } finally {
+      _initializing = null;
+      _notifySafely();
+    }
+  }
+
+
+  /// Builds schema blocks only from real local domain services.
+  Future<AgentUiIntent?> _resolveTrustedSchemaIntent(String query) async {
+    final normalized = AgentKnowledgeService.normalize(query);
+
+    // A standalone canonical reference is resolved only against the bundled
+    // Hafs corpus. The returned verse text is copied verbatim from that source.
+    final verseReference = RegExp(r'^\s*(\d{1,3})\s*[:/]\s*(\d{1,3})\s*$')
+        .firstMatch(query);
+    if (verseReference != null) {
+      final reference = verseReference.group(1)! + ':' + verseReference.group(2)!;
+      final result = await MudabbirUnifiedEngine().analyze(reference);
+      if (result.verses.isEmpty) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'مرجع الآية',
+          domain: 'quran_reference',
+          source: 'assets/quran_full.json',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'تعذر التحقق من المرجع',
+              'status': 'error',
+              'message': result.summary,
+            },
+          ],
+        );
+      }
+      final verse = result.verses.single;
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: verse.surahName + ' ' + verse.reference,
+        domain: 'quran_reference',
+        source: 'assets/quran_full.json via MudabbirUnifiedEngine',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'نص الآية من المصحف المحلي',
+            'text': verse.text,
+          },
+          <String, dynamic>{
+            'type': 'table',
+            'title': 'بيانات موضع الآية',
+            'columns': <String>['البيان', 'القيمة'],
+            'rows': <List<String>>[
+              <String>['السورة', verse.surahName],
+              <String>['رقم السورة', verse.surahNumber.toString()],
+              <String>['رقم الآية', verse.ayahNumber.toString()],
+              <String>['الصفحة', verse.pageNumber.toString()],
+              <String>['الجزء', verse.juzNumber.toString()],
+            ],
+          },
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'حدود النتيجة',
+            'text': 'تم استرجاع النص والموضع من بيانات المصحف المحلية. لا تمثل هذه النتيجة تفسيرًا للآية.',
+          },
+        ],
+      );
+    }
+
+    final wordSearchMatch = RegExp(
+      r'(?:ابحث|استخرج|اعرض|مواضع|اماكن)\s+(?:عن\s+)?(?:كلمه\s+)?([\u0621-\u064Aٱ]{2,})\s+(?:في\s+)?(?:القران|المصحف)',
+    ).firstMatch(normalized);
+    if (wordSearchMatch != null) {
+      final requestedWord = wordSearchMatch.group(1)!;
+      try {
+        final result = await MudabbirUnifiedEngine().analyze(
+          requestedWord,
+          limit: 100,
+        );
+        if (result.mode != MudabbirEngineMode.wordOccurrences) return null;
+        final references = result.words
+            .map((word) => word.reference)
+            .toSet()
+            .toList(growable: false);
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'مواضع كلمة «$requestedWord» في المصحف',
+          domain: 'quran_word_search',
+          source: 'QuranWordIndexService عبر MudabbirUnifiedEngine',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'نتيجة البحث المحلي',
+              'status': result.words.isEmpty ? 'empty' : 'ready',
+              'message': result.summary,
+            },
+            <String, dynamic>{
+              'type': 'table',
+              'title': 'المواضع المسترجعة من فهرس الكلمات',
+              'columns': <String>['النص المصدر', 'السورة:الآية', 'رقم الكلمة', 'الصفحة'],
+              'rows': result.words
+                  .map((word) => <String>[
+                        word.sourceText,
+                        word.reference,
+                        word.wordNumber.toString(),
+                        word.pageNumber.toString(),
+                      ])
+                  .toList(growable: false),
+            },
+            <String, dynamic>{
+              'type': 'list',
+              'title': 'مراجع الآيات الفريدة ضمن النتائج المعروضة',
+              'items': references,
+            },
+            <String, dynamic>{
+              'type': 'text',
+              'title': 'حدود البحث',
+              'text': 'هذه مواضع مسترجعة من فهرس الكلمات المحلي بحد أقصى 100 موضع معروض؛ ليست إحصاءً إجماليًا للتكرار ولا تحليلًا صرفيًا للجذور.',
+            },
+          ],
+        );
+      } catch (error) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تعذر البحث عن الكلمة',
+          domain: 'quran_word_search',
+          source: 'MudabbirUnifiedEngine + QuranWordIndexService',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'فشل البحث المحلي',
+              'status': 'error',
+              'message': 'تعذر تحميل فهرس الكلمات أو البحث فيه: $error. لم تُنشأ نتائج بديلة.',
+            },
+          ],
+        );
+      }
+    }
+
+    final abjadMatch = RegExp(
+      r'(?:احسب|حساب|قيمة)\s+(?:الجمل|ابجد|ابجدي)\s+(?:لكلمه\s+|لكلمة\s+|للاسم\s+)?(.+)$',
+    ).firstMatch(normalized);
+    if (abjadMatch != null) {
+      final input = abjadMatch.group(1)?.trim() ?? '';
+      final cleaned = AbjadConstants.normalizeArabic(input)
+          .replaceAll(RegExp(r'[^\u0621-\u064A]'), '');
+      if (cleaned.isEmpty) return null;
+      final letters = cleaned.runes
+          .map(String.fromCharCode)
+          .where(AbjadConstants.abjadSquare.containsKey)
+          .toList(growable: false);
+      if (letters.isEmpty) return null;
+      final rows = <List<String>>[
+        for (final letter in letters)
+          <String>[letter, AbjadConstants.getValue(letter).toString()],
+      ];
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'abjad_template',
+        title: 'حساب الجُمّل: $input',
+        domain: 'abjad',
+        source: 'AbjadConstants.abjadSquare',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'المجموع وفق جدول القيم المربّع',
+            'value': AbjadConstants.calculateTotal(cleaned),
+          },
+          <String, dynamic>{
+            'type': 'table',
+            'title': 'تفصيل الحروف والقيم',
+            'columns': <String>['الحرف', 'القيمة'],
+            'rows': rows,
+          },
+          <String, dynamic>{
+            'type': 'text',
+            'title': 'منهجية الحساب',
+            'text': 'مجموع قيم الحروف وفق جدول القيم المربّع في التطبيق. هذه عملية حسابية ولا تثبت علاقة غيبية أو تنبؤاً.',
+          },
+        ],
+      );
+    }
+
+    final pairCountMatch = RegExp(
+      r'(?:كم\s+مره\s+(?:وردت?|ذكرت?|تكررت?)\s+)([\u0621-\u064A]{2,})\s+و([\u0621-\u064A]{2,})(?:\s+(?:في\s+)?القران(?:\s+الكريم)?)?',
+    ).firstMatch(normalized);
+    if (pairCountMatch != null) {
+      final firstWord = pairCountMatch.group(1) ?? '';
+      final secondWord = pairCountMatch.group(2) ?? '';
+      try {
+        final canonical = await QuranLoaderService.loadAllAyahs();
+        QuranicSearchEngine.indexVerses(canonical
+            .map((ayah) => <String, String>{
+                  'id': ayah.id.toString(),
+                  'surah': ayah.surahName,
+                  'surah_number': ayah.surahNumber.toString(),
+                  'ayah': ayah.ayahNumber.toString(),
+                  'text': ayah.text,
+                })
+            .toList(growable: false));
+        final firstResult = QuranicSearchEngine.countExactWord(firstWord);
+        final secondResult = QuranicSearchEngine.countExactWord(secondWord);
+        if (firstResult == null || secondResult == null) {
+          return _uiCoordinator.resolveSchemaPayload(
+            templateId: 'analytics_template',
+            title: 'تعذر التحقق من العدّ المقارن',
+            domain: 'quran_analytics',
+            source: 'QuranicSearchEngine',
+            originalQuery: query,
+            blocks: <Map<String, dynamic>>[
+              <String, dynamic>{
+                'type': 'status',
+                'title': 'حالة التحقق',
+                'status': 'error',
+                'message': 'تعذّر التحقق من إحدى الكلمتين عبر الفهرس القرآني المحلي؛ لم تُنشأ أرقام بديلة.',
+              },
+            ],
+          );
+        }
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'مقارنة التكرار اللفظي',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine.countExactWord',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'table',
+              'title': 'النتائج المحسوبة من الفهرس المحلي',
+              'columns': <String>['الكلمة', 'عدد المطابقات', 'عدد الآيات'],
+              'rows': <List<String>>[
+                <String>[firstWord, firstResult.occurrenceCount.toString(), firstResult.ayahReferences.length.toString()],
+                <String>[secondWord, secondResult.occurrenceCount.toString(), secondResult.ayahReferences.length.toString()],
+              ],
+            },
+            <String, dynamic>{
+              'type': 'section',
+              'title': 'مراجع الكلمة الأولى: $firstWord',
+              'children': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'list',
+                  'items': firstResult.ayahReferences,
+                },
+              ],
+            },
+            <String, dynamic>{
+              'type': 'section',
+              'title': 'مراجع الكلمة الثانية: $secondWord',
+              'children': <Map<String, dynamic>>[
+                <String, dynamic>{
+                  'type': 'list',
+                  'items': secondResult.ayahReferences,
+                },
+              ],
+            },
+            <String, dynamic>{
+              'type': 'text',
+              'title': 'منهجية العد',
+              'text': 'مقارنة بين مطابقات لفظية بعد التطبيع؛ لا تمثل تحليلًا للجذور أو إثباتًا لدلالة تفسيرية.',
+            },
+          ],
+        );
+      } catch (error) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تعذر إكمال العدّ المقارن',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'مصدر البيانات',
+              'status': 'error',
+              'message': 'تعذر تحميل المصحف المحلي أو التحقق من فهرسه: $error. لم يتم إنشاء أرقام بديلة.',
+            },
+          ],
+        );
+      }
+    }
+
+    final countMatch = RegExp(
+      r'(?:كم\s+مره\s+(?:وردت?|ذكرت?|تكررت?)\s+(?:كلمه\s+)?|عدد\s+(?:مرات\s+)?(?:ورود|ذكر)\s+(?:كلمه\s+)?)([\u0621-\u064A]{2,})\s+(?:في\s+)?القران(?:\s+الكريم)?',
+    ).firstMatch(normalized);
+    if (countMatch != null) {
+      final requested = countMatch.group(1) ?? '';
+      try {
+        final canonical = await QuranLoaderService.loadAllAyahs();
+        // Index only the validated local corpus. The search engine returns null
+        // when it cannot verify a single-token query from this index.
+        QuranicSearchEngine.indexVerses(canonical
+            .map((ayah) => <String, String>{
+                  'id': ayah.id.toString(),
+                  'surah': ayah.surahName,
+                  'surah_number': ayah.surahNumber.toString(),
+                  'ayah': ayah.ayahNumber.toString(),
+                  'text': ayah.text,
+                })
+            .toList(growable: false));
+        final result = QuranicSearchEngine.countExactWord(requested);
+        if (result == null) {
+          return _uiCoordinator.resolveSchemaPayload(
+            templateId: 'analytics_template',
+            title: 'تعذر التحقق من العدّ القرآني',
+            domain: 'quran_analytics',
+            source: 'QuranicSearchEngine',
+            originalQuery: query,
+            blocks: <Map<String, dynamic>>[
+              <String, dynamic>{
+                'type': 'status',
+                'title': 'حالة التحقق',
+                'status': 'error',
+                'message': 'لم يتمكن محرك البحث القرآني من التحقق من كلمة مفردة في الفهرس المحلي. لم يُنشأ رقم بديل.',
+              },
+            ],
+          );
+        }
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تكرار «$requested» في القرآن',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine.countExactWord',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'metric',
+              'title': 'عدد المطابقات اللفظية بعد التطبيع',
+              'value': result.occurrenceCount,
+            },
+            <String, dynamic>{
+              'type': 'metric',
+              'title': 'عدد الآيات التي وردت فيها الكلمة',
+              'value': result.ayahReferences.length,
+            },
+            <String, dynamic>{
+              'type': 'list',
+              'title': 'مراجع الآيات (سورة:آية)',
+              'items': result.ayahReferences,
+            },
+            <String, dynamic>{
+              'type': 'text',
+              'title': 'منهجية العد',
+              'text': 'عدّ لفظي مطابق للكلمة بعد تطبيع علامات التشكيل وبعض أشكال الحروف؛ ليس تحليلاً للجذور الصرفية. تم الحصول على العدد والمراجع من QuranicSearchEngine بعد تحميل المصحف المحلي والتحقق منه.',
+            },
+          ],
+        );
+      } catch (error) {
+        return _uiCoordinator.resolveSchemaPayload(
+          templateId: 'analytics_template',
+          title: 'تعذر إكمال العدّ القرآني',
+          domain: 'quran_analytics',
+          source: 'QuranLoaderService + QuranicSearchEngine',
+          originalQuery: query,
+          blocks: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'type': 'status',
+              'title': 'مصدر البيانات',
+              'status': 'error',
+              'message': 'تعذر تحميل المصحف المحلي أو التحقق من فهرسه: $error. لم يتم إنشاء رقم بديل.',
+            },
+          ],
+        );
+      }
+    }
+
+    final unresolvedCountIntent = _uiCoordinator.resolve(query);
+    if (unresolvedCountIntent?.targetScreen == 'miracles_screen' &&
+        unresolvedCountIntent?.templateId == 'analytics_template') {
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'analytics_template',
+        title: 'تعذر التحقق من طلب العدّ',
+        domain: 'quran_analytics',
+        source: 'QuranicSearchEngine',
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'لم يُصدر المحرك رقمًا',
+            'status': 'error',
+            'message': 'تعذّر استخراج هدف لفظي واضح أو التحقق من نتيجة رقمية من الفهرس المحلي. أعد صياغة السؤال بكلمة محددة؛ لم يتم اختلاق أي عدد.',
+          },
+        ],
+      );
+    }
+
+    if (normalized.contains('حاله النواه') ||
+        normalized.contains('حاله النظام') ||
+        normalized.contains('حاله الوكلاء')) {
+      final nucleus = NucleusService();
+      await nucleus.initialize();
+      final sourceError = nucleus.error;
+      return _uiCoordinator.resolveSchemaPayload(
+        templateId: 'graph_template',
+        title: 'الحالة الفعلية للنواة',
+        domain: 'nucleus',
+        source: nucleus.source,
+        originalQuery: query,
+        blocks: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'تهيئة النواة',
+            'status': nucleus.isInitialized && sourceError == null
+                ? 'ready'
+                : sourceError != null
+                    ? 'error'
+                    : 'unknown',
+            'message': sourceError ??
+                (nucleus.isInitialized
+                    ? 'تمت تهيئة بيانات النواة.'
+                    : 'حالة التهيئة غير مؤكدة.'),
+          },
+          <String, dynamic>{
+            'type': 'status',
+            'title': 'النموذج المحلي',
+            'status': nucleus.isModelLoaded
+                ? 'ready'
+                : nucleus.isModelBusy
+                    ? 'busy'
+                    : 'unknown',
+            'message': nucleus.isModelLoaded
+                ? 'النموذج محمّل: ' + (nucleus.loadedModelPath ?? 'المسار غير معلن') + '.'
+                : nucleus.isModelBusy
+                    ? 'النموذج مشغول حالياً.'
+                    : 'لا يوجد نموذج محمّل وفق حالة مشغّل النموذج.',
+          },
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'الوكلاء المسجلون',
+            'value': nucleus.registeredAgentCount,
+          },
+          <String, dynamic>{
+            'type': 'metric',
+            'title': 'مستندات المعرفة المفهرسة',
+            'value': nucleus.indexedDocumentCount,
+          },
+          <String, dynamic>{
+            'type': 'list',
+            'title': 'مصادر المعرفة المحمّلة',
+            'items': nucleus.loadedKnowledgeSources,
+          },
+        ],
+      );
+    }
+    return null;
+  }
+
+  /// Accepts only a conservative, text-oriented layout from local inference.
+  /// Numerical, Quranic, status, chart, spatial, and audio claims must come from
+  /// trusted domain handlers rather than unverified model-authored payloads.
+  bool _tryPublishGeneratedLayout({
+    required String query,
+    required String generated,
+    required String evidence,
+  }) {
+    if (evidence.trim().isEmpty) return false;
+    final normalized = AgentKnowledgeService.normalize(query);
+    final isVisualRequest = RegExp(
+      r'(?:صمم|صمم لي|اعرض|لوحه|قالب|مخطط|رسم|واجهه|عرض بصري|تصور بصري|dashboard|diagram|visual layout)',
+    ).hasMatch(normalized);
+    if (!isVisualRequest) return false;
+
+    // Quran-related requests must remain on canonical deterministic handlers.
+    if (RegExp(r'قران|مصحف|ايه|سوره|تفسير|quran|quranic').hasMatch(normalized)) return false;
+
+    try {
+      var candidate = generated.trim();
+      if (candidate.startsWith('```json')) {
+        candidate = candidate.substring(7);
+        if (candidate.endsWith('```')) {
+          candidate = candidate.substring(0, candidate.length - 3);
+        }
+        candidate = candidate.trim();
+      }
+      final decoded = jsonDecode(candidate);
+      if (decoded is! Map || decoded.keys.any((key) => key is! String)) {
+        return false;
+      }
+      final schema = TemplatePayloadSchema.fromMap(
+        Map<String, dynamic>.from(decoded),
+      );
+      if (!schema.envelopeValid ||
+          schema.validationErrors.isNotEmpty ||
+          schema.blocks.isEmpty ||
+          TemplateRegistry.lookup(schema.templateId) == null) {
+        return false;
+      }
+
+      const safeGeneratedTypes = <String>{
+        'hero_header_block',
+        'text',
+        'section',
+        'list',
+        'interactive_card_block',
+      };
+      bool isSafePresentationBlock(Map<String, dynamic> block) {
+        final type = block['type'];
+        if (type is! String || !safeGeneratedTypes.contains(type)) return false;
+        if (type == 'section' && block['children'] is List) {
+          for (final child in block['children'] as List) {
+            if (child is! Map) return false;
+            final normalizedChild = TemplateBlockSchema.normalize(child);
+            if (normalizedChild == null ||
+                !isSafePresentationBlock(normalizedChild)) return false;
+          }
+        }
+        return true;
+      }
+
+      if (schema.blocks.any((block) => !isSafePresentationBlock(block))) {
+        return false;
+      }
+
+      // Model-provided source metadata is not trusted as provenance. Use a
+      // truthful app-generated label and disclose that content is unverified.
+      final intent = _uiCoordinator.resolveSchemaPayload(
+        templateId: schema.templateId,
+        title: schema.title,
+        domain: schema.domain?.trim().isNotEmpty == true
+            ? schema.domain!.trim()
+            : 'general',
+        source: 'Local GGUF: تنسيق مولّد من الأدلة المرفقة؛ الادعاءات غير متحققة آليًا',
+        originalQuery: query,
+        blocks: schema.blocks,
+      );
+      if (intent == null) return false;
+      _pendingUiIntent = intent;
+      return true;
+    } catch (_) {
+      // Invalid/non-JSON model output remains a normal text answer; it is
+      // never partially interpreted as an executable UI specification.
+      return false;
+    }
+  }
+
+  /// Selects only registered agents; invalid or stale IDs never silently
+  /// fall through to the generic knowledge-search handler.
   void selectAgent(String? id) {
-    _selectedAgent = id;
-    notifyListeners();
+    if (id == null) {
+      _selectedAgent = null;
+      _selectionError = null;
+      _notifySafely();
+      return;
+    }
+    final agent = AgentRegistry.byId(id);
+    if (agent == null) {
+      _selectionError = 'تعذر اختيار الوكيل؛ المعرّف «$id» غير مسجل.';
+      _notifySafely();
+      return;
+    }
+    _selectedAgent = agent.id;
+    _selectionError = null;
+    _notifySafely();
   }
 
-  Future<void> executeTask(String query) async {
+  /// Clears only the visible conversation/task. Persisted local memory runs
+  /// and vault notes are intentionally retained.
+  void clearConversation() {
+    final status = _activeTask?.status;
+    if (status == TaskStatus.running || status == TaskStatus.paused) return;
+    _activeTask = null;
+    _messages.clear();
+    _cancelled = false;
+    _paused = false;
+    _notifySafely();
+  }
+
+  Future<void> executeTask(String query) => _runTask(query);
+
+  /// Resumes the most recent paused checkpoint. Completed steps are preserved;
+  /// only pending/paused/in-flight steps are executed again.
+  Future<void> resumeTask() async {
+    final task = _activeTask;
+    if (task == null || task.status != TaskStatus.paused) return;
+    await _runTask(task.userQuery, resumeFrom: task);
+  }
+
+  Future<void> _runTask(String query, {AgentTask? resumeFrom}) async {
     final clean = query.trim();
     if (clean.isEmpty) return;
     final oldStatus = _activeTask?.status;
-    if (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused) return;
+    if (resumeFrom == null &&
+        (oldStatus == TaskStatus.running || oldStatus == TaskStatus.paused)) return;
+    final nucleusContext = NucleusService();
+    AgentUiIntent? schemaIntent;
+    try {
+      schemaIntent = await _resolveTrustedSchemaIntent(clean);
+    } catch (error) {
+      _messages.add('تعذر تجهيز العرض الديناميكي من المصدر المحلي: $error');
+    }
+    _pendingUiIntent = schemaIntent ??
+        _uiCoordinator.resolve(
+          clean,
+          currentSurahNumber: nucleusContext.currentSurahNumber,
+          currentAyahNumber: nucleusContext.currentAyahNumber,
+        );
 
     final generation = ++_executionGeneration;
+    final nucleusAtStart = NucleusService();
+    final contextSurahNumber = nucleusAtStart.currentSurahNumber;
+    final contextAyahNumber = nucleusAtStart.currentAyahNumber;
+    final contextVerseText = nucleusAtStart.currentVerseText;
+    final hasContextAtStart = contextSurahNumber != null &&
+        contextAyahNumber != null &&
+        contextVerseText != null &&
+        contextVerseText.trim().isNotEmpty;
+    _activeTaskVerseSource = hasContextAtStart
+        ? 'القرآن الكريم $contextSurahNumber:$contextAyahNumber'
+        : null;
     _cancelled = false;
     _paused = false;
     _attemptsByAgent.clear();
 
-    final agents = _route(clean);
-    var task = AgentTask(
+    final agents = resumeFrom == null
+        ? _route(clean)
+        : resumeFrom.steps
+            .map((step) => AgentRegistry.byId(step.agentName))
+            .whereType<AgentDefinition>()
+            .toList(growable: false);
+    if (resumeFrom != null &&
+        (agents.length != resumeFrom.steps.length || agents.isEmpty)) {
+      _selectionError = 'تعذر استئناف المهمة: أحد الوكلاء المحفوظين لم يعد مسجلًا.';
+      _notifySafely();
+      return;
+    }
+    var task = resumeFrom ?? AgentTask(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       userQuery: clean,
       createdAt: DateTime.now(),
@@ -82,13 +814,25 @@ class AgentChatProvider extends ChangeNotifier {
               ))
           .toList(),
     );
-    _activeTask = task;
-    _messages.add('المستخدم: $clean');
-    notifyListeners();
+    task = task.copyWith(status: TaskStatus.running);
+    _setActiveTask(task);
+    if (resumeFrom == null) {
+      _messages.add('المستخدم: $clean');
+    } else {
+      _messages.add('استئناف المهمة المحفوظة: $clean');
+    }
+    _notifySafely();
 
     try {
       await initialize();
+      if (!_initialized) {
+        throw StateError(
+          'تعذر تهيئة المعرفة المحلية: ${_initializationError ?? 'خطأ غير محدد'}',
+        );
+      }
       for (var i = 0; i < agents.length; i++) {
+        // Keep completed checkpoint steps immutable during resume.
+        if (task.steps[i].status == StepStatus.done) continue;
         if (_isCancelledFor(generation)) {
           _markCancelledIfCurrent(task);
           return;
@@ -107,8 +851,8 @@ class AgentChatProvider extends ChangeNotifier {
           startedAt: DateTime.now(),
         );
         task = task.copyWith(steps: _replaceStep(task.steps, i, step));
-        _activeTask = task;
-        notifyListeners();
+        _setActiveTask(task);
+        _notifySafely();
 
         try {
           final result = await _executeWithRetries(agents[i], clean, generation: generation);
@@ -120,8 +864,8 @@ class AgentChatProvider extends ChangeNotifier {
             completedAt: DateTime.now(),
           );
           task = task.copyWith(steps: _replaceStep(task.steps, i, step));
-          _activeTask = task;
-          notifyListeners();
+          _setActiveTask(task);
+          _notifySafely();
         } catch (error) {
           // The runtime may throw when stopGeneration interrupts native
           // inference. Preserve cancellation instead of marking this step as
@@ -144,13 +888,18 @@ class AgentChatProvider extends ChangeNotifier {
             steps: _replaceStep(task.steps, i, step),
             error: error.toString(),
           );
-          _activeTask = task;
-          notifyListeners();
+          _setActiveTask(task);
+          _notifySafely();
           return;
         }
       }
 
-      final answer = await _composeAnswer(task);
+      final answer = await _composeAnswer(
+        task,
+        contextSurahNumber: contextSurahNumber,
+        contextAyahNumber: contextAyahNumber,
+        contextVerseText: contextVerseText,
+      );
       // Local GGUF generation can run while the final answer is composed.
       // If the user cancels during that phase, do not report a completed task
       // or persist a cancelled run as a successful answer.
@@ -163,14 +912,28 @@ class AgentChatProvider extends ChangeNotifier {
         completedAt: DateTime.now(),
         finalAnswer: answer,
       );
-      _activeTask = task;
+      _setActiveTask(task);
       _messages.add('مُدَبِّر: $answer');
-      await _memory.saveRun(
-        query: clean,
-        answer: answer,
-        sources: _sourcesFromTask(task),
-      );
-      notifyListeners();
+      try {
+        await _memory.saveRun(
+          query: clean,
+          answer: answer,
+          sources: _sourcesFromTask(task),
+        );
+      } catch (memoryError) {
+        // A persistence failure must not rewrite a successfully completed
+        // inference/retrieval task as failed. Surface the storage issue
+        // separately while preserving the actual result and task status.
+        _messages.add('تنبيه: اكتملت المهمة، لكن تعذر حفظ سجلها محليًا: $memoryError');
+      }
+      try {
+        await AchievementsService.recordCompletedInsight();
+      } catch (achievementError) {
+        // Optional achievement bookkeeping must not turn a successful local
+        // retrieval/inference run into a failed task.
+        _messages.add('تنبيه: اكتملت المهمة، لكن تعذر تحديث سجل الإنجازات المحلي: $achievementError');
+      }
+      _notifySafely();
     } catch (error) {
       // Cancellation wins over an initialization/generation error. A native
       // stop can surface as an exception; it must not turn a cancelled task
@@ -180,9 +943,9 @@ class AgentChatProvider extends ChangeNotifier {
         return;
       }
       task = task.copyWith(status: TaskStatus.failed, error: error.toString());
-      _activeTask = task;
+      _setActiveTask(task);
       _messages.add('تعذر إكمال المهمة: $error');
-      notifyListeners();
+      _notifySafely();
     }
   }
 
@@ -193,11 +956,20 @@ class AgentChatProvider extends ChangeNotifier {
             task.status != TaskStatus.paused)) {
       return;
     }
+    // A restored checkpoint has paused task status but no live execution loop.
+    // Route that case through the resumable runner instead of merely flipping
+    // a boolean that no loop is waiting on.
+    if (task.status == TaskStatus.paused && !_paused) {
+      unawaited(resumeTask());
+      return;
+    }
     _paused = !_paused;
-    _activeTask = task.copyWith(
+    // This cooperative pause takes effect at the next step boundary; an
+    // already-running local lookup/inference is not falsely marked as stopped.
+    _setActiveTask(task.copyWith(
       status: _paused ? TaskStatus.paused : TaskStatus.running,
-    );
-    notifyListeners();
+    ));
+    _notifySafely();
   }
 
   bool _isCancelledFor(int generation) =>
@@ -205,9 +977,29 @@ class AgentChatProvider extends ChangeNotifier {
 
   void _markCancelledIfCurrent(AgentTask task) {
     // An older async run must never overwrite the currently selected task.
-    if (_activeTask?.id != task.id) return;
-    _activeTask = task.copyWith(status: TaskStatus.cancelled);
-    notifyListeners();
+    // Use the latest provider snapshot, not the caller's stale local copy, so
+    // cancellation cannot discard completed steps or leave a running step
+    // visually stuck after the task has already been cancelled.
+    final current = _activeTask;
+    if (current == null || current.id != task.id) return;
+    final now = DateTime.now();
+    final steps = current.steps.map((step) {
+      if (step.status != StepStatus.pending &&
+          step.status != StepStatus.running &&
+          step.status != StepStatus.paused) {
+        return step;
+      }
+      return step.copyWith(
+        status: StepStatus.cancelled,
+        completedAt: now,
+      );
+    }).toList(growable: false);
+    _setActiveTask(current.copyWith(
+      status: TaskStatus.cancelled,
+      steps: steps,
+      completedAt: now,
+    ));
+    _notifySafely();
   }
 
   void cancel() {
@@ -223,12 +1015,11 @@ class AgentChatProvider extends ChangeNotifier {
     // Stop native generation too; otherwise the task would remain busy until
     // llama.cpp finishes even though the user explicitly cancelled it.
     if (NucleusService().isGenerating) {
-      unawaited(NucleusService().stopGeneration());
+      unawaited(NucleusService().stopGeneration().catchError((Object error) {
+        debugPrint('AgentChatProvider: native generation stop failed: $error');
+      }));
     }
-    if (_activeTask != null) {
-      _activeTask = _activeTask!.copyWith(status: TaskStatus.cancelled);
-      notifyListeners();
-    }
+    _markCancelledIfCurrent(task);
   }
 
   List<AgentStep> _replaceStep(List<AgentStep> steps, int index, AgentStep value) {
@@ -270,8 +1061,24 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     // A bare verse reference is a lookup request, not a text-search query.
+    // Keep this deterministic path independent of any selected general agent.
     if (parseVerseReference(query) != null) {
       add('ayaat');
+      add('verifier');
+      return result;
+    }
+
+    // An explicit agent selection is an execution constraint, not just an
+    // extra entry in the default pipeline. Run the selected specialist between
+    // the shared safety/planning stages and the critic/verifier stages.
+    // This avoids silently running the full multi-agent pipeline when the
+    // user deliberately chose one agent from the console.
+    final selectedId = _selectedAgent;
+    if (selectedId != null) {
+      add('planner');
+      add('safety');
+      add(selectedId);
+      add('critic');
       add('verifier');
       return result;
     }
@@ -281,15 +1088,17 @@ class AgentChatProvider extends ChangeNotifier {
     add('researcher');
     add('retriever');
 
-    if (_selectedAgent != null) add(_selectedAgent!);
     final normalized = AgentKnowledgeService.normalize(query);
     if (RegExp(r'ايه|قران|سوره|تفسير|معني|النور|الصمد|مسند|هيروغليف|عثمان').hasMatch(normalized)) {
       for (final id in ['ayaat', 'tafsir', 'siyaq']) {
         add(id);
       }
     }
-    if (RegExp(r'جمل|عدد|حساب|قيمه').hasMatch(normalized)) add('jummal');
-    if (RegExp(r'ذاكرة|سابق|تذكر|ملاحظة|دفتر').hasMatch(normalized)) add('memory');
+    if (RegExp(r'جمل|ابجد').hasMatch(normalized)) add('jummal');
+    if (RegExp(r'عدد|تكرار|مره|كم|احصاء|كلمه').hasMatch(normalized)) {
+      add('adadi');
+    }
+    if (RegExp(r'ذاكره|سابق|تذكر|ملاحظه|دفتر|محفوظ|مخزن').hasMatch(normalized)) add('memory');
     add('overthinker');
     add('loop_engineering');
     add('critic');
@@ -331,9 +1140,7 @@ class AgentChatProvider extends ChangeNotifier {
     switch (agent.id) {
       case 'planner':
       case 'muwajjih':
-        return 'الخطة: (1) تحديد النطاق، (2) استرجاع أدلة من assets، '
-            '(3) فحص النواقص والتناقضات، (4) التحقق من المصادر، (5) حفظ ملخص محلي. '
-            'لا تُنفّذ أدوات خارجية غير متاحة.';
+        return _buildExecutionPlan(query);
       case 'safety':
         return 'فحص الأمان: البحث محلي وقراءة فقط؛ لا اتصال بخدمة بعيدة، '
             'ولا ادعاء بتشغيل نموذج توليدي أو أوامر نظام.';
@@ -386,6 +1193,34 @@ class AgentChatProvider extends ChangeNotifier {
             'ولا يجيز نسبة نص غير موثق إلى القرآن.';
         return hits.map((v) =>
             '${v['surah']} ${v['ayah']}: ${v['text']}').join('\n');
+      case 'adadi':
+        final normalizedQuery = QuranicSearchEngine.normalize(query);
+        final frequencies = QuranicSearchEngine.getWordFrequency();
+        const ignoredTerms = <String>{
+          'كم', 'مره', 'عدد', 'تكرار', 'احصاء', 'احصائي', 'كلمه', 'كلمات',
+          'القران', 'في', 'من', 'عن', 'هو', 'هي', 'ما', 'ورد', 'وردت',
+          'مرات', 'احسب', 'احص', 'لي', 'هل', 'كل', 'الذي', 'التي',
+        };
+        final candidates = normalizedQuery
+            .split(' ')
+            .where((term) => term.length >= 2 && !ignoredTerms.contains(term))
+            .toSet();
+        final matched = candidates
+            .where(frequencies.containsKey)
+            .toList(growable: false);
+        if (matched.isEmpty) {
+          return 'لم أجد كلمة محددة قابلة للعدّ الحرفي في السؤال. '
+              'حدّد الكلمة المطلوبة، مثل: كم مرة وردت كلمة الله في القرآن؟ '
+              'لا يُقدَّم إجمالي كلمات المصحف من فهرس التكرار الجزئي.';
+        }
+        matched.sort((a, b) => a.compareTo(b));
+        final lines = matched.map((word) =>
+            '$word: ${frequencies[word]} تكرارًا في فهرس الكلمات المحلي');
+        return 'إحصاء حرفي للكلمات المطابقة بعد تطبيع البحث العربي '
+            '(إزالة التشكيل وتوحيد بعض صور الألف/الياء/التاء المربوطة):\n'
+            '${lines.join('\n')}\n'
+            'المصدر: فهرس الآيات المحلي المبني من assets/quran_full.json. '
+            'هذا عدّ نصي وفق قواعد التطبيع المذكورة، وليس استنتاجًا تفسيريًا.';
       case 'jummal':
         return 'حساب أبجد للنص المدخل = ${_abjad(query)}. '
             'هذا حساب حرفي وفق جدول أبجد المضمّن، وليس استنتاجًا غيبيًا.';
@@ -394,10 +1229,37 @@ class AgentChatProvider extends ChangeNotifier {
             'مع تسجيل الخطأ النهائي وعدم اختلاق نتيجة بديلة. '
             'محاولات هذه الخطوة: ${_attemptsByAgent[agent.id] ?? 1}.';
       case 'memory':
+        final notes = await _memory.searchVault(query, limit: 5);
         final runs = await _memory.recentRuns(limit: 5);
-        if (runs.isEmpty) return 'لا توجد جلسات سابقة محفوظة محليًا بعد.';
-        return runs.map((row) =>
-            'سابقًا: ${row['query']}\nالملخص: ${row['answer']}').join('\n\n');
+        if (notes.isEmpty && runs.isEmpty) {
+          return 'لا توجد ملاحظات أو جلسات سابقة محفوظة محليًا بعد.';
+        }
+        final sections = <String>[];
+        if (notes.isNotEmpty) {
+          sections.add(
+            'ملاحظات دفتر المعرفة المطابقة (محلية):\n' +
+                notes.map((row) {
+                  final title = (row['title'] ?? 'ملاحظة بلا عنوان').toString();
+                  final content = (row['content'] ?? '').toString();
+                  final sources = row['sources'] is List
+                      ? (row['sources'] as List).whereType<String>().join(', ')
+                      : '';
+                  final createdAt = (row['createdAt'] ?? '').toString();
+                  final snippet = content.length > 1200
+                      ? '${content.substring(0, 1200)}…'
+                      : content;
+                  return 'العنوان: $title\nالتاريخ: $createdAt\nالمصادر: ${sources.isEmpty ? 'غير مسجلة' : sources}\n$snippet';
+                }).join('\n\n'),
+          );
+        }
+        if (runs.isNotEmpty) {
+          sections.add(
+            'جلسات التنفيذ الأخيرة:\n' +
+                runs.map((row) =>
+                    'سابقًا: ${row['query']}\nالملخص: ${row['answer']}').join('\n\n'),
+          );
+        }
+        return sections.join('\n\n---\n\n');
       case 'obsidian':
         final evidence = _activeTask?.steps
                 .where((step) => step.result != null && step.result!.trim().isNotEmpty)
@@ -431,9 +1293,12 @@ class AgentChatProvider extends ChangeNotifier {
             const <AgentStep>[];
         final withResults = prior.where((step) => (step.result ?? '').trim().isNotEmpty).length;
         final sources = _sourcesFromSteps(prior);
+        final verificationVerdict = sources.isEmpty
+            ? 'الحكم: اكتمال شكلي فقط؛ لا توجد إحالات مصدرية يمكن تتبعها.'
+            : 'الحكم: توجد إحالات مصدرية تحتاج مراجعة مقابل الأصول.';
         return 'التحقق المستقل: ${withResults} خطوة سابقة لديها مخرجات غير فارغة؛ '
             'المصادر المسجلة: ${sources.isEmpty ? 'لا توجد مصادر موثقة' : sources.join(', ')}. '
-            'هذا فحص اكتمال/مصدر، وليس حكمًا بصحة التفسير.';
+            '$verificationVerdict هذا فحص اكتمال ومصدر، وليس تصديقًا تلقائيًا على صحة الاستنتاج أو التفسير.';
       case 'tadrib':
         // The canonical Quran corpus is source material, not a user-labelled
         // supervised dataset. Never turn its metadata into training labels or
@@ -452,6 +1317,40 @@ class AgentChatProvider extends ChangeNotifier {
   }
 
   int? _currentStepNumber;
+
+  /// Produces an honest, query-specific execution outline from the same
+  /// deterministic routing rules used by the runner. This is a real plan of
+  /// registered handlers, not a claim that the language model generated it.
+  String _buildExecutionPlan(String query) {
+    final routed = _route(query)
+        .where((agent) =>
+            agent.id != 'planner' &&
+            agent.id != 'muwajjih' &&
+            agent.id != 'safety')
+        .toList(growable: false);
+    if (routed.isEmpty) {
+      return 'تعذر تكوين خطة قابلة للتنفيذ: لم يُنتج موجّه المهام أي معالج مسجل. '
+          'لم يبدأ تنفيذ بديل غير موثق.';
+    }
+
+    final intent = parseVerseReference(query) != null
+        ? 'استرجاع آية محددة والتحقق من مرجعها'
+        : RegExp(r'جمل|ابجد').hasMatch(AgentKnowledgeService.normalize(query))
+            ? 'حساب أبجد وفق الجدول المحلي ومراجعة النتيجة'
+            : RegExp(r'عدد|تكرار|مره|احصاء|كلمه')
+                    .hasMatch(AgentKnowledgeService.normalize(query))
+                ? 'إجراء بحث أو إحصاء نصي من البيانات المحلية'
+                : 'استرجاع أدلة محلية ومراجعة حدود الاستنتاج';
+    final stages = routed.asMap().entries.map((entry) {
+      final agent = entry.value;
+      return '${entry.key + 1}. ${agent.name} (${agent.id}): ${agent.description}';
+    }).join('\n');
+    return 'خطة تنفيذ محلية مبنية على قواعد التوجيه الفعلية.\n'
+        'الهدف المصنّف: $intent.\n'
+        'المعالجات المسجلة التي سيحاول المسار تشغيلها:\n$stages\n'
+        'مصدر الخطة: قواعد التوجيه المحلية وسجل الوكلاء؛ '
+        'لم تُستخدم خدمة تخطيط بعيدة، ولا تعني الخطة أن الخطوات قد نُفّذت بعد.';
+  }
 
   Future<String> _searchKnowledge(AgentDefinition agent, String query) async {
     final includeVariants = RegExp(r'مسند|هيروغليف|عثمان|خط|صيغة').hasMatch(query);
@@ -487,17 +1386,36 @@ class AgentChatProvider extends ChangeNotifier {
     return 'نتائج مسترجعة بواسطة ${agent.name} من الأصول المضمّنة:\n\n$output';
   }
 
-  List<StepDetail> _detailsFor(AgentDefinition agent, String result) => [
-        StepDetail('الوكيل', agent.name),
-        StepDetail('الطبقة', agent.layer),
-        StepDetail('المحاولات', '${_attemptsByAgent[agent.id] ?? 1} من 3'),
-        StepDetail('الأصول المحمّلة', _knowledge.loadedSources.length.toString()),
-        StepDetail('المصادر', _sourcesFromText(result).join(', ').isEmpty
-            ? 'لا يوجد مصدر مذكور في هذه النتيجة'
-            : _sourcesFromText(result).join(', ')),
-      ];
+  List<StepDetail> _detailsFor(AgentDefinition agent, String result) {
+    const explicitHandlers = <String>{
+      'muwajjih', 'planner', 'safety', 'researcher', 'retriever',
+      'tafsir', 'rabet', 'tibyan', 'tadabbur', 'overthinker',
+      'critic', 'narrator', 'ayaat', 'siyaq', 'jummal', 'adadi',
+      'memory', 'loop_engineering', 'verifier', 'damj', 'obsidian',
+    };
+    return [
+      StepDetail('الوكيل', agent.name),
+      StepDetail('الطبقة', agent.layer),
+      StepDetail(
+        'مسار التنفيذ',
+        explicitHandlers.contains(agent.id)
+            ? 'معالج مسجل لهذا المعرّف'
+            : 'استرجاع عام من المعرفة المحلية؛ لا توجد معالجة تخصصية مستقلة لهذا المعرّف بعد',
+      ),
+      StepDetail('المحاولات', '${_attemptsByAgent[agent.id] ?? 1} من 3'),
+      StepDetail('الأصول المحمّلة', _knowledge.loadedSources.length.toString()),
+      StepDetail('المصادر', _sourcesFromText(result).join(', ').isEmpty
+          ? 'لا يوجد مصدر مذكور في هذه النتيجة'
+          : _sourcesFromText(result).join(', ')),
+    ];
+  }
 
-  Future<String> _composeAnswer(AgentTask task) async {
+  Future<String> _composeAnswer(
+    AgentTask task, {
+    required int? contextSurahNumber,
+    required int? contextAyahNumber,
+    required String? contextVerseText,
+  }) async {
     final results = task.steps
         .where((step) => step.result != null && step.result!.trim().isNotEmpty)
         .map((step) => '${step.title}:\n${step.result}')
@@ -507,17 +1425,33 @@ class AgentChatProvider extends ChangeNotifier {
     }
 
     final evidence = results.join('\n\n');
-    final nucleus = NucleusService();
-    final verseContext = nucleus.currentVerseText;
-    final contextualEvidence = verseContext == null || verseContext.trim().isEmpty
+    final hasVerseContext = contextVerseText != null &&
+        contextVerseText.trim().isNotEmpty &&
+        contextSurahNumber != null &&
+        contextAyahNumber != null;
+    final verseSource = hasVerseContext
+        ? 'القرآن الكريم $contextSurahNumber:$contextAyahNumber'
+        : null;
+    final contextualEvidence = !hasVerseContext
         ? evidence
         : evidence + '\n\nالسياق المحدد في المصحف (' +
-            nucleus.currentSurahNumber.toString() + ':' +
-            nucleus.currentAyahNumber.toString() + '):\n' + verseContext;
-    final sourceList = _knowledge.loadedSources.join(', ');
-    final runtime = nucleus;
-    if (runtime.isModelLoaded) {
-      try {
+            contextSurahNumber.toString() + ':' +
+            contextAyahNumber.toString() + '):\n' + contextVerseText;
+    final sourceList = <String>{
+      ..._knowledge.loadedSources,
+      if (verseSource != null) verseSource,
+    }.join(', ');
+    final runtime = NucleusService();
+    try {
+      // The imported GGUF file persists in app-private storage, while the
+      // native llama.cpp controller is process-scoped and must be reloaded
+      // after an app restart. Restore it lazily before choosing retrieval-only
+      // output; otherwise chat silently degrades to Quran/knowledge snippets.
+      final modelReady = await runtime.ensureModelLoaded(
+        threads: 4,
+        contextSize: 1024,
+      );
+      if (modelReady) {
         final boundedEvidence = contextualEvidence.length > 12000
             ? '${contextualEvidence.substring(0, 12000)}\n[تم اقتطاع بقية الأدلة لتحديد طول السياق]'
             : contextualEvidence;
@@ -526,20 +1460,28 @@ class AgentChatProvider extends ChangeNotifier {
           evidence: boundedEvidence,
           maxTokens: 512,
         );
+        if (_tryPublishGeneratedLayout(
+          query: task.userQuery,
+          generated: generated,
+          evidence: boundedEvidence,
+        )) {
+          return 'جهّز النموذج المحلي لوحة عرض ديناميكية من الأدلة المرفقة. '
+              'المحتوى النصي مولّد وغير متحقق آليًا؛ راجع مصدر كل ادعاء.';
+        }
         return 'إجابة مولّدة محليًا بواسطة نموذج GGUF المحمّل (ليست نصًا قرآنيًا):\n'
             '$generated\n\n'
-            'الأدلة المسترجعة من التطبيق، للرجوع والتحقق:\n$evidence\n\n'
+            'الأدلة والسياق المحلي المحدد، للرجوع والتحقق:\n$contextualEvidence\n\n'
             'المصادر المحمّلة: $sourceList. يجب التحقق من أي استنتاج مولّد مقابل النصوص المصدرية.';
-      } catch (error) {
-        return 'تعذر الاستدلال بالنموذج المحلي؛ لم أستبدل ذلك بإجابة مولّدة وهمية.\n\n'
-            'تقرير الأدلة المحلية:\n$evidence\n\n'
-            'سبب تعذر النموذج: $error\nالمصادر: $sourceList.';
       }
-    }
 
-    return 'تقرير الوكلاء المحلي:\n\n$evidence\n\n'
-        'المصادر المحمّلة: $sourceList. '
-        'هذه نتائج استرجاع وفحوص محلية؛ لم يُشغّل نموذج توليدي لأن GGUF غير محمّل.';
+      return 'لا يوجد نموذج GGUF صالح ومتاح للتشغيل حاليًا؛ لم أقدّم مقتطفات الأصول على أنها إجابة مولّدة.\n\n'
+          'تقرير الأدلة والسياق المحلي:\n$contextualEvidence\n\n'
+          'حالة النموذج: ${runtime.modelStatus}\nالمصادر: $sourceList.';
+    } catch (error) {
+      return 'تعذر تحميل أو تشغيل النموذج المحلي؛ لم أستبدل ذلك بإجابة مولّدة وهمية.\n\n'
+          'تقرير الأدلة والسياق المحلي:\n$contextualEvidence\n\n'
+          'سبب تعذر النموذج: $error\nالمصادر: $sourceList.';
+    }
   }
 
   List<String> _sourcesFromText(String text) {
@@ -556,21 +1498,18 @@ class AgentChatProvider extends ChangeNotifier {
     return sources.toList(growable: false);
   }
 
-  List<String> _sourcesFromTask(AgentTask? task) =>
-      _sourcesFromSteps(task?.steps);
+  List<String> _sourcesFromTask(AgentTask? task) {
+    if (task == null) return const <String>[];
+    final sources = _sourcesFromSteps(task.steps).toSet();
+    final verseSource = _activeTaskVerseSource;
+    if (verseSource != null) sources.add(verseSource);
+    return sources.toList(growable: false);
+  }
 
   int _abjad(String text) {
-    const values = {
-      'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ب': 2, 'ج': 3, 'د': 4,
-      'ه': 5, 'ة': 5, 'و': 6, 'ز': 7, 'ح': 8, 'ط': 9, 'ي': 10,
-      'ى': 10, 'ك': 20, 'ل': 30, 'م': 40, 'ن': 50, 'س': 60,
-      'ع': 70, 'ف': 80, 'ص': 90, 'ق': 100, 'ر': 200, 'ش': 300,
-      'ت': 400, 'ث': 500, 'خ': 600, 'ذ': 700, 'ض': 800, 'ظ': 900,
-      'غ': 1000,
-    };
     var total = 0;
     for (final rune in text.runes) {
-      total += values[String.fromCharCode(rune)] ?? 0;
+      total += AbjadConstants.getValue(String.fromCharCode(rune));
     }
     return total;
   }

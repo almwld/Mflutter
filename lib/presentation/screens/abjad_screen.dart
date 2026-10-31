@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/abjad_provider.dart';
+import '../../services/achievements_service.dart';
+import '../../domain/entities/abjad_result.dart';
 
 class AbjadCalculatorScreen extends StatefulWidget {
   const AbjadCalculatorScreen({super.key});
@@ -10,9 +13,70 @@ class AbjadCalculatorScreen extends StatefulWidget {
 
 class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
   final _controller = TextEditingController();
+  bool _alphabetical = false;
 
-  void _calculate() {
-    context.read<AbjadProvider>().calculateAbjad(_controller.text);
+  Future<void> _copyResult(AbjadResult result) async {
+    final letters = result.letterResults
+        .map((letter) => '${letter.letter}=${letter.value}')
+        .join('، ');
+    final summary = [
+      'النص: ${_controller.text.trim()}',
+      'جدول القيم: ${_alphabetical ? 'الترتيب الهجائي' : 'أبجد الكبير'}',
+      'المجموع: ${result.kabir}',
+      _alphabetical ? 'متوسط القيم الهجائية: ${result.saghir}' : 'مجموع اختزال قيم الحروف (الجمل الصغير): ${result.saghir}',
+      _alphabetical ? 'نصف المجموع الهجائي: ${result.wasat}' : 'مجموع رتب الحروف (الجمل الأوسط الاصطلاحي): ${result.wasat}',
+      'تفصيل الحروف: $letters',
+      'الارتباطات الرمزية ليست قياسات علمية أو تنبؤات.',
+    ].join('\n');
+    try {
+      await Clipboard.setData(ClipboardData(text: summary));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('نُسخت نتيجة الحساب.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر نسخ النتيجة: $error')),
+      );
+    }
+  }
+
+  Future<void> _calculate() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('أدخل نصًا عربيًا لحساب قيم الحروف.')),
+      );
+      return;
+    }
+    if (!RegExp(r'[\u0600-\u06FF]').hasMatch(text)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب أن يحتوي النص على حروف عربية.')),
+      );
+      return;
+    }
+    final provider = context.read<AbjadProvider>();
+    provider.calculateAbjad(text, alphabetical: _alphabetical);
+    if (provider.lastResult?.letterResults.isEmpty ?? true) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('لم يُعثر على حروف لها قيمة في جدول أبجد؛ لم يُسجّل الحساب.'),
+        ),
+      );
+      return;
+    }
+    try {
+      await AchievementsService.recordAbjadCalculation();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم الحساب، لكن تعذر تحديث سجل الإنجازات المحلي: $error'),
+        ),
+      );
+    }
   }
 
   @override
@@ -32,13 +96,74 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'اختر جدول القيم ثم احسب مجموع الحروف. المتوسط ونصف المجموع عمليتان حسابيتان مشتقتان من الحروف المعروفة. أي ربط رمزي بعنصر أو كوكب أو برج أو اسم هو اصطلاح تقليدي قابل للاختلاف، وليس قياسًا علميًا أو تنبؤًا.',
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: secondaryText,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text('جدول قيم الحروف', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('أبجد الكبير'),
+                selected: !_alphabetical,
+                onSelected: (_) => setState(() {
+                  _alphabetical = false;
+                  if (_controller.text.trim().isNotEmpty) {
+                    context.read<AbjadProvider>().calculateAbjad(
+                      _controller.text,
+                      alphabetical: false,
+                    );
+                  }
+                }),
+              ),
+              ChoiceChip(
+                label: const Text('الترتيب الهجائي'),
+                selected: _alphabetical,
+                onSelected: (_) => setState(() {
+                  _alphabetical = true;
+                  if (_controller.text.trim().isNotEmpty) {
+                    context.read<AbjadProvider>().calculateAbjad(
+                      _controller.text,
+                      alphabetical: true,
+                    );
+                  }
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           TextField(
             controller: _controller,
             textDirection: TextDirection.rtl,
             style: theme.textTheme.bodyLarge,
-            decoration: const InputDecoration(
+            maxLength: 120,
+            decoration: InputDecoration(
               hintText: 'أدخل النص لحساب الجمل...',
+              suffixIcon: _controller.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: 'مسح النص والنتيجة',
+                      onPressed: () {
+                        _controller.clear();
+                        context.read<AbjadProvider>().clear();
+                        setState(() {});
+                      },
+                      icon: const Icon(Icons.clear_rounded),
+                    ),
               prefixIcon: Icon(Icons.calculate_outlined),
+              helperText: 'تُحسب الحروف الموجودة في الجدول المختار؛ تُتجاهل المسافات والرموز والحروف غير المدرجة.',
             ),
             onSubmitted: (_) => _calculate(),
           ),
@@ -59,12 +184,66 @@ class _AbjadCalculatorScreenState extends State<AbjadCalculatorScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      _ResultRow(label: 'الجمل الكبير', value: r.kabir.toString(), color: colors.primary),
-                      _ResultRow(label: 'الجمل الصغير', value: r.saghir.toString(), color: colors.onSurface),
-                      _ResultRow(label: 'الجمل الوسط', value: r.wasat.toString(), color: colors.onSurface),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: IconButton(
+                          tooltip: 'نسخ النتيجة',
+                          onPressed: () => _copyResult(r),
+                          icon: const Icon(Icons.copy_all_rounded),
+                        ),
+                      ),
+                      _ResultRow(
+                        label: _alphabetical ? 'مجموع القيم الهجائية' : 'مجموع أبجد الكبير',
+                        value: r.kabir.toString(),
+                        color: colors.primary,
+                      ),
+                      _ResultRow(
+                        label: _alphabetical ? 'متوسط قيم الحروف الهجائية' : 'مجموع اختزال قيم الحروف (الجمل الصغير)',
+                        value: r.saghir.toString(),
+                        color: colors.onSurface,
+                      ),
+                      _ResultRow(
+                        label: _alphabetical ? 'نصف المجموع الهجائي' : 'مجموع رتب الحروف (الجمل الأوسط الاصطلاحي)',
+                        value: r.wasat.toString(),
+                        color: colors.onSurface,
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Text(
+                          'تفصيل قيمة كل حرف — ${_alphabetical ? 'الترتيب الهجائي' : 'أبجد الكبير'}',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: r.letterResults
+                            .map(
+                              (letter) => Chip(
+                                label: Text('${letter.letter} = ${letter.value}'),
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
                       const SizedBox(height: 8),
-                      Text('العنصر: ${r.element} | الكوكب: ${r.planet} | البرج: ${r.zodiac}', textAlign: TextAlign.right, style: TextStyle(color: secondaryText)),
-                      Text('الطاقة: ${r.energy.toStringAsFixed(3)}', style: TextStyle(color: secondaryText)),
+                      Text(
+                        'ربط رمزي تقليدي مشتق من المجموع (ليس حقيقة علمية): العنصر ${r.element} • الكوكب ${r.planet} • البرج ${r.zodiac}',
+                        textDirection: TextDirection.rtl,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(color: secondaryText),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'الاسم حسب ترتيب القائمة الشائعة: ${r.divineName}',
+                        textDirection: TextDirection.rtl,
+                        style: TextStyle(color: secondaryText),
+                      ),
                     ],
                   ),
                 ),

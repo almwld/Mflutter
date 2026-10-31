@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../domain/entities/agent_task.dart';
 import '../../../services/agent_registry.dart';
+import '../../../services/agent_knowledge_service.dart';
 import '../../../services/nucleus_service.dart';
 import '../../providers/agent_chat_provider.dart';
 import '../../../services/external_asset_service.dart';
+import '../nucleus_screen.dart';
+import '../miracles_screen.dart';
+import '../compare_screen.dart';
+import '../quran_page_screen.dart';
+import '../../templates/universal_template_renderer.dart';
 
 class AgentConsoleScreen extends StatelessWidget {
   const AgentConsoleScreen({super.key});
@@ -28,7 +35,112 @@ class _AgentConsoleView extends StatefulWidget {
 
 class _AgentConsoleViewState extends State<_AgentConsoleView> {
   final _controller = TextEditingController();
+  final _agentSearchController = TextEditingController();
+  final NucleusService _nucleus = NucleusService();
+  late bool _modelLoaded;
+  String _agentQuery = '';
   String _layer = 'الكل';
+  String? _scheduledUiIntentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _modelLoaded = _nucleus.isModelLoaded;
+    _nucleus.addListener(_onNucleusChanged);
+  }
+
+  void _onNucleusChanged() {
+    final loaded = _nucleus.isModelLoaded;
+    if (mounted && loaded != _modelLoaded) {
+      setState(() => _modelLoaded = loaded);
+    }
+  }
+
+  void _scheduleAdaptiveNavigation(AgentChatProvider provider) {
+    final intent = provider.pendingUiIntent;
+    if (intent == null || intent.id == _scheduledUiIntentId) return;
+    _scheduledUiIntentId = intent.id;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      provider.consumeUiIntent(intent.id);
+      const allowedTemplates = <String, String>{
+        'miracles_screen': 'analytics_template',
+        'compare_screen': 'comparison_template',
+        'nucleus_screen': 'graph_template',
+        'quran_page_screen': 'reader_template',
+      };
+      final Map<String, dynamic> payload = intent.payload;
+      final hasSchemaBlocks = payload['blocks'] is List;
+      if (hasSchemaBlocks) {
+        if (TemplateRegistry.lookup(intent.templateId) == null) return;
+      } else if (allowedTemplates[intent.targetScreen] != intent.templateId) {
+        return;
+      }
+      // New schema-driven payloads render through the universal engine.
+      // Legacy intents without a blocks schema retain their domain screens.
+      if (hasSchemaBlocks) {
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            settings: RouteSettings(
+              name: '/agent-adaptive/template',
+              arguments: intent.toJson(),
+            ),
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(
+                payload['title']?.toString().trim().isNotEmpty == true
+                    ? payload['title'].toString()
+                    : 'عرض مُدَبِّر الديناميكي',
+              )),
+              body: UniversalTemplateRenderer(
+                dataPayload: <String, dynamic>{
+                  ...payload,
+                  'ui_template': intent.templateId,
+                },
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+      final Widget? destination;
+      switch (intent.targetScreen) {
+        case 'miracles_screen':
+          destination = MiraclesScreen(
+            initialQuery: payload['first_word']?.toString(),
+            initialComparisonQuery: payload['second_word']?.toString(),
+          );
+          break;
+        case 'compare_screen':
+          destination = CompareScreen(
+            agentQuery: payload['comparison_query']?.toString(),
+          );
+          break;
+        case 'nucleus_screen':
+          destination = const NucleusScreen();
+          break;
+        case 'quran_page_screen':
+          final surah = (payload['surah_number'] as num?)?.toInt() ?? 1;
+          destination = QuranPageScreen(
+            surahNumber: surah,
+            surahName: surah == 1 ? 'الفاتحة' : 'السورة $surah',
+            initialAyahNumber: (payload['ayah_number'] as num?)?.toInt() ?? 1,
+          );
+          break;
+        default:
+          destination = null;
+      }
+      if (destination == null) return;
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          settings: RouteSettings(
+            name: '/agent-adaptive/${intent.targetScreen}',
+            arguments: intent.toJson(),
+          ),
+          builder: (_) => destination!,
+        ),
+      );
+    });
+  }
 
   Future<void> _importOptionalAssets() async {
     try {
@@ -47,7 +159,9 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
 
   @override
   void dispose() {
+    _nucleus.removeListener(_onNucleusChanged);
     _controller.dispose();
+    _agentSearchController.dispose();
     super.dispose();
   }
 
@@ -55,10 +169,18 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
   Widget build(BuildContext context) {
     final provider = context.watch<AgentChatProvider>();
     final task = provider.activeTask;
+    _scheduleAdaptiveNavigation(provider);
     final layers = <String>{'الكل', ...AgentRegistry.all.map((a) => a.layer)};
-    final agents = _layer == 'الكل'
-        ? AgentRegistry.all
-        : AgentRegistry.all.where((a) => a.layer == _layer).toList();
+    final normalizedAgentQuery = AgentKnowledgeService.normalize(_agentQuery);
+    final agents = AgentRegistry.all.where((agent) {
+      final matchesLayer = _layer == 'الكل' || agent.layer == _layer;
+      final searchable = AgentKnowledgeService.normalize(
+        '${agent.name} ${agent.id} ${agent.layer} ${agent.description}',
+      );
+      return matchesLayer &&
+          (normalizedAgentQuery.isEmpty ||
+              searchable.contains(normalizedAgentQuery));
+    }).toList(growable: false);
 
     return Directionality(
       textDirection: TextDirection.rtl,
@@ -76,6 +198,51 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
             ],
           ),
           actions: [
+            if (task != null)
+              IconButton(
+                tooltip: 'نسخ تقرير المهمة بصيغة JSON',
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: provider.exportJson()));
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم نسخ تقرير المهمة JSON إلى الحافظة.')),
+                  );
+                },
+                icon: const Icon(Icons.data_object_rounded),
+              ),
+            IconButton(
+              tooltip: 'مسح المحادثة الحالية',
+              onPressed: task == null ||
+                      task.status == TaskStatus.running ||
+                      task.status == TaskStatus.paused
+                  ? null
+                  : () async {
+                      final clear = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text('مسح المحادثة الحالية؟'),
+                          content: const Text(
+                            'سيُمسح سجل العرض والمهمة الحالية فقط. '
+                            'ستبقى جلسات الذاكرة والملاحظات المحفوظة محليًا دون تغيير.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(dialogContext, false),
+                              child: const Text('إلغاء'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(dialogContext, true),
+                              child: const Text('مسح'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (clear == true && context.mounted) {
+                        provider.clearConversation();
+                      }
+                    },
+              icon: const Icon(Icons.cleaning_services_outlined),
+            ),
             IconButton(
               tooltip: 'استيراد أصول OCR / ML Kit والنماذج المحلية',
               onPressed: _importOptionalAssets,
@@ -84,7 +251,7 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 14),
               child: Center(
-                child: Text('${AgentRegistry.all.length} وكيل',
+                child: Text('${AgentRegistry.all.length} تعريف وكيل',
                     style: const TextStyle(color: AppColors.primaryGold)),
               ),
             ),
@@ -97,7 +264,46 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
               _WorkspaceHero(
                 documentCount: provider.indexedDocumentCount,
                 sourceCount: provider.loadedKnowledgeSources.length,
-                initialized: provider.loadedKnowledgeSources.isNotEmpty,
+                initialized: provider.initialized,
+                initializationError: provider.initializationError,
+                modelLoaded: _modelLoaded,
+                onRetry: provider.initialize,
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                child: TextField(
+                  controller: _agentSearchController,
+                  textDirection: TextDirection.rtl,
+                  onChanged: (value) => setState(() => _agentQuery = value),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                  decoration: InputDecoration(
+                    hintText: 'ابحث عن وكيل بالاسم أو المعرّف أو الوصف',
+                    hintStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 19,
+                        color: AppColors.primaryGold),
+                    suffixIcon: _agentQuery.isEmpty
+                        ? null
+                        : IconButton(
+                            tooltip: 'مسح بحث الوكلاء',
+                            onPressed: () {
+                              _agentSearchController.clear();
+                              setState(() => _agentQuery = '');
+                            },
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                          ),
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    isDense: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Colors.white12),
+                    ),
+                  ),
+                ),
               ),
               SizedBox(
                 height: 42,
@@ -105,6 +311,18 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: Text(
+                          '${agents.length} نتيجة',
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ),
                     PopupMenuButton<String>(
                       onSelected: (value) => setState(() => _layer = value),
                       itemBuilder: (_) => layers
@@ -151,6 +369,35 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                child: Text(
+                  'الأسماء المعروضة تعريفات مسجلة في الدليل؛ ظهور الاسم لا يعني أن لكل وكيل نموذجًا مستقلًا أو خدمة منفصلة. التنفيذ يعتمد على الأدوات والمصادر المحلية المتاحة وحالة النموذج.',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(.58),
+                    fontSize: 11,
+                    height: 1.45,
+                  ),
+                ),
+              ),
+              if (provider.selectionError != null)
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 0, 14, 8),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(.10),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(.35)),
+                    ),
+                    child: Text(
+                      provider.selectionError!,
+                      style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+                    ),
+                  ),
+                ),
               if (task == null)
                 _QuickPrompts(onChoose: (value) {
                   _controller.text = value;
@@ -162,7 +409,8 @@ class _AgentConsoleViewState extends State<_AgentConsoleView> {
                 child: _Transcript(
                   task: task,
                   messages: provider.messages,
-                  loadingKnowledge: provider.loadedKnowledgeSources.isEmpty,
+                  loadingKnowledge: !provider.initialized &&
+                      provider.initializationError == null,
                 ),
               ),
               _Composer(
@@ -188,10 +436,16 @@ class _WorkspaceHero extends StatelessWidget {
   final int documentCount;
   final int sourceCount;
   final bool initialized;
+  final String? initializationError;
+  final bool modelLoaded;
+  final VoidCallback onRetry;
   const _WorkspaceHero({
     required this.documentCount,
     required this.sourceCount,
     required this.initialized,
+    required this.initializationError,
+    required this.modelLoaded,
+    required this.onRetry,
   });
 
   @override
@@ -220,9 +474,58 @@ class _WorkspaceHero extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               Text(
-                initialized ? 'بحث محلي موثّق • النموذج التوليدي اختياري' : 'تهيئة فهرس المعرفة المحلي…',
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                initializationError != null
+                    ? 'تعذر تهيئة المعرفة المحلية'
+                    : initialized
+                        ? modelLoaded
+                            ? 'نموذج GGUF محلي محمّل • التوليد المحلي مهيأ'
+                            : 'فهرس المعرفة المحلي جاهز • حمّل نموذجًا من شاشة النواة للتوليد'
+                        : 'تهيئة فهرس المعرفة المحلي…',
+                style: TextStyle(
+                  color: initializationError != null
+                      ? Colors.redAccent
+                      : Colors.white70,
+                  fontSize: 11,
+                ),
               ),
+              if (initialized && !modelLoaded && initializationError == null)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const NucleusScreen(),
+                      ),
+                    ),
+                    icon: const Icon(Icons.memory_rounded, size: 16),
+                    label: const Text('فتح النواة وتحميل نموذج محلي'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryGold,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
+                ),
+              if (initializationError != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  initializationError!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 10),
+                ),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: const Text('إعادة تهيئة المعرفة'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryGold,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Wrap(spacing: 6, children: [
                 _Metric(icon: Icons.groups_2_outlined, text: '${AgentRegistry.all.length} وكيل'),
@@ -256,6 +559,7 @@ class _QuickPrompts extends StatelessWidget {
   const _QuickPrompts({required this.onChoose});
   static const items = [
     ('بحث قرآني', 'ابحث في القرآن عن آيات تتعلق بـ '),
+    ('إحصاء كلمة', 'كم مرة وردت كلمة الله في القرآن؟'),
     ('تحليل عميق', 'حلّل هذا الموضوع من المصادر المحلية: '),
     ('تدقيق الأدلة', 'استخرج الأدلة والمصادر وحدد ما لم يثبت: '),
   ];
@@ -428,6 +732,24 @@ class _TaskProgress extends StatelessWidget {
   final AgentTask task;
   final AgentChatProvider provider;
   const _TaskProgress({required this.task, required this.provider});
+
+  String _statusLabel(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return 'بانتظار البدء';
+      case TaskStatus.running:
+        return 'قيد التنفيذ';
+      case TaskStatus.paused:
+        return 'متوقفة مؤقتًا';
+      case TaskStatus.completed:
+        return 'اكتملت';
+      case TaskStatus.failed:
+        return 'فشلت';
+      case TaskStatus.cancelled:
+        return 'أُلغيت';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final done = task.steps.where((s) => s.status == StepStatus.done).length;
@@ -457,11 +779,35 @@ class _TaskProgress extends StatelessWidget {
         Row(children: [
           Text('$done/${task.steps.length} مكتملة${failed > 0 ? ' • $failed فاشلة' : ''}',
               style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          const SizedBox(width: 8),
+          Text(_statusLabel(task.status),
+              style: TextStyle(
+                color: task.status == TaskStatus.failed
+                    ? Colors.redAccent
+                    : task.status == TaskStatus.completed
+                        ? Colors.greenAccent
+                        : task.status == TaskStatus.cancelled
+                            ? Colors.white38
+                            : AppColors.primaryGold,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              )),
+          if (task.status == TaskStatus.failed ||
+              task.status == TaskStatus.cancelled)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              tooltip: 'إعادة المحاولة',
+              onPressed: () => provider.executeTask(task.userQuery),
+              icon: const Icon(Icons.replay_rounded,
+                  color: AppColors.primaryGold, size: 18),
+            ),
           const Spacer(),
           IconButton(
             visualDensity: VisualDensity.compact,
             onPressed: canControl ? provider.pauseOrResume : null,
-            tooltip: task.status == TaskStatus.paused ? 'استئناف المهمة' : 'إيقاف مؤقت',
+            tooltip: task.status == TaskStatus.paused
+                ? 'استئناف المهمة'
+                : 'إيقاف مؤقت بعد الخطوة الحالية',
             icon: Icon(provider.paused ? Icons.play_arrow : Icons.pause,
                 color: canControl ? AppColors.primaryGold : Colors.white24, size: 19),
           ),
@@ -473,6 +819,22 @@ class _TaskProgress extends StatelessWidget {
                 color: canControl ? Colors.redAccent : Colors.white24, size: 19),
           ),
         ]),
+        if (task.error != null && task.error!.trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: SelectableText(
+                'تفاصيل الخطأ: ${task.error}',
+                textDirection: TextDirection.rtl,
+                style: const TextStyle(
+                  color: Colors.redAccent,
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ),
       ]),
     );
   }
@@ -559,7 +921,14 @@ class _StepCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final running = step.status == StepStatus.running;
     final failed = step.status == StepStatus.failed;
-    final color = failed ? Colors.redAccent : step.status == StepStatus.done ? Colors.greenAccent : AppColors.primaryGold;
+    final cancelled = step.status == StepStatus.cancelled;
+    final color = failed
+        ? Colors.redAccent
+        : step.status == StepStatus.done
+            ? Colors.greenAccent
+            : cancelled
+                ? Colors.white38
+                : AppColors.primaryGold;
     return Card(
       color: AppColors.surface,
       margin: const EdgeInsets.only(bottom: 8),
@@ -570,8 +939,16 @@ class _StepCard extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         leading: running
             ? SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: color))
-            : Icon(failed ? Icons.error_outline_rounded : step.status == StepStatus.done
-                ? Icons.check_circle_outline_rounded : Icons.schedule_rounded, color: color),
+            : Icon(
+                failed
+                    ? Icons.error_outline_rounded
+                    : step.status == StepStatus.done
+                        ? Icons.check_circle_outline_rounded
+                        : cancelled
+                            ? Icons.cancel_outlined
+                            : Icons.schedule_rounded,
+                color: color,
+              ),
         title: Text('${step.number}. ${step.title}', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
         subtitle: Text('${step.agentName} • ${step.subtitle}', maxLines: 2, overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white54, fontSize: 11)),

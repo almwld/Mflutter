@@ -8,7 +8,7 @@ class AbjadConstants {
   /// خريطة قيم الحروف العربية (النظام المربع)
   static const Map<String, int> abjadSquare = {
     // الهمزة والألف
-    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1,
+    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ٱ': 1, 'ء': 1,
     // الباء
     'ب': 2,
     // التاء
@@ -60,14 +60,14 @@ class AbjadConstants {
     // الهاء
     'ه': 5,
     // الواو
-    'و': 6,
+    'و': 6, 'ؤ': 6,
     // الياء
-    'ي': 10, 'ى': 10,
+    'ي': 10, 'ى': 10, 'ئ': 10,
   };
 
   /// خريطة قيم الحروف العربية (النظام الهجائي)
   static const Map<String, int> abjadAlphabetical = {
-    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1,
+    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ٱ': 1, 'ء': 1,
     'ب': 2,
     'ت': 3, 'ة': 3,
     'ث': 4,
@@ -93,11 +93,11 @@ class AbjadConstants {
     'م': 24,
     'ن': 25,
     'ه': 26,
-    'و': 27,
-    'ي': 28, 'ى': 28,
+    'و': 27, 'ؤ': 27,
+    'ي': 28, 'ى': 28, 'ئ': 28,
   };
 
-  /// الأسماء الإلهية (99 اسم)
+  /// قائمة شائعة متداولة للأسماء الحسنى؛ قد تختلف بعض القوائم في العدّ والترتيب.
   static const List<String> divineNames = [
     'الله',
     'الرحمن',
@@ -121,7 +121,7 @@ class AbjadConstants {
     'العليم',
     'القابض',
     'الباسط',
-    'الخفض',
+    'الخافض',
     'الرافع',
     'المعز',
     'المذل',
@@ -136,18 +136,15 @@ class AbjadConstants {
     'الغفور',
     'الشكور',
     'العلي',
-    'الغني',
-    'المغني',
-    'النور',
-    'الهادي',
-    'البديع',
-    'الوالي',
-    'الرؤوف',
+    'الكبير',
+    'الحفيظ',
+    'المقيت',
+    'الحسيب',
     'الجليل',
     'الكريم',
     'الرقيب',
     'المجيب',
-    'الوسع',
+    'الواسع',
     'الحكيم',
     'الودود',
     'المجيد',
@@ -158,16 +155,18 @@ class AbjadConstants {
     'القوي',
     'المتين',
     'الولي',
-    'الحفيظ',
+    'الحميد',
     'المحصي',
-    'الم吉祥',
-    'السيد',
-    'المستعان',
-    'الصبور',
-    'المنتقم',
-    'العفو',
-    'الراشد',
-    'الغالب',
+    'المبدئ',
+    'المعيد',
+    'المحيي',
+    'المميت',
+    'الحي',
+    'القيوم',
+    'الواجد',
+    'الماجد',
+    'الواحد',
+    'الصمد',
     'القادر',
     'المقتدر',
     'المقدم',
@@ -176,25 +175,29 @@ class AbjadConstants {
     'الآخر',
     'الظاهر',
     'الباطن',
-    'الحافظ',
+    'الوالي',
+    'المتعالي',
+    'البر',
+    'التواب',
+    'المنتقم',
+    'العفو',
+    'الرؤوف',
+    'مالك الملك',
+    'ذو الجلال والإكرام',
     'المقسط',
-    'المجنّب',
+    'الجامع',
+    'الغني',
+    'المغني',
     'المانع',
     'الضار',
     'النافع',
     'النور',
-    'الهدى',
-    'البشير',
-    'النذير',
-    'العزير',
-    'الفتح',
-    'القريب',
-    'البعيد',
-    'الجواد',
-    'الواجد',
-    'الماجد',
-    'الواحد',
-    'الصمد',
+    'الهادي',
+    'البديع',
+    'الباقي',
+    'الوارث',
+    'الرشيد',
+    'الصبور',
   ];
 
   /// العناصر الأربعة
@@ -210,6 +213,17 @@ class AbjadConstants {
     'القوس', 'الجدي', 'الدلو', 'الحوت'
   ];
 
+  /// Canonical text normalization used by all Abjad entry points.
+  /// Diacritics and tatweel are removed; equivalent alif/hamza forms are
+  /// normalized while ta marbuta is deliberately preserved.
+  static String normalizeArabic(String text) => text
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+      .replaceAll('ـ', '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll('ؤ', 'و')
+      .replaceAll('ئ', 'ي')
+      .replaceAll('ى', 'ي');
+
   /// الحصول على قيمة الحرف (النظام المربع)
   static int getValue(String letter) {
     return abjadSquare[letter] ?? 0;
@@ -222,31 +236,38 @@ class AbjadConstants {
 
   /// حساب المجموع
   static int calculateTotal(String text) {
-    int total = 0;
-    for (int i = 0; i < text.length; i++) {
-      total += getValue(text[i]);
+    final normalized = normalizeArabic(text);
+    var total = 0;
+    for (final rune in normalized.runes) {
+      total += getValue(String.fromCharCode(rune));
     }
     return total;
   }
 
-  /// تحويل الرقم إلى اسم إلهى
+  static int _indexForPositiveNumber(int number, int length) {
+    if (number < 1) {
+      throw ArgumentError.value(number, 'number', 'يجب أن يكون الرقم 1 أو أكبر.');
+    }
+    return (number - 1) % length;
+  }
+
+  /// تحويل الرقم الموجب إلى اسم من القائمة المتداولة (بفهرسة تبدأ من 1).
   static String getDivineNameByNumber(int number) {
-    final index = (number - 1) % 99;
-    return divineNames[index];
+    return divineNames[_indexForPositiveNumber(number, divineNames.length)];
   }
 
-  /// تحويل الرقم إلى عنصر
+  /// تحويل الرقم الموجب إلى عنصر رمزي (بفهرسة تبدأ من 1).
   static String getElementByNumber(int number) {
-    return elements[number % elements.length];
+    return elements[_indexForPositiveNumber(number, elements.length)];
   }
 
-  /// تحويل الرقم إلى كوكب
+  /// تحويل الرقم الموجب إلى كوكب رمزي (بفهرسة تبدأ من 1).
   static String getPlanetByNumber(int number) {
-    return planets[number % planets.length];
+    return planets[_indexForPositiveNumber(number, planets.length)];
   }
 
-  /// تحويل الرقم إلى برج
+  /// تحويل الرقم الموجب إلى برج رمزي (بفهرسة تبدأ من 1).
   static String getZodiacByNumber(int number) {
-    return zodiacSigns[number % zodiacSigns.length];
+    return zodiacSigns[_indexForPositiveNumber(number, zodiacSigns.length)];
   }
 }
