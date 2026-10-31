@@ -60,9 +60,9 @@ class PhysicsWorld {
     }
     _accumulator += math.min(frameDelta, fixedTimeStep * maxSubSteps);
     var steps = 0;
-    while (_accumulator >= fixedTimeStep && steps < maxSubSteps) {
+    while (_accumulator + 1e-12 >= fixedTimeStep && steps < maxSubSteps) {
       _simulate(fixedTimeStep);
-      _accumulator -= fixedTimeStep;
+      _accumulator = math.max(0, _accumulator - fixedTimeStep);
       steps++;
     }
     return steps;
