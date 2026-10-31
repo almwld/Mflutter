@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
@@ -494,7 +495,7 @@ class _CosmosPainter extends CustomPainter {
       ..color = Colors.white.withOpacity(.15)
       ..strokeWidth = 1.45
       ..strokeCap = StrokeCap.round;
-    canvas.drawPoints(PointMode.points, points, basePaint);
+    canvas.drawPoints(ui.PointMode.points, points, basePaint);
 
     final activePoints = <Offset>[];
     for (final index in litIndices) {
@@ -506,12 +507,12 @@ class _CosmosPainter extends CustomPainter {
         ..color = DotMatrixCosmosConfig.gold.withOpacity(.18)
         ..strokeWidth = 4.0
         ..strokeCap = StrokeCap.round;
-      canvas.drawPoints(PointMode.points, activePoints, haloPaint);
+      canvas.drawPoints(ui.PointMode.points, activePoints, haloPaint);
       final litPaint = Paint()
         ..color = DotMatrixCosmosConfig.gold
         ..strokeWidth = 1.9
         ..strokeCap = StrokeCap.round;
-      canvas.drawPoints(PointMode.points, activePoints, litPaint);
+      canvas.drawPoints(ui.PointMode.points, activePoints, litPaint);
     }
     if (litIndices.isNotEmpty) {
       final pulse = 1.0 + .8 * (math.sin(time * 3.2) + 1) / 2;
