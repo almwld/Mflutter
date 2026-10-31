@@ -591,19 +591,76 @@ class _SkyPainter extends CustomPainter {
 
   void _drawConstellations(Canvas canvas, Map<String, Offset> points) {
     const edges = <(String, String)>[
-      ('betelgeuse', 'bellatrix'),
-      ('bellatrix', 'rigel'),
-      ('rigel', 'saiph'),
-      ('saiph', 'betelgeuse'),
-      ('betelgeuse', 'rigel'),
+      // Orion
+      ('betelgeuse', 'bellatrix'), ('bellatrix', 'rigel'),
+      ('rigel', 'saiph'), ('saiph', 'betelgeuse'),
+      ('betelgeuse', 'rigel'), ('alnilam', 'mintaka'),
+      ('alnilam', 'alnitak'),
+      // Ursa Major
+      ('dubhe', 'merak'), ('merak', 'phecda'), ('phecda', 'megrez'),
+      ('megrez', 'dubhe'), ('megrez', 'alioth'), ('alioth', 'mizar'),
+      ('mizar', 'alkaid'),
+      // Cassiopeia
+      ('schedar', 'caph'), ('caph', 'gamma_cas'),
+      ('gamma_cas', 'ruchbah'), ('ruchbah', 'segin'),
+      // Cygnus and Lyra
+      ('deneb', 'sadr'), ('sadr', 'albireo'), ('sadr', 'gienah'),
+      ('vega', 'sheliak'), ('sheliak', 'sulafat'),
+      // Aquila
+      ('altair', 'tarazed'), ('altair', 'alshain'),
+      // Taurus and Canis Major
+      ('aldebaran', 'elnath'), ('sirius', 'wezen'),
+      ('wezen', 'adhara'), ('adhara', 'aludra'),
+      // Leo and Gemini
+      ('regulus', 'algieba'), ('algieba', 'denebola'),
+      ('castor', 'pollux'),
+      // Andromeda
+      ('alpheratz', 'mirach'), ('mirach', 'almach'),
+      // Scorpius
+      ('antares', 'shaula'), ('shaula', 'sargas'),
+      // Southern Cross
+      ('acrux', 'mimosa'), ('mimosa', 'gacrux'),
     ];
-    final paint = Paint()
+    const labels = <(String, List<String>)>[
+      ('الجبار', ['betelgeuse', 'bellatrix', 'rigel', 'saiph']),
+      ('الدب الأكبر', ['dubhe', 'merak', 'phecda', 'megrez', 'alioth', 'mizar', 'alkaid']),
+      ('ذات الكرسي', ['schedar', 'caph', 'gamma_cas', 'ruchbah', 'segin']),
+      ('الدجاجة', ['deneb', 'albireo', 'gienah']),
+      ('القيثارة', ['vega', 'sheliak', 'sulafat']),
+      ('العقاب', ['altair', 'tarazed', 'alshain']),
+      ('الثور', ['aldebaran', 'elnath']),
+      ('الكلب الأكبر', ['sirius', 'wezen', 'adhara', 'aludra']),
+      ('الأسد', ['regulus', 'algieba', 'denebola']),
+      ('التوأمان', ['castor', 'pollux']),
+      ('المرأة المسلسلة', ['alpheratz', 'mirach', 'almach']),
+      ('العقرب', ['antares', 'shaula', 'sargas']),
+      ('الصليب الجنوبي', ['acrux', 'mimosa', 'gacrux']),
+    ];
+    final linePaint = Paint()
       ..color = const Color(0x668ED8E8)
       ..strokeWidth = .8;
     for (final edge in edges) {
       final first = points[edge.$1];
       final second = points[edge.$2];
-      if (first != null && second != null) canvas.drawLine(first, second, paint);
+      if (first != null && second != null) {
+        canvas.drawLine(first, second, linePaint);
+      }
+    }
+    for (final label in labels) {
+      final visible = label.$2
+          .map((id) => points[id])
+          .whereType<Offset>()
+          .toList(growable: false);
+      if (visible.length < 2) continue;
+      final center = visible.reduce((a, b) => a + b) / visible.length.toDouble();
+      final text = TextPainter(
+        text: TextSpan(text: label.$1, style: const TextStyle(
+          color: Color(0xA6F2DC98), fontFamily: 'Amiri', fontSize: 9,
+          shadows: [Shadow(color: Colors.black, blurRadius: 4)],
+        )),
+        textDirection: TextDirection.rtl,
+      )..layout(maxWidth: 90);
+      text.paint(canvas, center.translate(-text.width / 2, -text.height / 2));
     }
   }
 
