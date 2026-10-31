@@ -55,7 +55,6 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
   // لون نص المصحف: ذهبي فاخر، مع درجة أعمق للنهار لرفع التباين على ورق المصحف.
-  static const _quranGoldLight = Color(0xFFD49A16);
   static const _quranGoldDark = Color(0xFFFFD45A);
   static const _frame = Color(0xFF8C6A2D);
 
@@ -84,7 +83,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
               surah: targetSurah,
               verseNumber: targetAyah,
               page: page,
-              color: _quranGoldLight,
+              color: QuranPageThemeService.text(_pageTheme),
             ),
           ];
           _startLivingEffects();
@@ -144,15 +143,11 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   void _startLivingEffects() {
     if (_livingPulse.isAnimating && _livingGlow.isAnimating) return;
-    _livingPulse.repeat();
-    _livingGlow.repeat(reverse: true);
+    // Verse selection is intentionally static: no pulsing or glow.
   }
 
   void _stopLivingEffects() {
-    _livingPulse.stop();
-    _livingGlow.stop();
-    _livingPulse.value = 0;
-    _livingGlow.value = 0;
+    // No animated glow state is used by the reader.
   }
 
   Future<void> _restorePageTheme() async { final value = await QuranPageThemeService.load(); if (mounted) setState(() => _pageTheme = value); }
@@ -544,8 +539,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final quranGold = _pageTheme == QuranPageTheme.paper ? (isDark ? _quranGoldDark : _quranGoldLight) : QuranPageThemeService.text(_pageTheme);
+    final quranGold = QuranPageThemeService.text(_pageTheme);
     final pageBackground = QuranPageThemeService.background(_pageTheme);
 
     return Scaffold(
@@ -610,29 +604,16 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     // Keep QCF glyph rendering lightweight on lower-memory devices.
                   ),
                   customHighlightDecoration: (highlightColor) {
-                    final pulse = 0.5 + 0.5 * _livingGlow.value;
                     final isGreat = _highlights.isNotEmpty &&
                         _isGreatVerse(_highlights.first);
-                    final opacity = isGreat
-                        ? 0.12 + pulse * 0.22
-                        : 0.10 + pulse * 0.12;
+                    final opacity = isGreat ? 0.18 : 0.10;
                     return BoxDecoration(
                       color: highlightColor.withOpacity(opacity),
                       borderRadius: BorderRadius.circular(isGreat ? 7 : 4),
                       border: Border.all(
-                        color: highlightColor.withOpacity(
-                          isGreat ? 0.28 + pulse * 0.34 : 0.12 + pulse * 0.18,
-                        ),
+                        color: highlightColor.withOpacity(isGreat ? 0.32 : 0.18),
                         width: isGreat ? 1.2 : 0.8,
                       ),
-                      boxShadow: isGreat
-                          ? [
-                              BoxShadow(
-                                color: highlightColor.withOpacity(0.12 + pulse * 0.12),
-                                blurRadius: 8 + pulse * 8,
-                              ),
-                            ]
-                          : null,
                     );
                   },
                   pageBackgroundBuilder: (context, pageContent) {
