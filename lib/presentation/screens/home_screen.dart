@@ -43,6 +43,7 @@ import 'leaderboard_screen.dart';
 import 'planets_screen.dart';
 import 'letters_screen.dart';
 import 'quran/dot_matrix_cosmos_screen.dart';
+import 'sky_atlas_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -339,6 +340,7 @@ class _MushafHome extends StatelessWidget {
       ('الوكلاء', Icons.psychology_alt_rounded, const AgentsScreen()),
       ('مستكشف المعرفة', Icons.auto_stories_rounded, const OccultExplorerScreen()),
       ('الإحصائيات', Icons.insights_rounded, const StatsScreen()),
+      ('السماء التفاعلية', Icons.public_rounded, const SkyAtlasScreen()),
       ('الكون القرآني', Icons.blur_circular_rounded, const DotMatrixCosmosScreen()),
       ('عدسة AR', Icons.view_in_ar_outlined, const ARLensScreen()),
       ('تتبع النظر', Icons.visibility_outlined, const GazeTrackingScreen()),
@@ -525,6 +527,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('المجتمع', Icons.groups_rounded, const CommunityScreen()),
       ('التحديات', Icons.flag_outlined, const ChallengesScreen()),
       ('لوحة المتصدرين', Icons.leaderboard_rounded, const LeaderboardScreen()),
+      ('مرصد السماء', Icons.nights_stay_rounded, const SkyAtlasScreen()),
       ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
       ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
