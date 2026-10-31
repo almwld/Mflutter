@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mudabbir_al_asrar/features/shared/biomechanics/motion/pose_preset_manager.dart';
+import 'package:mudabbir_al_asrar/features/shared/biomechanics/motion/spring_damper.dart';
+import 'package:mudabbir_al_asrar/features/shared/biomechanics/motion/two_bone_ik.dart';
 import 'package:mudabbir_al_asrar/features/shared/biomechanics/collision/contact_solver.dart';
 import 'package:mudabbir_al_asrar/features/shared/biomechanics/collision/spatial_hash_grid.dart';
 import 'package:mudabbir_al_asrar/features/shared/biomechanics/core/biomechanics_engine.dart';
@@ -108,4 +111,37 @@ void main() {
       expect(() => engine.advance(1 / 60), throwsStateError);
     });
   });
+
+  group('motion primitives', () {
+    test('blends registered skeletal poses without dropping joints', () {
+      final poses = PosePresetManager.standard();
+      final blended = poses.blend('standing', 'embrace', .5);
+      expect(blended.joints.keys, containsAll(['pelvis', 'leftUpperArm']));
+      expect(blended.joints['leftUpperArm']!.rotationEuler.z,
+          closeTo(-.425, 1e-9));
+    });
+
+    test('spring damper converges toward target', () {
+      final spring = SpringDamper(value: 0, stiffness: 80, damping: 16);
+      for (var i = 0; i < 240; i++) {
+        spring.step(1, 1 / 60);
+      }
+      expect(spring.value, closeTo(1, .01));
+      expect(spring.velocity.abs(), lessThan(.1));
+    });
+
+    test('two-bone IK reaches a reachable target', () {
+      final result = TwoBoneIk.solve(
+        root: Vec3.zero,
+        target: const Vec3(1, 0, 0),
+        pole: const Vec3(0, 1, 0),
+        upperLength: 1,
+        lowerLength: 1,
+      );
+      expect(result.reachedTarget, isTrue);
+      expect((result.joint - result.root).length, closeTo(1, 1e-8));
+      expect((result.end - result.joint).length, closeTo(1, 1e-8));
+    });
+  });
+
 }
