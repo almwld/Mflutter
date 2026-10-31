@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:astronomia/apparent.dart' as apparent;
 import 'package:astronomia/coord.dart' as coord;
 import 'package:astronomia/elliptic.dart' as elliptic;
 import 'package:astronomia/globe.dart' as globe;
 import 'package:astronomia/moonposition.dart' as moon;
+import 'package:astronomia/nutation.dart' as nut;
 import 'package:astronomia/nutation.dart' as nutation;
 import 'package:astronomia/planetposition.dart' as pp;
 import 'package:astronomia/parallax.dart' as parallax;
@@ -208,8 +210,12 @@ class AstronomyService {
       note: 'موضع قمري محسوب بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي؛ الانكسار الجوي غير مطبق.',
     ));
 
+    // Evaluate Earth's VSOP87 position once, then reuse it for all planets.
+    // elliptic.position() recomputes Earth for every planet and each light-time
+    // pass; this shared calculation avoids repeated high-cost series summations.
+    final earthPosition = _earth.position(jde);
     for (final spec in _planets) {
-      final equatorial = elliptic.position(spec.planet, _earth, jde);
+      final equatorial = _planetEquatorial(spec.planet, earthPosition, jde);
       bodies.add(_fromEquatorial(
         id: spec.id,
         nameAr: spec.nameAr,
@@ -252,6 +258,61 @@ class AstronomyService {
     }
 
     return List<CelestialBody>.unmodifiable(bodies);
+  }
+
+  static ({double ra, double dec}) _planetEquatorial(
+    pp.Planet planet,
+    ({double lon, double lat, double range}) earth,
+    double jde,
+  ) {
+    final sinEarthLat = math.sin(earth.lat);
+    final cosEarthLat = math.cos(earth.lat);
+    final sinEarthLon = math.sin(earth.lon);
+    final cosEarthLon = math.cos(earth.lon);
+
+    ({double x, double y, double z}) geocentric(double lightDays) {
+      final position = planet.position(jde - lightDays);
+      final sinLat = math.sin(position.lat);
+      final cosLat = math.cos(position.lat);
+      final sinLon = math.sin(position.lon);
+      final cosLon = math.cos(position.lon);
+      return (
+        x: position.range * cosLat * cosLon -
+            earth.range * cosEarthLat * cosEarthLon,
+        y: position.range * cosLat * sinLon -
+            earth.range * cosEarthLat * sinEarthLon,
+        z: position.range * sinLat - earth.range * sinEarthLat,
+      );
+    }
+
+    final first = geocentric(0);
+    final distance = math.sqrt(
+      first.x * first.x + first.y * first.y + first.z * first.z,
+    );
+    // Meeus light-time in days for a distance expressed in astronomical units.
+    final corrected = geocentric(0.0057755183 * distance);
+    var longitude = math.atan2(corrected.y, corrected.x);
+    var latitude = math.atan2(
+      corrected.z,
+      math.sqrt(corrected.x * corrected.x + corrected.y * corrected.y),
+    );
+
+    final aberration = apparent.eclipticAberration(longitude, latitude, jde);
+    longitude += aberration.dLon;
+    latitude += aberration.dLat;
+    final fk5 = pp.toFK5(longitude, latitude, jde);
+    longitude = fk5.lon;
+    latitude = fk5.lat;
+
+    final nutation = nut.nutation(jde);
+    longitude += nutation.dPsi;
+    final obliquity = nut.meanObliquity(jde) + nutation.dEps;
+    return coord.eclToEq(
+      longitude,
+      latitude,
+      math.sin(obliquity),
+      math.cos(obliquity),
+    );
   }
 
   static CelestialBody _fromEquatorial({
