@@ -24,7 +24,6 @@ class AstronomyService {
     final obliquity = (23.4393 - 3.563e-7 * d) * _rad;
 
     final earth = _heliocentric(
-      d,
       _Orbit(0, 0, 282.9404 + 4.70935e-5 * d, 1,
           0.016709 - 1.151e-9 * d, 356.0470 + 0.9856002585 * d),
     );
@@ -92,7 +91,7 @@ class AstronomyService {
         spec.eccentricity + spec.eccentricityRate * d,
         spec.meanAnomaly + spec.meanAnomalyRate * d,
       );
-      final heliocentric = _heliocentric(d, orbit);
+      final heliocentric = _heliocentric(orbit);
       final geo = <double>[
         heliocentric[0] - earth[0],
         heliocentric[1] - earth[1],
@@ -270,7 +269,7 @@ class AstronomyService {
     return _eclipticToEquatorial(xe, ye, ze, obliquity);
   }
 
-  static List<double> _heliocentric(double d, _Orbit orbit) {
+  static List<double> _heliocentric(_Orbit orbit) {
     final n = orbit.node * _rad;
     final i = orbit.inclination * _rad;
     final w = orbit.perihelion * _rad;
