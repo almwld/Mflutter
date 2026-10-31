@@ -350,15 +350,18 @@ class AstronomyService {
     );
   }
 
-  static String _moonPhaseName(double angle, bool waxing) {
-    if (angle < 12 || angle >= 348) return 'محاق';
-    if (angle < 78) return waxing ? 'هلال متزايد' : 'هلال متناقص';
-    if (angle < 102) return waxing ? 'التربيع الأول' : 'التربيع الأخير';
-    if (angle < 168) return waxing ? 'أحدب متزايد' : 'أحدب متناقص';
-    if (angle < 192) return 'بدر';
-    if (angle < 258) return 'أحدب متناقص';
-    if (angle < 282) return 'التربيع الأخير';
-    return 'هلال متناقص';
+  static String _moonPhaseName(double phaseAngle, bool waxing) {
+    // Phase angle is measured at the Moon: 0° is full Moon and 180° is new.
+    // Illumination and the waxing flag together determine the named phase.
+    if (phaseAngle >= 168) return 'محاق';
+    if (phaseAngle < 12) return 'بدر';
+    if (phaseAngle < 78) {
+      return waxing ? 'أحدب متزايد' : 'أحدب متناقص';
+    }
+    if (phaseAngle < 102) {
+      return waxing ? 'التربيع الأول' : 'التربيع الأخير';
+    }
+    return waxing ? 'هلال متزايد' : 'هلال متناقص';
   }
 
   static const Map<String, double> _starDistanceLightYears = {
