@@ -362,13 +362,17 @@ class _CosmosPainter extends CustomPainter {
         final inRow = i % 6;
         final col = row.isOdd ? 5 - inRow : inRow;
         final point = Offset(cellW * (col + .5), startY + row * size.height * .105);
-        final active = calledProphets.contains(i) && time > 34 + i * .35;
+        final active = calledProphets.contains(i) && time > 32 + i * .25;
         final color = active ? DotMatrixCosmosConfig.gold : Colors.white.withOpacity(.25);
         canvas.drawCircle(point, active ? 3.5 : 2, Paint()..color = color);
         _text(canvas, size, names[i].$1, point.dy + 8,
             fontSize: 10, color: color, maxWidthFactor: .17);
       }
-      _text(canvas, size, 'مُحَمَّد ﷺ', size.height * .78,
+      _text(canvas, size, '25', size.height * .72,
+          fontSize: 30, color: DotMatrixCosmosConfig.gold, font: 'serif');
+      _text(canvas, size, 'أَسْمَاءٌ نَبَوِيَّةٌ فِي الْقُرْآن', size.height * .76,
+          fontSize: 12, color: Colors.white70);
+      _text(canvas, size, 'مُحَمَّد ﷺ', size.height * .82,
           fontSize: 18, color: DotMatrixCosmosConfig.gold);
       _text(canvas, size, 'MUHAMMAD', size.height * .84,
           fontSize: 9, color: const Color(0xFF8290B2), font: 'Cormorant Garamond');
@@ -419,6 +423,18 @@ class _CosmosPainter extends CustomPainter {
       }
       canvas.drawCircle(point, .72, Paint()
         ..color = active ? DotMatrixCosmosConfig.gold : Colors.white.withOpacity(.15));
+    }
+    if (litIndices.isNotEmpty) {
+      final pulse = 1.0 + .8 * (math.sin(time * 3.2) + 1) / 2;
+      for (final markerIndex in <int>[litIndices.first, litIndices.last]) {
+        final markerRow = markerIndex ~/ 79;
+        final markerCol = 78 - (markerIndex % 79);
+        final marker = Offset(left + (markerCol + .5) * dx, top + (markerRow + .5) * dy);
+        canvas.drawCircle(marker, 3.2 * pulse,
+            Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.18)
+              ..style = PaintingStyle.stroke..strokeWidth = 1.1);
+        canvas.drawCircle(marker, 1.6, Paint()..color = DotMatrixCosmosConfig.gold);
+      }
     }
     if (sweep < 1) {
       final y = top + scanRow * dy;
