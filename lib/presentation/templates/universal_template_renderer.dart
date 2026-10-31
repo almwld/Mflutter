@@ -391,7 +391,7 @@ abstract final class TemplateBlockSchema {
         final nodeIds = block['node_ids'];
         if (nodeIds != null && (nodeIds is! List || nodeIds.length > safeCount ||
             nodeIds.any((id) => id is! String || id.trim().isEmpty) ||
-            (nodeIds is List && nodeIds.whereType<String>().toSet().length != nodeIds.length))) {
+            (nodeIds.whereType<String>().toSet().length != nodeIds.length))) {
           errors.add('node_ids يجب أن تكون معرّفات نصية فريدة وبحد أقصى count.');
         }
         if (speed != null && (speed is! num || !speed.isFinite || speed < .1 || speed > 3)) {
