@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/features/shared/graphics/connected_nodes_path.dart';
 import 'package:mudabbir_al_asrar/features/shared/graphics/particle_matrix_block.dart';
+import 'package:mudabbir_al_asrar/features/shared/graphics/physics_sandbox_block.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/adaptive_template_selector.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/components/block_registry.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/universal_template_renderer.dart';
@@ -153,6 +154,44 @@ void main() {
         ],
       });
 
+      expect(schema.blocks, isEmpty);
+      expect(schema.validationErrors, isNotEmpty);
+    });
+
+    test('registers a bounded interactive physics sandbox block', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'physics_sandbox_block',
+            'title': 'محاكاة الأجسام المرنة',
+            'height': 320,
+          },
+        ],
+      });
+
+      expect(schema.blocks, hasLength(1));
+      expect(schema.validationErrors, isEmpty);
+      expect(BlockRegistry.registeredTypes, contains('physics_sandbox_block'));
+      expect(
+        BlockRegistry.buildBlock(
+          type: 'physics_sandbox_block',
+          title: 'محاكاة',
+          data: const <String, dynamic>{},
+        ),
+        isA<Widget>(),
+      );
+    });
+
+    test('rejects out-of-range physics sandbox dimensions', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': [
+          {'type': 'physics_sandbox_block', 'height': 900},
+        ],
+      });
       expect(schema.blocks, isEmpty);
       expect(schema.validationErrors, isNotEmpty);
     });
