@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../models/celestial_body.dart';
 import '../../services/astronomy_service.dart';
 import '../../services/sky_sensor_service.dart';
+import '../../services/sky_projection.dart';
 
 class SkyAtlasScreen extends StatefulWidget {
   const SkyAtlasScreen({super.key});
@@ -20,6 +21,36 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
     with WidgetsBindingObserver {
   static const _gold = Color(0xFFF2DC98);
   static const _filters = ['الكل', 'نجم', 'كوكب', 'القمر', 'الشمس'];
+  static const _constellationStars = <String, List<String>>{
+    'الجبار': ['betelgeuse', 'bellatrix', 'rigel', 'saiph'],
+    'الدب الأكبر': ['dubhe', 'merak', 'phecda', 'megrez', 'alioth', 'mizar', 'alkaid'],
+    'ذات الكرسي': ['schedar', 'caph', 'gamma_cas', 'ruchbah', 'segin'],
+    'الدجاجة': ['deneb', 'sadr', 'albireo', 'gienah'],
+    'القيثارة': ['vega', 'sheliak', 'sulafat'],
+    'العقاب': ['altair', 'tarazed', 'alshain'],
+    'الثور': ['aldebaran', 'elnath'],
+    'الكلب الأكبر': ['sirius', 'wezen', 'adhara', 'aludra'],
+    'الأسد': ['regulus', 'algieba', 'denebola'],
+    'التوأمان': ['castor', 'pollux'],
+    'المرأة المسلسلة': ['alpheratz', 'mirach', 'almach'],
+    'العقرب': ['antares', 'shaula', 'sargas'],
+    'الصليب الجنوبي': ['acrux', 'mimosa', 'gacrux'],
+  };
+  static const _constellationEdges = <String, List<(String, String)>>{
+    'الجبار': [('betelgeuse', 'bellatrix'), ('bellatrix', 'rigel'), ('rigel', 'saiph'), ('saiph', 'betelgeuse'), ('betelgeuse', 'rigel'), ('alnilam', 'mintaka'), ('alnilam', 'alnitak')],
+    'الدب الأكبر': [('dubhe', 'merak'), ('merak', 'phecda'), ('phecda', 'megrez'), ('megrez', 'dubhe'), ('megrez', 'alioth'), ('alioth', 'mizar'), ('mizar', 'alkaid')],
+    'ذات الكرسي': [('schedar', 'caph'), ('caph', 'gamma_cas'), ('gamma_cas', 'ruchbah'), ('ruchbah', 'segin')],
+    'الدجاجة': [('deneb', 'sadr'), ('sadr', 'albireo'), ('sadr', 'gienah')],
+    'القيثارة': [('vega', 'sheliak'), ('sheliak', 'sulafat')],
+    'العقاب': [('altair', 'tarazed'), ('altair', 'alshain')],
+    'الثور': [('aldebaran', 'elnath')],
+    'الكلب الأكبر': [('sirius', 'wezen'), ('wezen', 'adhara'), ('adhara', 'aludra')],
+    'الأسد': [('regulus', 'algieba'), ('algieba', 'denebola')],
+    'التوأمان': [('castor', 'pollux')],
+    'المرأة المسلسلة': [('alpheratz', 'mirach'), ('mirach', 'almach')],
+    'العقرب': [('antares', 'shaula'), ('shaula', 'sargas')],
+    'الصليب الجنوبي': [('acrux', 'mimosa'), ('mimosa', 'gacrux')],
+  };
 
   final SkySensorService _sensors = SkySensorService();
   StreamSubscription<SkyOrientation>? _orientationSubscription;
@@ -31,6 +62,8 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
   double? _latitude;
   double? _longitude;
   double _timeOffsetHours = 0;
+  double _horizontalFov = 65;
+  Set<String> _selectedConstellations = _constellationStars.keys.toSet();
   String _filter = 'الكل';
   String? _selectedId;
   String? _cameraError;
@@ -200,7 +233,7 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
     CelestialBody? nearest;
     var distanceLimit = 34.0;
     for (final body in _visibleBodies) {
-      final projected = _projectBody(body, size, _orientation);
+      final projected = _projectBody(body, size, _orientation, _horizontalFov);
       if (projected == null) continue;
       final distance = (projected - point).distance;
       if (distance < distanceLimit) {
@@ -234,6 +267,16 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
                   _detail('السمت', selected.azimuth.toStringAsFixed(1) + '°'),
                   _detail('الارتفاع', selected.altitude.toStringAsFixed(1) + '°'),
                   _detail('القدر الظاهري', selected.magnitude.toStringAsFixed(2)),
+                  if (selected.distanceAu != null)
+                    _detail('المسافة', _formatAu(selected.distanceAu!)),
+                  if (selected.distanceLightYears != null)
+                    _detail('المسافة التقريبية', '~${selected.distanceLightYears!.toStringAsFixed(1)} سنة ضوئية'),
+                  if (selected.illuminatedFraction != null)
+                    _detail('الجزء المضاء', '${(selected.illuminatedFraction! * 100).round()}%'),
+                  if (selected.phaseName != null)
+                    _detail('طور القمر', selected.phaseName!),
+                  if (selected.phaseAngleDegrees != null)
+                    _detail('زاوية الطور', '${selected.phaseAngleDegrees!.toStringAsFixed(1)}°'),
                 ]),
                 const SizedBox(height: 14),
                 if (selected.verse != null) ...[
@@ -263,6 +306,11 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
     ).whenComplete(() {
       if (mounted) setState(() => _selectedId = null);
     });
+  }
+
+  String _formatAu(double au) {
+    if (au < 0.01) return '${(au * 149597870.7).round()} كم';
+    return '${(au * 149.5978707).toStringAsFixed(2)} مليون كم';
   }
 
   Widget _detail(String label, String value) => Column(
@@ -317,6 +365,8 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
                             orientation: _orientation,
                             selectedId: _selectedId,
                             transparentBackground: cameraReady,
+                            horizontalFov: _horizontalFov,
+                            selectedConstellations: _selectedConstellations,
                           ),
                         ),
                         if (_latitude == null)
@@ -453,7 +503,62 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
               );
             }).toList(growable: false)),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+          Row(children: [
+            const Icon(Icons.camera_alt_outlined, color: Colors.white54, size: 16),
+            const SizedBox(width: 6),
+            Text('مجال الرؤية ${_horizontalFov.round()}°',
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
+            Expanded(
+              child: Slider(
+                value: _horizontalFov, min: 35, max: 100, divisions: 65,
+                activeColor: const Color(0xFF8ED8E8), inactiveColor: Colors.white12,
+                onChanged: (value) => setState(() => _horizontalFov = value),
+              ),
+            ),
+            IconButton(
+              tooltip: 'إعادة ضبط مجال الرؤية',
+              visualDensity: VisualDensity.compact,
+              onPressed: () => setState(() => _horizontalFov = 65),
+              icon: const Icon(Icons.restart_alt, size: 18, color: Colors.white54),
+            ),
+          ]),
+          Row(children: [
+            const Icon(Icons.auto_awesome_motion, color: Colors.white54, size: 16),
+            const SizedBox(width: 6),
+            const Text('الكوكبات', style: TextStyle(color: Colors.white70, fontSize: 11)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: _constellationStars.keys.map((name) {
+                  final active = _selectedConstellations.contains(name);
+                  return Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 6),
+                    child: FilterChip(
+                      label: Text(name),
+                      selected: active,
+                      onSelected: (value) => setState(() {
+                        if (value) {
+                          _selectedConstellations = {..._selectedConstellations, name};
+                        } else {
+                          _selectedConstellations = {..._selectedConstellations}..remove(name);
+                        }
+                      }),
+                      selectedColor: const Color(0xFF8ED8E8).withOpacity(.18),
+                      backgroundColor: Colors.white.withOpacity(.035),
+                      labelStyle: TextStyle(
+                        color: active ? const Color(0xFF8ED8E8) : Colors.white54,
+                        fontSize: 10,
+                      ),
+                      side: BorderSide(color: active ? const Color(0xFF8ED8E8).withOpacity(.5) : Colors.white12),
+                    ),
+                  );
+                }).toList(growable: false)),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 4),
           Row(children: [
             const Icon(Icons.history_rounded, color: Colors.white54, size: 17),
             const SizedBox(width: 6),
@@ -494,7 +599,7 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
           color: _gold, fontFamily: 'Amiri',
         )),
         content: const Text(
-          'تُحسب الشمس والكواكب باستخدام خوارزميات Meeus ونظرية VSOP87، والقمر بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي. تُحوّل النجوم من إحداثيات J2000 بعد تصحيح مبادرة الاعتدال إلى الأفق المحلي. لا يُطبّق الانكسار الجوي أو تصحيح الانحراف المغناطيسي المحلي، كما أن مجال رؤية الكاميرا تقريبي ويحتاج إلى معايرة على الجهاز. هذه أداة استكشاف وليست جهاز ملاحة أو مرصداً احترافياً.',
+          'تُحسب الشمس والكواكب باستخدام Meeus وVSOP87، والقمر مع تصحيح اختلاف المنظر الطبوغرافي. يعرض المرصد المسافات المتاحة في الكتالوج والجزء المضاء للقمر. الإسقاط الغنوموني يطابق مجال الرؤية الأفقي الذي تضبطه يدوياً، ويشتق المجال الرأسي من أبعاد الشاشة؛ يلزم ضبطه ليتوافق مع عدسة الهاتف. لا يُطبق الانكسار الجوي أو تصحيح الانحراف المغناطيسي المحلي، وهذه أداة استكشاف وليست جهاز ملاحة أو مرصداً احترافياً.'
           style: TextStyle(color: Colors.white70, fontFamily: 'Amiri', height: 1.6),
         ),
         actions: [
@@ -505,31 +610,22 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
   }
 }
 
-Offset? _projectBody(CelestialBody body, Size size, SkyOrientation orientation) {
-  if (body.altitude < -2 || !orientation.hasHeading || !orientation.hasTilt) {
-    return null;
-  }
-  const horizontalFov = 65.0;
-  const verticalFov = 48.0;
-  final deltaAzimuth = _signedDegrees(body.azimuth - orientation.heading);
-  final deltaAltitude = body.altitude - orientation.pitch;
-  final x = deltaAzimuth / horizontalFov * size.width;
-  final y = -deltaAltitude / verticalFov * size.height;
-  final roll = -orientation.roll * math.pi / 180;
-  final rotatedX = x * math.cos(roll) - y * math.sin(roll);
-  final rotatedY = x * math.sin(roll) + y * math.cos(roll);
-  final screenX = size.width / 2 + rotatedX;
-  final screenY = size.height / 2 + rotatedY;
-  if (screenX < -36 || screenX > size.width + 36 ||
-      screenY < -36 || screenY > size.height + 36) {
-    return null;
-  }
-  return Offset(screenX, screenY);
-}
-
-double _signedDegrees(double value) {
-  final normalized = ((value % 360) + 360) % 360;
-  return normalized > 180 ? normalized - 360 : normalized;
+Offset? _projectBody(
+  CelestialBody body,
+  Size size,
+  SkyOrientation orientation,
+  double horizontalFov,
+) {
+  if (!orientation.hasHeading || !orientation.hasTilt) return null;
+  return SkyProjection.project(
+    azimuth: body.azimuth,
+    altitude: body.altitude,
+    heading: orientation.heading,
+    pitch: orientation.pitch,
+    roll: orientation.roll,
+    horizontalFov: horizontalFov,
+    viewport: size,
+  );
 }
 
 class _SkyPainter extends CustomPainter {
@@ -537,6 +633,8 @@ class _SkyPainter extends CustomPainter {
   final SkyOrientation orientation;
   final String? selectedId;
   final bool transparentBackground;
+  final double horizontalFov;
+  final Set<String> selectedConstellations;
 
   static final List<Offset> _backgroundStars = List<Offset>.generate(180, (i) {
     final random = math.Random(12000 + i);
@@ -548,6 +646,8 @@ class _SkyPainter extends CustomPainter {
     required this.orientation,
     required this.selectedId,
     required this.transparentBackground,
+    required this.horizontalFov,
+    required this.selectedConstellations,
   });
 
   @override
@@ -576,7 +676,7 @@ class _SkyPainter extends CustomPainter {
 
     final positions = <String, Offset>{};
     for (final body in bodies) {
-      final point = _projectBody(body, size, orientation);
+      final point = _projectBody(body, size, orientation, horizontalFov);
       if (point != null) positions[body.id] = point;
     }
     _drawConstellations(canvas, positions);
@@ -590,71 +690,27 @@ class _SkyPainter extends CustomPainter {
   }
 
   void _drawConstellations(Canvas canvas, Map<String, Offset> points) {
-    const edges = <(String, String)>[
-      // Orion
-      ('betelgeuse', 'bellatrix'), ('bellatrix', 'rigel'),
-      ('rigel', 'saiph'), ('saiph', 'betelgeuse'),
-      ('betelgeuse', 'rigel'), ('alnilam', 'mintaka'),
-      ('alnilam', 'alnitak'),
-      // Ursa Major
-      ('dubhe', 'merak'), ('merak', 'phecda'), ('phecda', 'megrez'),
-      ('megrez', 'dubhe'), ('megrez', 'alioth'), ('alioth', 'mizar'),
-      ('mizar', 'alkaid'),
-      // Cassiopeia
-      ('schedar', 'caph'), ('caph', 'gamma_cas'),
-      ('gamma_cas', 'ruchbah'), ('ruchbah', 'segin'),
-      // Cygnus and Lyra
-      ('deneb', 'sadr'), ('sadr', 'albireo'), ('sadr', 'gienah'),
-      ('vega', 'sheliak'), ('sheliak', 'sulafat'),
-      // Aquila
-      ('altair', 'tarazed'), ('altair', 'alshain'),
-      // Taurus and Canis Major
-      ('aldebaran', 'elnath'), ('sirius', 'wezen'),
-      ('wezen', 'adhara'), ('adhara', 'aludra'),
-      // Leo and Gemini
-      ('regulus', 'algieba'), ('algieba', 'denebola'),
-      ('castor', 'pollux'),
-      // Andromeda
-      ('alpheratz', 'mirach'), ('mirach', 'almach'),
-      // Scorpius
-      ('antares', 'shaula'), ('shaula', 'sargas'),
-      // Southern Cross
-      ('acrux', 'mimosa'), ('mimosa', 'gacrux'),
-    ];
-    const labels = <(String, List<String>)>[
-      ('الجبار', ['betelgeuse', 'bellatrix', 'rigel', 'saiph']),
-      ('الدب الأكبر', ['dubhe', 'merak', 'phecda', 'megrez', 'alioth', 'mizar', 'alkaid']),
-      ('ذات الكرسي', ['schedar', 'caph', 'gamma_cas', 'ruchbah', 'segin']),
-      ('الدجاجة', ['deneb', 'albireo', 'gienah']),
-      ('القيثارة', ['vega', 'sheliak', 'sulafat']),
-      ('العقاب', ['altair', 'tarazed', 'alshain']),
-      ('الثور', ['aldebaran', 'elnath']),
-      ('الكلب الأكبر', ['sirius', 'wezen', 'adhara', 'aludra']),
-      ('الأسد', ['regulus', 'algieba', 'denebola']),
-      ('التوأمان', ['castor', 'pollux']),
-      ('المرأة المسلسلة', ['alpheratz', 'mirach', 'almach']),
-      ('العقرب', ['antares', 'shaula', 'sargas']),
-      ('الصليب الجنوبي', ['acrux', 'mimosa', 'gacrux']),
-    ];
     final linePaint = Paint()
       ..color = const Color(0x668ED8E8)
       ..strokeWidth = .8;
-    for (final edge in edges) {
-      final first = points[edge.$1];
-      final second = points[edge.$2];
-      if (first != null && second != null) {
-        canvas.drawLine(first, second, linePaint);
+    for (final name in selectedConstellations) {
+      for (final edge in _SkyAtlasScreenState._constellationEdges[name] ??
+          const <(String, String)>[]) {
+        final first = points[edge.$1];
+        final second = points[edge.$2];
+        if (first != null && second != null) {
+          canvas.drawLine(first, second, linePaint);
+        }
       }
-    }
-    for (final label in labels) {
-      final visible = label.$2
+      final visible = (_SkyAtlasScreenState._constellationStars[name] ??
+              const <String>[])
           .map((id) => points[id])
           .whereType<Offset>()
           .toList(growable: false);
       if (visible.length < 2) continue;
       final center = visible.reduce((a, b) => a + b) / visible.length.toDouble();
       final text = TextPainter(
-        text: TextSpan(text: label.$1, style: const TextStyle(
+        text: TextSpan(text: name, style: const TextStyle(
           color: Color(0xA6F2DC98), fontFamily: 'Amiri', fontSize: 9,
           shadows: [Shadow(color: Colors.black, blurRadius: 4)],
         )),
@@ -722,5 +778,7 @@ class _SkyPainter extends CustomPainter {
       oldDelegate.orientation.pitch != orientation.pitch ||
       oldDelegate.orientation.roll != orientation.roll ||
       oldDelegate.selectedId != selectedId ||
-      oldDelegate.transparentBackground != transparentBackground;
+      oldDelegate.transparentBackground != transparentBackground ||
+      oldDelegate.horizontalFov != horizontalFov ||
+      oldDelegate.selectedConstellations != selectedConstellations;
 }
