@@ -59,15 +59,3 @@ class Vec3 {
   @override
   String toString() => 'Vec3($x, $y, $z)';
 }
-
-extension on double {
-  double sqrt() {
-    if (this <= 0) return 0;
-    // Newton iteration avoids an extra dependency in this tiny math layer.
-    var x = this > 1 ? this : 1.0;
-    for (var i = 0; i < 8; i++) {
-      x = (x + this / x) * .5;
-    }
-    return x;
-  }
-}
