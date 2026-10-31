@@ -186,8 +186,10 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Test nucleus core contracts
-        run: flutter test test/nucleus_service_test.dart
+      - name: Test nucleus and astronomy core contracts
+        run: |
+          flutter test test/nucleus_service_test.dart
+          flutter test test/astronomy_service_test.dart
 
 
       - name: Generate launcher icons
