@@ -215,7 +215,8 @@ class _RecitationScreenState extends State<RecitationScreen> {
   Future<void> _playNextAyah() async {
     final index = _currentIndex;
     if (index == null || !mounted) return;
-    if (_currentAyah >= _surahs[index].ayahs) {
+    if (_selectedReciter != 'https://everyayah.com/data/Alafasy_128kbps/' ||
+        _currentAyah >= _surahs[index].ayahs) {
       setState(() { _playing = false; _paused = false; _loading = false; });
       return;
     }
@@ -344,6 +345,14 @@ class _RecitationScreenState extends State<RecitationScreen> {
                       setState(() => _selectedReciter = value);
                       if (_currentIndex != null) _selectSurah(_currentIndex!);
                     },
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'إسلام صبحي متاح ضمن الفهرس الصوتي عند توفر نسخته. عبدالرحمن مسعد وعبدالله أحمد شعبان أُضيفا إلى قائمة الطلبات؛ لم يظهر لهما حتى الآن رابط بث موثوق في مصدر MP3Quran المستخدم.',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.4),
             ),
           ),
           if (_loadingReciters)
