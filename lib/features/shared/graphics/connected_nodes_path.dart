@@ -272,7 +272,7 @@ class _ConnectedNodesPainter extends CustomPainter {
           progressSquared * progress * by;
       canvas.drawCircle(Offset(pointX, pointY), 2.1 + pulse, _activeLine);
     }
-    for (var i = 0; i < labels.length; i++) {
+    for (var i = 0; i < labelPainters.length; i++) {
       final x = coordinates[i * 2] * size.width;
       final y = coordinates[i * 2 + 1] * size.height;
       final active = i == selected;
