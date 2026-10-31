@@ -290,6 +290,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                 ),
     );
   }
+}
 
 class _CosmosPainter extends CustomPainter {
   static final List<Offset> _stars = List<Offset>.unmodifiable(
