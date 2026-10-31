@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+
+import '../../../presentation/templates/components/block_event_bus.dart';
+import '../../../presentation/templates/components/block_event_scope.dart';
 
 /// Animated particle matrix for dense, data-driven canvas blocks.
 ///
@@ -19,6 +23,8 @@ class ParticleMatrixBlockWidget extends StatefulWidget {
     this.backgroundColor = const Color(0xFF0F172A),
     this.accentColor = const Color(0xFF38BDF8),
     this.blockId = 'particle-matrix',
+    this.targetBlockId,
+    this.nodeIds = const <String>[],
   });
 
   final int count;
@@ -30,6 +36,8 @@ class ParticleMatrixBlockWidget extends StatefulWidget {
   final Color backgroundColor;
   final Color accentColor;
   final String blockId;
+  final String? targetBlockId;
+  final List<String> nodeIds;
 
   @override
   State<ParticleMatrixBlockWidget> createState() =>
@@ -44,6 +52,9 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
   late Float32List _phase;
   late Float32List _positions;
   late List<int> _activeNodes;
+  int? _activeRow;
+  BlockEventBus? _bus;
+  StreamSubscription<BlockEvent>? _subscription;
 
   @override
   void initState() {
@@ -52,7 +63,29 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
       vsync: this,
       duration: const Duration(seconds: 8),
     )..repeat();
+    _activeRow = widget.activeRow;
     _prepareParticles();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final nextBus = BlockEventScope.maybeOf(context);
+    if (identical(nextBus, _bus)) return;
+    unawaited(_subscription?.cancel());
+    _bus = nextBus;
+    _subscription = nextBus?.events.listen((event) {
+      if (event.type != 'selection_changed' || event.targetBlockId != widget.blockId) return;
+      final selectionId = event.payload['selection_id'];
+      if (selectionId is! String) return;
+      final index = widget.nodeIds.indexOf(selectionId);
+      if (index < 0 || index >= _baseX.length || !mounted) return;
+      final columns = widget.columns.clamp(1, _baseX.length).toInt();
+      setState(() {
+        _activeNodes = <int>[index];
+        _activeRow = index ~/ columns;
+      });
+    });
   }
 
   @override
@@ -62,6 +95,7 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
         oldWidget.columns != widget.columns) {
       _prepareParticles();
     }
+    if (oldWidget.activeRow != widget.activeRow) _activeRow = widget.activeRow;
     if (oldWidget.activeNodes != widget.activeNodes) {
       _activeNodes = List<int>.unmodifiable(
         widget.activeNodes.where((index) => index >= 0 && index < widget.count),
@@ -92,6 +126,7 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
 
   @override
   void dispose() {
+    unawaited(_subscription?.cancel());
     _clock.dispose();
     super.dispose();
   }
@@ -102,7 +137,12 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
       height: widget.height.clamp(80, 900).toDouble(),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: CustomPaint(
+        child: LayoutBuilder(builder: (context, constraints) {
+          final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (details) => _handleTap(details, canvasSize),
+            child: CustomPaint(
           painter: _ParticleMatrixPainter(
             clock: _clock,
             baseX: _baseX,
@@ -110,16 +150,49 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
             phase: _phase,
             positions: _positions,
             columns: widget.columns.clamp(1, widget.count.clamp(1, 8000)).toInt(),
-            activeRow: widget.activeRow,
+            activeRow: _activeRow,
             activeNodes: _activeNodes,
             backgroundColor: widget.backgroundColor,
             accentColor: widget.accentColor,
             speed: widget.speed.clamp(.1, 3).toDouble(),
           ),
           child: const SizedBox.expand(),
-        ),
+            ),
+          );
+        }),
       ),
     );
+  }
+
+  void _handleTap(TapUpDetails details, Size size) {
+    if (size.isEmpty) return;
+    final x = (details.localPosition.dx / size.width).clamp(0.0, 1.0);
+    final y = (details.localPosition.dy / size.height).clamp(0.0, 1.0);
+    var best = -1;
+    var bestDistance = double.infinity;
+    for (var i = 0; i < _baseX.length; i++) {
+      final dx = _baseX[i] - x;
+      final dy = _baseY[i] - y;
+      final distance = dx * dx + dy * dy;
+      if (distance < bestDistance) { bestDistance = distance; best = i; }
+    }
+    if (best < 0) return;
+    final columns = widget.columns.clamp(1, _baseX.length).toInt();
+    final nodeId = best < widget.nodeIds.length ? widget.nodeIds[best] : 'particle-$best';
+    setState(() {
+      _activeNodes = <int>[best];
+      _activeRow = best ~/ columns;
+    });
+    _bus?.publish(BlockEvent(
+      type: 'selection_changed',
+      sourceBlockId: widget.blockId,
+      targetBlockId: widget.targetBlockId,
+      payload: <String, Object?>{
+        'selection_id': nodeId,
+        'node_index': best,
+        'row_index': best ~/ columns,
+      },
+    ));
   }
 }
 
