@@ -7,8 +7,8 @@ import '../soft_body.dart';
 
 /// Fixed-step position-based simulation world for deformable particle bodies.
 ///
-/// The world is intentionally renderer-agnostic. Feed world-space vertices
-/// after skeletal transforms, then consume [SoftBody.positions] for rendering.
+/// The world is renderer-agnostic. Feed world-space vertices after skeletal
+/// transforms, then consume [SoftBody.positions] for rendering.
 class PhysicsWorld {
   PhysicsWorld({
     this.fixedTimeStep = 1 / 120,
@@ -52,7 +52,7 @@ class PhysicsWorld {
 
   bool removeBody(SoftBody body) => _bodies.remove(body);
 
-  /// Advances using a bounded accumulator and returns the number of fixed steps.
+  /// Advances with a bounded accumulator and returns the number of fixed steps.
   int advance(double frameDelta) {
     if (!frameDelta.isFinite || frameDelta < 0) {
       throw ArgumentError.value(frameDelta, 'frameDelta');
@@ -110,13 +110,10 @@ class PhysicsWorld {
           particleA: pair.$2,
           bodyB: _bodies[pair.$3],
           particleB: pair.$4,
-          restitution: restitution,
         );
       }
     }
 
-    // Reconstruct velocities from the corrected positions. This ensures CCD
-    // projection does not get undone by the next integration step.
     final inverseDt = 1 / dt;
     for (final body in _bodies) {
       for (var i = 0; i < body.particleCount; i++) {
@@ -128,6 +125,17 @@ class PhysicsWorld {
             (body.positions[offset + 1] - body.previousPositions[offset + 1]) * inverseDt;
         body.velocities[offset + 2] =
             (body.positions[offset + 2] - body.previousPositions[offset + 2]) * inverseDt;
+      }
+    }
+    if (restitution > 0) {
+      for (final pair in contacts) {
+        _ccd.applyRestitution(
+          bodyA: _bodies[pair.$1],
+          particleA: pair.$2,
+          bodyB: _bodies[pair.$3],
+          particleB: pair.$4,
+          restitution: restitution,
+        );
       }
     }
   }
@@ -167,13 +175,14 @@ class PhysicsWorld {
       totalParticles += _bodies[bodyIndex].particleCount;
     }
     final bodyForParticle = List<int>.filled(totalParticles, 0);
+    var requiresFallback = false;
     for (var bodyIndex = 0; bodyIndex < _bodies.length; bodyIndex++) {
       final body = _bodies[bodyIndex];
       for (var particle = 0; particle < body.particleCount; particle++) {
         final id = offsets[bodyIndex] + particle;
         bodyForParticle[id] = bodyIndex;
         final p = particle * 3;
-        _spatialHash.insertSweptParticle(
+        final inserted = _spatialHash.insertSweptParticle(
           particleId: id,
           previousX: body.previousPositions[p],
           previousY: body.previousPositions[p + 1],
@@ -183,16 +192,29 @@ class PhysicsWorld {
           currentZ: body.positions[p + 2],
           radius: body.radii[particle],
         );
+        requiresFallback = requiresFallback || !inserted;
       }
     }
 
     final uniquePairs = <(int, int)>{};
-    for (final bucket in _spatialHash.buckets) {
-      for (var i = 0; i < bucket.length; i++) {
-        for (var j = i + 1; j < bucket.length; j++) {
-          final a = bucket[i], b = bucket[j];
-          if (bodyForParticle[a] == bodyForParticle[b]) continue;
-          uniquePairs.add(a < b ? (a, b) : (b, a));
+    if (requiresFallback) {
+      // Conservative fallback for exceptionally long sweeps. It is rare and
+      // intentionally trades speed for not silently missing a collision.
+      for (var a = 0; a < totalParticles; a++) {
+        for (var b = a + 1; b < totalParticles; b++) {
+          if (bodyForParticle[a] != bodyForParticle[b]) {
+            uniquePairs.add((a, b));
+          }
+        }
+      }
+    } else {
+      for (final bucket in _spatialHash.buckets) {
+        for (var i = 0; i < bucket.length; i++) {
+          for (var j = i + 1; j < bucket.length; j++) {
+            final a = bucket[i], b = bucket[j];
+            if (bodyForParticle[a] == bodyForParticle[b]) continue;
+            uniquePairs.add(a < b ? (a, b) : (b, a));
+          }
         }
       }
     }
