@@ -47,7 +47,7 @@ class Vec3 {
     return this * (maximum / math.sqrt(squared));
   }
   static Vec3 lerp(Vec3 a, Vec3 b, double t) {
-    final u = t.clamp(0.0, 1.0);
+    final u = t.clamp(0.0, 1.0).toDouble();
     return a + (b - a) * u;
   }
 
