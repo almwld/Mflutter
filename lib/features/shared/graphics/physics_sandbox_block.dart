@@ -143,21 +143,24 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
       height: widget.height.clamp(160, 700).toDouble(),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanUpdate: (details) => _applyPointer(
-            details.localPosition,
-            Size(context.size?.width ?? 0, context.size?.height ?? 0),
-          ),
-          child: CustomPaint(
-            painter: _PhysicsSandboxPainter(
-              clock: _clock,
-              bodies: <SoftBody>[_left, _right],
-              backgroundColor: widget.backgroundColor,
-              accentColor: widget.accentColor,
-            ),
-            child: const SizedBox.expand(),
-          ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final size = Size(constraints.maxWidth, constraints.maxHeight);
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanUpdate: (details) =>
+                  _applyPointer(details.localPosition, size),
+              child: CustomPaint(
+                painter: _PhysicsSandboxPainter(
+                  clock: _clock,
+                  bodies: <SoftBody>[_left, _right],
+                  backgroundColor: widget.backgroundColor,
+                  accentColor: widget.accentColor,
+                ),
+                child: const SizedBox.expand(),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -166,7 +169,7 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
 
 class _PhysicsSandboxPainter extends CustomPainter {
   _PhysicsSandboxPainter({
-    required this.clock,
+    required Animation<double> clock,
     required this.bodies,
     required this.backgroundColor,
     required this.accentColor,
