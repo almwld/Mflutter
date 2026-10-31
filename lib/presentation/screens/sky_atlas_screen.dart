@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
-/// واجهة مرصد السماء: طبقة عرض تفاعلية مستقلة عن قارئ المصحف.
-/// مواقع النجوم هنا توزيع بصري توضيحي، وليست إحداثيات رصد فلكية محسوبة.
+import '../../models/celestial_body.dart';
+import '../../services/astronomy_service.dart';
+import '../../services/sky_sensor_service.dart';
+
 class SkyAtlasScreen extends StatefulWidget {
   const SkyAtlasScreen({super.key});
 
@@ -11,31 +16,279 @@ class SkyAtlasScreen extends StatefulWidget {
   State<SkyAtlasScreen> createState() => _SkyAtlasScreenState();
 }
 
-class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
+class _SkyAtlasScreenState extends State<SkyAtlasScreen>
+    with WidgetsBindingObserver {
+  static const _gold = Color(0xFFF2DC98);
+  static const _filters = ['الكل', 'نجم', 'كوكب', 'القمر', 'الشمس'];
+
+  final SkySensorService _sensors = SkySensorService();
+  StreamSubscription<SkyOrientation>? _orientationSubscription;
+  SkyOrientation _orientation = SkyOrientation.unavailable;
+  CameraController? _cameraController;
+  bool _cameraRequested = false;
+  bool _cameraInitializing = false;
+  bool _locating = false;
+  double? _latitude;
+  double? _longitude;
   double _timeOffsetHours = 0;
   String _filter = 'الكل';
+  String? _selectedId;
+  String? _cameraError;
+  List<CelestialBody> _bodies = const [];
 
-  static const _objects = <_SkyObject>[
-    _SkyObject('الشعرى اليمانية', 'Sirius', 'نجم', 0.78, 0.36, Color(0xFFEAF4FF), 'وَأَنَّهُ هُوَ رَبُّ الشِّعْرَىٰ', 'النجم: 49', 'سورة النجم، الآية 49.'),
-    _SkyObject('القمر', 'Moon', 'القمر', 0.72, 0.22, Color(0xFFE4E9F5), 'وَالْقَمَرَ قَدَّرْنَاهُ مَنَازِلَ', 'يس: 39', 'سورة يس، الآية 39.'),
-    _SkyObject('المريخ', 'Mars', 'كوكب', 0.28, 0.48, Color(0xFFFF806D), null, null, 'معلومة فلكية؛ لا توجد آية مخصصة لهذا الكوكب.'),
-    _SkyObject('الزهرة', 'Venus', 'كوكب', 0.58, 0.57, Color(0xFFFFE1A3), null, null, 'معلومة فلكية؛ لا توجد آية مخصصة لهذا الكوكب.'),
-    _SkyObject('المشتري', 'Jupiter', 'كوكب', 0.43, 0.29, Color(0xFFFFC98A), null, null, 'معلومة فلكية؛ لا توجد آية مخصصة لهذا الكوكب.'),
-    _SkyObject('زحل', 'Saturn', 'كوكب', 0.84, 0.51, Color(0xFFD8C6A5), null, null, 'معلومة فلكية؛ لا توجد آية مخصصة لهذا الكوكب.'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _sensors.start();
+    _orientationSubscription = _sensors.stream.listen((value) {
+      if (mounted) setState(() => _orientation = value);
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _orientationSubscription?.cancel();
+    _sensors.dispose();
+    _cameraController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_stopCamera());
+    } else if (state == AppLifecycleState.resumed && _cameraRequested) {
+      unawaited(_initializeCamera());
+    }
+  }
+
+  DateTime get _selectedUtc => DateTime.now().toUtc().add(
+        Duration(minutes: (_timeOffsetHours * 60).round()),
+      );
+
+  List<CelestialBody> get _visibleBodies => _bodies.where((body) {
+        switch (_filter) {
+          case 'نجم':
+            return body.kind == CelestialKind.star;
+          case 'كوكب':
+            return body.kind == CelestialKind.planet;
+          case 'القمر':
+            return body.kind == CelestialKind.moon;
+          case 'الشمس':
+            return body.kind == CelestialKind.sun;
+          default:
+            return true;
+        }
+      }).toList(growable: false);
+
+  void _recalculate() {
+    final lat = _latitude;
+    final lon = _longitude;
+    _bodies = lat == null || lon == null
+        ? const []
+        : AstronomyService.calculate(
+            utc: _selectedUtc,
+            latitude: lat,
+            longitude: lon,
+          );
+  }
+
+  Future<void> _requestLocation() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        _message('فعّل خدمة الموقع في الهاتف ثم أعد المحاولة.');
+        return;
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _message('لم يُمنح مُدَبِّر إذن الوصول إلى الموقع.');
+        return;
+      }
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _recalculate();
+      });
+    } catch (error) {
+      _message('تعذر تحديد الموقع: $error');
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<void> _toggleCamera() async {
+    if (_cameraRequested) {
+      _cameraRequested = false;
+      await _stopCamera();
+    } else {
+      _cameraRequested = true;
+      await _initializeCamera();
+    }
+  }
+
+  Future<void> _initializeCamera() async {
+    if (_cameraInitializing || _cameraController != null) return;
+    _cameraInitializing = true;
+    try {
+      final cameras = await availableCameras();
+      final back = cameras.where(
+        (item) => item.lensDirection == CameraLensDirection.back,
+      );
+      if (back.isEmpty) {
+        throw CameraException('camera-not-found', 'لا توجد كاميرا خلفية.');
+      }
+      final controller = CameraController(
+        back.first,
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
+      await controller.initialize();
+      if (!mounted || !_cameraRequested) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _cameraController = controller;
+        _cameraError = null;
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _cameraError = error.toString();
+          _cameraRequested = false;
+        });
+        _message('تعذر تشغيل الكاميرا. تحقق من الإذن: $error');
+      }
+    } finally {
+      _cameraInitializing = false;
+    }
+  }
+
+  Future<void> _stopCamera() async {
+    final old = _cameraController;
+    _cameraController = null;
+    if (mounted) setState(() {});
+    await old?.dispose();
+  }
+
+  void _message(String value) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(value)));
+  }
+
+  void _selectAt(Offset point, Size size) {
+    CelestialBody? nearest;
+    var distanceLimit = 34.0;
+    for (final body in _visibleBodies) {
+      final projected = _projectBody(body, size, _orientation);
+      if (projected == null) continue;
+      final distance = (projected - point).distance;
+      if (distance < distanceLimit) {
+        distanceLimit = distance;
+        nearest = body;
+      }
+    }
+    final selected = nearest;
+    if (selected == null) return;
+    setState(() => _selectedId = selected.id);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF101D34),
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 30),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(selected.nameAr, style: const TextStyle(
+                  color: _gold, fontFamily: 'Amiri', fontSize: 25,
+                )),
+                Text(selected.nameEn, textDirection: TextDirection.ltr,
+                    style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                const SizedBox(height: 14),
+                Wrap(spacing: 18, runSpacing: 8, children: [
+                  _detail('السمت', selected.azimuth.toStringAsFixed(1) + '°'),
+                  _detail('الارتفاع', selected.altitude.toStringAsFixed(1) + '°'),
+                  _detail('القدر الظاهري', selected.magnitude.toStringAsFixed(2)),
+                ]),
+                const SizedBox(height: 14),
+                if (selected.verse != null) ...[
+                  Text(selected.verse!, style: const TextStyle(
+                    color: Colors.white, fontFamily: 'Amiri',
+                    fontSize: 23, height: 1.8,
+                  )),
+                  Text(selected.reference ?? '', style: const TextStyle(
+                    color: _gold, fontFamily: 'Amiri',
+                  )),
+                  const SizedBox(height: 10),
+                ],
+                Text(selected.note, style: const TextStyle(
+                  color: Colors.white70, fontFamily: 'Amiri',
+                  fontSize: 15, height: 1.6,
+                )),
+                const SizedBox(height: 8),
+                const Text(
+                  'الآية نص قرآني مستقل عن الحساب الفلكي؛ لا تُنسب إليها إحداثيات أو نتائج علمية غير منصوص عليها.',
+                  style: TextStyle(color: Colors.white38, fontSize: 11, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ).whenComplete(() {
+      if (mounted) setState(() => _selectedId = null);
+    });
+  }
+
+  Widget _detail(String label, String value) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          const SizedBox(height: 3),
+          Text(value, style: const TextStyle(color: Colors.white, fontSize: 13)),
+        ],
+      );
 
   @override
   Widget build(BuildContext context) {
-    final visible = _objects.where((o) => _filter == 'الكل' || o.kind == _filter).toList();
+    final camera = _cameraController;
+    final cameraReady = camera != null && camera.value.isInitialized;
     return Scaffold(
       backgroundColor: const Color(0xFF050B1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF081329),
-        foregroundColor: const Color(0xFFF2DC98),
-        title: const Text('مرصد السماء', style: TextStyle(fontFamily: 'Amiri', fontWeight: FontWeight.bold)),
+        foregroundColor: _gold,
+        title: const Text('مرصد السماء', style: TextStyle(
+          fontFamily: 'Amiri', fontWeight: FontWeight.bold,
+        )),
         actions: [
           IconButton(
-            tooltip: 'معلومات عن دقة العرض',
+            tooltip: 'دقة الحساب والمعايرة',
             onPressed: _showAccuracyInfo,
             icon: const Icon(Icons.info_outline_rounded),
           ),
@@ -47,13 +300,64 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
             _buildStatusBar(),
             Expanded(
               child: LayoutBuilder(
-                builder: (context, constraints) => GestureDetector(
-                  onTapDown: (details) => _selectAt(details.localPosition, constraints.biggest),
-                  child: CustomPaint(
-                    painter: _SkyPainter(objects: visible, timeOffset: _timeOffsetHours),
-                    child: const SizedBox.expand(),
-                  ),
-                ),
+                builder: (context, constraints) {
+                  final size = constraints.biggest;
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) => _selectAt(details.localPosition, size),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (cameraReady) CameraPreview(camera),
+                        if (cameraReady)
+                          Container(color: Colors.black.withOpacity(.18)),
+                        CustomPaint(
+                          painter: _SkyPainter(
+                            bodies: _visibleBodies,
+                            orientation: _orientation,
+                            selectedId: _selectedId,
+                            transparentBackground: cameraReady,
+                          ),
+                        ),
+                        if (_latitude == null)
+                          Center(
+                            child: Container(
+                              margin: const EdgeInsets.all(24),
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: const Color(0xE6101D34),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: _gold.withOpacity(.35)),
+                              ),
+                              child: const Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.my_location_rounded, color: _gold, size: 30),
+                                  SizedBox(height: 10),
+                                  Text('حدد موقع الرصد أولاً', style: TextStyle(
+                                    color: _gold, fontFamily: 'Amiri', fontSize: 20,
+                                  )),
+                                  SizedBox(height: 5),
+                                  Text(
+                                    'تُحسب مواقع الأجرام من إحداثياتك ووقت الرصد، ولا نستخدم موقعاً افتراضياً.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        if (_cameraError != null && !cameraReady)
+                          Positioned(
+                            top: 12, left: 12, right: 12,
+                            child: Text('الكاميرا غير متاحة: ' + _cameraError!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                          ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
             _buildControls(),
@@ -63,134 +367,120 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
     );
   }
 
-  Widget _buildStatusBar() => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-    child: Row(
-      children: [
-        const Icon(Icons.explore_rounded, color: Color(0xFF8ED8E8), size: 19),
-        const SizedBox(width: 7),
-        const Text('N  •  000°', style: TextStyle(color: Colors.white70, fontSize: 12)),
-        const Spacer(),
-        Text(_timeLabel, style: const TextStyle(color: Color(0xFFF2DC98), fontSize: 12)),
-        const SizedBox(width: 8),
-        const Icon(Icons.my_location_rounded, color: Colors.white38, size: 16),
-      ],
-    ),
-  );
-
-  String get _timeLabel {
-    final time = DateTime.now().toUtc().add(Duration(minutes: (_timeOffsetHours * 60).round()));
-    return '${time.toIso8601String().substring(0, 16).replaceFirst('T', ' ')} UTC';
+  Widget _buildStatusBar() {
+    final location = _latitude == null
+        ? 'الموقع غير محدد'
+        : _latitude!.toStringAsFixed(3) + ', ' + _longitude!.toStringAsFixed(3);
+    final heading = _orientation.hasHeading
+        ? _orientation.heading.toStringAsFixed(0) + '°'
+        : '—°';
+    final tilt = _orientation.hasTilt
+        ? 'ميل ' + _orientation.pitch.toStringAsFixed(0) + '°'
+        : 'الميل غير متاح';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      child: Row(
+        children: [
+          const Icon(Icons.explore_rounded, color: Color(0xFF8ED8E8), size: 19),
+          const SizedBox(width: 5),
+          Text('الاتجاه ' + heading,
+              style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          const SizedBox(width: 8),
+          Text(tilt, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          const Spacer(),
+          Flexible(
+            child: Text(location, overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
+                style: const TextStyle(color: _gold, fontSize: 10)),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildControls() => Container(
-    padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-    decoration: const BoxDecoration(
-      color: Color(0xFF0A1428),
-      border: Border(top: BorderSide(color: Color(0x223E6688))),
-    ),
-    child: Column(
-      children: [
-        Row(
-          children: [
-            _filterChip('الكل'),
-            const SizedBox(width: 7),
-            _filterChip('نجم'),
-            const SizedBox(width: 7),
-            _filterChip('كوكب'),
-            const SizedBox(width: 7),
-            _filterChip('القمر'),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            const Icon(Icons.history_rounded, color: Colors.white54, size: 18),
+  Widget _buildControls() {
+    final time = _selectedUtc;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A1428),
+        border: Border(top: BorderSide(color: Color(0x223E6688))),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _locating ? null : _requestLocation,
+                icon: _locating
+                    ? const SizedBox(width: 15, height: 15,
+                        child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.my_location_rounded, size: 17),
+                label: Text(_latitude == null ? 'تحديد موقعي' : 'تحديث الموقع'),
+              ),
+            ),
             const SizedBox(width: 8),
-            const Text('الزمن', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _toggleCamera,
+                icon: Icon(_cameraRequested
+                    ? Icons.videocam_off_rounded : Icons.videocam_rounded, size: 17),
+                label: Text(_cameraRequested ? 'إيقاف الكاميرا' : 'عرض الكاميرا'),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 9),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: _filters.map((filter) {
+              final active = _filter == filter;
+              return Padding(
+                padding: const EdgeInsetsDirectional.only(end: 7),
+                child: ChoiceChip(
+                  label: Text(filter),
+                  selected: active,
+                  onSelected: (_) => setState(() => _filter = filter),
+                  selectedColor: _gold.withOpacity(.2),
+                  backgroundColor: Colors.white.withOpacity(.04),
+                  labelStyle: TextStyle(
+                    color: active ? _gold : Colors.white60, fontSize: 11,
+                  ),
+                  side: BorderSide(
+                    color: active ? _gold.withOpacity(.65) : Colors.white12,
+                  ),
+                ),
+              );
+            }).toList(growable: false)),
+          ),
+          const SizedBox(height: 6),
+          Row(children: [
+            const Icon(Icons.history_rounded, color: Colors.white54, size: 17),
+            const SizedBox(width: 6),
+            const Text('الزمن', style: TextStyle(color: Colors.white70, fontSize: 11)),
             Expanded(
               child: Slider(
                 value: _timeOffsetHours,
                 min: -24,
                 max: 24,
                 divisions: 96,
-                activeColor: const Color(0xFFF2DC98),
+                activeColor: _gold,
                 inactiveColor: Colors.white12,
-                onChanged: (v) => setState(() => _timeOffsetHours = v),
+                onChanged: (value) => setState(() {
+                  _timeOffsetHours = value;
+                  _recalculate();
+                }),
               ),
             ),
-            Text('${_timeOffsetHours.toStringAsFixed(0)}h', style: const TextStyle(color: Colors.white54, fontSize: 11)),
-          ],
-        ),
-        const Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Text(
-            'واجهة استكشافية أولية • بيانات المواقع الفلكية الحية قيد الربط',
-            style: TextStyle(color: Colors.white38, fontSize: 10),
+            Text(_timeOffsetHours.toStringAsFixed(0) + 'h',
+                style: const TextStyle(color: Colors.white54, fontSize: 10)),
+          ]),
+          Text(
+            time.toIso8601String().substring(0, 16).replaceFirst('T', ' ') +
+                ' UTC  •  ' + _bodies.length.toString() + ' جرم/نجم',
+            style: const TextStyle(color: Colors.white38, fontSize: 10),
           ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _filterChip(String value) {
-    final active = _filter == value;
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => setState(() => _filter = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: active ? const Color(0x33F2DC98) : Colors.white.withOpacity(.04),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: active ? const Color(0x99F2DC98) : Colors.white12),
-          ),
-          child: Text(value, textAlign: TextAlign.center, style: TextStyle(color: active ? const Color(0xFFF2DC98) : Colors.white60, fontSize: 11)),
-        ),
-      ),
-    );
-  }
-
-  void _selectAt(Offset point, Size size) {
-    _SkyObject? nearest;
-    var best = 34.0;
-    for (final object in _objects.where((o) => _filter == 'الكل' || o.kind == _filter)) {
-      final target = Offset(object.x * size.width, object.y * size.height);
-      final distance = (target - point).distance;
-      if (distance < best) {
-        best = distance;
-        nearest = object;
-      }
-    }
-    if (nearest == null) return;
-    final selected = nearest;
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF101D34),
-      isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 32),
-        child: Directionality(
-          textDirection: TextDirection.rtl,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(selected.nameAr, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri', fontSize: 25)),
-              Text(selected.nameEn, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-              const SizedBox(height: 18),
-              if (selected.verse != null) ...[
-                Text(selected.verse!, style: const TextStyle(color: Colors.white, fontFamily: 'Amiri', fontSize: 23, height: 1.8)),
-                Text(selected.reference!, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri')),
-                const SizedBox(height: 8),
-              ],
-              Text(selected.note, style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri', fontSize: 15)),
-              const SizedBox(height: 8),
-              const Text('الآية معروضة للاستئناس بموضوعها، ولا تعني أن النص يقرر تفاصيل فلكية حديثة.', style: TextStyle(color: Colors.white38, fontSize: 11, height: 1.5)),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -200,77 +490,180 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF101D34),
-        title: const Text('حول المرصد', style: TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri')),
+        title: const Text('دقة المرصد وحدوده', style: TextStyle(
+          color: _gold, fontFamily: 'Amiri',
+        )),
         content: const Text(
-          'هذه نسخة الواجهة الأولى. مواقع الأجرام وتوزيع النجوم توضيحية وليست رصداً حقيقياً بعد. المرحلة التالية تربط الموقع والوقت وبيانات الأفيميرس ومستشعرات الهاتف قبل عرض أي إحداثيات على أنها دقيقة.',
+          'تُحسب الشمس والقمر والكواكب بعناصر مدارية تحليلية منخفضة الدقة، وتُحوّل النجوم من إحداثيات فهرسية ثابتة إلى الأفق المحلي حسب الوقت والموقع. تصلح هذه النسخة للاستكشاف والتوجيه التقريبي، وليست بديلاً عن أفيميرس احترافي أو جهاز ملاحة. اتجاه البوصلة مغناطيسي على Android، وقد يحتاج إلى معايرة؛ لا يُطبّق تصحيح الانحراف المغناطيسي المحلي. زاوية الكاميرا ومجال الرؤية تقريبيان.',
           style: TextStyle(color: Colors.white70, fontFamily: 'Amiri', height: 1.6),
         ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('حسناً'))],
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('حسناً')),
+        ],
       ),
     );
   }
 }
 
-class _SkyObject {
-  final String nameAr;
-  final String nameEn;
-  final String kind;
-  final double x;
-  final double y;
-  final Color color;
-  final String? verse;
-  final String? reference;
-  final String note;
+Offset? _projectBody(CelestialBody body, Size size, SkyOrientation orientation) {
+  if (body.altitude < -2 || !orientation.hasHeading || !orientation.hasTilt) {
+    return null;
+  }
+  const horizontalFov = 65.0;
+  const verticalFov = 48.0;
+  final deltaAzimuth = _signedDegrees(body.azimuth - orientation.heading);
+  final deltaAltitude = body.altitude - orientation.pitch;
+  final x = deltaAzimuth / horizontalFov * size.width;
+  final y = -deltaAltitude / verticalFov * size.height;
+  final roll = -orientation.roll * math.pi / 180;
+  final rotatedX = x * math.cos(roll) - y * math.sin(roll);
+  final rotatedY = x * math.sin(roll) + y * math.cos(roll);
+  final screenX = size.width / 2 + rotatedX;
+  final screenY = size.height / 2 + rotatedY;
+  if (screenX < -36 || screenX > size.width + 36 ||
+      screenY < -36 || screenY > size.height + 36) {
+    return null;
+  }
+  return Offset(screenX, screenY);
+}
 
-  const _SkyObject(this.nameAr, this.nameEn, this.kind, this.x, this.y, this.color, this.verse, this.reference, this.note);
+double _signedDegrees(double value) {
+  final normalized = ((value % 360) + 360) % 360;
+  return normalized > 180 ? normalized - 360 : normalized;
 }
 
 class _SkyPainter extends CustomPainter {
-  final List<_SkyObject> objects;
-  final double timeOffset;
+  final List<CelestialBody> bodies;
+  final SkyOrientation orientation;
+  final String? selectedId;
+  final bool transparentBackground;
 
-  const _SkyPainter({required this.objects, required this.timeOffset});
+  static final List<Offset> _backgroundStars = List<Offset>.generate(180, (i) {
+    final random = math.Random(12000 + i);
+    return Offset(random.nextDouble(), random.nextDouble());
+  }, growable: false);
+
+  const _SkyPainter({
+    required this.bodies,
+    required this.orientation,
+    required this.selectedId,
+    required this.transparentBackground,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    canvas.drawRect(rect, Paint()..shader = const LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [Color(0xFF101F3D), Color(0xFF071126), Color(0xFF030814)],
-    ).createShader(rect));
-
-    final random = math.Random(2048);
-    for (var i = 0; i < 260; i++) {
-      final p = Offset(random.nextDouble() * size.width, random.nextDouble() * size.height);
-      final radius = .35 + random.nextDouble() * 1.15;
-      canvas.drawCircle(p, radius, Paint()..color = Colors.white.withOpacity(.2 + random.nextDouble() * .6));
+    if (!transparentBackground) {
+      canvas.drawRect(rect, Paint()..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF101F3D), Color(0xFF071126), Color(0xFF030814)],
+      ).createShader(rect));
+      for (var i = 0; i < _backgroundStars.length; i++) {
+        final star = _backgroundStars[i];
+        canvas.drawCircle(
+          Offset(star.dx * size.width, star.dy * size.height),
+          .35 + (i % 4) * .18,
+          Paint()..color = Colors.white.withOpacity(.2 + (i % 5) * .12),
+        );
+      }
     }
 
-    final center = Offset(size.width * .5, size.height * .52);
-    final horizon = Paint()..color = const Color(0x3369A6C8)..strokeWidth = 1;
-    canvas.drawLine(Offset(0, size.height * .82), Offset(size.width, size.height * .82), horizon);
-    final compass = TextPainter(
-      text: const TextSpan(text: 'N', style: TextStyle(color: Color(0xFF8ED8E8), fontSize: 12, letterSpacing: 2)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    compass.paint(canvas, Offset(center.dx - compass.width / 2, 16));
+    if (!orientation.hasHeading || !orientation.hasTilt) {
+      _drawMessage(canvas, size, 'حرّك الهاتف وانتظر قراءة المستشعرات');
+      return;
+    }
 
-    for (final object in objects) {
-      final drift = math.sin(timeOffset * .08 + object.x * 8) * 7;
-      final p = Offset(object.x * size.width + drift, object.y * size.height);
-      final glow = Paint()..color = object.color.withOpacity(.22)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13);
-      canvas.drawCircle(p, object.kind == 'القمر' ? 12 : 7, glow);
-      canvas.drawCircle(p, object.kind == 'القمر' ? 5 : 3, Paint()..color = object.color);
+    final positions = <String, Offset>{};
+    for (final body in bodies) {
+      final point = _projectBody(body, size, orientation);
+      if (point != null) positions[body.id] = point;
+    }
+    _drawConstellations(canvas, positions);
+    for (final body in bodies) {
+      final point = positions[body.id];
+      if (point != null) _drawBody(canvas, body, point, selectedId == body.id);
+    }
+    if (positions.isEmpty) {
+      _drawMessage(canvas, size, 'لا توجد أجرام ضمن مجال الرؤية الحالي');
+    }
+  }
+
+  void _drawConstellations(Canvas canvas, Map<String, Offset> points) {
+    const edges = <(String, String)>[
+      ('betelgeuse', 'bellatrix'),
+      ('bellatrix', 'rigel'),
+      ('rigel', 'saiph'),
+      ('saiph', 'betelgeuse'),
+      ('betelgeuse', 'rigel'),
+    ];
+    final paint = Paint()
+      ..color = const Color(0x668ED8E8)
+      ..strokeWidth = .8;
+    for (final edge in edges) {
+      final first = points[edge.$1];
+      final second = points[edge.$2];
+      if (first != null && second != null) canvas.drawLine(first, second, paint);
+    }
+  }
+
+  void _drawBody(Canvas canvas, CelestialBody body, Offset point, bool selected) {
+    final color = body.color;
+    final radius = switch (body.kind) {
+      CelestialKind.sun => 8.0,
+      CelestialKind.moon => 6.5,
+      CelestialKind.planet => 4.8,
+      CelestialKind.star => (3.0 - body.magnitude * .45).clamp(1.2, 4.2).toDouble(),
+    };
+    canvas.drawCircle(point, radius * (selected ? 4.5 : 3.3), Paint()
+      ..color = color.withOpacity(.20)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 13));
+    if (body.kind == CelestialKind.sun) {
+      canvas.drawCircle(point, 14, Paint()..color = color.withOpacity(.18));
+    }
+    if (body.kind == CelestialKind.moon) {
+      canvas.drawCircle(point, radius, Paint()..color = color);
+      canvas.drawCircle(point.translate(3, -2), radius * .85,
+          Paint()..color = const Color(0xFF15243B));
+    } else {
+      canvas.drawCircle(point, radius, Paint()..color = color);
+    }
+    if (selected) {
+      canvas.drawCircle(point, radius + 8, Paint()
+        ..color = const Color(0xCCF2DC98)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1);
+    }
+    if (body.kind != CelestialKind.star || body.magnitude <= 1.1 || selected) {
       final label = TextPainter(
-        text: TextSpan(text: object.nameAr, style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri', fontSize: 12)),
+        text: TextSpan(text: body.nameAr, style: TextStyle(
+          color: selected ? const Color(0xFFF2DC98) : Colors.white70,
+          fontFamily: 'Amiri', fontSize: 11,
+          shadows: const [Shadow(color: Colors.black, blurRadius: 5)],
+        )),
         textDirection: TextDirection.rtl,
-      )..layout(maxWidth: 110);
-      label.paint(canvas, Offset(p.dx - label.width / 2, p.dy + 13));
+      )..layout(maxWidth: 120);
+      label.paint(canvas, Offset(point.dx - label.width / 2, point.dy + radius + 5));
     }
+  }
+
+  void _drawMessage(Canvas canvas, Size size, String message) {
+    final painter = TextPainter(
+      text: TextSpan(text: message, style: const TextStyle(
+        color: Colors.white54, fontFamily: 'Amiri', fontSize: 14,
+      )),
+      textDirection: TextDirection.rtl,
+      textAlign: TextAlign.center,
+    )..layout(maxWidth: size.width * .8);
+    painter.paint(canvas, Offset((size.width - painter.width) / 2, size.height * .72));
   }
 
   @override
   bool shouldRepaint(covariant _SkyPainter oldDelegate) =>
-      oldDelegate.timeOffset != timeOffset || oldDelegate.objects != objects;
+      oldDelegate.bodies != bodies ||
+      oldDelegate.orientation.heading != orientation.heading ||
+      oldDelegate.orientation.pitch != orientation.pitch ||
+      oldDelegate.orientation.roll != orientation.roll ||
+      oldDelegate.selectedId != selectedId ||
+      oldDelegate.transparentBackground != transparentBackground;
 }
