@@ -84,7 +84,6 @@ class AstronomyService {
     required DateTime utc,
     required double latitude,
     required double longitude,
-    double elevationMeters = 0,
   }) {
     final date = utc.toUtc();
     final jd = date.millisecondsSinceEpoch / 86400000.0 + 2440587.5;
@@ -92,7 +91,6 @@ class AstronomyService {
     // keeps the ephemeris input in dynamical time without a network lookup.
     final jde = jd + 69.0 / 86400.0;
     final latitudeRadians = latitude * _rad;
-    final longitudeRadians = longitude * _rad;
     final greenwichSiderealRadians =
         sidereal.apparent(jd) / 240.0 * _rad;
     final localSiderealDegrees =
