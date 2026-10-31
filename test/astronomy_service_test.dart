@@ -45,6 +45,8 @@ void main() {
 
       expect(sun.distanceAu, inInclusiveRange(0.9, 1.1));
       expect(moon.distanceAu, inInclusiveRange(0.002, 0.003));
+      expect(moon.distanceKilometers, inInclusiveRange(350000, 410000));
+      expect(moon.magnitude.isFinite, isTrue);
       expect(moon.illuminatedFraction, inInclusiveRange(0, 1));
       expect(moon.phaseAngleDegrees, inInclusiveRange(0, 180));
       expect(moon.phaseName, isNotEmpty);
