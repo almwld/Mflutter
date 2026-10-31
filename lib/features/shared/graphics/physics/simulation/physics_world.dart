@@ -22,7 +22,8 @@ class PhysicsWorld {
   }) : _spatialHash = SpatialHash(cellSize: spatialCellSize) {
     if (!fixedTimeStep.isFinite || fixedTimeStep <= 0 ||
         maxSubSteps < 1 || constraintIterations < 1 ||
-        !restitution.isFinite || restitution < 0 || restitution > 1) {
+        !restitution.isFinite || restitution < 0 || restitution > 1 ||
+        !gravityX.isFinite || !gravityY.isFinite || !gravityZ.isFinite) {
       throw ArgumentError('Invalid physics world configuration.');
     }
   }
