@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'metric_card_block.dart';
 import 'spatial_map_block.dart';
 import 'star_tracker_block.dart';
+import '../../../features/shared/graphics/particle_matrix_block.dart';
+import '../../../features/shared/graphics/connected_nodes_path.dart';
 
 typedef BlockBuilder = Widget Function({
   required String title,
@@ -20,6 +22,8 @@ abstract final class BlockRegistry {
     'vector_space_block': _buildSpatial,
     'quantum_particle_block': _buildSpatial,
     'star_tracker_block': _buildStarTracker,
+    'particle_matrix_block': _buildParticleMatrix,
+    'connected_nodes_path_block': _buildConnectedNodes,
   };
 
   static Set<String> get registeredTypes =>
@@ -54,9 +58,91 @@ abstract final class BlockRegistry {
   }) =>
       StarTrackerBlock(title: title, data: data);
 
+
+  static Widget _buildParticleMatrix({
+    required String title,
+    required Map<String, dynamic> data,
+  }) {
+    final rawNodes = data['active_nodes'];
+    final activeNodes = rawNodes is List
+        ? rawNodes.whereType<int>().toList(growable: false)
+        : const <int>[];
+    return _BlockCard(
+      title: title,
+      child: ParticleMatrixBlockWidget(
+        count: data['count'] is int ? data['count'] as int : 2400,
+        columns: data['columns'] is int ? data['columns'] as int : 80,
+        activeRow: data['active_row'] is int ? data['active_row'] as int : null,
+        activeNodes: activeNodes,
+        speed: data['speed'] is num ? (data['speed'] as num).toDouble() : 1,
+        height: data['height'] is num ? (data['height'] as num).toDouble() : 260,
+        blockId: data['_canvas_block_id'] is String
+            ? data['_canvas_block_id'] as String
+            : 'particle-matrix',
+      ),
+    );
+  }
+
+  static Widget _buildConnectedNodes({
+    required String title,
+    required Map<String, dynamic> data,
+  }) {
+    final rawNodes = data['nodes'];
+    final rawEdges = data['edges'];
+    final nodes = rawNodes is List
+        ? rawNodes.whereType<Map>().map((node) => Map<String, dynamic>.from(node)).toList(growable: false)
+        : const <Map<String, dynamic>>[];
+    final edges = rawEdges is List
+        ? rawEdges.whereType<Map>().map((edge) => Map<String, dynamic>.from(edge)).toList(growable: false)
+        : const <Map<String, dynamic>>[];
+    return _BlockCard(
+      title: title,
+      child: ConnectedNodesPathWidget(
+        nodes: nodes,
+        edges: edges,
+        height: data['height'] is num ? (data['height'] as num).toDouble() : 280,
+        blockId: data['_canvas_block_id'] is String
+            ? data['_canvas_block_id'] as String
+            : 'connected-nodes',
+        targetBlockId: data['target_block_id'] is String
+            ? data['target_block_id'] as String
+            : null,
+      ),
+    );
+  }
+
   static Widget _buildSpatial({
     required String title,
     required Map<String, dynamic> data,
   }) =>
       SpatialMapBlock(title: title, data: data);
+}
+
+
+class _BlockCard extends StatelessWidget {
+  const _BlockCard({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF0F172A),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xFF334155)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        if (title.isNotEmpty) ...[
+          Text(title, textDirection: TextDirection.rtl,
+            style: const TextStyle(color: Color(0xFFE2E8F0), fontWeight: FontWeight.w700)),
+          const SizedBox(height: 10),
+        ],
+        child,
+      ],
+    ),
+  );
 }
