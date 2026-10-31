@@ -13,6 +13,8 @@ class CelestialBody {
   final double magnitude;
   /// Geocentric distance in AU for solar-system bodies.
   final double? distanceAu;
+  /// Physical geocentric distance in kilometres, populated for the Moon.
+  final double? distanceKilometers;
   /// Approximate catalog distance for stars; null when not curated.
   final double? distanceLightYears;
   /// Illuminated fraction in [0, 1], currently populated for the Moon.
@@ -34,6 +36,7 @@ class CelestialBody {
     required this.altitude,
     required this.magnitude,
     this.distanceAu,
+    this.distanceKilometers,
     this.distanceLightYears,
     this.illuminatedFraction,
     this.phaseAngleDegrees,
