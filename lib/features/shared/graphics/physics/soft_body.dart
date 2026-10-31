@@ -30,6 +30,10 @@ class SoftBody {
         radii.length != _particleCount) {
       throw ArgumentError('inverseMasses and radii must match particle count.');
     }
+    if (positions.any((value) => !value.isFinite) ||
+        this.velocities.any((value) => !value.isFinite)) {
+      throw ArgumentError('Particle positions and velocities must be finite.');
+    }
     if (!linearDamping.isFinite || linearDamping < 0) {
       throw ArgumentError.value(linearDamping, 'linearDamping');
     }
@@ -40,7 +44,11 @@ class SoftBody {
       }
     }
     for (final constraint in constraints) {
-      if (constraint.a >= _particleCount || constraint.b >= _particleCount) {
+      if (constraint.a < 0 || constraint.b < 0 ||
+          constraint.a >= _particleCount || constraint.b >= _particleCount ||
+          !constraint.restLength.isFinite || constraint.restLength < 0 ||
+          !constraint.stiffness.isFinite ||
+          constraint.stiffness < 0 || constraint.stiffness > 1) {
         throw ArgumentError('A distance constraint references a missing particle.');
       }
     }
