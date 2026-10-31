@@ -297,8 +297,8 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
             : body.distanceLightYears != null
                 ? '~${body.distanceLightYears!.toStringAsFixed(1)} سنة ضوئية'
                 : 'المسافة غير متاحة في الفهرس';
-    final left = (point.dx - 112).clamp(8.0, math.max(8.0, viewport.width - 232));
-    final top = (point.dy - 104).clamp(8.0, math.max(8.0, viewport.height - 100));
+    final left = (point.dx - 112).clamp(8.0, math.max(8.0, viewport.width - 232)).toDouble();
+    final top = (point.dy - 104).clamp(8.0, math.max(8.0, viewport.height - 100)).toDouble();
     return Positioned(
       left: left,
       top: top,
