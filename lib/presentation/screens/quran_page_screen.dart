@@ -27,7 +27,9 @@ const Map<String, Map<String, Color>> _quranDisplayPalettes = {
   'rose': {'background': Color(0xFF3A2028), 'surface': Color(0xFF512D38), 'text': Color(0xFFFFE9ED), 'accent': Color(0xFFE5A2B1)},
   'sand': {'background': Color(0xFFDCC9A8), 'surface': Color(0xFFEBDDCA), 'text': Color(0xFF3E3326), 'accent': Color(0xFF876B45)},
   'slate': {'background': Color(0xFF303943), 'surface': Color(0xFF414D59), 'text': Color(0xFFF0F3F5), 'accent': Color(0xFFAABAC8)},
-  'highContrast': {'background': Color(0xFF000000), 'surface': Color(0xFF000000), 'text': Color(0xFFFFFF00), 'accent': Color(0xFFFFFFFF)},
+  'pearl': {'background': Color(0xFFF8F7F2), 'surface': Color(0xFFFFFFFF), 'text': Color(0xFF252525), 'accent': Color(0xFF667A72)},
+  'amber': {'background': Color(0xFF101010), 'surface': Color(0xFF191919), 'text': Color(0xFFF2C879), 'accent': Color(0xFFE0B65F)},
+  'highContrast': {'background': Color(0xFF000000), 'surface': Color(0xFF000000), 'text': Color(0xFFFFFFFF), 'accent': Color(0xFFFFFF00)},
 };
 
 const Map<String, String> _quranPaletteNames = {
@@ -35,7 +37,8 @@ const Map<String, String> _quranPaletteNames = {
   'ivory': 'عاجي دافئ', 'midnight': 'منتصف الليل', 'black': 'أسود خالص',
   'emerald': 'زمردي', 'sage': 'أخضر هادئ', 'ocean': 'أزرق محيطي',
   'lavender': 'لافندر', 'rose': 'وردي داكن', 'sand': 'رملي',
-  'slate': 'رمادي أردوازي', 'highContrast': 'تباين مرتفع',
+  'slate': 'رمادي أردوازي', 'pearl': 'أبيض لؤلؤي', 'amber': 'عنبر هادئ',
+  'highContrast': 'تباين مرتفع',
 };
 
 /// 📄 شاشة تصفح المصحف — عرض الصفحات كاملة
@@ -505,13 +508,6 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                       border: Border.all(
                         color: _accentColor.withOpacity(0.35),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _accentColor.withOpacity(0.08),
-                          blurRadius: 10,
-                          spreadRadius: 1,
-                        ),
-                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -550,15 +546,8 @@ class _QuranPageScreenState extends State<QuranPageScreen> {
                                   ..strokeJoin = StrokeJoin.round
                                   ..color = _textColor)
                                 : null,
-                            shadows: [
-                              Shadow(
-                                color: _pageColor.computeLuminance() > 0.5
-                                    ? const Color(0x553B2A1A)
-                                    : const Color(0x88000000),
-                                offset: const Offset(0.35, 0.55),
-                                blurRadius: 0.65,
-                              ),
-                            ],
+                            // Keep glyph contours crisp: no glow or blur.
+                            shadows: const [],
                             height: _fontFamily == 'Musnad' ? 1.95 : 1.8,
                           ),
                           ),
