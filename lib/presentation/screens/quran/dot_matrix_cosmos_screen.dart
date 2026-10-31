@@ -62,7 +62,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
   String? _error;
 
   double get _time => _clock.value * 60;
-  int get _scene => (_time / 10).floor().clamp(0, 5).toInt();
+  int get _scene => (_time / 6).floor().clamp(0, 9).toInt();
 
   @override
   void initState() {
@@ -196,7 +196,12 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                               child: AspectRatio(
                                 aspectRatio: 9 / 16,
                                 child: RepaintBoundary(
-                                  child: CustomPaint(
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 650),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    child: CustomPaint(
+                                      key: ValueKey<int>(scene),
                                     painter: _CosmosPainter(
                                       time: _time,
                                       scene: scene,
@@ -214,7 +219,8 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                                       calledProphets: _prophetsCalled,
                                       addresses: _directAddresses,
                                     ),
-                                    child: const SizedBox.expand(),
+                                      child: const SizedBox.expand(),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -380,7 +386,7 @@ class _CosmosPainter extends CustomPainter {
     }
 
     if (scene == 0) {
-      final reveal = ((time - 1) / 7).clamp(0.0, 1.0);
+      final reveal = ((time - 1) / 4).clamp(0.0, 1.0);
       _text(canvas, size, 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
           size.height * .37, fontSize: 24 + reveal * 3, color: DotMatrixCosmosConfig.gold);
       _text(canvas, size, 'In the name of Allah, the Most Compassionate, Most Merciful',
@@ -398,7 +404,7 @@ class _CosmosPainter extends CustomPainter {
     }
 
     if (scene == 1 || scene == 2) {
-      _drawGrid(canvas, size, scene == 2 ? ((time - 20) / 5).clamp(0.0, 1.0) : 1);
+      _drawGrid(canvas, size, scene == 2 ? ((time - 12) / 5).clamp(0.0, 1.0) : 1);
       if (scene == 1) {
         _text(canvas, size, 'أَوَّلُ وَآخِرُ مَوْضِع', size.height * .12,
             color: DotMatrixCosmosConfig.gold, fontSize: 17);
@@ -434,7 +440,7 @@ class _CosmosPainter extends CustomPainter {
       }
       final pathMetric = line.computeMetrics().first;
       final drawn = pathMetric.extractPath(0, pathMetric.length *
-          ((time - 30) / 4).clamp(0.0, 1.0));
+          ((time - 18) / 3).clamp(0.0, 1.0));
       canvas.drawPath(drawn, Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.25)
         ..style = PaintingStyle.stroke..strokeWidth = .8);
       for (var i = 0; i < 24; i++) {
@@ -442,7 +448,7 @@ class _CosmosPainter extends CustomPainter {
         final inRow = i % 6;
         final col = row.isOdd ? 5 - inRow : inRow;
         final point = Offset(cellW * (col + .5), startY + row * size.height * .105);
-        final active = calledProphets.contains(i) && time > 32 + i * .25;
+        final active = calledProphets.contains(i) && time > 19 + i * .15;
         final color = active ? DotMatrixCosmosConfig.gold : Colors.white.withOpacity(.25);
         canvas.drawCircle(point, active ? 3.5 : 2, Paint()..color = color);
         _text(canvas, size, names[i].$1, point.dy + 8,
@@ -464,13 +470,137 @@ class _CosmosPainter extends CustomPainter {
           color: DotMatrixCosmosConfig.gold, fontSize: 20);
       _text(canvas, size, 'DIRECT ADDRESSES', size.height * .18,
           color: const Color(0xFF8290B2), fontSize: 9, font: 'Cormorant Garamond');
-      final visible = ((time - 40) * 1.2).floor().clamp(0, addresses.length).toInt();
+      final visible = ((time - 24) * 1.2).floor().clamp(0, addresses.length).toInt();
       if (visible > 0) {
         final item = addresses[(visible - 1).clamp(0, addresses.length - 1).toInt()];
         _text(canvas, size, item, size.height * .34, fontSize: 12, color: Colors.white, maxWidthFactor: .9);
         _text(canvas, size, '$visible', size.height * .65,
             fontSize: 30, color: DotMatrixCosmosConfig.gold, font: 'Cormorant Garamond');
       }
+      return;
+    }
+
+    if (scene == 5) {
+      // Al-Kahf 18:17 — an illustrative cave-and-sun composition.
+      final caveCenter = Offset(size.width * .5, size.height * .59);
+      final caveRect = Rect.fromCenter(
+        center: caveCenter,
+        width: size.width * .88,
+        height: size.height * .31,
+      );
+      canvas.drawOval(caveRect, Paint()..color = const Color(0xFF020611));
+      canvas.drawOval(caveRect, Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.28)
+        ..style = PaintingStyle.stroke..strokeWidth = 1.1);
+      final sun = Offset(size.width * (.77 + .018 * math.sin(time * 1.4)),
+          size.height * .48);
+      canvas.drawCircle(sun, 38, Paint()
+        ..color = const Color(0xFFFFC76A).withOpacity(.22)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28));
+      canvas.drawCircle(sun, 13, Paint()..color = const Color(0xFFFFE8B0));
+      for (var i = 0; i < 7; i++) {
+        final angle = math.pi * (.68 + i * .035);
+        final end = Offset(sun.dx + math.cos(angle) * size.width * .55,
+            sun.dy + math.sin(angle) * size.height * .42);
+        canvas.drawLine(sun, end, Paint()
+          ..color = const Color(0xFFFFD58A).withOpacity(.10)
+          ..strokeWidth = 7);
+      }
+      for (var i = 0; i < 46; i++) {
+        final x = ((i * 37.17) % 97) / 100 * size.width;
+        final y = size.height * (.39 + ((i * 19.31) % 48) / 100);
+        final drift = math.sin(time * 1.2 + i) * 5;
+        canvas.drawCircle(Offset(x + drift, y), .7 + (i % 3) * .45,
+            Paint()..color = Colors.white.withOpacity(.18));
+      }
+      _text(canvas, size, 'وَتَرَى الشَّمْسَ إِذَا طَلَعَت', size.height * .12,
+          color: DotMatrixCosmosConfig.gold, fontSize: 19);
+      _text(canvas, size, 'تَّزَاوَرُ عَن كَهْفِهِمْ ذَاتَ الْيَمِينِ',
+          size.height * .20, fontSize: 18);
+      _text(canvas, size, 'AL-KAHF · 18:17', size.height * .77,
+          fontSize: 10, color: const Color(0xFF8290B2), font: 'serif');
+      return;
+    }
+
+    if (scene == 6) {
+      // A restrained orbital diagram: lunar-year / solar-year relationship.
+      final center = Offset(size.width * .5, size.height * .52);
+      final rx = size.width * .37;
+      final ry = size.height * .13;
+      canvas.drawOval(Rect.fromCenter(center: center, width: rx * 2, height: ry * 2),
+          Paint()..color = Colors.white.withOpacity(.24)
+            ..style = PaintingStyle.stroke..strokeWidth = 1);
+      canvas.drawCircle(center, 45, Paint()
+        ..color = const Color(0xFFFFD27A).withOpacity(.16)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30));
+      canvas.drawCircle(center, 17, Paint()..color = const Color(0xFFFFE6A8));
+      final angle = (time - 36) / 6 * math.pi * 2;
+      final planet = Offset(center.dx + math.cos(angle) * rx,
+          center.dy + math.sin(angle) * ry);
+      canvas.drawLine(center, planet, Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.25)..strokeWidth = 1);
+      canvas.drawCircle(planet, 18, Paint()
+        ..color = const Color(0xFF4DD8E8).withOpacity(.25)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14));
+      canvas.drawCircle(planet, 8, Paint()..color = const Color(0xFFB9F5FF));
+      _text(canvas, size, 'دَوْرَةُ الْقَمَرِ وَالزَّمَن', size.height * .12,
+          color: DotMatrixCosmosConfig.gold, fontSize: 20);
+      _text(canvas, size, 'السنة القمرية أقصر من الشمسية بنحو 10–11 يوماً',
+          size.height * .75, fontSize: 15);
+      _text(canvas, size, 'LUNAR YEAR · ORBITAL CYCLE', size.height * .82,
+          fontSize: 9, color: const Color(0xFF8290B2), font: 'serif');
+      return;
+    }
+
+    if (scene == 7) {
+      // Geometric calligraphic motif only; no unsupported numerical claim.
+      final center = Offset(size.width * .5, size.height * .45);
+      final radius = size.width * .34;
+      final rotation = (time - 42) * .12;
+      final path = Path();
+      for (var i = 0; i < 24; i++) {
+        final r = i.isEven ? radius : radius * .78;
+        final a = i * math.pi / 12 - math.pi / 2 + rotation;
+        final point = Offset(center.dx + math.cos(a) * r,
+            center.dy + math.sin(a) * r);
+        if (i == 0) { path.moveTo(point.dx, point.dy); }
+        else { path.lineTo(point.dx, point.dy); }
+      }
+      path.close();
+      canvas.drawPath(path, Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.08));
+      canvas.drawPath(path, Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.72)
+        ..style = PaintingStyle.stroke..strokeWidth = 1.4);
+      canvas.drawCircle(center, radius * .65, Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.32)
+        ..style = PaintingStyle.stroke..strokeWidth = 1);
+      _text(canvas, size, 'م', center.dy - 43, fontSize: 88,
+          color: DotMatrixCosmosConfig.gold);
+      _text(canvas, size, 'حَرْفُ الْمِيم · تَشْكِيلٌ هَنْدَسِيّ',
+          size.height * .75, fontSize: 17);
+      _text(canvas, size, 'GEOMETRIC LETTER STUDY', size.height * .82,
+          fontSize: 9, color: const Color(0xFF8290B2), font: 'serif');
+      return;
+    }
+
+    if (scene == 8) {
+      // The exact verse wording is displayed as text, not inferred from dots.
+      final pulse = .5 + .5 * math.sin((time - 48) * math.pi * 1.3);
+      final center = Offset(size.width * .5, size.height * .48);
+      for (var ring = 0; ring < 5; ring++) {
+        canvas.drawCircle(center, 35 + ring * 23, Paint()
+          ..color = DotMatrixCosmosConfig.gold.withOpacity(.055 + pulse * .025)
+          ..style = PaintingStyle.stroke..strokeWidth = 1);
+      }
+      _text(canvas, size, 'وَلَبِثُوا فِي كَهْفِهِمْ ثَلَاثَ مِائَةٍ سِنِينَ',
+          size.height * .32, fontSize: 21, color: DotMatrixCosmosConfig.gold);
+      _text(canvas, size, 'وَازْدَادُوا تِسْعًا', size.height * .43,
+          fontSize: 25, color: Colors.white);
+      _text(canvas, size, 'AL-KAHF · 18:25', size.height * .57,
+          fontSize: 11, color: const Color(0xFF8290B2), font: 'serif');
+      _text(canvas, size, '٣٠٠ + ٩', size.height * .69,
+          fontSize: 34, color: DotMatrixCosmosConfig.gold);
       return;
     }
 
