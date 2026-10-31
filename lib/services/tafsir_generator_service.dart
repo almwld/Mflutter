@@ -1,3 +1,5 @@
+/// A tiny fixed set of educational summaries, not a sourced tafsir database.
+/// Callers must not present these strings as quotations or verified exegesis.
 class TafsirGeneratorService {
   static const Map<String, String> _tafsirDB = {
     'الفاتحة:1': 'افتتح الله كتابه بالبسملة، وهي آية عظيمة تقال في بداية كل أمر ذي بال.',
@@ -10,7 +12,7 @@ class TafsirGeneratorService {
   static String generate(String surahName, int ayahNumber) {
     final result = _tafsirDB['$surahName:$ayahNumber'];
     if (result == null) {
-      throw StateError('لا يوجد تفسير محلي موثق لهذه الآية في قاعدة البيانات الحالية.');
+      throw StateError('لا تتوفر ملخصات محلية لهذه الآية في قاعدة البيانات المحدودة.');
     }
     return result;
   }

@@ -43,7 +43,7 @@ class AgentRegistry {
     AgentDefinition('iqtisad','اقتصاد','الإدراك','تحليل المفاهيم الاقتصادية'),
     AgentDefinition('fan','بلاغة','الإدراك','تحليل الأساليب البلاغية'),
     AgentDefinition('sawt','صوت','الصوت','تحليل النصوص المرتبطة بالصوت'),
-    AgentDefinition('tiry al','تلاوة','الصوت','تنظيم بيانات التلاوة المتاحة'),
+    AgentDefinition('tilawa','تلاوة','الصوت','تنظيم بيانات التلاوة المتاحة'),
     AgentDefinition('shifa_sound','صوت علاجي','الصوت','فهرسة الادعاءات الصوتية دون اعتمادها كحقائق'),
     AgentDefinition('tawatur','تواتر','الصوت','تحليل تكرار الأنماط'),
     AgentDefinition('iqa','إيقاع','الصوت','تحليل الإيقاع النصي'),
@@ -141,8 +141,21 @@ class AgentRegistry {
   ];
 
   static List<AgentDefinition> get all => List.unmodifiable(_core);
+
+  /// Stable, first-seen layer order for navigation and grouped agent screens.
+  static List<String> get layers => List.unmodifiable(
+        _core.map((agent) => agent.layer).toSet(),
+      );
+
+  /// Returns a read-only snapshot of agents in the requested layer.
+  static List<AgentDefinition> inLayer(String layer) => List.unmodifiable(
+        _core.where((agent) => agent.layer == layer),
+      );
+
   static AgentDefinition? byId(String id) {
-    for (final a in _core) { if (a.id == id) return a; }
+    for (final a in _core) {
+      if (a.id == id) return a;
+    }
     return null;
   }
 }

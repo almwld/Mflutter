@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/mushaf_source.dart';
 import 'quran/mushaf_screen.dart';
 import 'quran/mushaf_variant_screen.dart';
@@ -15,6 +16,56 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
   final TextEditingController _search = TextEditingController();
   String _query = '';
   int _tab = 0;
+  int? _lastVariantPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreLastVariantPage();
+  }
+
+  Future<void> _restoreLastVariantPage() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final page = preferences.getInt('mudabbir_mushaf_variant_last_page');
+      if (!mounted || page == null) return;
+      setState(() => _lastVariantPage = MushafSource.normalizePage(page));
+    } catch (error) {
+      // Index browsing remains available if optional resume metadata is corrupt
+      // or local preferences are temporarily inaccessible.
+      debugPrint('Could not restore variant Mushaf page: $error');
+    }
+  }
+
+  Future<void> _openVariantPage(int page) async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(builder: (_) => MushafVariantScreen(initialPage: page)),
+    );
+    await _restoreLastVariantPage();
+  }
+
+  String _normalizeArabicSearch(String value) => value
+      .replaceAllMapped(
+        RegExp(r'[٠-٩۰-۹]'),
+        (match) {
+          final code = match.group(0)!.codeUnitAt(0);
+          final digit = code >= 0x06F0 && code <= 0x06F9
+              ? code - 0x06F0
+              : code - 0x0660;
+          return String.fromCharCode(0x30 + digit);
+        },
+      )
+      .replaceAll(
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'),
+        '',
+      )
+      .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   static const _background = Color(0xFF0B0D12);
   static const _surface = Color(0xFF15181F);
@@ -26,10 +77,10 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final query = _query.trim();
+    final query = _normalizeArabicSearch(_query);
     final items = List<int>.generate(MushafSource.totalSurahs, (i) => i + 1)
         .where((number) => query.isEmpty ||
-            getSurahNameArabic(number).contains(query) ||
+            _normalizeArabicSearch(getSurahNameArabic(number)).contains(query) ||
             '$number'.contains(query))
         .toList();
 
@@ -66,6 +117,25 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
             onSelectionChanged: (value) => setState(() => _tab = value.first),
           ),
         ),
+        if (_lastVariantPage != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _openVariantPage(_lastVariantPage!),
+                icon: const Icon(Icons.play_arrow_rounded, color: _gold),
+                label: Text(
+                  'متابعة القراءة — صفحة $_lastVariantPage',
+                  style: const TextStyle(fontFamily: 'Amiri', color: _gold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF665226)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ),
         if (_tab == 0)
           Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
@@ -110,9 +180,22 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
         Expanded(child: _tab == 0 ? ListView.separated(
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(14, 2, 14, 24),
-          itemCount: items.length,
+          itemCount: items.isEmpty ? 1 : items.length,
           separatorBuilder: (_, __) => const SizedBox(height: 7),
           itemBuilder: (context, index) {
+            if (items.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                child: Center(
+                  child: Text(
+                    'لا توجد سورة مطابقة للبحث.',
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: 'Amiri', color: _muted),
+                  ),
+                ),
+              );
+            }
             final number = items[index];
             final name = getSurahNameArabic(number);
             final page = MushafSource.pageForVerse(number, 1);
@@ -120,8 +203,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
               color: _surface, borderRadius: BorderRadius.circular(18),
               child: InkWell(
                 borderRadius: BorderRadius.circular(18),
-                onTap: () => Navigator.push(context, MaterialPageRoute(
-                  builder: (_) => MushafVariantScreen(initialPage: page))),
+                onTap: () => _openVariantPage(page),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   child: Row(textDirection: TextDirection.rtl, children: [
@@ -171,9 +253,7 @@ class _QuranIndexScreenState extends State<QuranIndexScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
-                      onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => MushafVariantScreen(initialPage: page),
-                      )),
+                      onTap: () => _openVariantPage(page),
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: const Color(0xFF1D1A13),

@@ -72,7 +72,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
   void initState() {
     super.initState();
     _player = widget.audioEngineFactory?.call() ?? AudioplayersRecitationEngine();
-    unawaited(_player.setReleaseMode(ReleaseMode.stop));
+    unawaited(_player.setReleaseMode(ReleaseMode.stop).catchError((Object error) {
+      _showPlaybackError(error);
+    }));
     unawaited(_loadSurahs());
     _completionSubscription = _player.onPlayerComplete.listen((_) {
       if (!_stoppedByUser && _playing && !_paused) unawaited(_playNextAyah());
@@ -152,8 +154,16 @@ class _RecitationScreenState extends State<RecitationScreen> {
   }
 
   Future<void> _playNextAyah() async {
+    // A completion event can arrive close to a user stop/pause action. Do not
+    // advance the playlist after playback has been cancelled or paused.
     final index = _currentIndex;
-    if (index == null || !mounted) return;
+    if (index == null ||
+        !mounted ||
+        _stoppedByUser ||
+        !_playing ||
+        _paused) {
+      return;
+    }
     if (_currentAyah >= _surahs[index].ayahs) {
       setState(() { _playing = false; _paused = false; _loading = false; });
       return;
@@ -191,9 +201,21 @@ class _RecitationScreenState extends State<RecitationScreen> {
   Future<void> _stopPlayback() async {
     _stoppedByUser = true;
     _generation++;
-    try { await _player.stop(); } catch (_) {}
+    Object? stopError;
+    try {
+      await _player.stop();
+    } catch (error) {
+      stopError = error;
+    }
     if (!mounted) return;
-    setState(() { _playing = false; _paused = false; _loading = false; });
+    setState(() {
+      _playing = false;
+      _paused = false;
+      _loading = false;
+      _error = stopError == null
+          ? null
+          : 'تعذر تأكيد إيقاف مشغل التلاوة: $stopError';
+    });
   }
 
   @override

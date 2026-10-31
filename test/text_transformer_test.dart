@@ -16,5 +16,17 @@ void main() {
       const source = 'ٱلْحَمْدُ لِلَّٰهِ';
       expect(TextTransformer.transform(source, 'unknown'), source);
     });
+
+    test('marked dotless mode preserves vowel and Quranic annotation marks', () {
+      const source = 'بَتٌۢ';
+      expect(TextTransformer.toDotlessPreservingMarks(source), 'ٮَٮٌۢ');
+      expect(source, 'بَتٌۢ');
+    });
+
+    test('plain dotless mode removes presentation marks without mutating source', () {
+      const source = 'بَتٌۢ';
+      expect(TextTransformer.toDotless(source), 'ٮٮ');
+      expect(source, 'بَتٌۢ');
+    });
   });
 }

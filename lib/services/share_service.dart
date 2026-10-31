@@ -1,16 +1,74 @@
+import 'package:share_plus/share_plus.dart';
+
+import 'achievements_service.dart';
+
 class ShareService {
+  /// Shares canonical verse text and records the milestone only when the
+  /// platform reports a successful share, not merely a dismissed share sheet.
+  static Future<bool> shareVerse({
+    required String text,
+    required int surahNumber,
+    required int ayahNumber,
+    String? surahName,
+  }) async {
+    if (text.trim().isEmpty ||
+        surahNumber < 1 ||
+        surahNumber > 114 ||
+        ayahNumber < 1) {
+      throw ArgumentError('لا يمكن مشاركة آية دون نص أو مرجع صالح.');
+    }
+    final surahLabel = surahName == null || surahName.trim().isEmpty
+        ? 'رقم $surahNumber'
+        : surahName;
+    final payload = '$text\n\nسورة $surahLabel — الآية $ayahNumber\n'
+        'من مُدَبِّر الأسرار العليا';
+    final result = await Share.share(
+      payload,
+      subject: 'آية من القرآن الكريم',
+    );
+    final succeeded = result.status == ShareResultStatus.success;
+    if (succeeded) await AchievementsService.recordVerseShared();
+    return succeeded;
+  }
+
   static String formatForShare(Map<String, dynamic> verse) {
-    return '''
-🕌 مُدَبِّر الْأَسْرَارِ الْعُلْيَا
+    final lines = <String>['مُدَبِّر الأسرار العليا'];
+    final text = verse['text'];
+    if (text is String && text.trim().isNotEmpty) {
+      lines
+        ..add('')
+        ..add('الآية: $text');
+    }
 
-📖 ${verse['text']}
-📍 سورة ${verse['surah']} - آية ${verse['ayah']}
+    final surah = verse['surah'];
+    final ayah = verse['ayah'];
+    if (surah != null && ayah != null) {
+      lines.add('المرجع: سورة $surah — الآية $ayah');
+    }
 
-🔬 العلوم: ${verse['sciences']?.join(', ') ?? 'علوم متعددة'}
-🔮 الصفات: ${verse['attributes']?.join(', ') ?? 'الله'}
+    final sciences = verse['sciences'];
+    if (sciences is List) {
+      final labels = sciences
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      if (labels.isNotEmpty) lines.add('العلوم: ${labels.join(', ')}');
+    }
 
-🔢 الجمل: ${verse['jummal'] ?? 0}
-''';
+    final attributes = verse['attributes'];
+    if (attributes is List) {
+      final labels = attributes
+          .whereType<String>()
+          .map((value) => value.trim())
+          .where((value) => value.isNotEmpty)
+          .toList(growable: false);
+      if (labels.isNotEmpty) lines.add('الصفات: ${labels.join(', ')}');
+    }
+
+    final jummal = verse['jummal'];
+    if (jummal is num) lines.add('قيمة الجمل المسجلة: $jummal');
+    return lines.join('\n');
   }
 
   static String formatDailyInsight(Map<String, String> insight) {

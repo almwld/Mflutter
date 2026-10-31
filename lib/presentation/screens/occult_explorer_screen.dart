@@ -6,6 +6,7 @@ import '../../data/abjad_extended_service.dart';
 import '../../data/occult_data_service.dart';
 import '../../models/occult_models.dart';
 import '../../services/audio_synthesis_service.dart';
+import '../../services/achievements_service.dart';
 
 class OccultExplorerScreen extends StatefulWidget {
   const OccultExplorerScreen({super.key});
@@ -16,23 +17,67 @@ class OccultExplorerScreen extends StatefulWidget {
 class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
   final _abjad = TextEditingController();
   final _search = TextEditingController();
-  late final Future<List<OccultEntry>> _entries = OccultDataService.fetchAllEntries();
+  late Future<List<OccultEntry>> _entries;
   String _category = 'all';
   String _query = '';
   int? _result;
   bool _busy = false;
 
   static const _labels = <String, String>{
-    'all': 'الكل', 'tarot': 'التاروت', 'runes': 'الرونية',
-    'crystals': 'الأحجار والمعادن', 'hermeticism': 'الهرمسية', 'general': 'عام',
+    'all': 'الكل',
+    'tarot': 'التاروت',
+    'runes': 'الرونية',
+    'crystals': 'الأحجار والمعادن',
+    'hermeticism': 'الهرمسية',
+    'general': 'عام',
+    'astronomy': 'علم الفلك',
+    'planets': 'علم الكواكب',
+    'zodiac': 'علم الأبراج',
+    'abjad': 'حساب الجمل',
+    'history': 'تاريخ العلوم',
+    'physics': 'الفيزياء',
   };
+
+  String _normalizeSearch(String value) => value
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  @override
+  void initState() {
+    super.initState();
+    _entries = OccultDataService.fetchAllEntries();
+  }
+
+  void _retryLoadEntries() {
+    setState(() => _entries = OccultDataService.fetchAllEntries());
+  }
 
   @override
   void dispose() {
     _abjad.dispose();
     _search.dispose();
-    unawaited(AudioSynthesisService.stop());
+    unawaited(AudioSynthesisService.stop().catchError((Object error) {
+      debugPrint('Could not stop local audio during dispose: $error');
+    }));
     super.dispose();
+  }
+
+  Future<void> _stopAudio() async {
+    try {
+      await AudioSynthesisService.stop();
+      if (mounted) setState(() {});
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر إيقاف الصوت: $error')),
+      );
+    }
   }
 
   void _calculate() => setState(() => _result = AbjadExtendedService.calculate(_abjad.text));
@@ -63,7 +108,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
         actions: [
           IconButton(
             tooltip: 'إيقاف الصوت',
-            onPressed: () async { await AudioSynthesisService.stop(); if (mounted) setState(() {}); },
+            onPressed: _stopAudio,
             icon: const Icon(Icons.stop_circle_outlined),
           ),
         ],
@@ -71,6 +116,20 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Text(
+                'هذه المواد تعرض تاريخ الرموز والمعتقدات الثقافية، وليست حقائق علمية أو تنبؤات موثوقة. حساب الجُمّل عملية حسابية للحروف ولا يثبت صفات الأشخاص أو نتائج المستقبل.',
+                textDirection: TextDirection.rtl,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurface.withOpacity(.72),
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           _heading(context, 'حاسبة الجُمّل', Icons.calculate_outlined),
           const SizedBox(height: 8),
           Card(
@@ -128,7 +187,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
                 _soundButton('تركيز · 14 Hz', () => _play(AudioSynthesisService.playFocus)),
                 _soundButton('تأمل · 4 Hz', () => _play(AudioSynthesisService.playDeepMeditation)),
                 OutlinedButton.icon(
-                  onPressed: _busy ? null : () async { await AudioSynthesisService.stop(); if (mounted) setState(() {}); },
+                  onPressed: _busy ? null : _stopAudio,
                   icon: const Icon(Icons.stop_rounded), label: const Text('إيقاف'),
                 ),
               ]),
@@ -146,7 +205,7 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
               prefixIcon: Icon(Icons.search_rounded),
               border: OutlineInputBorder(),
             ),
-            onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+            onChanged: (value) => setState(() => _query = _normalizeSearch(value)),
           ),
           const SizedBox(height: 8),
           FutureBuilder<List<OccultEntry>>(
@@ -156,13 +215,42 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
                 return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
               }
               if (snapshot.hasError) {
-                return const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('تعذر تحميل البيانات المحلية.')));
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'تعذر تحميل البيانات المحلية.',
+                          textDirection: TextDirection.rtl,
+                        ),
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: OutlinedButton.icon(
+                            onPressed: _retryLoadEntries,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('إعادة المحاولة'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               }
               final all = snapshot.data ?? const <OccultEntry>[];
               final categories = <String>{'all', ...all.map((e) => e.category)}.toList();
               final filtered = all.where((entry) {
                 final categoryMatch = _category == 'all' || entry.category == _category;
-                final queryMatch = _query.isEmpty || entry.name.toLowerCase().contains(_query) || entry.description.toLowerCase().contains(_query);
+                final searchable = _normalizeSearch([
+                  entry.name,
+                  entry.description,
+                  entry.category,
+                  entry.source ?? '',
+                  entry.properties.entries.map((item) => '${item.key} ${item.value}').join(' '),
+                ].join(' '));
+                final queryMatch = _query.isEmpty || searchable.contains(_query);
                 return categoryMatch && queryMatch;
               }).toList();
               return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -229,11 +317,20 @@ class _OccultExplorerScreenState extends State<OccultExplorerScreen> {
       case 'runes': return Icons.gesture_rounded;
       case 'crystals': return Icons.diamond_outlined;
       case 'hermeticism': return Icons.menu_book_outlined;
+      case 'astronomy': return Icons.nights_stay_outlined;
+      case 'planets': return Icons.public_outlined;
+      case 'zodiac': return Icons.auto_awesome_outlined;
+      case 'physics': return Icons.science_outlined;
       default: return Icons.auto_awesome_outlined;
     }
   }
 
   void _showDetails(OccultEntry entry) {
+    // Count a distinct knowledge topic only when the user opens its details.
+    unawaited(AchievementsService.recordScienceExplored(
+      entry.id,
+      legacyName: entry.name,
+    ));
     final colors = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,

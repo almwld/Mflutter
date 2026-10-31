@@ -19,6 +19,22 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
         children: [
           _header(context),
+          if (state.persistenceError != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.errorContainer.withOpacity(.35),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.error.withOpacity(.4)),
+              ),
+              child: Text(
+                state.persistenceError!,
+                textDirection: TextDirection.rtl,
+                style: TextStyle(color: colors.error, height: 1.4),
+              ),
+            ),
+          ],
           const SizedBox(height: 22),
           _heading(context, 'المظهر', Icons.palette_outlined),
           _group(context, [
@@ -170,8 +186,18 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await context.read<ThemeProvider>().resetToDefaults();
+    final provider = context.read<ThemeProvider>();
+    await provider.resetToDefaults();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت استعادة إعدادات المظهر الافتراضية')));
+    final error = provider.persistenceError;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null
+              ? 'تمت استعادة إعدادات المظهر الافتراضية.'
+              : 'أُعيدت القيم داخل الجلسة، لكن تعذر تأكيد حفظها: $error',
+        ),
+      ),
+    );
   }
 }

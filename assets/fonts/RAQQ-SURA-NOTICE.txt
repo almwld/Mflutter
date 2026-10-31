@@ -1,0 +1,4 @@
+RaqqSura — companion typeface for early-manuscript Kufic surah headings.
+Source: fonts/RaqqSura.ttf from https://github.com/aliftype/raqq
+License: GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later); see RAQQ-AGPL-3.0.txt.
+This font affects presentation only and does not alter Quran text or surah references.

@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/local_activity_summary_service.dart';
 
-class LeaderboardScreen extends StatelessWidget {
+class LeaderboardScreen extends StatefulWidget {
   const LeaderboardScreen({super.key});
+
+  @override
+  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends State<LeaderboardScreen> {
+  late Future<LocalActivitySummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = const LocalActivitySummaryService().load();
+  }
+
+  void _retry() {
+    setState(() => _summaryFuture = const LocalActivitySummaryService().load());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,19 +32,29 @@ class LeaderboardScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryNavy,
       ),
       body: FutureBuilder<LocalActivitySummary>(
-        future: const LocalActivitySummaryService().load(),
+        future: _summaryFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'تعذر تحميل إنجازاتك المحلية.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'تعذر تحميل إنجازاتك المحلية.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _retry,
+                      child: const Text('إعادة المحاولة'),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -36,6 +63,8 @@ class LeaderboardScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              if (activity.warnings.isNotEmpty)
+                _activityWarning(activity.warnings),
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -80,6 +109,21 @@ class LeaderboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _activityWarning(List<String> warnings) => Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withOpacity(.35)),
+        ),
+        child: Text(
+          'بعض المؤشرات غير مكتملة:\n${warnings.join('\n')}',
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(color: Colors.orangeAccent, height: 1.5),
+        ),
+      );
 
   Widget _stat(String label, String value) {
     return Container(

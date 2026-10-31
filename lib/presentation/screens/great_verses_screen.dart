@@ -43,6 +43,9 @@ class _GreatVersesScreenState extends State<GreatVersesScreen> {
     try {
       final ayahs = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
+      if (ayahs.isEmpty) {
+        throw StateError('فهرس القرآن المحلي لا يحتوي على آيات.');
+      }
       setState(() {
         _ayahByReference = <String, Ayah>{
           for (final ayah in ayahs)
@@ -63,7 +66,14 @@ class _GreatVersesScreenState extends State<GreatVersesScreen> {
   void _open(Ayah ayah) {
     final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => MushafScreen(initialPage: page, restoreLastPage: false)),
+      MaterialPageRoute(
+        builder: (_) => MushafScreen(
+          initialPage: page,
+          initialSurah: ayah.surahNumber,
+          initialAyah: ayah.ayahNumber,
+          restoreLastPage: false,
+        ),
+      ),
     );
   }
 

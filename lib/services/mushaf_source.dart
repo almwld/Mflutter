@@ -17,6 +17,35 @@ class MushafSource {
   static int juzForPage(int page) =>
       getCurrentJuzNumberForPage(normalizePage(page));
 
+  // Canonical start references for the 30 juz. A page can contain a juz
+  // boundary, so verse metadata must be derived from the ayah reference rather
+  // than assigning every verse the juz that starts on its page.
+  static const List<(int, int)> _juzStarts = <(int, int)>[
+    (1, 1), (2, 142), (2, 253), (3, 93), (4, 24),
+    (4, 148), (5, 82), (6, 111), (7, 88), (8, 41),
+    (9, 93), (11, 6), (12, 53), (15, 1), (17, 1),
+    (18, 75), (21, 1), (23, 1), (25, 21), (27, 56),
+    (29, 46), (33, 31), (36, 28), (39, 32), (41, 47),
+    (46, 1), (51, 31), (58, 1), (67, 1), (78, 1),
+  ];
+
+  static int juzForVerse(int surah, int ayah) {
+    if (surah < 1 || surah > totalSurahs || ayah < 1) {
+      throw ArgumentError('مرجع الآية غير صالح: $surah:$ayah');
+    }
+    var juz = 1;
+    for (var index = 1; index < _juzStarts.length; index++) {
+      final start = _juzStarts[index];
+      if (surah > start.$1 ||
+          (surah == start.$1 && ayah >= start.$2)) {
+        juz = index + 1;
+      } else {
+        break;
+      }
+    }
+    return juz;
+  }
+
   static String hizbTextForPage(int page) =>
       getCurrentHizbTextForPage(normalizePage(page), isArabic: true);
 
@@ -29,11 +58,9 @@ class MushafSource {
   static int firstPageForSurah(int surah) => pageForVerse(surah, 1);
 
   static int firstPageForJuz(int juz) {
-    final target = juz.clamp(1, totalJuz);
-    for (var page = 1; page <= totalPages; page++) {
-      if (juzForPage(page) == target) return page;
-    }
-    return 1;
+    final target = juz.clamp(1, totalJuz).toInt();
+    final start = _juzStarts[target - 1];
+    return pageForVerse(start.$1, start.$2);
   }
 
   /// يعيد الصفحة الأولى لكل حزب وفق انتقال نص الحزب الذي توفره QCF.

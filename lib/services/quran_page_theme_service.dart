@@ -5,16 +5,48 @@ enum QuranPageTheme { paper, black, navy, deepGreen }
 
 class QuranPageThemeService {
   static const _key = 'quran.page_theme';
+  static const _fontColorKey = 'quran.page_font_color';
+
+  static Future<Color?> loadFontColor() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final value = prefs.getInt(_fontColorKey);
+      return value == null ? null : Color(value);
+    } catch (error) {
+      debugPrint('QuranPageThemeService: could not load font color: $error');
+      return null;
+    }
+  }
+
+  static Future<void> saveFontColor(Color color) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setInt(_fontColorKey, color.value);
+    if (!saved) throw StateError('تعذر حفظ لون خط المصحف محليًا.');
+  }
+
+  static Future<void> clearFontColor() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_fontColorKey);
+  }
 
   static Future<QuranPageTheme> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final index = prefs.getInt(_key) ?? 0;
-    return QuranPageTheme.values[index.clamp(0, QuranPageTheme.values.length - 1).toInt()];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final index = prefs.getInt(_key) ?? 0;
+      return QuranPageTheme.values[
+          index.clamp(0, QuranPageTheme.values.length - 1).toInt()];
+    } catch (error) {
+      debugPrint('QuranPageThemeService: could not load page theme: $error');
+      return QuranPageTheme.paper;
+    }
   }
 
   static Future<void> save(QuranPageTheme theme) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_key, theme.index);
+    final saved = await prefs.setInt(_key, theme.index);
+    if (!saved) {
+      throw StateError('تعذر حفظ مظهر صفحات المصحف محليًا.');
+    }
   }
 
   static Color background(QuranPageTheme theme) {

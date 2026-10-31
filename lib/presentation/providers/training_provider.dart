@@ -8,11 +8,15 @@ class TrainingProvider extends ChangeNotifier {
   final _engine = MudabbirPythonEngine();
   StreamSubscription<Map<String, dynamic>>? _subscription;
   bool _initialized = false;
+  bool _isInitializing = false;
+  Future<void>? _initializing;
   String? _modelInitializationError;
 
   bool get isTraining => _trainingService.isTraining;
+  bool get isInitializing => _isInitializing;
   double get progress => _trainingService.progress;
   String get status {
+    if (_isInitializing) return 'جارٍ فحص أوزان المصنف المحلي...';
     if (_modelInitializationError != null &&
         !_engine.isInitialized &&
         _trainingService.status == 'جاهز') {
@@ -22,19 +26,46 @@ class TrainingProvider extends ChangeNotifier {
   }
   List<Map<String, dynamic>> get history => _trainingService.history;
   bool get modelLoaded => _engine.isInitialized;
+  String? get modelInitializationError => _modelInitializationError;
 
   Future<void> initialize() async {
     if (_initialized) return;
+    final pending = _initializing;
+    if (pending != null) {
+      await pending;
+      return;
+    }
+    final attempt = _initializeOnce();
+    _initializing = attempt;
+    try {
+      await attempt;
+    } finally {
+      if (identical(_initializing, attempt)) _initializing = null;
+    }
+  }
+
+  Future<void> _initializeOnce() async {
+    _isInitializing = true;
+    notifyListeners();
     try {
       await _engine.initialize();
       _modelInitializationError = null;
     } catch (error) {
       // A missing starter checkpoint must not block training from scratch.
+      // Keep the failure visible and allow a later explicit retry.
       _modelInitializationError = error.toString();
     } finally {
       _initialized = true;
+      _isInitializing = false;
       notifyListeners();
     }
+  }
+
+  Future<void> retryInitialize() async {
+    if (_trainingService.isTraining) return;
+    _initialized = false;
+    _modelInitializationError = null;
+    await initialize();
   }
 
   Future<void> trainOnVerses(List<Map<String, dynamic>> verses, {int epochs = 50}) async {

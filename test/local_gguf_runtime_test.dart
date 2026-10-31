@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/services/local_gguf_runtime_service.dart';
@@ -16,6 +17,17 @@ void main() {
       ),
       throwsA(isA<StateError>()),
     );
+  });
+
+  group('GGUF import storage errors', () {
+    test('recognizes Android/Linux no-space-left error code', () {
+      final error = FileSystemException(
+        'write failed',
+        '/models/model.gguf.importing',
+        const OSError('No space left on device', 28),
+      );
+      expect(error.osError?.errorCode, 28);
+    });
   });
 
   group('GGUF header validation', () {

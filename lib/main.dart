@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
@@ -7,9 +10,49 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/splash_screen.dart';
 import 'services/theme_service.dart';
 import 'services/nucleus_service.dart';
+import 'services/achievements_service.dart';
+import 'core/themes/font_manager.dart';
+
+Future<void> _loadBundledKufiFont() async {
+  try {
+    // The font is bundled as base64 text to keep the repository transport-safe;
+    // it is decoded locally at startup and requires no network access.
+    final encoded = await rootBundle.loadString(
+      'assets/fonts/Raqq.ttf.base64',
+    );
+    final bytes = Uint8List.fromList(
+      base64Decode(encoded.replaceAll(RegExp(r'\s+'), '')),
+    );
+    final loader = FontLoader('Raqq')
+      ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+    await loader.load();
+    FontManager.markRaqqFontLoaded(true);
+  } catch (_) {
+    FontManager.markRaqqFontLoaded(false);
+    // Keep the app usable if the optional display font cannot be loaded.
+  }
+
+  try {
+    final encoded = await rootBundle.loadString(
+      'assets/fonts/RaqqSura.ttf.base64',
+    );
+    final bytes = Uint8List.fromList(
+      base64Decode(encoded.replaceAll(RegExp(r'\s+'), '')),
+    );
+    final loader = FontLoader('RaqqSura')
+      ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes)));
+    await loader.load();
+    FontManager.markRaqqSuraFontLoaded(true);
+  } catch (_) {
+    FontManager.markRaqqSuraFontLoaded(false);
+    // Surah titles retain their standard Amiri fallback if unavailable.
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AchievementsService.recordNightUseIfApplicable();
+  await _loadBundledKufiFont();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   runApp(const MudabbirApp());
 }

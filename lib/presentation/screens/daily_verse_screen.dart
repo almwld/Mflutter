@@ -34,12 +34,24 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
     try {
       final verses = await QuranLoaderService.loadAllAyahs();
       if (!mounted) return;
-      final now = DateTime.now();
-      final dayOfYear = now.difference(DateTime(now.year)).inDays;
-      final index = dayOfYear % verses.length;
+      if (verses.isEmpty) {
+        throw StateError('فهرس القرآن المحلي لا يحتوي على آيات.');
+      }
+      final nowUtc = DateTime.now().toUtc();
+      // Use UTC calendar-day arithmetic from a fixed epoch so the choice is
+      // stable across time zones and cycles through the full corpus over time.
+      final todayUtc = DateTime.utc(
+        nowUtc.year,
+        nowUtc.month,
+        nowUtc.day,
+      );
+      final epochUtc = DateTime.utc(2000, 1, 1);
+      final dayNumber = todayUtc.difference(epochUtc).inDays;
+      final index = ((dayNumber % verses.length) + verses.length) % verses.length;
       setState(() {
         _verses = verses;
         _index = index;
+        _isBookmarked = false;
         _loading = false;
         _error = null;
       });
@@ -64,25 +76,44 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
   Future<void> _refreshBookmark() async {
     final verse = _current;
     if (verse == null) return;
-    final saved = await BookmarkService.isBookmarked(
-      verse.surahNumber,
-      verse.ayahNumber,
-    );
-    if (mounted) setState(() => _isBookmarked = saved);
+    try {
+      final saved = await BookmarkService.isBookmarked(
+        verse.surahNumber,
+        verse.ayahNumber,
+      );
+      final current = _current;
+      if (mounted &&
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber) {
+        setState(() => _isBookmarked = saved);
+      }
+    } catch (_) {
+      // Bookmark storage is optional for rendering the verse itself.
+      final current = _current;
+      if (mounted &&
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber) {
+        setState(() => _isBookmarked = false);
+      }
+    }
   }
 
   Future<void> _nextVerse() async {
     if (_verses.isEmpty) return;
-    setState(() => _index = (_index + 1) % _verses.length);
+    setState(() {
+      _index = (_index + 1) % _verses.length;
+      _isBookmarked = false;
+    });
     await _refreshBookmark();
   }
 
   Future<void> _toggleBookmark() async {
     final verse = _current;
     if (verse == null || _saving) return;
+    final wasBookmarked = _isBookmarked;
     setState(() => _saving = true);
     try {
-      if (_isBookmarked) {
+      if (wasBookmarked) {
         await BookmarkService.removeBookmark(
           verse.surahNumber,
           verse.ayahNumber,
@@ -95,13 +126,23 @@ class _DailyVerseScreenState extends State<DailyVerseScreen> {
         );
       }
       if (!mounted) return;
+      final current = _current;
+      final stillShowingSavedVerse =
+          current?.surahNumber == verse.surahNumber &&
+          current?.ayahNumber == verse.ayahNumber;
       setState(() {
-        _isBookmarked = !_isBookmarked;
         _saving = false;
+        if (stillShowingSavedVerse) _isBookmarked = !wasBookmarked;
       });
+      if (!stillShowingSavedVerse) await _refreshBookmark();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(_isBookmarked ? 'أُضيفت الآية إلى المفضلة' : 'أُزيلت الآية من المفضلة'),
+          content: Text(
+            wasBookmarked
+                ? 'أُزيلت الآية ${verse.surahNumber}:${verse.ayahNumber} من المفضلة'
+                : 'أُضيفت الآية ${verse.surahNumber}:${verse.ayahNumber} إلى المفضلة',
+          ),
         ),
       );
     } catch (error) {

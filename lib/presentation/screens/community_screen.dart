@@ -3,8 +3,25 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/local_activity_summary_service.dart';
 
-class CommunityScreen extends StatelessWidget {
+class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
+
+  @override
+  State<CommunityScreen> createState() => _CommunityScreenState();
+}
+
+class _CommunityScreenState extends State<CommunityScreen> {
+  late Future<LocalActivitySummary> _summaryFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _summaryFuture = const LocalActivitySummaryService().load();
+  }
+
+  void _retry() {
+    setState(() => _summaryFuture = const LocalActivitySummaryService().load());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +32,7 @@ class CommunityScreen extends StatelessWidget {
         backgroundColor: AppColors.primaryNavy,
       ),
       body: FutureBuilder<LocalActivitySummary>(
-        future: const LocalActivitySummaryService().load(),
+        future: _summaryFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
@@ -24,11 +41,22 @@ class CommunityScreen extends StatelessWidget {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'تعذر تحميل إحصاءات القراءة المحلية. حاول مجددًا.\n${snapshot.error ?? ''}',
-                  textAlign: TextAlign.center,
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(color: Colors.white70),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'تعذر تحميل إحصاءات القراءة المحلية.\n${snapshot.error ?? ''}',
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('إعادة المحاولة'),
+                    ),
+                  ],
                 ),
               ),
             );
@@ -37,6 +65,8 @@ class CommunityScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(20),
             children: [
+              if (activity.warnings.isNotEmpty)
+                _activityWarning(activity.warnings),
               const Text(
                 'نشاطك المحلي',
                 textDirection: TextDirection.rtl,
@@ -106,6 +136,21 @@ class CommunityScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _activityWarning(List<String> warnings) => Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(.10),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withOpacity(.35)),
+        ),
+        child: Text(
+          'بعض المؤشرات غير مكتملة:\n${warnings.join('\n')}',
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(color: Colors.orangeAccent, height: 1.5),
+        ),
+      );
 
   Widget _statCard(String title, String value) {
     return Container(
