@@ -165,7 +165,6 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
     }
     if (nearest == null) return;
     final selected = nearest;
-    if (selected == null) return;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF101D34),
@@ -182,7 +181,7 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
               Text(selected.nameEn, style: const TextStyle(color: Colors.white54, fontSize: 12)),
               const SizedBox(height: 18),
               if (selected.verse != null) ...[
-                Text(nearest.verse!, style: const TextStyle(color: Colors.white, fontFamily: 'Amiri', fontSize: 23, height: 1.8)),
+                Text(selected.verse!, style: const TextStyle(color: Colors.white, fontFamily: 'Amiri', fontSize: 23, height: 1.8)),
                 Text(selected.reference!, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri')),
                 const SizedBox(height: 8),
               ],
