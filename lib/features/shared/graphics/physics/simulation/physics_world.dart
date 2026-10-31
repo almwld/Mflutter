@@ -4,6 +4,7 @@ import '../collision/ccd_solver.dart';
 import '../collision/spatial_hash.dart';
 import '../distance_constraint.dart';
 import '../soft_body.dart';
+import '../volume_constraint.dart';
 
 /// Fixed-step position-based simulation world for deformable particle bodies.
 ///
@@ -104,6 +105,9 @@ class PhysicsWorld {
         for (final constraint in body.constraints) {
           _solveDistanceConstraint(body, constraint);
         }
+        for (final constraint in body.volumeConstraints) {
+          _solveVolumeConstraint(body, constraint);
+        }
       }
       for (final pair in contacts) {
         _ccd.resolvePair(
@@ -165,6 +169,72 @@ class PhysicsWorld {
     body.positions[b] -= nx * correction * wb;
     body.positions[b + 1] -= ny * correction * wb;
     body.positions[b + 2] -= nz * correction * wb;
+  }
+
+  void _solveVolumeConstraint(
+    SoftBody body,
+    TetraVolumeConstraint constraint,
+  ) {
+    final ia = constraint.a * 3;
+    final ib = constraint.b * 3;
+    final ic = constraint.c * 3;
+    final id = constraint.d * 3;
+    final p = body.positions;
+
+    final abx = p[ib] - p[ia];
+    final aby = p[ib + 1] - p[ia + 1];
+    final abz = p[ib + 2] - p[ia + 2];
+    final acx = p[ic] - p[ia];
+    final acy = p[ic + 1] - p[ia + 1];
+    final acz = p[ic + 2] - p[ia + 2];
+    final adx = p[id] - p[ia];
+    final ady = p[id + 1] - p[ia + 1];
+    final adz = p[id + 2] - p[ia + 2];
+
+    final crossX = acy * adz - acz * ady;
+    final crossY = acz * adx - acx * adz;
+    final crossZ = acx * ady - acy * adx;
+    final volume = (abx * crossX + aby * crossY + abz * crossZ) / 6;
+    final error = volume - constraint.restVolume;
+    if (error.abs() <= 1e-10) return;
+
+    final gbx = crossX / 6;
+    final gby = crossY / 6;
+    final gbz = crossZ / 6;
+    final gcx = (ady * abz - adz * aby) / 6;
+    final gcy = (adz * abx - adx * abz) / 6;
+    final gcz = (adx * aby - ady * abx) / 6;
+    final gdx = (aby * acz - abz * acy) / 6;
+    final gdy = (abz * acx - abx * acz) / 6;
+    final gdz = (abx * acy - aby * acx) / 6;
+    final gax = -(gbx + gcx + gdx);
+    final gay = -(gby + gcy + gdy);
+    final gaz = -(gbz + gcz + gdz);
+
+    final wa = body.inverseMasses[constraint.a];
+    final wb = body.inverseMasses[constraint.b];
+    final wc = body.inverseMasses[constraint.c];
+    final wd = body.inverseMasses[constraint.d];
+    final denominator =
+        wa * (gax * gax + gay * gay + gaz * gaz) +
+        wb * (gbx * gbx + gby * gby + gbz * gbz) +
+        wc * (gcx * gcx + gcy * gcy + gcz * gcz) +
+        wd * (gdx * gdx + gdy * gdy + gdz * gdz);
+    if (denominator <= 1e-18) return;
+
+    final lambda = -error * constraint.stiffness / denominator;
+    p[ia] += wa * lambda * gax;
+    p[ia + 1] += wa * lambda * gay;
+    p[ia + 2] += wa * lambda * gaz;
+    p[ib] += wb * lambda * gbx;
+    p[ib + 1] += wb * lambda * gby;
+    p[ib + 2] += wb * lambda * gbz;
+    p[ic] += wc * lambda * gcx;
+    p[ic + 1] += wc * lambda * gcy;
+    p[ic + 2] += wc * lambda * gcz;
+    p[id] += wd * lambda * gdx;
+    p[id + 1] += wd * lambda * gdy;
+    p[id + 2] += wd * lambda * gdz;
   }
 
   List<(int, int, int, int)> _buildContactPairs() {
