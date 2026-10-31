@@ -57,7 +57,10 @@ class BiomechanicsEngine {
 
   bool removeBody(String id) {
     _ensureActive();
-    final index = _bodies.indexWhere((body) => body.id == id);\n    if (index < 0) return false;\n    _bodies.removeAt(index);\n    return true;
+    final index = _bodies.indexWhere((body) => body.id == id);
+    if (index < 0) return false;
+    _bodies.removeAt(index);
+    return true;
   }
 
   BiomechanicsFrameStats advance(double frameDelta) {
@@ -77,7 +80,13 @@ class BiomechanicsEngine {
       for (final body in _bodies) {
         body.integrate(settings.gravity, dt);
       }
-      for (final body in _bodies) {\n        body.solveConstraints(\n          dt,\n          iterations: settings.constraintIterations,\n        );\n      }\n      for (final solver in contactSolvers) {
+      for (final body in _bodies) {
+        body.solveConstraints(
+          dt,
+          iterations: settings.constraintIterations,
+        );
+      }
+      for (final solver in contactSolvers) {
         for (var a = 0; a < _bodies.length; a++) {
           for (var b = a + 1; b < _bodies.length; b++) {
             contactStats.add(solver.solve(
