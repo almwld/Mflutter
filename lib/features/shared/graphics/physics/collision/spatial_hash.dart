@@ -1,8 +1,8 @@
 /// Swept-AABB spatial hash used to generate conservative particle candidates.
 ///
 /// Each particle is inserted into every cell touched by its previous-to-current
-/// motion segment expanded by its collision radius. This is what lets the
-/// narrow phase consider fast movers that would otherwise tunnel between frames.
+/// motion segment expanded by its collision radius. This lets the narrow phase
+/// consider fast movers that would otherwise tunnel between frames.
 class SpatialHash {
   SpatialHash({this.cellSize = 0.25}) {
     if (!cellSize.isFinite || cellSize <= 0) {
@@ -15,7 +15,9 @@ class SpatialHash {
 
   void clear() => _cells.clear();
 
-  void insertSweptParticle({
+  /// Returns false when the swept bounds are too large for grid insertion.
+  /// The caller must then use a conservative all-pairs fallback for that step.
+  bool insertSweptParticle({
     required int particleId,
     required double previousX,
     required double previousY,
@@ -32,12 +34,9 @@ class SpatialHash {
     final maxY = _cell((previousY > currentY ? previousY : currentY) + radius);
     final maxZ = _cell((previousZ > currentZ ? previousZ : currentZ) + radius);
 
-    // Bound pathological inputs before entering a potentially unbounded loop.
     final cellCount = (maxX - minX + 1) *
         (maxY - minY + 1) * (maxZ - minZ + 1);
-    if (cellCount > 4096) {
-      throw StateError('A swept particle spans too many spatial-hash cells.');
-    }
+    if (cellCount > 4096) return false;
 
     for (var x = minX; x <= maxX; x++) {
       for (var y = minY; y <= maxY; y++) {
@@ -46,6 +45,7 @@ class SpatialHash {
         }
       }
     }
+    return true;
   }
 
   Iterable<List<int>> get buckets => _cells.values;
