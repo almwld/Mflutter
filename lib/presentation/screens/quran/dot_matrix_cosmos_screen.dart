@@ -65,7 +65,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
   String? _error;
 
   double get _time => _clock.value * 60;
-  int get _scene => (_time / 10).floor().clamp(0, 5);
+  int get _scene => (_time / 10).floor().clamp(0, 5).toInt();
 
   @override
   void initState() {
@@ -123,12 +123,18 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
         }
 
         for (var p = 0; p < DotMatrixCosmosConfig.prophets.length; p++) {
-          final name = _tokens(DotMatrixCosmosConfig.prophets[p].$1).join(' ');
-          if (name.isEmpty) continue;
-          for (var i = 1; i < words.length; i++) {
-            if (words[i] == name && words[i - 1] == 'يا') {
-              called.add(p);
+          final nameTokens = _tokens(DotMatrixCosmosConfig.prophets[p].$1);
+          if (nameTokens.isEmpty) continue;
+          for (var i = 1; i + nameTokens.length <= words.length; i++) {
+            if (words[i - 1] != 'يا') continue;
+            var matches = true;
+            for (var part = 0; part < nameTokens.length; part++) {
+              if (words[i + part] != nameTokens[part]) {
+                matches = false;
+                break;
+              }
             }
+            if (matches) called.add(p);
           }
         }
       }
@@ -298,7 +304,7 @@ class _CosmosPainter extends CustomPainter {
       _text(canvas, size, 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
           size.height * .37, fontSize: 24 + reveal * 3, color: DotMatrixCosmosConfig.gold);
       _text(canvas, size, 'In the name of Allah, the Most Compassionate, Most Merciful',
-          size.height * .48, fontSize: 12, font: 'Cormorant Garamond');
+          size.height * .48, fontSize: 12, font: 'serif');
       _text(canvas, size, 'AL-FATIHAH 1:1', size.height * .58,
           fontSize: 9, color: const Color(0xFF8290B2), font: 'Cormorant Garamond');
       for (var i = 0; i < 170; i++) {
@@ -374,9 +380,9 @@ class _CosmosPainter extends CustomPainter {
           color: DotMatrixCosmosConfig.gold, fontSize: 20);
       _text(canvas, size, 'DIRECT ADDRESSES', size.height * .18,
           color: const Color(0xFF8290B2), fontSize: 9, font: 'Cormorant Garamond');
-      final visible = ((time - 40) * 1.2).floor().clamp(0, addresses.length);
+      final visible = ((time - 40) * 1.2).floor().clamp(0, addresses.length).toInt();
       if (visible > 0) {
-        final item = addresses[(visible - 1).clamp(0, addresses.length - 1)];
+        final item = addresses[(visible - 1).clamp(0, addresses.length - 1).toInt()];
         _text(canvas, size, item, size.height * .36, fontSize: 15, color: Colors.white);
         _text(canvas, size, '$visible', size.height * .65,
             fontSize: 30, color: DotMatrixCosmosConfig.gold, font: 'Cormorant Garamond');
