@@ -42,6 +42,7 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
   late Float32List _coordinates;
   late List<String> _ids;
   late List<String> _labels;
+  List<TextPainter>? _labelPainters;
   late List<(int, int)> _edges;
   BlockEventBus? _bus;
   StreamSubscription<BlockEvent>? _subscription;
@@ -85,6 +86,9 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
   }
 
   void _prepareGraph() {
+    for (final painter in _labelPainters ?? const <TextPainter>[]) {
+      painter.dispose();
+    }
     final nodes = widget.nodes.take(250).toList(growable: false);
     _ids = <String>[];
     _labels = <String>[];
@@ -99,6 +103,21 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
       _ids.add(node['id'] is String ? node['id'] as String : 'node-$i');
       _labels.add(node['label'] is String ? node['label'] as String : _ids.last);
     }
+    _labelPainters = List<TextPainter>.generate(_labels.length, (index) {
+      return TextPainter(
+        text: TextSpan(
+          text: _labels[index],
+          style: const TextStyle(
+            color: Color(0xFFE2E8F0),
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        textDirection: TextDirection.rtl,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: 110);
+    }, growable: false);
     final indexes = <String, int>{for (var i = 0; i < _ids.length; i++) _ids[i]: i};
     _edges = <(int, int)>[];
     for (final edge in widget.edges.take(500)) {
@@ -151,6 +170,9 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
     unawaited(_subscription?.cancel());
     _flow.dispose();
     _selection.dispose();
+    for (final painter in _labelPainters ?? const <TextPainter>[]) {
+      painter.dispose();
+    }
     super.dispose();
   }
 
@@ -171,7 +193,7 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
                 flow: _flow,
                 selection: _selection,
                 coordinates: _coordinates,
-                labels: _labels,
+                labelPainters: _labelPainters ?? const <TextPainter>[],
                 edges: _edges,
                 selected: _selected,
                 accentColor: widget.accentColor,
@@ -191,7 +213,7 @@ class _ConnectedNodesPainter extends CustomPainter {
     required this.flow,
     required this.selection,
     required this.coordinates,
-    required this.labels,
+    required this.labelPainters,
     required this.edges,
     required this.selected,
     required this.accentColor,
@@ -209,33 +231,17 @@ class _ConnectedNodesPainter extends CustomPainter {
     _node = Paint()..color = const Color(0xFFCBD5E1);
     _activeNode = Paint()..color = accentColor;
     _glow = Paint()..color = accentColor.withOpacity(.16);
-    _labelPainters = List<TextPainter>.generate(labels.length, (index) {
-      return TextPainter(
-        text: TextSpan(
-          text: labels[index],
-          style: const TextStyle(
-            color: Color(0xFFE2E8F0),
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        textDirection: TextDirection.rtl,
-        maxLines: 1,
-        ellipsis: '…',
-      )..layout(maxWidth: 110);
-    }, growable: false);
   }
 
   final Animation<double> flow;
   final Animation<double> selection;
   final Float32List coordinates;
-  final List<String> labels;
+  final List<TextPainter> labelPainters;
   final List<(int, int)> edges;
   final int selected;
   final Color accentColor;
   final Color backgroundColor;
   late final Paint _background, _line, _activeLine, _node, _activeNode, _glow;
-  late final List<TextPainter> _labelPainters;
   final Path _path = Path();
 
   @override
@@ -276,7 +282,7 @@ class _ConnectedNodesPainter extends CustomPainter {
       } else {
         canvas.drawCircle(Offset(x, y), 5.2, _node);
       }
-      final text = _labelPainters[i];
+      final text = labelPainters[i];
       final labelY = y + (y < size.height * .55 ? 12 : -text.height - 12);
       text.paint(canvas, Offset(
         (x - text.width / 2).clamp(4, math.max(4, size.width - text.width - 4)).toDouble(),
@@ -286,15 +292,9 @@ class _ConnectedNodesPainter extends CustomPainter {
   }
 
   @override
-  void dispose() {
-    for (final painter in _labelPainters) { painter.dispose(); }
-    super.dispose();
-  }
-
-  @override
   bool shouldRepaint(covariant _ConnectedNodesPainter oldDelegate) =>
       oldDelegate.coordinates != coordinates ||
-      oldDelegate.labels != labels ||
+      oldDelegate.labelPainters != labelPainters ||
       oldDelegate.edges != edges ||
       oldDelegate.selected != selected ||
       oldDelegate.accentColor != accentColor ||
