@@ -92,7 +92,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
       .toList(growable: false);
 
   bool _isAllahToken(String token) =>
-      token == 'الله' || token == 'لله' || token.endsWith('الله');
+      token == 'الله' || token == 'لله' || token == 'اللهم' || token.endsWith('الله');
 
   Future<void> _loadCorpus() async {
     try {
@@ -434,6 +434,15 @@ class _CosmosPainter extends CustomPainter {
             Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.18)
               ..style = PaintingStyle.stroke..strokeWidth = 1.1);
         canvas.drawCircle(marker, 1.6, Paint()..color = DotMatrixCosmosConfig.gold);
+        if (scene == 1) {
+          final targetY = markerIndex == litIndices.first ? .76 : .82;
+          canvas.drawLine(
+            marker,
+            Offset(size.width / 2, size.height * targetY),
+            Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.35)
+              ..strokeWidth = .65,
+          );
+        }
       }
     }
     if (sweep < 1) {
