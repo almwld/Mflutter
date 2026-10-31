@@ -88,8 +88,8 @@ class TetraVolumeConstraint {
     final pc = nc.position, pd = nd.position;
     final ga = (pc - pb).cross(pd - pb) / 6.0;
     final gb = (pd - pa).cross(pc - pa) / 6.0;
-    final gc = (pb - pa).cross(pd - pa) / 6.0;
-    final gd = (pc - pa).cross(pb - pa) / 6.0;
+    final gc = (pd - pa).cross(pb - pa) / 6.0;
+    final gd = (pb - pa).cross(pc - pa) / 6.0;
     final gradients = [ga, gb, gc, gd];
     final selected = [na, nb, nc, nd];
     var denominator = compliance / (dt * dt);
