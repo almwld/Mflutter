@@ -387,6 +387,12 @@ abstract final class TemplateBlockSchema {
             activeNodes.any((index) => index is! int || index < 0 || index >= safeCount))) {
           errors.add('active_nodes يجب أن تكون فهارس صحيحة ضمن عدد الجسيمات وبحد أقصى 128.');
         }
+        final nodeIds = block['node_ids'];
+        if (nodeIds != null && (nodeIds is! List || nodeIds.length > safeCount ||
+            nodeIds.any((id) => id is! String || id.trim().isEmpty) ||
+            (nodeIds is List && nodeIds.whereType<String>().toSet().length != nodeIds.length))) {
+          errors.add('node_ids يجب أن تكون معرّفات نصية فريدة وبحد أقصى count.');
+        }
         if (speed != null && (speed is! num || !speed.isFinite || speed < .1 || speed > 3)) {
           errors.add('speed يجب أن تكون قيمة رقمية بين 0.1 و3.');
         }
