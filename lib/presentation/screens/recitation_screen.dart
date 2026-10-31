@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../../core/constants/app_colors.dart';
 import '../../services/quran_loader_service.dart';
@@ -43,6 +45,13 @@ class AudioplayersRecitationEngine implements RecitationAudioEngine {
   Future<void> dispose() => _player.dispose();
 }
 
+class _ReciterSource {
+  const _ReciterSource({required this.name, required this.server, required this.surahs});
+  final String name;
+  final String server;
+  final Set<int> surahs;
+}
+
 class RecitationScreen extends StatefulWidget {
   const RecitationScreen({super.key, this.audioEngineFactory});
 
@@ -67,6 +76,9 @@ class _RecitationScreenState extends State<RecitationScreen> {
   bool _loading = false;
   bool _stoppedByUser = false;
   String? _error;
+  List<_ReciterSource> _reciters = const [];
+  String _selectedReciter = 'https://everyayah.com/data/Alafasy_128kbps/';
+  bool _loadingReciters = true;
 
   @override
   void initState() {
@@ -74,6 +86,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
     _player = widget.audioEngineFactory?.call() ?? AudioplayersRecitationEngine();
     unawaited(_player.setReleaseMode(ReleaseMode.stop));
     unawaited(_loadSurahs());
+    unawaited(_loadReciters());
     _completionSubscription = _player.onPlayerComplete.listen((_) {
       if (!_stoppedByUser && _playing && !_paused) unawaited(_playNextAyah());
     });
@@ -111,11 +124,59 @@ class _RecitationScreenState extends State<RecitationScreen> {
     }
   }
 
+  Future<void> _loadReciters() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://mp3quran.net/api/v3/reciters?language=ar'),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+      final payload = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final records = payload['reciters'] as List<dynamic>? ?? const [];
+      final loaded = <_ReciterSource>[];
+      for (final item in records) {
+        if (item is! Map<String, dynamic>) continue;
+        final name = item['name']?.toString() ?? '';
+        final moshaf = item['moshaf'] as List<dynamic>? ?? const [];
+        for (final edition in moshaf) {
+          if (edition is! Map<String, dynamic>) continue;
+          final server = edition['server']?.toString() ?? '';
+          if (server.isEmpty) continue;
+          final surahs = (edition['surah_list']?.toString() ?? '')
+              .split(',')
+              .map(int.tryParse)
+              .whereType<int>()
+              .toSet();
+          if (surahs.isNotEmpty && !loaded.any((entry) => entry.server == server)) {
+            loaded.add(_ReciterSource(name: name, server: server, surahs: surahs));
+          }
+        }
+      }
+      loaded.sort((a, b) => a.name.compareTo(b.name));
+      if (!mounted) return;
+      setState(() {
+        _reciters = loaded;
+        _loadingReciters = false;
+        if (loaded.any((item) => item.name.contains('إسلام صبحي'))) {
+          _selectedReciter = loaded.firstWhere((item) => item.name.contains('إسلام صبحي')).server;
+        }
+      });
+    } catch (error) {
+      debugPrint('Reciter catalog unavailable: $error');
+      if (mounted) setState(() => _loadingReciters = false);
+    }
+  }
+
   String _ayahUrl(int surahNumber, int ayahNumber) {
     final surah = surahNumber.toString().padLeft(3, '0');
     final ayah = ayahNumber.toString().padLeft(3, '0');
-    return 'https://everyayah.com/data/Alafasy_128kbps/$surah$ayah.mp3';
+    if (_selectedReciter == 'https://everyayah.com/data/Alafasy_128kbps/') {
+      return '${_selectedReciter}$surah$ayah.mp3';
+    }
+    return '${_selectedReciter}$surah.mp3';
   }
+
 
   Future<void> _selectSurah(int index) async {
     final generation = ++_generation;
@@ -143,6 +204,13 @@ class _RecitationScreenState extends State<RecitationScreen> {
     final surah = _surahs[index];
     setState(() { _loading = true; _error = null; });
     try {
+      if (_selectedReciter != 'https://everyayah.com/data/Alafasy_128kbps/') {
+        final matchingSources = _reciters.where((item) => item.server == _selectedReciter);
+        final source = matchingSources.isEmpty ? null : matchingSources.first;
+        if (source == null || !source.surahs.contains(surah.number)) {
+          throw StateError('هذه السورة غير متاحة ضمن النسخة الصوتية المختارة.');
+        }
+      }
       await _player.playUrl(_ayahUrl(surah.number, _currentAyah));
       if (!mounted || generation != _generation) return;
       setState(() { _loading = false; _playing = true; _paused = false; });
@@ -154,7 +222,8 @@ class _RecitationScreenState extends State<RecitationScreen> {
   Future<void> _playNextAyah() async {
     final index = _currentIndex;
     if (index == null || !mounted) return;
-    if (_currentAyah >= _surahs[index].ayahs) {
+    if (_selectedReciter != 'https://everyayah.com/data/Alafasy_128kbps/' ||
+        _currentAyah >= _surahs[index].ayahs) {
       setState(() { _playing = false; _paused = false; _loading = false; });
       return;
     }
@@ -254,6 +323,61 @@ class _RecitationScreenState extends State<RecitationScreen> {
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: DropdownButtonFormField<String>(
+              value: _selectedReciter,
+              isExpanded: true,
+              dropdownColor: AppColors.surface,
+              decoration: const InputDecoration(
+                labelText: 'القارئ',
+                labelStyle: TextStyle(color: AppColors.primaryGold),
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.record_voice_over_rounded),
+              ),
+              items: [
+                const DropdownMenuItem(
+                  value: 'https://everyayah.com/data/Alafasy_128kbps/',
+                  child: Text('مشاري العفاسي — افتراضي'),
+                ),
+                ..._reciters.map((item) => DropdownMenuItem(
+                  value: item.server,
+                  child: Text(item.name, overflow: TextOverflow.ellipsis),
+                )),
+              ],
+              onChanged: _loading || _playing
+                  ? null
+                  : (value) {
+                      if (value == null) return;
+                      setState(() => _selectedReciter = value);
+                      if (_currentIndex != null) _selectSurah(_currentIndex!);
+                    },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: const [
+                Chip(label: Text('عبدالرحمن مسعد • مصدر قيد الربط')),
+                Chip(label: Text('عبدالله أحمد شعبان • مصدر قيد الربط')),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text(
+              'إسلام صبحي يُحمّل من فهرس MP3Quran عند توفر نسخته. أُدرج الاسمان الآخران في القائمة المرئية، لكن لم يظهر لهما حتى الآن رابط بث موثوق في المصدر المعتمد؛ لن نشغّل رابطاً تخمينياً.',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.4),
+            ),
+          ),
+          if (_loadingReciters)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 6),
+              child: Text('جارٍ تحميل فهرس القراء...', style: TextStyle(color: Colors.white54, fontSize: 11)),
+            ),
           Expanded(
             child: _loadingSurahList
                 ? const Center(child: CircularProgressIndicator())
@@ -338,7 +462,11 @@ class _RecitationScreenState extends State<RecitationScreen> {
                           Text(current.name, textDirection: TextDirection.rtl,
                             style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
-                          Text('الآية $_currentAyah من ${current.ayahs}', textDirection: TextDirection.rtl,
+                          Text(
+                            _selectedReciter == 'https://everyayah.com/data/Alafasy_128kbps/'
+                                ? 'الآية $_currentAyah من ${current.ayahs}'
+                                : 'تشغيل السورة كاملة',
+                            textDirection: TextDirection.rtl,
                             style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         ],
                       ),
