@@ -52,12 +52,12 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
     duration: DotMatrixCosmosConfig.duration,
   );
   List<int> _allahVerseIndices = const [];
-  Set<int> _allahVerseIndexSet = const {};
   List<int> _allahOccurrences = const [];
   List<String> _allahRefs = const [];
   List<String> _directAddresses = const [];
   Set<int> _prophetsCalled = const {};
   bool _loading = true;
+  bool _resumeAfterScrub = false;
   String? _error;
 
   double get _time => _clock.value * 60;
@@ -138,7 +138,6 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
       if (!mounted) return;
       setState(() {
         _allahVerseIndices = List<int>.unmodifiable(lit);
-        _allahVerseIndexSet = Set<int>.unmodifiable(lit.toSet());
         _allahOccurrences = occurrences;
         _allahRefs = refs;
         _directAddresses = addresses;
@@ -189,7 +188,6 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                                   time: _time,
                                   scene: scene,
                                   litIndices: _allahVerseIndices,
-                                  litIndexSet: _allahVerseIndexSet,
                                   occurrenceCount: _allahOccurrences.fold<int>(0, (a, b) => a + b),
                                   firstRef: _allahRefs.isEmpty ? '—' : _allahRefs.first,
                                   lastRef: _allahRefs.isEmpty ? '—' : _allahRefs.last,
@@ -207,18 +205,33 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                           children: [
                             Slider(
                               value: progress,
+                              onChangeStart: (_) {
+                                _resumeAfterScrub = _clock.isAnimating;
+                                _clock.stop();
+                              },
                               onChanged: (v) => _clock.value = v,
+                              onChangeEnd: (_) {
+                                if (_resumeAfterScrub) _clock.forward();
+                                _resumeAfterScrub = false;
+                              },
                               activeColor: DotMatrixCosmosConfig.gold,
                               inactiveColor: Colors.white24,
                             ),
                             Row(
                               children: [
                                 IconButton(
-                                  onPressed: () => _clock.value = 0,
+                                  onPressed: () { _clock.stop(); _clock.value = 0; _clock.forward(); },
                                   icon: const Icon(Icons.replay, color: Colors.white70),
                                 ),
                                 IconButton(
-                                  onPressed: () => _clock.isAnimating ? _clock.stop() : _clock.forward(),
+                                  onPressed: () {
+                                    if (_clock.isAnimating) {
+                                      _clock.stop();
+                                    } else {
+                                      if (_clock.isCompleted) _clock.reset();
+                                      _clock.forward();
+                                    }
+                                  },
                                   icon: Icon(_clock.isAnimating ? Icons.pause : Icons.play_arrow,
                                       color: DotMatrixCosmosConfig.gold),
                                 ),
@@ -270,7 +283,6 @@ class _CosmosPainter extends CustomPainter {
   final double time;
   final int scene;
   final List<int> litIndices;
-  final Set<int> litIndexSet;
   final int occurrenceCount;
   final String firstRef;
   final String lastRef;
@@ -281,7 +293,6 @@ class _CosmosPainter extends CustomPainter {
     required this.time,
     required this.scene,
     required this.litIndices,
-    required this.litIndexSet,
     required this.occurrenceCount,
     required this.firstRef,
     required this.lastRef,
@@ -358,7 +369,7 @@ class _CosmosPainter extends CustomPainter {
         final value = (occurrenceCount * ((time - 20) / 5).clamp(0.0, 1.0)).round();
         _text(canvas, size, value.toString(), size.height * .12,
             fontSize: 36, color: DotMatrixCosmosConfig.gold, font: 'Cormorant Garamond');
-        _text(canvas, size, 'TIMES IN THE QURAN', size.height * .22,
+        _text(canvas, size, 'OCCURRENCES OF ALLAH-NAME FORMS', size.height * .22,
             fontSize: 9, color: const Color(0xFF8290B2), font: 'Cormorant Garamond');
       }
       return;
@@ -492,6 +503,5 @@ class _CosmosPainter extends CustomPainter {
   bool shouldRepaint(covariant _CosmosPainter oldDelegate) =>
       oldDelegate.time != time || oldDelegate.scene != scene ||
       oldDelegate.litIndices != litIndices ||
-      oldDelegate.litIndexSet != litIndexSet ||
       oldDelegate.occurrenceCount != occurrenceCount;
 }
