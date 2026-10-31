@@ -307,8 +307,10 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
                   _detail('السمت', selected.azimuth.toStringAsFixed(1) + '°'),
                   _detail('الارتفاع', selected.altitude.toStringAsFixed(1) + '°'),
                   _detail('القدر الظاهري', selected.magnitude.toStringAsFixed(2)),
+                  if (selected.distanceKilometers != null)
+                    _detail('المسافة', selected.distanceKilometers!.toStringAsFixed(0) + ' كم'),
                   if (selected.distanceAu != null)
-                    _detail('المسافة', selected.distanceAu!.toStringAsFixed(3) + ' AU'),
+                    _detail('المسافة الفلكية', selected.distanceAu!.toStringAsFixed(5) + ' AU'),
                   if (selected.distanceLightYears != null)
                     _detail('المسافة التقريبية', '~' + selected.distanceLightYears!.toStringAsFixed(1) + ' سنة ضوئية'),
                   if (selected.illuminatedFraction != null)
@@ -640,7 +642,7 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
           color: _gold, fontFamily: 'Amiri',
         )),
         content: const Text(
-          'تُحسب الشمس والكواكب باستخدام خوارزميات Meeus ونظرية VSOP87، والقمر بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي. تُحوّل النجوم من إحداثيات J2000 بعد تصحيح مبادرة الاعتدال إلى الأفق المحلي. لا يُطبّق الانكسار الجوي أو تصحيح الانحراف المغناطيسي المحلي، كما أن مجال رؤية الكاميرا تقريبي ويحتاج إلى معايرة على الجهاز. هذه أداة استكشاف وليست جهاز ملاحة أو مرصداً احترافياً.',
+          'تُحسب مواقع الشمس والكواكب باستخدام Meeus وVSOP87، والقمر مع اختلاف المنظر الطبوغرافي وطور الإضاءة والمسافة. إسقاط الشاشة غنوموني، ويمكن معايرة مجال الرؤية أفقياً وحفظه على الجهاز. زاوية العدسة الفعلية ومحاذاة المستشعرات لا تُستخرجان تلقائياً، لذا يلزم ضبط يدوي على الجهاز. لا يُطبّق الانكسار الجوي أو تصحيح الانحراف المغناطيسي المحلي، والقدر الظاهري للكواكب تقريبي. هذه أداة استكشاف وليست جهاز ملاحة أو مرصداً احترافياً.',
           style: TextStyle(color: Colors.white70, fontFamily: 'Amiri', height: 1.6),
         ),
         actions: [
