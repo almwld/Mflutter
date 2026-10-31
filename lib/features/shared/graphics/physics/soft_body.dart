@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'distance_constraint.dart';
+import 'volume_constraint.dart';
 
 /// Particle-based deformable body.
 ///
@@ -14,6 +15,7 @@ class SoftBody {
     required this.inverseMasses,
     required this.radii,
     this.constraints = const <DistanceConstraint>[],
+    this.volumeConstraints = const <TetraVolumeConstraint>[],
     this.linearDamping = 0.04,
     this.name = 'soft-body',
   })  : velocities = velocities ?? Float64List(positions.length),
@@ -52,6 +54,18 @@ class SoftBody {
         throw ArgumentError('A distance constraint references a missing particle.');
       }
     }
+    for (final constraint in volumeConstraints) {
+      final indices = <int>[
+        constraint.a, constraint.b, constraint.c, constraint.d,
+      ];
+      if (indices.any((index) => index < 0 || index >= _particleCount) ||
+          indices.toSet().length != 4 ||
+          !constraint.restVolume.isFinite ||
+          !constraint.stiffness.isFinite ||
+          constraint.stiffness < 0 || constraint.stiffness > 1) {
+        throw ArgumentError('A tetrahedral volume constraint is invalid.');
+      }
+    }
   }
 
   final Float64List positions;
@@ -60,6 +74,7 @@ class SoftBody {
   final Float64List radii;
   final Float64List previousPositions;
   final List<DistanceConstraint> constraints;
+  final List<TetraVolumeConstraint> volumeConstraints;
   final double linearDamping;
   final String name;
   final int _particleCount;
