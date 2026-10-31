@@ -14,6 +14,7 @@ import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/share_service.dart';
+import '../../../services/quran_fonts_service.dart';
 import '../../widgets/quran/font_color_picker_dialog.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
@@ -112,6 +113,10 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
       unawaited(DailyStreakService.recordActivity().catchError((_) {}));
     }
     _restorePageTheme();
+    // Register optional manuscript fonts before any custom-font reading view is shown.
+    unawaited(QuranFontsService.load().catchError((error) {
+      debugPrint('MushafScreen: optional Quran font registration failed: $error');
+    }));
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
       debugPrint('MushafScreen: could not set initial system bars: $error');
     });
