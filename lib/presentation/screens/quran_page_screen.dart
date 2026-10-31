@@ -686,8 +686,9 @@ class _OrnateAyahPainter extends CustomPainter {
 }
 
 
-/// Subtle page-only parchment finish. It is painted behind the scroll content,
-/// never over Quran glyphs, verse markers, or interactive controls.
+/// Procedural antique-paper finish, painted behind the scroll content.
+/// The deterministic texture is intentionally subtle and is enabled only for
+/// the classic parchment palette; Quran glyphs and source data are untouched.
 class _ParchmentPagePainter extends CustomPainter {
   const _ParchmentPagePainter({
     required this.baseColor,
@@ -699,43 +700,93 @@ class _ParchmentPagePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (size.isEmpty) return;
     final bounds = Offset.zero & size;
     canvas.drawRect(bounds, Paint()..color = baseColor);
-    if (!enabled || size.isEmpty) return;
+    if (!enabled) return;
 
+    // Warm translucent washes create a paper-like base without image assets.
     final wash = Paint()
       ..shader = const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0x18FFF8E8), Color(0x00FFFFFF), Color(0x1A80613B)],
+        colors: [
+          Color(0x20FFF8E8),
+          Color(0x00FFFFFF),
+          Color(0x1A80613B),
+        ],
         stops: [0, .52, 1],
       ).createShader(bounds);
     canvas.drawRect(bounds, wash);
 
+    // A restrained radial edge tint suggests natural ageing, not a vignette.
     final edge = Paint()
-      ..shader = RadialGradient(
+      ..shader = const RadialGradient(
         center: Alignment.center,
         radius: 0.88,
         colors: [
-          const Color(0x00000000),
-          const Color(0x0D684A2B),
+          Color(0x00000000),
+          Color(0x0D684A2B),
         ],
-        stops: const [0.68, 1],
+        stops: [0.68, 1],
       ).createShader(bounds);
     canvas.drawRect(bounds, edge);
 
-    // Deterministic, very low-contrast fibers avoid random repaint flicker.
+    // Fixed seed keeps the paper grain stable while scrolling/rebuilding.
+    final random = math.Random(1337);
+    final specklePaint = Paint()..style = PaintingStyle.fill;
+    final speckleCount =
+        (size.width * size.height / 1800).clamp(120, 520).toInt();
+    for (var i = 0; i < speckleCount; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final radius = .22 + random.nextDouble() * .72;
+      final alpha = 4 + random.nextInt(11);
+      final tone = random.nextBool()
+          ? const Color(0xFF60452E)
+          : const Color(0xFF9B7952);
+      specklePaint.color = tone.withAlpha(alpha);
+      canvas.drawCircle(Offset(x, y), radius, specklePaint);
+    }
+
+    // Short, low-contrast fibers imitate the irregular grain of old paper.
     final fiberPaint = Paint()
       ..color = const Color(0x126D5030)
-      ..strokeWidth = .45;
-    final count = (size.width * size.height / 5200).clamp(0, 260).toInt();
-    for (var i = 0; i < count; i++) {
-      final xSeed = (i * 73 + 19) % 997 / 997.0;
-      final ySeed = (i * 191 + 47) % 991 / 991.0;
-      final x = xSeed * size.width;
-      final y = ySeed * size.height;
-      final length = 2.0 + (i % 5) * .65;
-      canvas.drawLine(Offset(x, y), Offset(x + length, y + .35), fiberPaint);
+      ..strokeWidth = .45
+      ..strokeCap = StrokeCap.round;
+    final fiberCount =
+        (size.width * size.height / 5200).clamp(15, 260).toInt();
+    for (var i = 0; i < fiberCount; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final length = 3.0 + random.nextDouble() * 13.0;
+      final drift = (random.nextDouble() - .5) * 1.8;
+      fiberPaint.color = const Color(0xFF70523A)
+          .withAlpha(5 + random.nextInt(9));
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(x + length, y + drift),
+        fiberPaint,
+      );
+    }
+
+    // A few broad, nearly transparent age marks add depth without clutter.
+    final stainPaint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 7; i++) {
+      final x = random.nextDouble() * size.width;
+      final y = random.nextDouble() * size.height;
+      final radiusX = 7 + random.nextDouble() * 22;
+      final radiusY = 3 + random.nextDouble() * 9;
+      stainPaint.color = const Color(0xFF8A6845)
+          .withAlpha(2 + random.nextInt(4));
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, y),
+          width: radiusX * 2,
+          height: radiusY * 2,
+        ),
+        stainPaint,
+      );
     }
   }
 
