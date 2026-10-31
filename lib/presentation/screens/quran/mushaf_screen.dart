@@ -9,7 +9,6 @@ import '../../../services/reading_progress_service.dart';
 import '../../../services/daily_streak_service.dart';
 import '../../../services/ayah_coordinate_service.dart';
 import 'mushaf_variant_screen.dart';
-import '../../widgets/quran/living_ayah_painter.dart';
 import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/nucleus_service.dart';
@@ -564,16 +563,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
                     fit: StackFit.expand,
                     children: [
                       child!,
-                      IgnorePointer(
-                        child: CustomPaint(
-                          painter: LivingAyahPainter(
-                            pulse: _livingPulse.value,
-                            glow: selected ? .72 + _livingGlow.value * .28 : 0,
-                            isGreatVerse: great,
-                            isActive: selected,
-                          ),
-                        ),
-                      ),
+                      const SizedBox.shrink(),
                     ],
                   );
                 },
