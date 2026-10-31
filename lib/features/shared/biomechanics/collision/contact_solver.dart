@@ -96,7 +96,7 @@ class MultiBodyContactSolver {
           final tangentLength = tangentVelocity.length;
           if (tangentLength > 1e-9 && material.friction > 0) {
             final frictionImpulse = tangentVelocity *
-                (-material.friction.clamp(0.0, 1.0) * .5);
+                (-material.friction.clamp(0.0, 1.0).toDouble() * .5);
             if (wa > 0) {
               nodeA.velocity = nodeA.velocity +
                   frictionImpulse * (wa / totalWeight);
