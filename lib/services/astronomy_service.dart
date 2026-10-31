@@ -157,6 +157,8 @@ class AstronomyService {
     final year = _decimalYear(date);
 
     final bodies = <CelestialBody>[];
+    // One shared Earth vector supplies the Sun distance and all planetary ranges.
+    final earthPosition = _earth.position(jde);
 
     final sun = solar.apparentEquatorial(jde);
     bodies.add(_fromEquatorial(
@@ -167,6 +169,7 @@ class AstronomyService {
       ra: sun.ra,
       dec: sun.dec,
       magnitude: -26.7,
+      distanceAu: earthPosition.range,
       color: 0xFFFFD27A,
       latitudeRadians: latitudeRadians,
       localSiderealDegrees: localSiderealDegrees,
@@ -182,7 +185,26 @@ class AstronomyService {
       math.cos(obliquity),
     );
     final observerParallax = globe.parallaxConstants(latitudeRadians, 0);
-    final moonDistanceAu = moonPosition.delta / 149597870.7;
+    final moonDistanceKm = moonPosition.delta;
+    final moonDistanceAu = moonDistanceKm / 149597870.7;
+    final elongation = math.acos((
+      math.sin(moonGeocentric.dec) * math.sin(sun.dec) +
+      math.cos(moonGeocentric.dec) * math.cos(sun.dec) *
+          math.cos(moonGeocentric.ra - sun.ra)
+    ).clamp(-1.0, 1.0).toDouble());
+    final sunMoonDistanceAu = math.sqrt(
+      earthPosition.range * earthPosition.range +
+      moonDistanceAu * moonDistanceAu -
+      2 * earthPosition.range * moonDistanceAu * math.cos(elongation),
+    );
+    final phaseCosine = (
+      moonDistanceAu * moonDistanceAu +
+      sunMoonDistanceAu * sunMoonDistanceAu -
+      earthPosition.range * earthPosition.range
+    ) / (2 * moonDistanceAu * sunMoonDistanceAu);
+    final phaseAngle = math.acos(phaseCosine.clamp(-1.0, 1.0).toDouble());
+    final illuminatedFraction = (1 + math.cos(phaseAngle)) / 2;
+    final waxing = _normalize((moonGeocentric.ra - sun.ra) * _deg) < 180;
     final moonHourAngle = localSiderealDegrees * _rad - moonGeocentric.ra;
     final moonEquatorial = parallax.topocentric(
       moonGeocentric.ra,
@@ -201,6 +223,10 @@ class AstronomyService {
       ra: moonEquatorial.ra,
       dec: moonEquatorial.dec,
       magnitude: -12.0,
+      distanceAu: moonDistanceAu,
+      illuminatedFraction: illuminatedFraction,
+      phaseAngleDegrees: phaseAngle * _deg,
+      phaseName: _moonPhaseName(phaseAngle * _deg, waxing),
       color: 0xFFE4E9F5,
       latitudeRadians: latitudeRadians,
       localSiderealDegrees: localSiderealDegrees,
@@ -209,10 +235,7 @@ class AstronomyService {
       note: 'موضع قمري محسوب بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي؛ الانكسار الجوي غير مطبق.',
     ));
 
-    // Evaluate Earth's VSOP87 position once, then reuse it for all planets.
-    // elliptic.position() recomputes Earth for every planet and each light-time
-    // pass; this shared calculation avoids repeated high-cost series summations.
-    final earthPosition = _earth.position(jde);
+    // Reuse the shared Earth VSOP87 vector for every planet.
     for (final spec in _planets) {
       final equatorial = _planetEquatorial(spec.planet, earthPosition, jde);
       bodies.add(_fromEquatorial(
@@ -223,6 +246,7 @@ class AstronomyService {
         ra: equatorial.ra,
         dec: equatorial.dec,
         magnitude: spec.magnitude,
+        distanceAu: equatorial.distanceAu,
         color: spec.color,
         latitudeRadians: latitudeRadians,
         localSiderealDegrees: localSiderealDegrees,
@@ -247,6 +271,7 @@ class AstronomyService {
         ra: precessed.ra,
         dec: precessed.dec,
         magnitude: star.magnitude,
+        distanceLightYears: _starDistanceLightYears[star.id],
         color: star.color,
         latitudeRadians: latitudeRadians,
         localSiderealDegrees: localSiderealDegrees,
@@ -259,7 +284,7 @@ class AstronomyService {
     return List<CelestialBody>.unmodifiable(bodies);
   }
 
-  static ({double ra, double dec}) _planetEquatorial(
+  static ({double ra, double dec, double distanceAu}) _planetEquatorial(
     pp.Planet planet,
     ({double lon, double lat, double range}) earth,
     double jde,
@@ -306,13 +331,53 @@ class AstronomyService {
     final nutation = nut.nutation(jde);
     longitude += nutation.dPsi;
     final obliquity = nut.meanObliquity(jde) + nutation.dEps;
-    return coord.eclToEq(
+    final equatorial = coord.eclToEq(
       longitude,
       latitude,
       math.sin(obliquity),
       math.cos(obliquity),
     );
+    final correctedDistance = math.sqrt(
+      corrected.x * corrected.x +
+      corrected.y * corrected.y +
+      corrected.z * corrected.z,
+    );
+    return (
+      ra: equatorial.ra,
+      dec: equatorial.dec,
+      distanceAu: correctedDistance,
+    );
   }
+
+  static String _moonPhaseName(double angle, bool waxing) {
+    if (angle < 12 || angle >= 348) return 'محاق';
+    if (angle < 78) return waxing ? 'هلال متزايد' : 'هلال متناقص';
+    if (angle < 102) return waxing ? 'التربيع الأول' : 'التربيع الأخير';
+    if (angle < 168) return waxing ? 'أحدب متزايد' : 'أحدب متناقص';
+    if (angle < 192) return 'بدر';
+    if (angle < 258) return 'أحدب متناقص';
+    if (angle < 282) return 'التربيع الأخير';
+    return 'هلال متناقص';
+  }
+
+  static const Map<String, double> _starDistanceLightYears = {
+    'sirius': 8.6, 'polaris': 447, 'vega': 25, 'arcturus': 36.7,
+    'capella': 42.9, 'procyon': 11.5, 'betelgeuse': 548, 'rigel': 860,
+    'bellatrix': 250, 'aldebaran': 65, 'spica': 250, 'antares': 550,
+    'deneb': 2600, 'altair': 16.7, 'albireo': 430, 'dubhe': 123,
+    'merak': 79, 'phecda': 83, 'megrez': 80, 'alioth': 81,
+    'mizar': 83, 'alkaid': 104, 'schedar': 228, 'caph': 54,
+    'castor': 51, 'pollux': 34, 'regulus': 79, 'denebola': 36,
+    'hamal': 66, 'mirach': 197, 'alpheratz': 97, 'algol': 93,
+    'mirfak': 510, 'elnath': 134, 'maia': 134, 'electra': 400,
+    'mimosa': 280, 'acrux': 320, 'gacrux': 88, 'canopus': 310,
+    'adhara': 430, 'wezen': 1600, 'aludra': 2000, 'fomalhaut': 25,
+    'achernar': 139, 'shaula': 570, 'sargas': 270,
+    'kaus_australis': 145, 'rasalhague': 48, 'alphecca': 75,
+    'muphrid': 37, 'alnair': 101, 'gienah': 154, 'alnilam': 2000,
+    'mintaka': 1200, 'alnitak': 1260, 'sadr': 1800, 'sheliak': 960,
+    'sulafat': 620, 'tarazed': 460, 'alshain': 45,
+  };
 
   static CelestialBody _fromEquatorial({
     required String id,
@@ -322,6 +387,11 @@ class AstronomyService {
     required double ra,
     required double dec,
     required double magnitude,
+    double? distanceAu,
+    double? distanceLightYears,
+    double? illuminatedFraction,
+    double? phaseAngleDegrees,
+    String? phaseName,
     required int color,
     required double latitudeRadians,
     required double localSiderealDegrees,
@@ -349,6 +419,11 @@ class AstronomyService {
       azimuth: _normalize(azimuth * _deg),
       altitude: altitude * _deg,
       magnitude: magnitude,
+      distanceAu: distanceAu,
+      distanceLightYears: distanceLightYears,
+      illuminatedFraction: illuminatedFraction,
+      phaseAngleDegrees: phaseAngleDegrees,
+      phaseName: phaseName,
       colorValue: color,
       verse: verse,
       reference: reference,
