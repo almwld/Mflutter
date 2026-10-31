@@ -174,7 +174,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Text(
-                      'تعذر تحليل النص القرآني المحلي\\n$_error',
+                      'تعذر تحليل النص القرآني المحلي\n$_error',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white70,
