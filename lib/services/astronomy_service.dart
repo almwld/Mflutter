@@ -222,7 +222,7 @@ class AstronomyService {
       kind: CelestialKind.moon,
       ra: moonEquatorial.ra,
       dec: moonEquatorial.dec,
-      magnitude: -12.73 + 0.026 * (phaseAngle * _deg) + 4e-9 * math.pow(phaseAngle * _deg, 4),
+      magnitude: -12.73 + 0.026 * (phaseAngle * _deg) + (4e-9 * math.pow(phaseAngle * _deg, 4)).toDouble(),
       distanceAu: moonDistanceAu,
       distanceKilometers: moonDistanceKm,
       illuminatedFraction: illuminatedFraction,
