@@ -747,6 +747,15 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
             if (_readerControlsVisible)
               Positioned(
                 top: 48,
+                right: 68,
+                child: _roundButton(
+                  icon: Icons.format_color_text_rounded,
+                  onPressed: _showFontColorPicker,
+                ),
+              ),
+            if (_readerControlsVisible)
+              Positioned(
+                top: 48,
                 right: 18,
                 child: _roundButton(
                   icon: Icons.palette_outlined,
