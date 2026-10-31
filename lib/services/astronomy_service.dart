@@ -183,7 +183,7 @@ class AstronomyService {
     final dec = equatorial.dec * _rad;
     final sinAlt = math.sin(lat) * math.sin(dec) +
         math.cos(lat) * math.cos(dec) * math.cos(hourAngle);
-    final altitude = math.asin(sinAlt.clamp(-1.0, 1.0)) * _deg;
+    final altitude = math.asin(sinAlt.clamp(-1.0, 1.0).toDouble()) * _deg;
     final azimuth = _normalize(math.atan2(
           -math.sin(hourAngle),
           math.tan(dec) * math.cos(lat) -
