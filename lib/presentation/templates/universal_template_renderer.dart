@@ -177,7 +177,7 @@ abstract final class TemplateBlockSchema {
     'hero_header_block', 'timeline_block', 'relation_graph_block', 'star_tracker_block',
     'code_math_block', 'audio_frequency_block', 'spatial_map_block',
     'star_map_block', 'vector_space_block', 'quantum_particle_block',
-    'interactive_card_block',
+    'interactive_card_block', 'particle_matrix_block', 'connected_nodes_path_block',
   };
 
   static bool isSupported(Map<String, dynamic> block) =>
@@ -363,6 +363,63 @@ abstract final class TemplateBlockSchema {
               link.any((index) => index is! int || index < 0 || index >= pointCount)))) {
             errors.add('links يجب أن تكون أزواج فهارس صحيحة للجسيمات.');
           }
+        }
+        break;
+      case 'particle_matrix_block':
+        final count = block['count'];
+        final columns = block['columns'];
+        final activeRow = block['active_row'];
+        final activeNodes = block['active_nodes'];
+        final speed = block['speed'];
+        final height = block['height'];
+        if (count != null && (count is! int || count < 1 || count > 8000)) {
+          errors.add('count يجب أن يكون عددًا صحيحًا بين 1 و8000.');
+        }
+        if (columns != null && (columns is! int || columns < 1 || columns > 500)) {
+          errors.add('columns يجب أن يكون عددًا صحيحًا بين 1 و500.');
+        }
+        final safeCount = count is int ? count : 2400;
+        if (activeRow != null && (activeRow is! int || activeRow < 0 ||
+            activeRow >= (safeCount / (columns is int && columns > 0 ? columns : 80)).ceil())) {
+          errors.add('active_row خارج نطاق صفوف المصفوفة.');
+        }
+        if (activeNodes != null && (activeNodes is! List || activeNodes.length > 128 ||
+            activeNodes.any((index) => index is! int || index < 0 || index >= safeCount))) {
+          errors.add('active_nodes يجب أن تكون فهارس صحيحة ضمن عدد الجسيمات وبحد أقصى 128.');
+        }
+        if (speed != null && (speed is! num || !speed.isFinite || speed < .1 || speed > 3)) {
+          errors.add('speed يجب أن تكون قيمة رقمية بين 0.1 و3.');
+        }
+        if (height != null && (height is! num || !height.isFinite || height < 80 || height > 900)) {
+          errors.add('height يجب أن تكون قيمة رقمية بين 80 و900.');
+        }
+        break;
+      case 'connected_nodes_path_block':
+        final nodes = block['nodes'];
+        final edges = block['edges'] ?? const <dynamic>[];
+        if (nodes is! List || nodes.length < 2 || nodes.length > 250 ||
+            nodes.any((node) => node is! Map ||
+                node['id'] is! String || (node['id'] as String).trim().isEmpty ||
+                node['label'] is! String ||
+                ((node['x'] == null) != (node['y'] == null)) ||
+                (node['x'] != null && (node['x'] is! num || !(node['x'] as num).isFinite ||
+                    (node['x'] as num) < 0 || (node['x'] as num) > 1)) ||
+                (node['y'] != null && (node['y'] is! num || !(node['y'] as num).isFinite ||
+                    (node['y'] as num) < 0 || (node['y'] as num) > 1)))) {
+          errors.add('nodes يجب أن تحتوي 2 إلى 250 عقدة بمعرّف واسم وإحداثيات اختيارية صحيحة.');
+        } else {
+          final ids = nodes.map((node) => (node as Map)['id'] as String).toSet();
+          if (ids.length != nodes.length) errors.add('معرّفات العقد يجب أن تكون فريدة.');
+          if (edges is! List || edges.length > 500 || edges.any((edge) =>
+              edge is! Map || edge['from'] is! String || edge['to'] is! String ||
+              !ids.contains(edge['from']) || !ids.contains(edge['to']))) {
+            errors.add('edges يجب أن تربط معرّفات عقد موجودة وبحد أقصى 500 وصلة.');
+          }
+        }
+        if (block['height'] != null &&
+            (block['height'] is! num || !(block['height'] as num).isFinite ||
+                (block['height'] as num) < 120 || (block['height'] as num) > 900)) {
+          errors.add('height يجب أن تكون قيمة بين 120 و900.');
         }
         break;
       case 'code_math_block':
