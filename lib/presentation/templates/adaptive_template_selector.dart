@@ -35,8 +35,10 @@ abstract final class AdaptiveTemplateSelector {
     required String query,
     required List<Map<String, dynamic>> blocks,
   }) {
+    // Unknown identifiers belong to the caller/renderer validation boundary.
+    // Do not silently replace them with a different template.
     if (!supportedTemplates.contains(requestedTemplateId)) {
-      return 'generic_template';
+      return requestedTemplateId;
     }
 
     final normalizedDomain = _normalize(domain);
@@ -46,11 +48,13 @@ abstract final class AdaptiveTemplateSelector {
         .whereType<String>()
         .toSet();
 
+    if (_containsCanonicalVerse(blocks)) return 'reader_template';
     if (normalizedDomain.contains('abjad')) return 'abjad_template';
     if (types.contains('star_tracker_block')) {
       return 'cosmic_celestial_template';
     }
-    if (types.contains('particle_matrix_block') || types.contains('quantum_particle_block')) {
+    if (types.contains('particle_matrix_block') ||
+        types.contains('quantum_particle_block')) {
       return 'quantum_mesh_template';
     }
     if (types.contains('vector_space_block')) {
@@ -89,15 +93,29 @@ abstract final class AdaptiveTemplateSelector {
     return requestedTemplateId;
   }
 
+  static bool _containsCanonicalVerse(List<Map<String, dynamic>> blocks) {
+    return blocks.any((block) {
+      if (block['type'] != 'quran_verse') return false;
+      final surah = block['surah_number'];
+      final ayah = block['ayah_number'];
+      return surah is int &&
+          surah >= 1 &&
+          surah <= 114 &&
+          ayah is int &&
+          ayah >= 1 &&
+          ayah <= 286;
+    });
+  }
+
   static bool _containsAny(String value, List<String> terms) =>
       terms.any(value.contains);
 
   static String _normalize(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(RegExp(r'[\\u064B-\\u065F\\u0670\\u0640]'), '')
       .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
       .replaceAll('ى', 'ي')
       .replaceAll('ة', 'ه')
-      .replaceAll(RegExp(r'\s+'), ' ')
+      .replaceAll(RegExp(r'\\s+'), ' ')
       .trim();
 }
