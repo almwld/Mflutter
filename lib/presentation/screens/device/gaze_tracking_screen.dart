@@ -78,34 +78,46 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
 
   Future<void> _initialize() async {
     final generation = ++_generation;
+    CameraController? pendingCamera;
+    FaceDetector? pendingDetector;
     if (mounted) setState(() { _loading = true; _error = null; });
-    await _releaseCamera();
     try {
+      await _releaseCamera();
+      if (!mounted || generation != _generation) return;
       await _fusion.load();
-      final detector = await FaceDetector.create(model: FaceDetectionModel.frontCamera);
+      pendingDetector = await FaceDetector.create(model: FaceDetectionModel.frontCamera);
       final cameras = await availableCameras();
       final front = cameras.where((c) => c.lensDirection == CameraLensDirection.front);
       final info = front.isNotEmpty ? front.first : (cameras.isEmpty ? null : cameras.first);
       if (info == null) throw StateError('لم يتم العثور على كاميرا.');
-      final camera = CameraController(
+      pendingCamera = CameraController(
         info,
         ResolutionPreset.medium,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.yuv420,
       );
-      await camera.initialize();
-      if (!mounted || generation != _generation) {
-        await camera.dispose();
-        await detector.dispose();
-        return;
-      }
-      _camera = camera;
-      _detector = detector;
+      await pendingCamera.initialize();
+      if (!mounted || generation != _generation) return;
+      _camera = pendingCamera;
+      _detector = pendingDetector;
+      pendingCamera = null;
+      pendingDetector = null;
       setState(() => _loading = false);
       if (_tracking) await _startStream();
     } catch (error) {
       if (mounted && generation == _generation) {
         setState(() { _loading = false; _error = 'تعذر تهيئة تتبع النظر المحلي: $error'; });
+      }
+    } finally {
+      try {
+        await pendingCamera?.dispose();
+      } catch (error) {
+        debugPrint('Could not release incomplete gaze camera: $error');
+      }
+      try {
+        await pendingDetector?.dispose();
+      } catch (error) {
+        debugPrint('Could not release incomplete gaze detector: $error');
       }
     }
   }
@@ -133,8 +145,18 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
     final detector = _detector;
     _camera = null;
     _detector = null;
-    await camera?.dispose();
-    await detector?.dispose();
+    // Releasing one native resource must not prevent releasing the other or
+    // leak an asynchronous exception during lifecycle changes/dispose.
+    try {
+      await camera?.dispose();
+    } catch (error) {
+      debugPrint('Could not dispose gaze camera: $error');
+    }
+    try {
+      await detector?.dispose();
+    } catch (error) {
+      debugPrint('Could not dispose gaze detector: $error');
+    }
   }
 
   double? _eyeRatio(Eye? eye, bool horizontal) {
@@ -323,7 +345,21 @@ class _GazeTrackingScreenState extends State<GazeTrackingScreen>
         actions: [
           IconButton(
             tooltip: 'إعادة ضبط المعايرة',
-            onPressed: () async { await _fusion.clear(); if (mounted) setState(() => _point = null); },
+            onPressed: () async {
+              try {
+                await _fusion.clear();
+                if (!mounted) return;
+                setState(() => _point = null);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('تم حذف معايرة النظر المحفوظة.')),
+                );
+              } catch (error) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('تعذر حذف المعايرة: $error')),
+                );
+              }
+            },
             icon: const Icon(Icons.restart_alt_rounded),
           ),
         ],

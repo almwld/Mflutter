@@ -1,36 +1,26 @@
+import '../core/utils/abjad_calculator.dart';
+import '../utils/abjad_constants.dart';
+
+/// One canonical normalization and arithmetic path for all Abjad tools.
+///
+/// The values are conventional letter-number mappings, not scientific
+/// measurements or a basis for predictions. Unsupported characters are ignored.
 class AbjadExtendedService {
   AbjadExtendedService._();
 
-  static const Map<String, int> values = <String, int>{
-    'ا': 1, 'ب': 2, 'ج': 3, 'د': 4, 'ه': 5, 'و': 6, 'ز': 7, 'ح': 8,
-    'ط': 9, 'ي': 10, 'ك': 20, 'ل': 30, 'م': 40, 'ن': 50, 'س': 60,
-    'ع': 70, 'ف': 80, 'ص': 90, 'ق': 100, 'ر': 200, 'ش': 300,
-    'ت': 400, 'ث': 500, 'خ': 600, 'ذ': 700, 'ض': 800, 'ظ': 900,
-    'غ': 1000,
-  };
+  static const Map<String, int> values = AbjadConstants.abjadSquare;
 
-  /// Removes harakat and normalizes common Arabic letter variants.
-  static String normalize(String text) {
-    return text
-        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
-        .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
-        .replaceAll('ى', 'ي')
-        .replaceAll('ؤ', 'و')
-        .replaceAll('ئ', 'ي')
-        .replaceAll('ة', 'ه')
-        .replaceAll('ـ', '');
-  }
+  /// Remove Arabic marks and normalize equivalent spellings consistently.
+  /// Ta marbuta is intentionally preserved: traditional mappings may assign it
+  /// 400, so silently converting it to ه would change the selected convention.
+  static String normalize(String text) =>
+      AbjadCalculator.normalizeArabic(text);
 
-  /// Abjad al-kabir. Punctuation, spaces, and non-Arabic characters are ignored.
-  static int calculate(String text) {
-    var total = 0;
-    for (final rune in normalize(text).runes) {
-      final letter = String.fromCharCode(rune);
-      total += values[letter] ?? 0;
-    }
-    return total;
-  }
+  /// Canonical large-Abjad sum. Uses the same implementation as the main UI.
+  static int calculate(String text) =>
+      AbjadCalculator.calculateKabir(normalize(text));
 
+  /// Per-letter values from the same map and normalization policy.
   static List<MapEntry<String, int>> analyzeLetters(String text) {
     final result = <MapEntry<String, int>>[];
     for (final rune in normalize(text).runes) {

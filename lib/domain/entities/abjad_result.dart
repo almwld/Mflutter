@@ -4,7 +4,20 @@ class AbjadResult {
   final double energy, frequency;
   final int color;
   final List<LetterResult> letterResults;
-  const AbjadResult({required this.major,required this.minor,required this.middle,this.element='نار',this.planet='الشمس',this.zodiac='الحمل',this.divineName='الله',this.energy=0.0,this.frequency=0.0,this.color=0xFF1A237E,this.letterResults=const []});
+  const AbjadResult({
+    required this.major,
+    required this.minor,
+    required this.middle,
+    this.element = 'غير محدد',
+    this.planet = 'غير محدد',
+    this.zodiac = 'غير محدد',
+    this.divineName = 'غير محدد',
+    // Legacy compatibility fields; no physical energy/frequency is measured.
+    this.energy = 0.0,
+    this.frequency = 0.0,
+    this.color = 0xFF1A237E,
+    this.letterResults = const [],
+  });
   int get kabir=>major; int get saghir=>minor; int get wasat=>middle;
   List<LetterResult> get letterValues => letterResults;
   int get kabirValue => major;

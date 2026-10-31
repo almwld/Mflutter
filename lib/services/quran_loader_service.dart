@@ -170,7 +170,8 @@ class QuranLoaderService {
 
       final parsedAyah = Ayah.fromJson(Map<String, dynamic>.from(row));
       // The bundled search JSON has placeholder page/juz metadata. Derive
-      // coordinates from the canonical 604-page Hafs Mushaf instead.
+      // page numbers from the canonical 604-page Hafs Mushaf and juz numbers
+      // from the canonical start reference of each juz.
       final pageNumber = MushafSource.pageForVerse(
         parsedAyah.surahNumber,
         parsedAyah.ayahNumber,
@@ -182,7 +183,10 @@ class QuranLoaderService {
         ayahNumber: parsedAyah.ayahNumber,
         text: parsedAyah.text,
         isMakki: parsedAyah.isMakki,
-        juzNumber: MushafSource.juzForPage(pageNumber),
+        juzNumber: MushafSource.juzForVerse(
+          parsedAyah.surahNumber,
+          parsedAyah.ayahNumber,
+        ),
         pageNumber: pageNumber,
         jummal: parsedAyah.jummal,
         axisType: parsedAyah.axisType,

@@ -1,14 +1,24 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qcf_quran_lite/qcf_quran_lite.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../services/text_transformer.dart';
+import '../../../core/themes/font_manager.dart';
 import '../../../services/musnad_quran_service.dart';
 import '../../../services/hieroglyphic_quran_service.dart';
 import '../../../services/quran_source_corrections.dart';
+import '../../../services/nucleus_service.dart';
+import '../../../services/bookmark_service.dart';
+import '../../../services/daily_streak_service.dart';
+import '../../../services/share_service.dart';
+import '../../../services/quran_fonts_service.dart';
+import '../../widgets/quran_wave_text.dart';
 
-enum QuranDisplayMode { uthmaniGold, musnadAncient, dotless, kufi, hieroglyphic }
+enum QuranDisplayMode { uthmaniGold, musnadAncient, dotlessMarked, dotless, kufi, hieroglyphic }
 
 /// 📖 شاشة القرآن الاحترافية — 5 أنماط عرض
 class QuranProScreen extends StatefulWidget {
@@ -18,27 +28,32 @@ class QuranProScreen extends StatefulWidget {
   State<QuranProScreen> createState() => _QuranProScreenState();
 }
 
-class _QuranProScreenState extends State<QuranProScreen>
-    with SingleTickerProviderStateMixin {
+class _QuranProScreenState extends State<QuranProScreen> {
   // البيانات
   Map<String, dynamic>? _quran;
   Map<String, List<Map<String, dynamic>>>? _musnadQuran;
   Map<String, List<Map<String, dynamic>>>? _hieroglyphicQuran;
   List<dynamic> _currentVerses = [];
   int _currentSurah = 1;
+  int? _selectedAyah;
+  String? _selectedAyahText;
   String _surahName = 'الفاتحة';
   bool _loading = true;
+  String? _loadError;
+  String? _variantWarning;
 
   // العرض
   QuranDisplayMode _mode = QuranDisplayMode.uthmaniGold;
   double _fontSize = 22;
   bool _showFrame = true;
+  bool _waveEnabled = true;
+  bool _chromeVisible = true;
   bool _autoScroll = false;
   Timer? _autoScrollTimer;
 
   // متحكمات
   final ScrollController _scroll = ScrollController();
-  late AnimationController _pulseCtrl;
+  final Map<int, GlobalKey> _verseKeys = <int, GlobalKey>{};
 
   // الثوابت
   static const _bgColor = Color(0xFF0A0E27);
@@ -53,37 +68,93 @@ class _QuranProScreenState extends State<QuranProScreen>
   @override
   void initState() {
     super.initState();
-    _pulseCtrl = AnimationController(
-      vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranProScreen: could not set initial system bars: $error');
+    });
+    _restoreDisplayMode();
+    _restoreReadingPreferences();
     _loadQuran();
+    _loadQuranFonts();
+  }
+
+  Future<void> _loadQuranFonts() async {
+    await QuranFontsService.load();
+    FontManager.markRaqqFontLoaded(QuranFontsService.isRaqqLoaded);
+    FontManager.markRaqqSuraFontLoaded(QuranFontsService.isRaqqSuraLoaded);
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadQuran() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
+      // Only the canonical Arabic Quran asset is required to open the reader.
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
-      final musnadQuran = await MusnadQuranService.load();
-      final hieroglyphicQuran = await HieroglyphicQuranService.load();
       final decoded = jsonDecode(jsonStr);
       if (decoded is! Map<String, dynamic>) {
         throw const FormatException('صيغة بيانات المصحف غير صحيحة');
       }
+      final canonical = QuranSourceCorrections.correctQuranMap(
+        Map<String, dynamic>.from(decoded),
+      );
+      final firstSurah = canonical['1'];
+      if (firstSurah is! List || firstSurah.isEmpty) {
+        throw const FormatException('مصدر القرآن لا يحتوي آيات صالحة لسورة الفاتحة.');
+      }
       if (!mounted) return;
       setState(() {
-        _quran = QuranSourceCorrections.correctQuranMap(
-          Map<String, dynamic>.from(decoded as Map),
-        );
-        _musnadQuran = musnadQuran;
-        _hieroglyphicQuran = hieroglyphicQuran;
+        _quran = canonical;
         _loading = false;
       });
-      _loadSurah(1);
+
+      try {
+        final preferences = await SharedPreferences.getInstance();
+        final savedSurah =
+            preferences.getInt('mudabbir_quran_pro_last_surah') ?? 1;
+        _loadSurah(savedSurah.clamp(1, 114).toInt());
+      } catch (error) {
+        debugPrint('QuranProScreen: could not restore last surah: $error');
+        _loadSurah(1);
+      }
+
+      // Optional experimental scripts load after canonical reading is usable.
+      // The reader remains responsive while these separate datasets are parsed.
+      unawaited(_loadOptionalScriptDatasets());
     } catch (error) {
       if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تعذر تحميل بيانات المصحف: $error')),
-      );
+      setState(() {
+        _loading = false;
+        _loadError = 'تعذر تحميل بيانات المصحف: $error';
+      });
     }
+  }
+
+  Future<void> _loadOptionalScriptDatasets() async {
+    Map<String, List<Map<String, dynamic>>>? musnadQuran;
+    Map<String, List<Map<String, dynamic>>>? hieroglyphicQuran;
+    final warnings = <String>[];
+    try {
+      musnadQuran = await MusnadQuranService.load();
+    } catch (error) {
+      warnings.add('بيانات المسند غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+      debugPrint('QuranProScreen: Musnad dataset unavailable: $error');
+    }
+    try {
+      hieroglyphicQuran = await HieroglyphicQuranService.load();
+    } catch (error) {
+      warnings.add('بيانات الهيروغليفي غير متاحة؛ سيُستخدم تحويل العرض المحلي عند الإمكان.');
+      debugPrint('QuranProScreen: hieroglyphic dataset unavailable: $error');
+    }
+    if (!mounted) return;
+    setState(() {
+      _musnadQuran = musnadQuran;
+      _hieroglyphicQuran = hieroglyphicQuran;
+      _variantWarning = warnings.isEmpty ? null : warnings.join(' ');
+    });
   }
 
   void _loadSurah(int n) {
@@ -93,15 +164,129 @@ class _QuranProScreenState extends State<QuranProScreen>
     final verses = quran[n.toString()];
     setState(() {
       _currentSurah = n;
+      _selectedAyah = null;
+      _selectedAyahText = null;
       _currentVerses = verses is List ? List<dynamic>.from(verses) : <dynamic>[];
       _surahName = surah.isNotEmpty ? surah.first['name'] as String : 'سورة $n';
+      _verseKeys.clear();
     });
+    unawaited(SharedPreferences.getInstance().then((preferences) {
+      return preferences.setInt('mudabbir_quran_pro_last_surah', n);
+    }).catchError((error) {
+      debugPrint('QuranProScreen: could not save last surah: $error');
+      return false;
+    }));
+    unawaited(DailyStreakService.recordActivity().catchError((_) {}));
+    // A newly opened surah has no selected verse yet; do not leave the nucleus
+    // pointed at the first verse or at a verse selected in a previous surah.
+    NucleusService().clearQuranContext();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scroll.hasClients) _scroll.jumpTo(0);
     });
   }
 
-  String _transform(String text) => TextTransformer.transform(text, switch (_mode) { QuranDisplayMode.musnadAncient => 'musnad', QuranDisplayMode.dotless => 'dotless', QuranDisplayMode.kufi => 'kufi', QuranDisplayMode.hieroglyphic => 'hieroglyphic', _ => 'uthmani', });
+  Future<void> _restoreReadingPreferences() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _fontSize = (preferences.getDouble('mudabbir_quran_pro_font_size') ?? 22)
+            .clamp(14.0, 40.0).toDouble();
+        _showFrame = preferences.getBool('mudabbir_quran_pro_show_frame') ?? true;
+        _waveEnabled = preferences.getBool('mudabbir_quran_pro_wave_enabled') ?? true;
+      });
+    } catch (error) {
+      debugPrint('QuranProScreen: could not restore reading preferences: $error');
+    }
+  }
+
+  Future<void> _persistReaderPreference(
+    Future<bool> Function(SharedPreferences preferences) write,
+    String setting,
+  ) async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await write(preferences);
+      if (!saved) {
+        debugPrint('QuranProScreen: preference write was rejected: $setting');
+      }
+    } catch (error) {
+      // Keep the current reader controls usable even when persistence fails.
+      debugPrint('QuranProScreen: could not save $setting: $error');
+    }
+  }
+
+  Future<void> _changeFontSize(double delta) async {
+    final next = (_fontSize + delta).clamp(14.0, 40.0).toDouble();
+    setState(() => _fontSize = next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setDouble('mudabbir_quran_pro_font_size', next),
+      'font size',
+    );
+  }
+
+  Future<void> _toggleFrame() async {
+    final next = !_showFrame;
+    setState(() => _showFrame = next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setBool('mudabbir_quran_pro_show_frame', next),
+      'verse frame',
+    );
+  }
+
+  Future<void> _toggleWave() async {
+    final next = !_waveEnabled;
+    setState(() => _waveEnabled = next);
+    await _persistReaderPreference(
+      (preferences) => preferences.setBool('mudabbir_quran_pro_wave_enabled', next),
+      'word wave',
+    );
+  }
+
+  Future<void> _restoreDisplayMode() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final savedIndex = preferences.getInt('mudabbir_quran_pro_mode_v2');
+      if (savedIndex == null ||
+          savedIndex < 0 ||
+          savedIndex >= QuranDisplayMode.values.length ||
+          !mounted) {
+        return;
+      }
+      setState(() => _mode = QuranDisplayMode.values[savedIndex]);
+    } catch (error) {
+      debugPrint('QuranProScreen: could not restore display mode: $error');
+    }
+  }
+
+  Future<void> _setDisplayMode(QuranDisplayMode mode) async {
+    setState(() => _mode = mode);
+    await _persistReaderPreference(
+      (preferences) => preferences.setInt('mudabbir_quran_pro_mode_v2', mode.index),
+      'display mode',
+    );
+  }
+
+  String _transform(String text) {
+    switch (_mode) {
+      case QuranDisplayMode.musnadAncient:
+        return TextTransformer.toMusnad(text);
+      case QuranDisplayMode.dotlessMarked:
+        return FontManager.isRaqqFontLoaded
+            ? text
+            : TextTransformer.toDotlessPreservingMarks(text);
+      case QuranDisplayMode.dotless:
+        return FontManager.isRaqqFontLoaded
+            ? TextTransformer.removeArabicMarks(text)
+            : TextTransformer.toDotless(text);
+      case QuranDisplayMode.kufi:
+        return text;
+      case QuranDisplayMode.hieroglyphic:
+        return TextTransformer.toHieroglyphic(text);
+      case QuranDisplayMode.uthmaniGold:
+        return text;
+    }
+  }
 
   TextStyle _textStyle() {
     return TextStyle(
@@ -110,7 +295,17 @@ class _QuranProScreenState extends State<QuranProScreen>
           ? 'Musnad'
           : _mode == QuranDisplayMode.hieroglyphic
               ? 'NotoSansEgyptianHieroglyphs'
-              : 'Amiri',
+              : (_mode == QuranDisplayMode.kufi ||
+                      _mode == QuranDisplayMode.dotlessMarked ||
+                      _mode == QuranDisplayMode.dotless) &&
+                  FontManager.isRaqqFontLoaded
+                  ? 'Raqq'
+                  : 'Amiri',
+      fontFeatures: FontManager.isRaqqFontLoaded &&
+              (_mode == QuranDisplayMode.dotlessMarked ||
+                  _mode == QuranDisplayMode.dotless)
+          ? const [FontFeature.enable('ss01')]
+          : const [],
       fontWeight: FontWeight.bold,
       color: _mode == QuranDisplayMode.uthmaniGold
           ? const Color(0xFFFFD700)
@@ -132,7 +327,9 @@ class _QuranProScreenState extends State<QuranProScreen>
   void dispose() {
     _autoScrollTimer?.cancel();
     _scroll.dispose();
-    _pulseCtrl.dispose();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge).catchError((error) {
+      debugPrint('QuranProScreen: could not restore system bars on dispose: $error');
+    });
     super.dispose();
   }
 
@@ -145,17 +342,211 @@ class _QuranProScreenState extends State<QuranProScreen>
       );
     }
 
+    if (_loadError != null) {
+      return Scaffold(
+        backgroundColor: _bgColor,
+        appBar: AppBar(title: const Text('القرآن الكريم')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _loadError!,
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: _loadQuran,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('إعادة تحميل المصحف'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: _bgColor,
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          _buildModeBar(),
-          Expanded(child: _buildVerseList()),
-        ],
+      appBar: _chromeVisible ? _buildAppBar() : null,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onDoubleTap: _toggleChrome,
+        child: Column(
+          children: [
+            if (_chromeVisible) _buildModeBar(),
+            if (_chromeVisible && _variantWarning != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                color: Colors.orange.withOpacity(.12),
+                child: Text(
+                  _variantWarning!,
+                  textDirection: TextDirection.rtl,
+                  style: const TextStyle(color: Colors.orangeAccent, fontSize: 11),
+                ),
+              ),
+            Expanded(child: _buildVerseList()),
+          ],
+        ),
       ),
-      bottomNavigationBar: _buildBottomBar(),
+      bottomNavigationBar: _chromeVisible ? _buildBottomBar() : null,
     );
+  }
+
+  /// Search normalization is presentation-only; the canonical Quran text
+  /// remains untouched. It allows matches regardless of tashkeel, tatweel,
+  /// common alef variants, and Arabic/Persian digit keyboards.
+  String _normalizeSearchText(String value) => value
+      .replaceAllMapped(
+        RegExp(r'[٠-٩۰-۹]'),
+        (match) {
+          final code = match.group(0)!.codeUnitAt(0);
+          final digit = code >= 0x06F0 && code <= 0x06F9
+              ? code - 0x06F0
+              : code - 0x0660;
+          return String.fromCharCode(0x30 + digit);
+        },
+      )
+      .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'), '')
+      .replaceAll(RegExp(r'[إأآٱ]'), 'ا')
+      .replaceAll(RegExp(r'[ؤئ]'), 'ء')
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
+
+  Future<void> _searchCurrentSurah() async {
+    if (_currentVerses.isEmpty) return;
+    final controller = TextEditingController();
+    var query = '';
+    final selectedIndex = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final normalized = _normalizeSearchText(query);
+          final matches = <int>[];
+          for (var i = 0; i < _currentVerses.length; i++) {
+            final verse = _currentVerses[i];
+            final text = verse is Map ? (verse['text']?.toString() ?? '') : '';
+            final normalizedVerse = _normalizeSearchText(text);
+            final numberMatches = normalized.isNotEmpty &&
+                (i + 1).toString() == normalized;
+            if (normalized.isEmpty ||
+                normalizedVerse.contains(normalized) ||
+                numberMatches) {
+              matches.add(i);
+            }
+          }
+          return AlertDialog(
+            title: Text('البحث في سورة ${_surahName}'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: controller,
+                    autofocus: true,
+                    textDirection: TextDirection.rtl,
+                    onChanged: (value) => setDialogState(() => query = value),
+                    decoration: InputDecoration(
+                      hintText: 'اكتب كلمة أو رقم الآية',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: query.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'مسح البحث',
+                              icon: const Icon(Icons.close_rounded),
+                              onPressed: () {
+                                controller.clear();
+                                setDialogState(() => query = '');
+                              },
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: matches.isEmpty
+                        ? const Center(child: Text('لا توجد آيات مطابقة'))
+                        : ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: matches.length.clamp(0, 80).toInt(),
+                            itemBuilder: (_, row) {
+                              final index = matches[row];
+                              final verse = _currentVerses[index];
+                              final text = verse is Map
+                                  ? (verse['text']?.toString() ?? '')
+                                  : '';
+                              return ListTile(
+                                dense: true,
+                                title: Text('الآية ${index + 1}',
+                                    textDirection: TextDirection.rtl),
+                                subtitle: Text(text,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    textDirection: TextDirection.rtl),
+                                onTap: () => Navigator.of(dialogContext).pop(index),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('إغلاق'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    controller.dispose();
+    if (selectedIndex == null || !mounted) return;
+    final selectedVerse = _currentVerses[selectedIndex];
+    final selectedText =
+        selectedVerse is Map ? selectedVerse['text']?.toString() ?? '' : '';
+    setState(() {
+      _selectedAyah = selectedIndex + 1;
+      _selectedAyahText = selectedText;
+    });
+    NucleusService().setQuranContext(
+      surahNumber: _currentSurah,
+      ayahNumber: selectedIndex + 1,
+      verseText: selectedText,
+    );
+    var targetContext = _verseKeys[selectedIndex]?.currentContext;
+    // ListView.builder creates off-screen rows lazily. Move near the target first
+    // so its keyed context exists even when the result is far down the surah.
+    if (targetContext == null && _scroll.hasClients) {
+      final position = _scroll.position;
+      final estimatedOffset = (selectedIndex * 180.0)
+          .clamp(0.0, position.maxScrollExtent).toDouble();
+      await _scroll.animateTo(
+        estimatedOffset,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      if (!mounted) return;
+      targetContext = _verseKeys[selectedIndex]?.currentContext;
+    }
+    if (targetContext != null) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOut,
+        alignment: 0.2,
+      );
+    }
   }
 
   void _toggleAutoScroll() {
@@ -184,13 +575,92 @@ class _QuranProScreenState extends State<QuranProScreen>
     });
   }
 
+  Future<void> _shareSelectedAyah() async {
+    final ayah = _selectedAyah;
+    final text = _selectedAyahText;
+    if (ayah == null || text == null || text.isEmpty) return;
+
+    try {
+      await ShareService.shareVerse(
+        text: text,
+        surahNumber: _currentSurah,
+        ayahNumber: ayah,
+        surahName: _surahName,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذرت مشاركة الآية: $error')),
+      );
+    }
+  }
+
+  Future<void> _toggleChrome() async {
+    final show = !_chromeVisible;
+    if (mounted) setState(() => _chromeVisible = show);
+    try {
+      await SystemChrome.setEnabledSystemUIMode(
+        show ? SystemUiMode.edgeToEdge : SystemUiMode.immersiveSticky,
+      );
+    } catch (error) {
+      debugPrint('QuranProScreen: could not toggle system bars: $error');
+    }
+  }
+
+  Future<void> _bookmarkSelectedAyah() async {
+    final ayah = _selectedAyah;
+    final text = _selectedAyahText;
+    if (ayah == null || text == null || text.isEmpty) return;
+    try {
+      await BookmarkService.addBookmark(_currentSurah, ayah, text);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم حفظ الآية $_surahName $ayah في العلامات المرجعية')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حفظ العلامة المرجعية: $error')),
+      );
+    }
+  }
+
   AppBar _buildAppBar() {
     return AppBar(
-      title: Text(_surahName,
-          style: const TextStyle(color: _goldColor, fontFamily: 'Amiri')),
+      title: Text(
+        _surahName,
+        style: TextStyle(
+          color: _goldColor,
+          fontFamily: FontManager.isRaqqSuraFontLoaded ? 'RaqqSura' : 'Amiri',
+        ),
+      ),
       backgroundColor: const Color(0xFF1A237E),
       elevation: 0,
       actions: [
+        IconButton(
+          tooltip: _selectedAyah == null
+              ? 'اختر آية أولًا لحفظها'
+              : 'حفظ الآية المحددة في العلامات المرجعية',
+          icon: const Icon(Icons.bookmark_add_outlined, color: _goldColor),
+          onPressed: _selectedAyah == null ? null : _bookmarkSelectedAyah,
+        ),
+        IconButton(
+          tooltip: _showFrame ? 'إخفاء إطار الآيات' : 'إظهار إطار الآيات',
+          icon: Icon(_showFrame ? Icons.crop_square_rounded : Icons.crop_free_rounded,
+              color: _goldColor),
+          onPressed: _toggleFrame,
+        ),
+        IconButton(
+          tooltip: _waveEnabled ? 'إيقاف حركة الكلمات' : 'تشغيل حركة الكلمات',
+          icon: Icon(_waveEnabled ? Icons.waves_rounded : Icons.motion_photos_off_rounded,
+              color: _goldColor),
+          onPressed: _toggleWave,
+        ),
+        IconButton(
+          tooltip: 'البحث في السورة الحالية',
+          icon: const Icon(Icons.search_rounded, color: _goldColor),
+          onPressed: _searchCurrentSurah,
+        ),
         IconButton(
             tooltip: _autoScroll ? 'إيقاف التمرير التلقائي' : 'تشغيل التمرير التلقائي',
             icon: Icon(_autoScroll ? Icons.pause : Icons.play_arrow,
@@ -198,13 +668,29 @@ class _QuranProScreenState extends State<QuranProScreen>
             onPressed: _toggleAutoScroll),
         PopupMenuButton<int>(
           icon: const Icon(Icons.list, color: _goldColor),
-          onSelected: _loadSurah,
-          itemBuilder: (_) => _surahs
-              .map((s) => PopupMenuItem(
-                  value: s['n'] as int,
-                  child: Text('${s['name']} (${s['n']})',
-                      style: const TextStyle(color: Colors.white))))
-              .toList(),
+          onSelected: (value) {
+            if (value == -1) {
+              _shareSelectedAyah();
+            } else {
+              _loadSurah(value);
+            }
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem<int>(
+              value: -1,
+              enabled: _selectedAyah != null,
+              child: const Text('مشاركة الآية المحددة'),
+            ),
+            ..._surahs.map(
+              (s) => PopupMenuItem<int>(
+                value: s['n'] as int,
+                child: Text(
+                  '${s['name']} (${s['n']})',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -220,19 +706,26 @@ class _QuranProScreenState extends State<QuranProScreen>
           children: [
             _modeButton('عثماني', QuranDisplayMode.uthmaniGold, '🕌'),
             _modeButton('المسند', QuranDisplayMode.musnadAncient, '𐩱'),
-            _modeButton('بدون نقاط', QuranDisplayMode.dotless, 'ٮ'),
-            _modeButton('كوفي تجريبي', QuranDisplayMode.kufi, '│'),
+            _modeButton('بلا نقاط + تشكيل', QuranDisplayMode.dotlessMarked, 'ٮِ'),
+            _modeButton('بلا نقاط/تشكيل', QuranDisplayMode.dotless, 'ٮ'),
+            _modeButton(
+              FontManager.isRaqqFontLoaded ? 'رَقّ — كوفي مصحفي' : 'رَقّ — خط بديل',
+              QuranDisplayMode.kufi,
+              '│',
+            ),
             _modeButton('هيلوغريفية', QuranDisplayMode.hieroglyphic, '𓂝'),
             const SizedBox(width: 16),
             // أزرار التحكم
             IconButton(
+                tooltip: 'تصغير الخط',
                 icon: const Icon(Icons.remove, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize - 2).clamp(14, 40).toDouble())),
+                onPressed: () => _changeFontSize(-2)),
             Text('${_fontSize.toInt()}',
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
             IconButton(
+                tooltip: 'تكبير الخط',
                 icon: const Icon(Icons.add, color: _goldColor, size: 20),
-                onPressed: () => setState(() => _fontSize = (_fontSize + 2).clamp(14, 40).toDouble())),
+                onPressed: () => _changeFontSize(2)),
           ],
         ),
       ),
@@ -244,7 +737,7 @@ class _QuranProScreenState extends State<QuranProScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: GestureDetector(
-        onTap: () => setState(() => _mode = mode),
+        onTap: () => _setDisplayMode(mode),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -268,8 +761,8 @@ class _QuranProScreenState extends State<QuranProScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _currentVerses.length,
       itemBuilder: (context, i) {
-        final v = _currentVerses[i];
-        final text = v['text'] ?? '';
+        final verse = _currentVerses[i];
+        final text = verse['text'] ?? '';
         final musnadRows = _musnadQuran?[_currentSurah.toString()];
         final musnad = musnadRows != null && i < musnadRows.length
             ? musnadRows[i]['musnad'] as String?
@@ -279,44 +772,102 @@ class _QuranProScreenState extends State<QuranProScreen>
             ? hieroglyphicRows[i]['hieroglyphic'] as String?
             : null;
         final transformed = _mode == QuranDisplayMode.musnadAncient
-            ? (musnad ?? '')
+            ? (musnad ?? _transform(text))
             : _mode == QuranDisplayMode.hieroglyphic
-                ? (hieroglyphic ?? '')
+                ? (hieroglyphic ?? _transform(text))
                 : _transform(text);
-        final num = i + 1;
+        final verseNumber = i + 1;
+        final isSelected = _selectedAyah == verseNumber;
+        final verseKey = _verseKeys.putIfAbsent(i, GlobalKey.new);
 
-        return AnimatedBuilder(
-          animation: _pulseCtrl,
-          builder: (context, _) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _goldColor.withOpacity(0.1)),
-                boxShadow: [
-                  if (_showFrame)
-                    BoxShadow(
-                      color: _goldColor.withOpacity(0.05),
-                      blurRadius: 10,
-                      spreadRadius: 1,
-                    ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(transformed,
-                      style: _textStyle(),
-                      textAlign: TextAlign.justify,
-                      textDirection: TextDirection.rtl),
-                  const SizedBox(height: 8),
-                  _buildVerseNumber(num),
-                ],
-              ),
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+            });
+            // Always send canonical source text to the local core, never a
+            // transformed Musnad/dotless/Kufic presentation string.
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
             );
           },
+          onDoubleTap: () {
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+            });
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
+            );
+            unawaited(_toggleChrome());
+          },
+          onLongPress: () async {
+            setState(() {
+              _selectedAyah = verseNumber;
+              _selectedAyahText = text.toString();
+            });
+            NucleusService().setQuranContext(
+              surahNumber: _currentSurah,
+              ayahNumber: verseNumber,
+              verseText: text.toString(),
+            );
+            try {
+              await Clipboard.setData(ClipboardData(text: text.toString()));
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('تم نسخ الآية $verseNumber من سورة $_surahName'),
+                ),
+              );
+            } catch (error) {
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('تعذر نسخ الآية: $error')),
+              );
+            }
+          },
+          child: Container(
+            key: verseKey,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? _goldColor.withOpacity(0.10)
+                  : Colors.white.withOpacity(0.03),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? _goldColor.withOpacity(0.85) : _goldColor.withOpacity(0.1),
+                width: isSelected ? 1.4 : 1,
+              ),
+              boxShadow: [
+                if (_showFrame)
+                  BoxShadow(
+                    color: _goldColor.withOpacity(0.05),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                QuranWaveText(
+                  text: transformed,
+                  importanceText: text.toString(),
+                  style: _textStyle(),
+                  enabled: _waveEnabled,
+                  textAlign: WrapAlignment.end,
+                ),
+                const SizedBox(height: 8),
+                _buildVerseNumber(verseNumber),
+              ],
+            ),
+          ),
         );
       },
     );

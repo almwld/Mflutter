@@ -1,9 +1,34 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../services/reading_progress_service.dart';
+import 'quran/mushaf_screen.dart';
 
-class StatsScreen extends StatelessWidget {
+class StatsScreen extends StatefulWidget {
   const StatsScreen({super.key});
+
+  @override
+  State<StatsScreen> createState() => _StatsScreenState();
+}
+
+class _StatsScreenState extends State<StatsScreen> {
+  late Future<List<dynamic>> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = _loadStats();
+  }
+
+  Future<List<dynamic>> _loadStats() => Future.wait<dynamic>([
+        ReadingProgressService.getLastPage(),
+        ReadingProgressService.getKhatmahProgress(),
+        ReadingProgressService.getPagesRead(),
+        ReadingProgressService.getCurrentStreak(),
+        ReadingProgressService.getReadingDays(),
+        ReadingProgressService.getReadingDaysInLast7Days(),
+      ]);
+
+  void _retry() => setState(() => _statsFuture = _loadStats());
 
   @override
   Widget build(BuildContext context) {
@@ -16,16 +41,36 @@ class StatsScreen extends StatelessWidget {
         ),
         backgroundColor: AppColors.primaryNavy,
       ),
-      body: FutureBuilder(
-        future: Future.wait([
-          ReadingProgressService.getLastPage(),
-          ReadingProgressService.getKhatmahProgress(),
-          ReadingProgressService.getPagesRead(),
-          ReadingProgressService.getCurrentStreak(),
-          ReadingProgressService.getReadingDays(),
-          ReadingProgressService.getPagesReadInLast7Days(),
-        ]),
+      body: FutureBuilder<List<dynamic>>(
+        future: _statsFuture,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: Colors.redAccent, size: 34),
+                    const SizedBox(height: 12),
+                    Text(
+                      'تعذر تحميل إحصاءات القراءة المحلية: ${snapshot.error}',
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: _retry,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('إعادة المحاولة'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -36,7 +81,7 @@ class StatsScreen extends StatelessWidget {
           final pagesRead = data[2] as int;
           final streak = data[3] as int;
           final readingDays = data[4] as int;
-          final weekDays = data[5] as int;
+          final readingDaysInLast7Days = data[5] as int;
 
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -51,8 +96,8 @@ class StatsScreen extends StatelessWidget {
                 crossAxisSpacing: 10,
                 childAspectRatio: 1.35,
                 children: [
-                  _statCard('الصفحات المقروءة', '$pagesRead / 604', Icons.menu_book),
-                  _statCard('الورد الأسبوعي', '$weekDays أيام', Icons.calendar_today),
+                  _statCard('صفحات تمت زيارتها', '$pagesRead / 604', Icons.menu_book),
+                  _statCard('أيام القراءة آخر 7 أيام', '$readingDaysInLast7Days يوم', Icons.calendar_today),
                   _statCard('الاستمرار الحالي', '$streak يوم', Icons.local_fire_department),
                   _statCard('أيام القراءة', '$readingDays يوم', Icons.auto_awesome),
                 ],
@@ -62,13 +107,21 @@ class StatsScreen extends StatelessWidget {
                 title: 'آخر موضع قراءة',
                 value: 'صفحة $lastPage',
                 icon: Icons.bookmark_outline,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MushafScreen(
+                        initialPage: lastPage,
+                        restoreLastPage: false,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               _infoCard(
-                title: 'الختمة الحالية',
-                value: progress >= 1
-                    ? 'اكتملت الختمة'
-                    : '${(progress * 100).toStringAsFixed(1)}٪ مكتملة',
+                title: 'تغطية صفحات المصحف',
+                value: '${(progress * 100).toStringAsFixed(1)}٪ من إجمالي صفحات المصحف',
                 icon: Icons.track_changes,
               ),
             ],
@@ -94,7 +147,7 @@ class StatsScreen extends StatelessWidget {
               Icon(Icons.auto_stories, color: AppColors.primaryGold, size: 30),
               const Spacer(),
               Text(
-                'تقدم الختمة',
+                'تغطية الصفحات',
                 style: TextStyle(
                   color: AppColors.primaryGold,
                   fontSize: 20,
@@ -108,7 +161,7 @@ class StatsScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               minHeight: 10,
-              value: progress,
+              value: progress.clamp(0.0, 1.0).toDouble(),
               backgroundColor: Colors.white12,
               valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
             ),
@@ -173,27 +226,39 @@ class StatsScreen extends StatelessWidget {
     required String title,
     required String value,
     required IconData icon,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.primaryGold),
-          const SizedBox(width: 12),
-          Text(
-            value,
-            style: TextStyle(
-              color: AppColors.primaryGold,
-              fontWeight: FontWeight.w700,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: onTap == null
+              ? null
+              : Border.all(color: AppColors.primaryGold.withOpacity(.22)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppColors.primaryGold),
+            const SizedBox(width: 12),
+            Text(
+              value,
+              style: TextStyle(
+                color: AppColors.primaryGold,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const Spacer(),
-          Text(title, style: const TextStyle(color: Colors.white70)),
-        ],
+            const Spacer(),
+            Text(title, style: const TextStyle(color: Colors.white70)),
+            if (onTap != null) ...[
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_left_rounded, color: AppColors.primaryGold),
+            ],
+          ],
+        ),
       ),
     );
   }

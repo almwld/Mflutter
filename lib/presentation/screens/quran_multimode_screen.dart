@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../services/text_transformer.dart';
 import '../../services/quran_source_corrections.dart';
+import '../../services/quran_loader_service.dart';
 
 /// 📖 شاشة المصحف — ٤ خطوط × ٣ خلفيات
 enum QuranMode { musnad, oldArabic, uthmaniGold, hieroglyphic }
@@ -97,22 +98,55 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
   }
 
   Future<void> _loadSurah() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadError = null;
+      });
+    }
     try {
+      if (widget.surahNumber < 1 || widget.surahNumber > 114) {
+        throw ArgumentError.value(widget.surahNumber, 'surahNumber');
+      }
       final jsonStr = await rootBundle.loadString('assets/unified_quran.json');
       final data = jsonDecode(jsonStr);
+      if (data is! Map) {
+        throw const FormatException('مصدر القرآن المحلي ليس كائن السور المتوقع.');
+      }
       final rawVerses = data[widget.surahNumber.toString()];
+      final expected = QuranLoaderService.canonicalSurahAyahCounts[widget.surahNumber - 1];
+      if (rawVerses is! List || rawVerses.length != expected) {
+        throw FormatException(
+          'بيانات السورة غير مكتملة: المتوقع $expected آية، '
+          'والموجود ${rawVerses is List ? rawVerses.length : 0}.',
+        );
+      }
+      for (var index = 0; index < rawVerses.length; index++) {
+        final verse = rawVerses[index];
+        if (verse is! Map ||
+            verse['text'] is! String ||
+            (verse['text'] as String).trim().isEmpty) {
+          throw FormatException('نص الآية ${widget.surahNumber}:${index + 1} غير صالح.');
+        }
+      }
+      final corrected = QuranSourceCorrections.correctSurahVerses(
+        widget.surahNumber,
+        rawVerses,
+      );
+      if (corrected.length != expected) {
+        throw const FormatException('تغيّر عدد آيات السورة بعد تصحيح المصدر المحلي.');
+      }
       if (!mounted) return;
       setState(() {
-        _verses = rawVerses is List
-            ? QuranSourceCorrections.correctSurahVerses(widget.surahNumber, rawVerses)
-            : <dynamic>[];
+        _verses = corrected;
         _loading = false;
+        _loadError = null;
       });
-    } catch (e) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _verses = [];
-        _loadError = 'تعذر تحميل بيانات المصحف المحلية: $e';
+        _loadError = 'تعذر تحميل بيانات المصحف المحلية: $error';
         _loading = false;
       });
     }
@@ -189,8 +223,19 @@ class _QuranMultiModeScreenState extends State<QuranMultiModeScreen> {
           : _loadError != null
           ? Center(child: Padding(
               padding: const EdgeInsets.all(24),
-              child: Text(_loadError!, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
-                  style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_loadError!, textAlign: TextAlign.center, textDirection: TextDirection.rtl,
+                      style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _loadSurah,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('إعادة تحميل السورة'),
+                  ),
+                ],
+              ),
             ))
           : Container(
               decoration: BoxDecoration(

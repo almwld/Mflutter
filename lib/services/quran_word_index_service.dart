@@ -58,6 +58,8 @@ class QuranLetterEntry {
 class QuranWordIndexService {
   static List<QuranWordEntry>? _cachedWords;
   static List<QuranLetterEntry>? _cachedLetters;
+  static Future<List<QuranWordEntry>>? _wordsLoad;
+  static Future<List<QuranLetterEntry>>? _lettersLoad;
 
   static final RegExp _marks = RegExp(
     r'[\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]',
@@ -91,10 +93,20 @@ class QuranWordIndexService {
       .where((character) => _arabicLetters.hasMatch(character))
       .toList(growable: false);
 
-  static Future<List<QuranWordEntry>> loadWords() async {
+  static Future<List<QuranWordEntry>> loadWords() {
     final cached = _cachedWords;
-    if (cached != null) return cached;
+    if (cached != null) return Future.value(cached);
+    final pending = _wordsLoad;
+    if (pending != null) return pending;
 
+    final attempt = _buildWordIndex();
+    _wordsLoad = attempt;
+    return attempt.whenComplete(() {
+      if (identical(_wordsLoad, attempt)) _wordsLoad = null;
+    });
+  }
+
+  static Future<List<QuranWordEntry>> _buildWordIndex() async {
     final ayahs = await QuranLoaderService.loadAllAyahs();
     final words = <QuranWordEntry>[];
     for (final Ayah ayah in ayahs) {
@@ -107,7 +119,7 @@ class QuranWordIndexService {
 
   static List<QuranWordEntry> _wordsForAyah(Ayah ayah) {
     final page = MushafSource.pageForVerse(ayah.surahNumber, ayah.ayahNumber);
-    final juz = MushafSource.juzForPage(page);
+    final juz = MushafSource.juzForVerse(ayah.surahNumber, ayah.ayahNumber);
     final tokens = ayah.text
         .split(RegExp(r'\s+'))
         .map((token) => token.trim())
@@ -180,10 +192,20 @@ class QuranWordIndexService {
     return const <QuranWordEntry>[];
   }
 
-  static Future<List<QuranLetterEntry>> loadLetters() async {
+  static Future<List<QuranLetterEntry>> loadLetters() {
     final cached = _cachedLetters;
-    if (cached != null) return cached;
+    if (cached != null) return Future.value(cached);
+    final pending = _lettersLoad;
+    if (pending != null) return pending;
 
+    final attempt = _buildLetterIndex();
+    _lettersLoad = attempt;
+    return attempt.whenComplete(() {
+      if (identical(_lettersLoad, attempt)) _lettersLoad = null;
+    });
+  }
+
+  static Future<List<QuranLetterEntry>> _buildLetterIndex() async {
     final words = await loadWords();
     final letters = <QuranLetterEntry>[];
     for (final word in words) {
@@ -236,5 +258,7 @@ class QuranWordIndexService {
   static void clearCacheForTesting() {
     _cachedWords = null;
     _cachedLetters = null;
+    _wordsLoad = null;
+    _lettersLoad = null;
   }
 }

@@ -41,7 +41,35 @@ class _TrainingScreenState extends State<TrainingScreen> {
     }
   }
 
+  Future<void> _startTraining(TrainingProvider provider) async {
+    final dataset = _dataset;
+    if (dataset == null || provider.isTraining) return;
+    setState(() => _datasetError = null);
+    try {
+      await provider.trainOnVerses(dataset.samples, epochs: 50);
+      if (!mounted) return;
+      final status = provider.status;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(status)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _datasetError = 'تعذر بدء التدريب المحلي: $error');
+    }
+  }
+
   void _showPredictionDialog(BuildContext context, Map<String, dynamic> result) {
+    const classLabels = <int, String>{
+      0: 'كوني (cosmic)',
+      1: 'سكينة (tranquil)',
+      2: 'حسابي (calculation)',
+    };
+    final rawIndex = result['class_index'];
+    final classIndex = rawIndex is num ? rawIndex.toInt() : null;
+    final rawConfidence = result['confidence'];
+    final confidence = rawConfidence is num && rawConfidence.isFinite
+        ? rawConfidence.toDouble().clamp(0.0, 1.0).toDouble()
+        : null;
     showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -51,14 +79,22 @@ class _TrainingScreenState extends State<TrainingScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('فهرس الفئة الرقمي: ${result['class_index']}', style: const TextStyle(color: Colors.white)),
             Text(
-              'الدرجة العددية: ${((result['confidence'] as num).toDouble() * 100).toStringAsFixed(1)}%',
+              classIndex == null
+                  ? 'الفئة: غير معروفة'
+                  : 'الفئة: ${classLabels[classIndex] ?? 'فئة غير مدعومة'} (الفهرس $classIndex)',
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(color: Colors.white),
+            ),
+            Text(
+              confidence == null
+                  ? 'درجة softmax: غير متاحة'
+                  : 'درجة softmax غير المعايرة: ${(confidence * 100).toStringAsFixed(1)}%',
               style: const TextStyle(color: Colors.white70),
             ),
             Text(
               result['interpretation']?.toString() ??
-                  'مخرج رقمي تجريبي لا يحمل دلالة روحية أو تفسيرية مثبتة.',
+                  'مخرج مصنف رقمي محلي؛ لا يحمل دلالة روحية أو تفسيرية مثبتة.',
               textDirection: TextDirection.rtl,
               style: const TextStyle(color: Colors.white54, fontSize: 12),
             ),
@@ -93,10 +129,35 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       const Text('حالة المصنف', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
                       const SizedBox(height: 8),
                       Text(
-                        provider.modelLoaded ? 'المصنف المحلي جاهز للاستدلال' : 'لا يوجد مصنف محمّل — التدريب متوقف مؤقتًا',
+                        provider.isInitializing
+                            ? 'جارٍ فحص النموذج المحلي...'
+                            : provider.modelLoaded
+                                ? 'المصنف المحلي جاهز للاستدلال'
+                                : 'لا يوجد مصنف محمّل — استورد بيانات موسومة لبدء التدريب',
                         style: const TextStyle(color: Colors.white),
                       ),
                       Text('الحالة: ${provider.status}', style: const TextStyle(color: Colors.white70)),
+                      if (provider.modelInitializationError != null) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'تفاصيل فحص النموذج: ${provider.modelInitializationError}',
+                          textDirection: TextDirection.rtl,
+                          style: const TextStyle(color: Colors.orangeAccent, fontSize: 12),
+                        ),
+                      ],
+                      if (!provider.modelLoaded &&
+                          !provider.isTraining &&
+                          !provider.isInitializing) ...[
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: OutlinedButton.icon(
+                            onPressed: provider.retryInitialize,
+                            icon: const Icon(Icons.refresh_rounded),
+                            label: const Text('إعادة فحص النموذج المحلي'),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       const Text(
                         'هذا تدريب إشرافي لمصنف خطي صغير فقط، وليس تدريبًا لنموذج GGUF أو Qwen. لا تُستخدم آيات القرآن تلقائيًا كبيانات موسومة.',
@@ -127,13 +188,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       const Text('مجموعة البيانات الموسومة', style: TextStyle(color: AppColors.primaryGold, fontSize: 18)),
                       const SizedBox(height: 6),
                       const Text(
-                        'تم تعطيل بدء التدريب مؤقتًا لأن مسار المصنف الجاهز للتشغيل غير متوفر. لم يعد الزر يوحي بأن التدريب سيعمل قبل تجهيز المحرك.',
+                        'يمكن تدريب المصنف الخطي المحلي على العينات الموسومة المستوردة. لا يدرّب هذا الإجراء نموذج GGUF أو Qwen ولا يستخدم نص القرآن تلقائيًا كتصنيفات.',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(color: Colors.orangeAccent),
+                        style: TextStyle(color: Colors.white70),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'استورد ملف JSON يحتوي على قائمة عينات، وكل عينة تتضمن text و axis_type. التصنيفات المقبولة: cosmic و tranquil و calculation. يلزم 6 عينات على الأقل وعينتان لكل فئة مستخدمة.',
+                        'استورد ملف JSON يحتوي على قائمة عينات، وكل عينة تتضمن text و axis_type. التصنيفات المقبولة: cosmic و tranquil و calculation. يلزم 6 عينات على الأقل، مع عينتين أو أكثر لكل فئة من الفئات الثلاث كلها: cosmic و tranquil و calculation.',
                         textDirection: TextDirection.rtl,
                         style: TextStyle(color: Colors.white70),
                       ),
@@ -152,8 +213,15 @@ class _TrainingScreenState extends State<TrainingScreen> {
                         const SizedBox(height: 8),
                         Text('الملف: ${dataset.fileName}', style: const TextStyle(color: Colors.white)),
                         Text('عدد العينات: ${dataset.samples.length}', style: const TextStyle(color: Colors.white70)),
-                        for (final entry in classCounts.entries)
-                          Text('${entry.key}: ${entry.value}', style: const TextStyle(color: Colors.white70)),
+                        for (final label in const <String>[
+                          'cosmic',
+                          'tranquil',
+                          'calculation',
+                        ])
+                          Text(
+                            '$label: ${classCounts[label] ?? 0}',
+                            style: const TextStyle(color: Colors.white70),
+                          ),
                       ],
                       if (_datasetError != null) ...[
                         const SizedBox(height: 8),
@@ -163,9 +231,19 @@ class _TrainingScreenState extends State<TrainingScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: null,
-                          icon: const Icon(Icons.play_arrow),
-                          label: const Text('التدريب متوقف مؤقتًا'),
+                          onPressed: dataset == null || provider.isTraining
+                              ? null
+                              : () => _startTraining(provider),
+                          icon: provider.isTraining
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.play_arrow),
+                          label: Text(provider.isTraining
+                              ? 'التدريب جارٍ...'
+                              : 'بدء تدريب المصنف المحلي'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
                             foregroundColor: AppColors.primaryNavy,
@@ -269,7 +347,9 @@ class LossChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (history.isEmpty || size.width <= 0 || size.height <= 0) return;
     final losses = history
-        .map((entry) => (entry['loss'] as num).toDouble())
+        .map((entry) => entry['loss'])
+        .whereType<num>()
+        .map((value) => value.toDouble())
         .where((value) => value.isFinite)
         .toList(growable: false);
     if (losses.isEmpty) return;

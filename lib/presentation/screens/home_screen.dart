@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'quran/mushaf_screen.dart';
+import 'quran/quran_pro_screen.dart';
 import 'quran_index_screen.dart';
 import 'chat/chat_screen.dart';
 import 'advanced_search_screen.dart';
 import 'quran_word_explorer_screen.dart';
 import 'favorites_screen.dart';
+import 'quran_bookmarks_screen.dart';
 import 'great_verses_screen.dart';
 import 'stats_screen.dart';
 import 'agents/agents_screen.dart';
+import 'agents/agent_console_screen.dart';
 import 'insight_screen.dart';
 import 'divine_names_screen.dart';
 import 'daily_verse_screen.dart';
@@ -41,7 +44,9 @@ import 'community_screen.dart';
 import 'challenges_screen.dart';
 import 'leaderboard_screen.dart';
 import 'planets_screen.dart';
+import 'astronomy_screen.dart';
 import 'letters_screen.dart';
+import 'advanced_tech_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -240,7 +245,9 @@ class _MushafHome extends StatelessWidget {
       ('الفهرس', Icons.list_alt_rounded, const QuranIndexScreen()),
       ('بحث متقدم', Icons.manage_search_rounded, const AdvancedSearchScreen()),
       ('تحليل الكلمات', Icons.text_fields_rounded, const QuranWordExplorerScreen()),
+      ('الحروف', Icons.abc_rounded, const LettersScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
+      ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('التلاوة', Icons.graphic_eq_rounded, const RecitationScreen()),
     ];
     return SizedBox(
@@ -282,7 +289,7 @@ class _MushafHome extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const AgentsScreen()),
+            MaterialPageRoute(builder: (_) => const AgentConsoleScreen()),
           ),
           child: Container(
             padding: const EdgeInsets.all(17),
@@ -332,6 +339,8 @@ class _MushafHome extends StatelessWidget {
       ('علم العناصر', Icons.water_drop_outlined, const ElementsScreen()),
       ('علم الأعداد', Icons.numbers_rounded, const NumbersScreen()),
       ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+      ('علم الفلك', Icons.nights_stay_rounded, const AstronomyScreen()),
       ('التدبر والبصائر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
@@ -486,10 +495,16 @@ class _MoreScreenState extends State<MoreScreen> {
 
   String _normalizeSearchText(String value) => value
       .toLowerCase()
-      .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u0640]'), '')
+      .replaceAll(
+        RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]'),
+        '',
+      )
       .replaceAll(RegExp(r'[أإآٱ]'), 'ا')
       .replaceAll(RegExp(r'[ؤئ]'), 'ء')
-      .replaceAll('ى', 'ي');
+      .replaceAll('ى', 'ي')
+      .replaceAll('ة', 'ه')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   @override
   Widget build(BuildContext context) {
@@ -499,6 +514,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('التدبر', Icons.lightbulb_outline_rounded, const InsightScreen()),
       ('الأسماء الحسنى', Icons.mosque_outlined, const DivineNamesScreen()),
       ('المفضلة', Icons.bookmark_outline_rounded, const FavoritesScreen()),
+      ('علامات المصحف', Icons.bookmarks_outlined, const QuranBookmarksScreen()),
       ('الآيات العظيمة', Icons.star_outline_rounded, const GreatVersesScreen()),
       ('الإحصائيات', Icons.insights_rounded, const StatsScreen()),
       ('عدسة AR', Icons.view_in_ar_outlined, const ARLensScreen()),
@@ -506,9 +522,17 @@ class _MoreScreenState extends State<MoreScreen> {
       ('الإعدادات', Icons.settings_outlined, const SettingsScreen()),
       ('حول مُدَبِّر', Icons.info_outline_rounded, const AboutScreen()),
       ('القرآن التفاعلي', Icons.menu_book_rounded, const QuranScreen()),
+      ('القرآن بأنماط الخط', Icons.auto_stories_rounded, const QuranProScreen()),
+      ('تقنيات متقدمة', Icons.science_outlined, const AdvancedTechScreen()),
       ('فهرس السور', Icons.list_alt_rounded, const SurahIndexScreen()),
       ('صفحة المصحف', Icons.menu_book_outlined, const QuranPageScreen(surahNumber: 1, surahName: 'الفاتحة')),
       ('حاسبة الأبجد', Icons.calculate_outlined, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
+      ('تحليل أبجد', Icons.functions_rounded, ChangeNotifierProvider<AbjadProvider>(create: (_) => AbjadProvider(), child: const AbjadCalculatorScreen())),
+      ('العناصر الرمزية', Icons.category_outlined, const ElementsScreen()),
+      ('الأعداد الرمزية', Icons.pin_outlined, const NumbersScreen()),
+      ('علم الأبراج', Icons.auto_awesome_rounded, const ZodiacScreen()),
+      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+      ('علم الفلك', Icons.nights_stay_rounded, const AstronomyScreen()),
       ('التدريب', Icons.model_training_rounded, ChangeNotifierProvider<TrainingProvider>(create: (_) => TrainingProvider()..initialize(), child: const TrainingScreen())),
       ('الإعجاز', Icons.auto_awesome_rounded, const MiraclesScreen()),
       ('المقارنة', Icons.compare_arrows_rounded, const CompareScreen()),
@@ -523,7 +547,7 @@ class _MoreScreenState extends State<MoreScreen> {
       ('المجتمع', Icons.groups_rounded, const CommunityScreen()),
       ('التحديات', Icons.flag_outlined, const ChallengesScreen()),
       ('لوحة المتصدرين', Icons.leaderboard_rounded, const LeaderboardScreen()),
-      ('علم الكواكب', Icons.public_rounded, const PlanetsScreen()),
+
       ('علم الحروف', Icons.abc_rounded, const LettersScreen()),
     ];
     final normalizedQuery = _normalizeSearchText(_query.trim());

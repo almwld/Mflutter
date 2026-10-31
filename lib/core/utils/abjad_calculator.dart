@@ -1,3 +1,5 @@
+import '../../utils/abjad_constants.dart';
+
 /// =============================================================================
 /// AbjadCalculator - حاسبة الجُمَّل
 /// =============================================================================
@@ -14,12 +16,12 @@ class AbjadCalculator {
   /// قيم الجمل الكبير (أبجد هوز)
   static const Map<String, int> kabirValues = {
     // الحروف العربية وقيمها
-    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ء': 1, // ألف
+    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ٱ': 1, 'ء': 1, // ألف
     'ب': 2, // با
     'ج': 3, // جيم
     'د': 4, // دال
     'ه': 5, // هاء
-    'و': 6, // واو
+    'و': 6, 'ؤ': 6, // واو
     'ز': 7, // زاي
     'ح': 8, // حاء
     'ط': 9, // طاء
@@ -35,7 +37,7 @@ class AbjadCalculator {
     'ق': 100, // قاف
     'ر': 200, // راء
     'ش': 300, // شين
-    'ت': 400, // تاء
+    'ت': 400, 'ة': 400, // تاء
     'ث': 500, // ثاء
     'خ': 600, // خاء
     'ذ': 700, // ذال
@@ -48,50 +50,30 @@ class AbjadCalculator {
   // قيم الجمل الصغير
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// قيم الجمل الصغير
+  /// اختزال رقمي لقيمة كل حرف (مجموع الأرقام حتى خانة واحدة).
+  /// هذه طريقة حسابية واحدة وليست تعريفًا موحدًا للجمل الصغير.
   static const Map<String, int> saghirValues = {
-    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ء': 1,
-    'ب': 2,
-    'ج': 3,
-    'د': 4,
-    'ه': 5,
-    'و': 6,
-    'ز': 7,
-    'ح': 8,
-    'ط': 9,
-    'ي': 10, 'ى': 10, 'ئ': 10,
-    'ك': 20,
-    'ل': 30,
-    'م': 40,
-    'ن': 50,
-    'س': 60,
-    'ع': 70,
-    'ف': 80,
-    'ص': 90,
-    'ق': 100,
-    'ر': 101,
-    'ش': 102,
-    'ت': 103,
-    'ث': 104,
-    'خ': 105,
-    'ذ': 106,
-    'ض': 107,
-    'ظ': 108,
-    'غ': 109,
+    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ٱ': 1, 'ء': 1,
+    'ب': 2, 'ج': 3, 'د': 4, 'ه': 5, 'و': 6, 'ؤ': 6,
+    'ز': 7, 'ح': 8, 'ط': 9, 'ي': 1, 'ى': 1, 'ئ': 1,
+    'ك': 2, 'ل': 3, 'م': 4, 'ن': 5, 'س': 6, 'ع': 7,
+    'ف': 8, 'ص': 9, 'ق': 1, 'ر': 2, 'ش': 3, 'ت': 4,
+    'ث': 5, 'خ': 6, 'ذ': 7, 'ض': 8, 'ظ': 9, 'غ': 1,
+    'ة': 4,
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // القيم الوسطى
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// قيم الجمل الأوسط
+  /// رتبة الحرف في تسلسل أبجد التقليدي (ليست قيمة معيارية مستقلة باسم الوسط).
   static const Map<String, int> wasatValues = {
-    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ء': 1,
+    'ا': 1, 'أ': 1, 'إ': 1, 'آ': 1, 'ٱ': 1, 'ء': 1,
     'ب': 2,
     'ج': 3,
     'د': 4,
     'ه': 5,
-    'و': 6,
+    'و': 6, 'ؤ': 6,
     'ز': 7,
     'ح': 8,
     'ط': 9,
@@ -107,7 +89,7 @@ class AbjadCalculator {
     'ق': 19,
     'ر': 20,
     'ش': 21,
-    'ت': 22,
+    'ت': 22, 'ة': 22,
     'ث': 23,
     'خ': 24,
     'ذ': 25,
@@ -116,12 +98,19 @@ class AbjadCalculator {
     'غ': 28,
   };
 
+  /// Canonical Arabic normalization shared by every calculation entry point.
+  /// Diacritics and tatweel are removed; equivalent alif/hamza forms are
+  /// normalized while ta marbuta remains distinct (value 400 in this convention).
+  static String normalizeArabic(String text) =>
+      AbjadConstants.normalizeArabic(text);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // حساب الجمل
   // ═══════════════════════════════════════════════════════════════════════════
 
   /// حساب الجمل الكبير
   static int calculateKabir(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -132,6 +121,7 @@ class AbjadCalculator {
 
   /// حساب الجمل الصغير
   static int calculateSaghir(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -142,6 +132,7 @@ class AbjadCalculator {
 
   /// حساب الجمل الأوسط
   static int calculateWasat(String text) {
+    text = normalizeArabic(text);
     int total = 0;
     for (int i = 0; i < text.length; i++) {
       final char = text[i].toLowerCase();
@@ -152,18 +143,18 @@ class AbjadCalculator {
 
   /// حساب جميع أنواع الجمل
   static AbjadResult calculateAll(String text) {
-    final kabir = calculateKabir(text);
-    final saghir = calculateSaghir(text);
-    final wasat = calculateWasat(text);
+    final normalizedText = normalizeArabic(text);
+    final kabir = calculateKabir(normalizedText);
+    final saghir = calculateSaghir(normalizedText);
+    final wasat = calculateWasat(normalizedText);
     final element = _getElement(kabir);
     final planet = _getPlanet(kabir);
     final zodiac = _getZodiac(kabir);
     final divineName = _getDivineName(kabir);
-    final frequency = _getFrequency(kabir);
     final color = _getColor(kabir);
 
     return AbjadResult(
-      text: text,
+      text: normalizedText,
       kabir: kabir,
       saghir: saghir,
       wasat: wasat,
@@ -171,13 +162,15 @@ class AbjadCalculator {
       planet: planet,
       zodiac: zodiac,
       divineName: divineName,
-      frequency: frequency,
+      // Retained for model compatibility; no physical frequency is calculated.
+      frequency: 0,
       color: color,
     );
   }
 
   /// حساب حرف بحرف
   static List<LetterResult> calculateLetterByLetter(String text) {
+    text = normalizeArabic(text);
     final results = <LetterResult>[];
     int runningTotal = 0;
 
@@ -206,72 +199,67 @@ class AbjadCalculator {
   // دوال مساعدة
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /// الحصول على العنصر
+  /// قيمة رمزية اصطلاحية مشتقة من المجموع، وليست وصفًا علميًا للنص.
   static ElementType _getElement(int value) {
-    final remainder = value % 5;
-    switch (remainder) {
-      case 1:
-        return ElementType.fire;
-      case 2:
-        return ElementType.water;
-      case 3:
-        return ElementType.earth;
-      case 4:
-        return ElementType.air;
-      case 0:
-        return ElementType.spirit;
-      default:
-        return ElementType.spirit;
-    }
+    if (value < 1) return ElementType.unknown;
+    const order = [
+      ElementType.fire,
+      ElementType.water,
+      ElementType.earth,
+      ElementType.air,
+      ElementType.spirit,
+    ];
+    return order[(value - 1) % order.length];
   }
 
-  /// الحصول على الكوكب
+  /// الحصول على ارتباط الكوكب الرمزي وفق ترتيب الجدول المشترك.
   static PlanetType _getPlanet(int value) {
-    final remainder = value % 7;
-    switch (remainder) {
-      case 1:
-        return PlanetType.sun;
-      case 2:
-        return PlanetType.moon;
-      case 3:
-        return PlanetType.mars;
-      case 4:
-        return PlanetType.mercury;
-      case 5:
-        return PlanetType.venus;
-      case 6:
-        return PlanetType.jupiter;
-      case 0:
-        return PlanetType.saturn;
-      default:
-        return PlanetType.sun;
-    }
+    if (value < 1) return PlanetType.unknown;
+    const order = [
+      PlanetType.sun,
+      PlanetType.moon,
+      PlanetType.mars,
+      PlanetType.mercury,
+      PlanetType.jupiter,
+      PlanetType.venus,
+      PlanetType.saturn,
+    ];
+    return order[(value - 1) % order.length];
   }
 
-  /// الحصول على البرج
+  /// الحصول على ارتباط البرج الرمزي وفق ترتيب الجدول المشترك.
   static ZodiacType _getZodiac(int value) {
-    final remainder = value % 12;
-    return ZodiacType.values[remainder];
+    if (value < 1) return ZodiacType.unknown;
+    const order = [
+      ZodiacType.aries,
+      ZodiacType.taurus,
+      ZodiacType.gemini,
+      ZodiacType.cancer,
+      ZodiacType.leo,
+      ZodiacType.virgo,
+      ZodiacType.libra,
+      ZodiacType.scorpio,
+      ZodiacType.sagittarius,
+      ZodiacType.capricorn,
+      ZodiacType.aquarius,
+      ZodiacType.pisces,
+    ];
+    return order[(value - 1) % order.length];
   }
 
-  /// الحصول على الاسم الإلهي
+  /// اختيار اسم من القائمة بحسب ترتيب اصطلاحي؛ لا يحمل دلالة تنبؤية.
   static String _getDivineName(int value) {
-    final index = (value % 99);
-    return DivineNames.arabicNames[index];
+    if (value < 1 || AbjadConstants.divineNames.isEmpty) return 'غير محدد';
+    final index = (value - 1) % AbjadConstants.divineNames.length;
+    return AbjadConstants.divineNames[index];
   }
 
-  /// الحصول على التكرر
-  static int _getFrequency(int value) {
-    if (value < 100) return 1;
-    if (value < 1000) return value ~/ 100;
-    return value ~/ 1000;
-  }
-
-  /// الحصول على اللون
+  /// لون رمزي اصطلاحي فقط؛ لا يمثل خاصية فيزيائية أو قياسًا علميًا.
   static String _getColor(int value) {
-    final remainder = value % 7;
+    if (value < 1) return 'غير محدد';
+    final index = (value - 1) % 7;
     const colors = ['أحمر', 'أخضر', 'أزرق', 'أصفر', 'أبيض', 'أسود', 'ذهبي'];
-    return colors[remainder];
+    return colors[index];
   }
 }
 
@@ -279,14 +267,14 @@ class AbjadCalculator {
 /// ElementType - نوع العنصر
 /// =============================================================================
 enum ElementType {
-  fire, water, earth, air, spirit
+  fire, water, earth, air, spirit, unknown
 }
 
 /// =============================================================================
 /// PlanetType - نوع الكوكب
 /// =============================================================================
 enum PlanetType {
-  sun, moon, mars, mercury, venus, jupiter, saturn
+  sun, moon, mars, mercury, venus, jupiter, saturn, unknown
 }
 
 /// =============================================================================
@@ -294,7 +282,7 @@ enum PlanetType {
 /// =============================================================================
 enum ZodiacType {
   aries, taurus, gemini, cancer, leo, virgo,
-  libra, scorpio, sagittarius, capricorn, aquarius, pisces
+  libra, scorpio, sagittarius, capricorn, aquarius, pisces, unknown
 }
 
 /// =============================================================================
@@ -354,23 +342,6 @@ class LetterResult {
 class DivineNames {
   DivineNames._();
 
-  static const List<String> arabicNames = [
-    'الله', 'الرَّحْمَنُ', 'الرَّحِيمُ', 'الْمَلِكُ', 'الْقُدُّوسُ',
-    'السَّلَامُ', 'الْمُؤْمِنُ', 'الْمُهَيْمِنُ', 'الْعَزِيزُ', 'الْجَبَّارُ',
-    'الْمُتَكَبِّرُ', 'الْخَالِقُ', 'الْبَارِئُ', 'الْمُصَوِّرُ', 'الْغَفَّارُ',
-    'الْقَهَّارُ', 'الْوَهَّابُ', 'الرَّزَّاقُ', 'الْفَتَّاحُ', 'الْعَلِيمُ',
-    'الْقَابِضُ', 'الْبَاسِطُ', 'الْخَافِضُ', 'الرَّافِعُ', 'الْمُعِزُّ',
-    'الْمُذِلُّ', 'السَّمِيعُ', 'الْبَصِيرُ', 'الْحَكِيمُ', 'الْوَدُودُ',
-    'الْمَجِيدُ', 'الْبَاعِثُ', 'الشَّهِيدُ', 'الْحَقُّ', 'الْوَكِيلُ',
-    'الْقَوِيُّ', 'الْمَتِينُ', 'الْوَلِيُّ', 'الْحَمِيدُ', 'الْمُحْصِيُّ',
-    'الْمُبْدِئُ', 'الْمُعِيدُ', 'الْمُحْيِي', 'الْمُمِيتُ', 'الْحَيُّ',
-    'الْقَيُّومُ', 'الْوَاجِدُ', 'الْمَاجِدُ', 'الْواحِدُ', 'الصَّمَدُ',
-    'الْقَادِرُ', 'الْمُقْتَدِرُ', 'الْقَدِيرُ', 'الْمُقَدِّمُ', 'الْمُؤَخِّرُ',
-    'الْأَوَّلُ', 'الْآخِرُ', 'الظَّاهِرُ', 'الْبَاطِنُ', 'الْعَلِيُّ',
-    'الْأَعْلَى', 'الْكَبِيرُ', 'الْحَفِيظُ', 'الْمُقِيتُ', 'الْحَسِيبُ',
-    'الْجَلِيلُ', 'الْكَرِيمُ', 'الرَّقِيبُ', 'الْمُجِيبُ', 'الْوَاسِعُ',
-    'الْحَكِيمُ', 'الْوَدُودُ', 'الْمُضِلُّ', 'النَّافِعُ', 'النُّورُ',
-    'الْهَادِي', 'الْبَدِيعُ', 'الْبَاقِي', 'الْوَارِثُ', 'الرَّشِيدُ',
-    'الصَّبُورُ',
-  ];
+  /// Shared canonicalized list; avoid maintaining a second divergent copy.
+  static const List<String> arabicNames = AbjadConstants.divineNames;
 }

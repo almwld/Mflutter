@@ -7,50 +7,81 @@ class ReadingProgressService {
   static const _readingDaysKey = 'quran.reading_days';
   static const int _firstPage = 1;
   static const int _lastPage = 604;
+  static Future<void> _saveQueue = Future<void>.value();
+
+  static Future<void> _awaitPendingWrites() async {
+    await _saveQueue.catchError((Object _) {});
+  }
 
   static Future<int> getLastPage({int fallback = 1}) async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     return (prefs.getInt(_pageKey) ?? fallback)
         .clamp(_firstPage, _lastPage)
         .toInt();
   }
 
-  static Future<void> saveLastPage(int page) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Persist and count the same canonical page. Otherwise page 0 or 999
-    // could be saved as 1/604 while also inflating progress with an invalid ID.
+  static Future<void> saveLastPage(int page) {
     final normalizedPage = page.clamp(_firstPage, _lastPage).toInt();
-    await prefs.setInt(_pageKey, normalizedPage);
+    // Serialize reader writes so a delayed older write cannot replace a newer page.
+    _saveQueue = _saveQueue
+        .catchError((Object _) {})
+        .then((_) => _savePageAndActivity(normalizedPage));
+    return _saveQueue;
+  }
 
-    final pages = _readValidPages(
-      prefs.getStringList(_pagesReadKey) ?? const <String>[],
-    );
-    if (pages.add(normalizedPage)) {
-      final sorted = pages.toList()..sort();
-      await prefs.setStringList(
-        _pagesReadKey,
-        sorted.map((value) => value.toString()).toList(growable: false),
-      );
-    } else {
-      // Clean up legacy invalid entries and duplicates while preserving
-      // previously recorded valid pages.
-      final stored = prefs.getStringList(_pagesReadKey) ?? const <String>[];
-      final normalized = pages.toList()..sort();
-      final canonical = normalized.map((value) => value.toString()).toList();
-      if (!_sameStrings(stored, canonical)) {
-        await prefs.setStringList(_pagesReadKey, canonical);
+  /// Records a real reading-day event without inventing a page number.
+  /// Used by surah-based readers that do not expose a page position.
+  static Future<void> recordReadingDay() {
+    final day = _dateKey(DateTime.now());
+    _saveQueue = _saveQueue
+        .catchError((Object _) {})
+        .then((_) => _saveReadingDay(day));
+    return _saveQueue;
+  }
+
+  static Future<void> _saveReadingDay(String day) async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_readingDaysKey) ?? const <String>[];
+    final days = _readValidDays(stored)..add(day);
+    final sorted = days.toList()..sort();
+    if (!_sameStrings(stored, sorted) &&
+        !await prefs.setStringList(_readingDaysKey, sorted)) {
+      throw StateError('تعذر حفظ يوم القراءة محليًا.');
+    }
+  }
+
+  static Future<void> _savePageAndActivity(int normalizedPage) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setInt(_pageKey, normalizedPage)) {
+      throw StateError('تعذر حفظ موضع القراءة محليًا.');
+    }
+
+    final storedPages = prefs.getStringList(_pagesReadKey) ?? const <String>[];
+    final pages = _readValidPages(storedPages);
+    pages.add(normalizedPage);
+    final sortedPages = pages.toList()..sort();
+    final canonicalPages = sortedPages.map((value) => value.toString()).toList();
+    if (!_sameStrings(storedPages, canonicalPages)) {
+      if (!await prefs.setStringList(_pagesReadKey, canonicalPages)) {
+        throw StateError('تعذر تحديث صفحات القراءة المحفوظة.');
       }
     }
 
-    final days = prefs.getStringList(_readingDaysKey) ?? <String>[];
-    final today = _dateKey(DateTime.now());
-    if (!days.contains(today)) {
-      days.add(today);
-      await prefs.setStringList(_readingDaysKey, days);
+    final storedDays =
+        prefs.getStringList(_readingDaysKey) ?? const <String>[];
+    final days = _readValidDays(storedDays);
+    days.add(_dateKey(DateTime.now()));
+    final sortedDays = days.toList()..sort();
+    if (!_sameStrings(storedDays, sortedDays)) {
+      if (!await prefs.setStringList(_readingDaysKey, sortedDays)) {
+        throw StateError('تعذر حفظ يوم القراءة محليًا.');
+      }
     }
   }
 
   static Future<double> getKhatmahProgress() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     final pages = _readValidPages(
       prefs.getStringList(_pagesReadKey) ?? const <String>[],
@@ -59,6 +90,7 @@ class ReadingProgressService {
   }
 
   static Future<int> getPagesRead() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
     return _readValidPages(
       prefs.getStringList(_pagesReadKey) ?? const <String>[],
@@ -76,31 +108,48 @@ class ReadingProgressService {
     return pages;
   }
 
+  static Set<String> _readValidDays(List<String> values) {
+    final days = <String>{};
+    for (final value in values) {
+      if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(value)) continue;
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null || _dateKey(parsed) != value) continue;
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      if (parsed.isAfter(today)) continue;
+      days.add(value);
+    }
+    return days;
+  }
+
   static bool _sameStrings(List<String> left, List<String> right) {
     if (left.length != right.length) return false;
-    for (var i = 0; i < left.length; i++) {
-      if (left[i] != right[i]) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (left[index] != right[index]) return false;
     }
     return true;
   }
 
   static Future<int> getReadingDays() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_readingDaysKey) ?? const <String>[]).length;
+    return _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    ).length;
   }
 
   static Future<int> getCurrentStreak() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    // Keep yesterday's streak alive until the user either reads today or
-    // misses a full calendar day, matching the persistent DailyStreakService.
     var cursor = days.contains(_dateKey(today))
         ? today
         : today.subtract(const Duration(days: 1));
     var streak = 0;
-
     while (days.contains(_dateKey(cursor))) {
       streak++;
       cursor = cursor.subtract(const Duration(days: 1));
@@ -109,18 +158,49 @@ class ReadingProgressService {
   }
 
   /// Number of distinct reading days in the last seven calendar days.
-  static Future<int> getPagesReadInLast7Days() async {
+  static Future<int> getReadingDaysInLast7Days() async {
+    await _awaitPendingWrites();
     final prefs = await SharedPreferences.getInstance();
-    final days = (prefs.getStringList(_readingDaysKey) ?? const <String>[]).toSet();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     var count = 0;
-    for (var i = 0; i < 7; i++) {
-      if (days.contains(_dateKey(DateTime.now().subtract(Duration(days: i))))) {
+    for (var offset = 0; offset < 7; offset++) {
+      if (days.contains(_dateKey(today.subtract(Duration(days: offset))))) {
         count++;
       }
     }
     return count;
   }
 
+  static Future<List<bool>> getReadingWeekHistory() async {
+    await _awaitPendingWrites();
+    final prefs = await SharedPreferences.getInstance();
+    final days = _readValidDays(
+      prefs.getStringList(_readingDaysKey) ?? const <String>[],
+    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return List<bool>.unmodifiable(
+      List<bool>.generate(
+        7,
+        (index) => days.contains(
+          _dateKey(today.subtract(Duration(days: 6 - index))),
+        ),
+      ),
+    );
+  }
+
+  /// Compatibility alias retained for existing callers. The value is a count
+  /// of distinct reading days, not pages read.
+  @Deprecated('Use getReadingDaysInLast7Days; this returns days, not pages.')
+  static Future<int> getPagesReadInLast7Days() =>
+      getReadingDaysInLast7Days();
+
   static String _dateKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
 }

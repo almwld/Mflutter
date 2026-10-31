@@ -136,10 +136,10 @@ class DivineNameVisualization {
     required this.energy,
   });
 
-  /// الوصف
+  /// وصف بصري رمزي؛ لا تمثل قيم التردد والطاقة قياسات فيزيائية.
   String get description =>
-      'اللون: $color\n'
-      'الشكل: $shape\n'
-      'التكرر: $frequency\n'
-      'الطاقة: $energy';
+      'اللون الرمزي: $color\n'
+      'الشكل التوضيحي: $shape\n'
+      'التردد (قيمة وصفية): $frequency\n'
+      'الطاقة (وصف رمزي غير مقاس): $energy';
 }

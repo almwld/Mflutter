@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
@@ -15,6 +16,50 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   static final LocalGgufRuntimeService instance = LocalGgufRuntimeService._();
 
   static const _minimumGgufBytes = 1024 * 1024;
+
+  /// Local visual-orchestration policy. This asks the model to structure a
+  /// layout, but the app still validates every returned payload before render.
+  static const String _mudabbirSystemPrompt = '''
+أنت النواة الذكية المحلية ومهندس العرض الديناميكي في مُدَبِّر.
+أجب بالعربية، ولا تدّعِ استخدام الإنترنت أو خدمة أو جهاز لم تُشغّله فعليًا.
+
+للسؤال العادي أجب بنص عربي واضح. فقط عندما يطلب المستخدم صراحةً لوحة أو مخططًا أو واجهة أو عرضًا بصريًا، أخرج JSON صالحًا فقط دون Markdown وبحسب schema_version=1:
+{
+  "template_id": "universal_dynamic_canvas",
+  "schema_version": 1,
+  "metadata": {
+    "title": "عنوان واضح",
+    "subtitle": "وصف موجز",
+    "topic_category": "المجال",
+    "source": "وصف صادق للأدلة المتاحة أو أنها غير متحققة",
+    "generated_at": "وقت ISO-8601 إذا كان متاحًا فعلًا"
+  },
+  "blocks": [
+    {"type": "text", "title": "عنوان", "data": {"text": "محتوى موجز"}}
+  ]
+}
+
+في الحمولة التي تولّدها بنفسك استخدم فقط كتل العرض النصية الآمنة:
+text, section, list, hero_header_block, interactive_card_block.
+استخدم شكل {type,title,data}. لا تضف JavaScript أو كود واجهة أو مفاتيح أسلوب حرة.
+الكتل الرقمية والرسوم والخرائط والحالة (metric, table, bar_chart, status,
+timeline_block, relation_graph_block, code_math_block, audio_frequency_block,
+spatial_map_block, star_map_block, vector_space_block, quantum_particle_block)
+محجوزة لمعالجات التطبيق والخدمات المحلية التي تملك بياناتها؛ لا تُصدرها أنت.
+لا تُنشئ أرقامًا أو إحصاءات أو حالات تشغيل أو تواريخ أو مراجع مصدرية من عندك.
+عند غياب الأدلة، استخدم نصًا يوضح أن البيانات غير متاحة ولا تخترع قيمة.
+أي خريطة نجوم أو فضاء متجهي أو شبكة جسيمات هي رسم توضيحي فقط ما لم توفر خدمة
+حقيقية بياناتها؛ لا تدّعِ رصدًا فلكيًا حيًا أو تشابكًا كميًا حقيقيًا أو فضاء 3D حقيقيًا.
+لا تدّعِ أن P2P أو AR أو IoT أو القياس الصوتي يعمل ما لم تظهر الأدلة تشغيله فعلًا.
+
+ممنوع عليك كتابة أو إعادة صياغة أو توليد أي آية قرآنية داخل حمولة الواجهة.
+لا تضع نص القرآن أو كتلة quran_verse في الحمولة التي تولّدها أنت؛ يقتصر إنشاء
+كتلة quran_verse على معالج التطبيق الموثوق الذي يضع مرجع السورة والآية فقط،
+ويحمّل العارض النص من المصحف المحلي. إذا لم يتوفر مرجع محقق فلا تُنشئ نصًا بديلًا.
+اسم المصدر وحده ليس دليلًا على صحة المعلومة. كل مخرجات النموذج غير متحققة
+آليًا ما لم يؤكدها محرك محلي موثوق. لا تقل إنك ضمنت الحقيقة المطلقة.
+''';
+
   LlamaController? _controller;
   String _status = 'لم يتم تثبيت نموذج GGUF محلي';
   bool _busy = false;
@@ -80,6 +125,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     _busy = true;
     _status = 'جارٍ فحص ملف GGUF المستورد...';
     notifyListeners();
+    File? temporaryImport;
     try {
       final source = File(sourcePath);
       final sourceName = source.uri.pathSegments.isEmpty
@@ -105,18 +151,65 @@ class LocalGgufRuntimeService extends ChangeNotifier {
         return target;
       }
       final temp = File('${target.path}.importing');
+      temporaryImport = temp;
       if (await temp.exists()) await temp.delete();
       await source.openRead().pipe(temp.openWrite());
       if (!await _isValidGguf(temp)) {
         await temp.delete();
         throw const FormatException('فشل التحقق من نسخة GGUF بعد الاستيراد.');
       }
-      if (await target.exists()) await target.delete();
-      await temp.rename(target.path);
-      await _selectModel(sourceName);
+      final backup = File('${target.path}.previous');
+      if (await backup.exists()) {
+        final backupValid = await _isValidGguf(backup);
+        final targetExists = await target.exists();
+        final targetValid = targetExists && await _isValidGguf(target);
+        if (!targetValid && backupValid) {
+          if (targetExists) await target.delete();
+          await backup.rename(target.path);
+        } else if (targetValid) {
+          await backup.delete();
+        } else {
+          throw StateError(
+            'عُثر على نسخة احتياطية غير صالحة ولا يوجد نموذج صالح يمكن استعادته.',
+          );
+        }
+      }
+      final hadPrevious = await target.exists();
+      if (hadPrevious) await target.rename(backup.path);
+
+      try {
+        // Keep the previous valid model recoverable until both the validated
+        // file replacement and the selected-model marker have succeeded.
+        await temp.rename(target.path);
+        temporaryImport = null;
+        await _selectModel(sourceName);
+      } catch (_) {
+        if (await target.exists()) await target.delete();
+        if (hadPrevious && await backup.exists()) {
+          await backup.rename(target.path);
+        }
+        rethrow;
+      }
+
+      if (await backup.exists()) {
+        try {
+          await backup.delete();
+        } catch (_) {
+          // A stale backup is harmless; do not turn a successful import into
+          // a reported failure solely because cleanup was denied.
+        }
+      }
       _status = 'تم استيراد النموذج $sourceName إلى مساحة التطبيق الخاصة.';
       return target;
     } catch (error) {
+      final temp = temporaryImport;
+      if (temp != null && await temp.exists()) {
+        try {
+          await temp.delete();
+        } catch (_) {
+          // Keep the original import error as the primary failure.
+        }
+      }
       _status = 'فشل استيراد النموذج: $error';
       rethrow;
     } finally {
@@ -224,7 +317,7 @@ class LocalGgufRuntimeService extends ChangeNotifier {
     try {
       await for (final token in controller.generateChat(
         messages: [
-          ChatMessage(role: 'system', content: 'مساعد عربي حذر، يذكر حدود الأدلة ولا يختلق المراجع.'),
+          ChatMessage(role: 'system', content: _mudabbirSystemPrompt),
           ChatMessage(role: 'user', content: prompt),
         ],
         template: 'chatml',
@@ -239,6 +332,14 @@ class LocalGgufRuntimeService extends ChangeNotifier {
       _status = 'اكتمل الاستدلال المحلي.';
       return answer;
     } catch (error) {
+      // A stream timeout/error must not leave llama.cpp generating natively
+      // after the Dart state has released the generation lock. Stop the native
+      // controller before allowing another request to start.
+      try {
+        await controller.stop();
+      } catch (_) {
+        // Preserve the original generation error; stop is best-effort.
+      }
       _status = 'فشل الاستدلال المحلي: $error';
       rethrow;
     } finally {
@@ -248,7 +349,9 @@ class LocalGgufRuntimeService extends ChangeNotifier {
   }
 
   Future<void> stopGeneration() async {
-    await _controller?.stop();
+    final controller = _controller;
+    if (controller == null || !_generating) return;
+    await controller.stop();
   }
 
   Future<void> unloadModel() async {
