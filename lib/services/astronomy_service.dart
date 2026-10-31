@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:astronomia/coord.dart' as coord;
 import 'package:astronomia/elliptic.dart' as elliptic;
+import 'package:astronomia/globe.dart' as globe;
 import 'package:astronomia/moonposition.dart' as moon;
 import 'package:astronomia/nutation.dart' as nutation;
 import 'package:astronomia/planetposition.dart' as pp;
+import 'package:astronomia/parallax.dart' as parallax;
 import 'package:astronomia/precess.dart' as precess;
 import 'package:astronomia/sidereal.dart' as sidereal;
 import 'package:astronomia/solar.dart' as solar;
@@ -15,8 +17,8 @@ import '../models/celestial_body.dart';
 ///
 /// The package's solar/lunar/planetary routines provide geocentric equatorial
 /// coordinates; this service converts them to the observer's local horizon.
-/// Fixed stars are precessed from J2000 to the observation epoch. The Moon's
-/// topocentric parallax and atmospheric refraction are not yet applied.
+/// Fixed stars are precessed from J2000 to the observation epoch. Lunar
+/// topocentric parallax is applied; atmospheric refraction is not applied.
 class AstronomyService {
   const AstronomyService._();
 
@@ -116,11 +118,23 @@ class AstronomyService {
 
     final moonPosition = moon.position(jde);
     final obliquity = nutation.meanObliquity(jde);
-    final moonEquatorial = coord.eclToEq(
+    final moonGeocentric = coord.eclToEq(
       moonPosition.lon,
       moonPosition.lat,
       math.sin(obliquity),
       math.cos(obliquity),
+    );
+    final observerParallax = globe.parallaxConstants(latitudeRadians, 0);
+    final moonDistanceAu = moonPosition.delta / 149597870.7;
+    final moonHourAngle = localSiderealDegrees * _rad - moonGeocentric.ra;
+    final moonEquatorial = parallax.topocentric(
+      moonGeocentric.ra,
+      moonGeocentric.dec,
+      moonDistanceAu,
+      observerParallax.rhsSinPhiPrime,
+      observerParallax.rhoCosPrime,
+      moonHourAngle,
+      math.sin(parallax.horizontal(moonDistanceAu)),
     );
     bodies.add(_fromEquatorial(
       id: 'moon',
@@ -135,7 +149,7 @@ class AstronomyService {
       localSiderealDegrees: localSiderealDegrees,
       verse: 'وَالْقَمَرَ قَدَّرْنَاهُ مَنَازِلَ',
       reference: 'يس: 39',
-      note: 'موضع قمري محسوب بخوارزميات Meeus؛ تصحيح اختلاف المنظر الطبوغرافي غير مطبق بعد.',
+      note: 'موضع قمري محسوب بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي؛ الانكسار الجوي غير مطبق.',
     ));
 
     for (final spec in _planets) {
