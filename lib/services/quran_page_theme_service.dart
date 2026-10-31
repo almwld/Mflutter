@@ -5,6 +5,29 @@ enum QuranPageTheme { paper, black, navy, deepGreen }
 
 class QuranPageThemeService {
   static const _key = 'quran.page_theme';
+  static const _fontColorKey = 'quran.page_font_color';
+
+  static Future<Color?> loadFontColor() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final value = prefs.getInt(_fontColorKey);
+      return value == null ? null : Color(value);
+    } catch (error) {
+      debugPrint('QuranPageThemeService: could not load font color: $error');
+      return null;
+    }
+  }
+
+  static Future<void> saveFontColor(Color color) async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setInt(_fontColorKey, color.value);
+    if (!saved) throw StateError('تعذر حفظ لون خط المصحف محليًا.');
+  }
+
+  static Future<void> clearFontColor() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_fontColorKey);
+  }
 
   static Future<QuranPageTheme> load() async {
     try {
