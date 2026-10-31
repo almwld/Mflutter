@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../../domain/entities/verse.dart';
 import '../../../services/quran_loader_service.dart';
 
 /// All editorial and visual data for the 60-second study lives here.
