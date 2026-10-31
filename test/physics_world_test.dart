@@ -13,6 +13,7 @@ void main() {
         positions: Float64List.fromList([0, 0, 0]),
         inverseMasses: Float64List.fromList([1]),
         radii: Float64List.fromList([.05]),
+        linearDamping: 0,
       )..velocities[0] = 1;
       world.addBody(body);
 
