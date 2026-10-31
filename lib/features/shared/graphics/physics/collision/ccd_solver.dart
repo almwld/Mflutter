@@ -6,8 +6,8 @@ import '../soft_body.dart';
 ///
 /// The narrow phase computes the closest point between two swept relative
 /// trajectories. If their swept spheres overlap, it projects the pair back to
-/// the non-crossed side of the impact normal. This is a robust vertex-sampled
-/// CCD layer; it is not a triangle-triangle mesh intersection test.
+/// the non-crossed side of the impact normal. This is a vertex-sampled CCD
+/// layer, not a triangle-triangle mesh intersection test.
 class CcdSolver {
   const CcdSolver();
 
@@ -16,7 +16,6 @@ class CcdSolver {
     required int particleA,
     required SoftBody bodyB,
     required int particleB,
-    required double restitution,
   }) {
     final ia = particleA * 3;
     final ib = particleB * 3;
@@ -70,8 +69,7 @@ class CcdSolver {
     final totalWeight = weightA + weightB;
     if (totalWeight <= 0) return false;
 
-    // Use signed separation at the end of the step. If the particles crossed,
-    // this deliberately pushes them back to the same side of the impact plane.
+    // Signed end separation detects a pair that crossed during this step.
     final endX = a1[ia] - b1[ib];
     final endY = a1[ia + 1] - b1[ib + 1];
     final endZ = a1[ia + 2] - b1[ib + 2];
@@ -88,5 +86,40 @@ class CcdSolver {
     b1[ib + 1] -= ny * moveB;
     b1[ib + 2] -= nz * moveB;
     return true;
+  }
+
+  /// Applies a velocity impulse after position reconstruction.
+  void applyRestitution({
+    required SoftBody bodyA,
+    required int particleA,
+    required SoftBody bodyB,
+    required int particleB,
+    required double restitution,
+  }) {
+    final ia = particleA * 3;
+    final ib = particleB * 3;
+    final dx = bodyA.positions[ia] - bodyB.positions[ib];
+    final dy = bodyA.positions[ia + 1] - bodyB.positions[ib + 1];
+    final dz = bodyA.positions[ia + 2] - bodyB.positions[ib + 2];
+    final length = math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (length <= 1e-9) return;
+    final nx = dx / length, ny = dy / length, nz = dz / length;
+    final relativeNormalVelocity =
+        (bodyA.velocities[ia] - bodyB.velocities[ib]) * nx +
+        (bodyA.velocities[ia + 1] - bodyB.velocities[ib + 1]) * ny +
+        (bodyA.velocities[ia + 2] - bodyB.velocities[ib + 2]) * nz;
+    if (relativeNormalVelocity >= 0) return;
+
+    final weightA = bodyA.inverseMasses[particleA];
+    final weightB = bodyB.inverseMasses[particleB];
+    final totalWeight = weightA + weightB;
+    if (totalWeight <= 0) return;
+    final impulse = -(1 + restitution) * relativeNormalVelocity / totalWeight;
+    bodyA.velocities[ia] += nx * impulse * weightA;
+    bodyA.velocities[ia + 1] += ny * impulse * weightA;
+    bodyA.velocities[ia + 2] += nz * impulse * weightA;
+    bodyB.velocities[ib] -= nx * impulse * weightB;
+    bodyB.velocities[ib + 1] -= ny * impulse * weightB;
+    bodyB.velocities[ib + 2] -= nz * impulse * weightB;
   }
 }
