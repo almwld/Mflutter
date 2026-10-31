@@ -94,8 +94,8 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
       final angle = -math.pi / 2 + (2 * math.pi * i / math.max(1, nodes.length));
       final x = node['x'] is num ? (node['x'] as num).toDouble() : .5 + .38 * math.cos(angle);
       final y = node['y'] is num ? (node['y'] as num).toDouble() : .5 + .36 * math.sin(angle);
-      _coordinates[i * 2] = x.clamp(0, 1);
-      _coordinates[i * 2 + 1] = y.clamp(0, 1);
+      _coordinates[i * 2] = x.clamp(0, 1).toDouble();
+      _coordinates[i * 2 + 1] = y.clamp(0, 1).toDouble();
       _ids.add(node['id'] is String ? node['id'] as String : 'node-$i');
       _labels.add(node['label'] is String ? node['label'] as String : _ids.last);
     }
@@ -156,7 +156,7 @@ class _ConnectedNodesPathWidgetState extends State<ConnectedNodesPathWidget>
 
   @override
   Widget build(BuildContext context) {
-    final size = Size(double.infinity, widget.height.clamp(120, 900));
+    final size = Size(double.infinity, widget.height.clamp(120, 900).toDouble());
     return SizedBox(
       height: size.height,
       child: ClipRRect(
@@ -253,12 +253,18 @@ class _ConnectedNodesPainter extends CustomPainter {
       _path.cubicTo(ax + bend, ay, bx - bend, by, bx, by);
       canvas.drawPath(_path, _line);
       final progress = (flow.value + edge.$1 * .137) % 1;
-      final point = _path.computeMetrics().firstOrNull?.getTangentForOffset(
-        _path.computeMetrics().first.length * progress,
-      );
-      if (point != null) {
-        canvas.drawCircle(point.position, 2.1 + pulse, _activeLine);
-      }
+      final inverse = 1 - progress;
+      final inverseSquared = inverse * inverse;
+      final progressSquared = progress * progress;
+      final pointX = inverseSquared * inverse * ax +
+          3 * inverseSquared * progress * (ax + bend) +
+          3 * inverse * progressSquared * (bx - bend) +
+          progressSquared * progress * bx;
+      final pointY = inverseSquared * inverse * ay +
+          3 * inverseSquared * progress * ay +
+          3 * inverse * progressSquared * by +
+          progressSquared * progress * by;
+      canvas.drawCircle(Offset(pointX, pointY), 2.1 + pulse, _activeLine);
     }
     for (var i = 0; i < labels.length; i++) {
       final x = coordinates[i * 2] * size.width;
@@ -273,8 +279,8 @@ class _ConnectedNodesPainter extends CustomPainter {
       final text = _labelPainters[i];
       final labelY = y + (y < size.height * .55 ? 12 : -text.height - 12);
       text.paint(canvas, Offset(
-        (x - text.width / 2).clamp(4, math.max(4, size.width - text.width - 4)),
-        labelY.clamp(2, math.max(2, size.height - text.height - 2)),
+        (x - text.width / 2).clamp(4, math.max(4, size.width - text.width - 4)).toDouble(),
+        labelY.clamp(2, math.max(2, size.height - text.height - 2)).toDouble(),
       ));
     }
   }
