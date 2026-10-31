@@ -347,10 +347,21 @@ class _RecitationScreenState extends State<RecitationScreen> {
                     },
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: const [
+                Chip(label: Text('عبدالرحمن مسعد • مصدر قيد الربط')),
+                Chip(label: Text('عبدالله أحمد شعبان • مصدر قيد الربط')),
+              ],
+            ),
+          ),
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: Text(
-              'إسلام صبحي متاح ضمن الفهرس الصوتي عند توفر نسخته. عبدالرحمن مسعد وعبدالله أحمد شعبان أُضيفا إلى قائمة الطلبات؛ لم يظهر لهما حتى الآن رابط بث موثوق في مصدر MP3Quran المستخدم.',
+              'إسلام صبحي يُحمّل من فهرس MP3Quran عند توفر نسخته. أُدرج الاسمان الآخران في القائمة المرئية، لكن لم يظهر لهما حتى الآن رابط بث موثوق في المصدر المعتمد؛ لن نشغّل رابطاً تخمينياً.',
               textDirection: TextDirection.rtl,
               style: TextStyle(color: Colors.white54, fontSize: 10, height: 1.4),
             ),
