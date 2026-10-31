@@ -35,7 +35,18 @@ class AstronomyService {
     'bellatrix': 250, 'saiph': 650, 'aldebaran': 65.2, 'spica': 250,
     'antares': 550, 'deneb': 2615, 'altair': 16.7, 'albireo': 430,
     'dubhe': 123, 'merak': 79.7, 'phecda': 83.2, 'megrez': 80.5,
-    'alioth': 83.2, 'mizar': ตาม, 
+    'alioth': 83.2, 'mizar': 78.2, 'alkaid': 103, 'schedar': 228,
+    'caph': 54.7, 'gamma_cas': 550, 'ruchbah': 99, 'segin': 440,
+    'castor': 51.6, 'pollux': 33.8, 'regulus': 79.3, 'denebola': 36.2,
+    'algieba': 130, 'hamal': 65.9, 'almach': 350, 'mirach': 197,
+    'alpheratz': 97, 'algol': 93.4, 'mirfak': 510, 'elnath': 134,
+    'maia': 344, 'electra': 400, 'mimosa': 280, 'acrux': 320,
+    'gacrux': 88.6, 'canopus': 310, 'adhara': 430, 'wezen': 1600,
+    'aludra': 2000, 'fomalhaut': 25.1, 'achernar': 139, 'shaula': 570,
+    'sargas': 270, 'kaus_australis': 145, 'rasalhague': 48.6,
+    'alphecca': 75, 'muphrid': 37.2, 'alnair': 101, 'gienah': 154,
+    'alnilam': 2000, 'mintaka': 1200, 'alnitak': 1260, 'sadr': 1800,
+    'sheliak': 960, 'sulafat': 620, 'tarazed': 395, 'alshain': 45.9,
   };
 
   static final List<_PlanetSpec> _planets = [
@@ -337,12 +348,13 @@ class AstronomyService {
   static double _moonPhaseAngle(double sunRa, double sunDec, double moonRa, double moonDec) {
     final cosine = math.sin(sunDec) * math.sin(moonDec) +
         math.cos(sunDec) * math.cos(moonDec) * math.cos(sunRa - moonRa);
-    return math.acos(cosine.clamp(-1.0, 1.0).toDouble()) * _deg;
+    final elongation = math.acos(cosine.clamp(-1.0, 1.0).toDouble()) * _deg;
+    return 180 - elongation;
   }
 
   static double _moonIllumination(double sunRa, double sunDec, double moonRa, double moonDec) {
-    final elongation = _moonPhaseAngle(sunRa, sunDec, moonRa, moonDec) * _rad;
-    return ((1 - math.cos(math.pi - elongation)) / 2).clamp(0.0, 1.0).toDouble();
+    final phaseAngle = _moonPhaseAngle(sunRa, sunDec, moonRa, moonDec) * _rad;
+    return ((1 + math.cos(phaseAngle)) / 2).clamp(0.0, 1.0).toDouble();
   }
 
   static String _moonPhaseName(double sunRa, double moonRa, double illumination) {
@@ -364,6 +376,11 @@ class AstronomyService {
     required double ra,
     required double dec,
     required double magnitude,
+    double? distanceAu,
+    double? distanceLightYears,
+    double? illuminatedFraction,
+    double? phaseAngleDegrees,
+    String? phaseName,
     required int color,
     required double latitudeRadians,
     required double localSiderealDegrees,
@@ -391,6 +408,11 @@ class AstronomyService {
       azimuth: _normalize(azimuth * _deg),
       altitude: altitude * _deg,
       magnitude: magnitude,
+      distanceAu: distanceAu,
+      distanceLightYears: distanceLightYears,
+      illuminatedFraction: illuminatedFraction,
+      phaseAngleDegrees: phaseAngleDegrees,
+      phaseName: phaseName,
       colorValue: color,
       verse: verse,
       reference: reference,
