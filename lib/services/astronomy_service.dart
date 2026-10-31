@@ -222,8 +222,9 @@ class AstronomyService {
       kind: CelestialKind.moon,
       ra: moonEquatorial.ra,
       dec: moonEquatorial.dec,
-      magnitude: -12.0,
+      magnitude: -12.73 + 0.026 * (phaseAngle * _deg) + 4e-9 * math.pow(phaseAngle * _deg, 4),
       distanceAu: moonDistanceAu,
+      distanceKilometers: moonDistanceKm,
       illuminatedFraction: illuminatedFraction,
       phaseAngleDegrees: phaseAngle * _deg,
       phaseName: _moonPhaseName(phaseAngle * _deg, waxing),
@@ -250,7 +251,7 @@ class AstronomyService {
         color: spec.color,
         latitudeRadians: latitudeRadians,
         localSiderealDegrees: localSiderealDegrees,
-        note: 'إحداثيات كوكبية محسوبة باستخدام VSOP87 وMeeus.',
+        note: 'الموضع والمسافة محسوبان باستخدام VSOP87 وMeeus؛ القدر الظاهري قيمة فهرسية تقريبية وليست قياساً لحظياً للسطوع.',
       ));
     }
 
