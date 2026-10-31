@@ -55,6 +55,57 @@ void main() {
       expect(schema.validationErrors, isNotEmpty);
     });
 
+    test('accepts stable node ids for cross-block selection', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'id': 'particle-field',
+            'type': 'particle_matrix_block',
+            'count': 3,
+            'columns': 3,
+            'node_ids': ['source', 'engine', 'output'],
+            'target_block_id': 'flow-graph',
+          },
+          {
+            'id': 'flow-graph',
+            'type': 'connected_nodes_path_block',
+            'target_block_id': 'particle-field',
+            'nodes': [
+              {'id': 'source', 'label': 'المصدر'},
+              {'id': 'engine', 'label': 'المحرك'},
+              {'id': 'output', 'label': 'المخرجات'},
+            ],
+            'edges': [
+              {'from': 'source', 'to': 'engine'},
+              {'from': 'engine', 'to': 'output'},
+            ],
+          },
+        ],
+      });
+
+      expect(schema.blocks, hasLength(2));
+      expect(schema.validationErrors, isEmpty);
+    });
+
+    test('rejects duplicate particle node ids', () {
+      final schema = TemplatePayloadSchema.fromMap({
+        'ui_template': 'universal_dynamic_canvas',
+        'schema_version': 1,
+        'blocks': [
+          {
+            'type': 'particle_matrix_block',
+            'count': 2,
+            'node_ids': ['duplicate', 'duplicate'],
+          },
+        ],
+      });
+
+      expect(schema.blocks, isEmpty);
+      expect(schema.validationErrors, isNotEmpty);
+    });
+
     test('validates connected nodes and edge references', () {
       final schema = TemplatePayloadSchema.fromMap({
         'ui_template': 'universal_dynamic_canvas',
