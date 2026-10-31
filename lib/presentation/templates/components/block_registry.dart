@@ -5,6 +5,7 @@ import 'spatial_map_block.dart';
 import 'star_tracker_block.dart';
 import '../../../features/shared/graphics/particle_matrix_block.dart';
 import '../../../features/shared/graphics/connected_nodes_path.dart';
+import '../../../features/shared/graphics/physics_sandbox_block.dart';
 
 typedef BlockBuilder = Widget Function({
   required String title,
@@ -24,6 +25,7 @@ abstract final class BlockRegistry {
     'star_tracker_block': _buildStarTracker,
     'particle_matrix_block': _buildParticleMatrix,
     'connected_nodes_path_block': _buildConnectedNodes,
+    'physics_sandbox_block': _buildPhysicsSandbox,
   };
 
   static Set<String> get registeredTypes =>
@@ -116,6 +118,19 @@ abstract final class BlockRegistry {
       ),
     );
   }
+
+  static Widget _buildPhysicsSandbox({
+    required String title,
+    required Map<String, dynamic> data,
+  }) =>
+      _BlockCard(
+        title: title,
+        child: PhysicsSandboxBlockWidget(
+          height: data['height'] is num
+              ? (data['height'] as num).toDouble()
+              : 300,
+        ),
+      );
 
   static Widget _buildSpatial({
     required String title,
