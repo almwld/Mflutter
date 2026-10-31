@@ -14,6 +14,7 @@ import '../../widgets/quran/mushaf_nebula.dart';
 import '../../../services/quran_page_theme_service.dart';
 import '../../../services/nucleus_service.dart';
 import '../../../services/share_service.dart';
+import '../../widgets/quran/font_color_picker_dialog.dart';
 
 /// قارئ المصحف — تخطيط صفحات المصحف المدني 604 صفحة.
 /// يعتمد على QCF Hafs لضمان ثبات مواضع الأسطر والآيات وحدود الصفحات،
@@ -51,6 +52,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   bool _readerControlsVisible = true;
   bool _hasUserNavigated = false;
   QuranPageTheme _pageTheme = QuranPageTheme.paper;
+  Color? _customFontColor;
 
   static const _paper = Color(0xFFF8F1E4);
   static const _ink = Color(0xFF241A12);
@@ -155,7 +157,43 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
     _livingGlow.value = 0;
   }
 
-  Future<void> _restorePageTheme() async { final value = await QuranPageThemeService.load(); if (mounted) setState(() => _pageTheme = value); }
+  Future<void> _restorePageTheme() async {
+    final values = await Future.wait([
+      QuranPageThemeService.load(),
+      QuranPageThemeService.loadFontColor(),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _pageTheme = values[0] as QuranPageTheme;
+      _customFontColor = values[1] as Color?;
+    });
+  }
+
+  Future<void> _showFontColorPicker() async {
+    final fallback = _pageTheme == QuranPageTheme.paper
+        ? (Theme.of(context).brightness == Brightness.dark
+            ? _quranGoldDark
+            : _quranGoldLight)
+        : QuranPageThemeService.text(_pageTheme);
+    final selected = await showDialog<Color>(
+      context: context,
+      builder: (_) => FontColorPickerDialog(
+        initialColor: _customFontColor ?? fallback,
+      ),
+    );
+    if (selected == null || !mounted) return;
+    final previous = _customFontColor;
+    setState(() => _customFontColor = selected);
+    try {
+      await QuranPageThemeService.saveFontColor(selected);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _customFontColor = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تعذر حفظ لون الخط: $error')),
+      );
+    }
+  }
 
   Future<void> _showPageThemePicker() async {
     await showModalBottomSheet<void>(
@@ -545,7 +583,7 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final quranGold = _pageTheme == QuranPageTheme.paper ? (isDark ? _quranGoldDark : _quranGoldLight) : QuranPageThemeService.text(_pageTheme);
+    final quranGold = _customFontColor ?? (_pageTheme == QuranPageTheme.paper ? (isDark ? _quranGoldDark : _quranGoldLight) : QuranPageThemeService.text(_pageTheme));
     final pageBackground = QuranPageThemeService.background(_pageTheme);
 
     return Scaffold(
