@@ -79,6 +79,12 @@ abstract final class BlockRegistry {
         blockId: data['_canvas_block_id'] is String
             ? data['_canvas_block_id'] as String
             : 'particle-matrix',
+        targetBlockId: data['target_block_id'] is String
+            ? data['target_block_id'] as String
+            : null,
+        nodeIds: data['node_ids'] is List
+            ? (data['node_ids'] as List).whereType<String>().toList(growable: false)
+            : const <String>[],
       ),
     );
   }
