@@ -317,6 +317,7 @@ class _CosmosPainter extends CustomPainter {
     final top = size.height * .29;
     final width = size.width * .84;
     final height = size.height * .36;
+    final dx = width / DotMatrixCosmosConfig.columns;
     final dy = height / DotMatrixCosmosConfig.rows;
     _gridCache = List<Offset>.generate(DotMatrixCosmosConfig.verseCount, (index) {
       final row = index ~/ DotMatrixCosmosConfig.columns;
