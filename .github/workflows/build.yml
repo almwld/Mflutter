@@ -186,6 +186,9 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
+      - name: Test Quran readability themes
+        run: flutter test test/quran_page_theme_service_test.dart
+
       - name: Test nucleus core contracts
         run: flutter test test/nucleus_service_test.dart
 
