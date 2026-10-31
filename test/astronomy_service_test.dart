@@ -37,6 +37,22 @@ void main() {
       }
     });
 
+    test('exposes solar-system distances and lunar phase metadata', () {
+      final sun = bodies.singleWhere((body) => body.id == 'sun');
+      final moon = bodies.singleWhere((body) => body.id == 'moon');
+      final sirius = bodies.singleWhere((body) => body.id == 'sirius');
+      final venus = bodies.singleWhere((body) => body.id == 'venus');
+
+      expect(sun.distanceAu, isNotNull);
+      expect(sun.distanceAu!, inInclusiveRange(0.9, 1.1));
+      expect(moon.distanceAu, inInclusiveRange(0.002, 0.003));
+      expect(moon.illuminatedFraction, inInclusiveRange(0, 1));
+      expect(moon.phaseAngleDegrees, inInclusiveRange(0, 180));
+      expect(moon.phaseName, isNotEmpty);
+      expect(venus.distanceAu, greaterThan(0));
+      expect(sirius.distanceLightYears, closeTo(8.6, 0.1));
+    });
+
     test('Sirius keeps its verified Quranic reference', () {
       final sirius = bodies.singleWhere((body) => body.id == 'sirius');
       expect(sirius.verse, 'وَأَنَّهُ هُوَ رَبُّ الشِّعْرَىٰ');
