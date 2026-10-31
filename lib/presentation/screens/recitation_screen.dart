@@ -205,7 +205,8 @@ class _RecitationScreenState extends State<RecitationScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       if (_selectedReciter != 'https://everyayah.com/data/Alafasy_128kbps/') {
-        final source = _reciters.where((item) => item.server == _selectedReciter).firstOrNull;
+        final matchingSources = _reciters.where((item) => item.server == _selectedReciter);
+        final source = matchingSources.isEmpty ? null : matchingSources.first;
         if (source == null || !source.surahs.contains(surah.number)) {
           throw StateError('هذه السورة غير متاحة ضمن النسخة الصوتية المختارة.');
         }
