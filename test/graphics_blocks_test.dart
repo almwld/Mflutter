@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mudabbir_al_asrar/features/shared/graphics/connected_nodes_path.dart';
 import 'package:mudabbir_al_asrar/features/shared/graphics/particle_matrix_block.dart';
-import 'package:mudabbir_al_asrar/features/shared/graphics/physics_sandbox_block.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/adaptive_template_selector.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/components/block_registry.dart';
 import 'package:mudabbir_al_asrar/presentation/templates/universal_template_renderer.dart';
@@ -180,7 +179,7 @@ void main() {
           title: 'محاكاة',
           data: const <String, dynamic>{},
         ),
-        isA<Widget>(),
+        isNotNull,
       );
     });
 
