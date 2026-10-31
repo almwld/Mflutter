@@ -267,6 +267,74 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
       ..showSnackBar(SnackBar(content: Text(value)));
   }
 
+
+  /// Finds the catalogued body closest to the optical-axis reticle.
+  /// Drawing, hit-testing and target lock share the same projection.
+  CelestialBody? _findAimedBody(Size size) {
+    if (!_orientation.hasHeading || !_orientation.hasTilt || _visibleBodies.isEmpty) {
+      return null;
+    }
+    final opticalAxis = Offset(size.width / 2, size.height / 2);
+    CelestialBody? nearest;
+    var nearestDistance = 42.0;
+    for (final body in _visibleBodies) {
+      final point = _projectBody(body, size, _orientation, _horizontalFov);
+      if (point == null) continue;
+      final distance = (point - opticalAxis).distance;
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = body;
+      }
+    }
+    return nearest;
+  }
+
+  Widget _buildAimedObjectCard(CelestialBody body, Offset point, Size viewport) {
+    final distance = body.distanceKilometers != null
+        ? '${body.distanceKilometers!.toStringAsFixed(0)} كم'
+        : body.distanceAu != null
+            ? '${body.distanceAu!.toStringAsFixed(4)} وحدة فلكية'
+            : body.distanceLightYears != null
+                ? '~${body.distanceLightYears!.toStringAsFixed(1)} سنة ضوئية'
+                : 'المسافة غير متاحة في الفهرس';
+    final left = (point.dx - 112).clamp(8.0, math.max(8.0, viewport.width - 232));
+    final top = (point.dy - 104).clamp(8.0, math.max(8.0, viewport.height - 100));
+    return Positioned(
+      left: left,
+      top: top,
+      child: IgnorePointer(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 224),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: const Color(0xE9101D34),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: body.color.withOpacity(.85), width: 1.2),
+            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 4))],
+          ),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(body.nameAr, style: const TextStyle(
+                  color: _gold, fontFamily: 'Amiri', fontWeight: FontWeight.bold, fontSize: 17,
+                )),
+                Text(body.nameEn, textDirection: TextDirection.ltr,
+                  style: const TextStyle(color: Colors.white60, fontSize: 10)),
+                const SizedBox(height: 4),
+                Text('المسافة: $distance', style: const TextStyle(color: Colors.white, fontSize: 11)),
+                Text('الارتفاع ${body.altitude.toStringAsFixed(1)}°  •  السمت ${body.azimuth.toStringAsFixed(1)}°',
+                  style: const TextStyle(color: Colors.white70, fontSize: 10)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _selectAt(Offset point, Size size) {
     CelestialBody? nearest;
     var distanceLimit = 34.0;
@@ -390,6 +458,10 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
               child: LayoutBuilder(
                 builder: (context, constraints) {
                   final size = constraints.biggest;
+                  final aimedBody = _findAimedBody(size);
+                  final aimedPoint = aimedBody == null
+                      ? null
+                      : _projectBody(aimedBody, size, _orientation, _horizontalFov);
                   return GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTapDown: (details) => _selectAt(details.localPosition, size),
@@ -403,12 +475,14 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen>
                           painter: _SkyPainter(
                             bodies: _visibleBodies,
                             orientation: _orientation,
-                            selectedId: _selectedId,
+                            selectedId: aimedBody?.id ?? _selectedId,
                             horizontalFov: _horizontalFov,
                             selectedConstellations: _selectedConstellations,
                             transparentBackground: cameraReady,
                           ),
                         ),
+                        if (aimedBody != null && aimedPoint != null && cameraReady)
+                          _buildAimedObjectCard(aimedBody, aimedPoint, size),
                         if (_latitude == null)
                           Center(
                             child: Container(
