@@ -70,8 +70,8 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
   }
 
   void _prepareParticles() {
-    final count = widget.count.clamp(1, 8000);
-    final columns = widget.columns.clamp(1, count);
+    final count = widget.count.clamp(1, 8000).toInt();
+    final columns = widget.columns.clamp(1, count).toInt();
     _baseX = Float32List(count);
     _baseY = Float32List(count);
     _phase = Float32List(count);
@@ -99,7 +99,7 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: widget.height.clamp(80, 900),
+      height: widget.height.clamp(80, 900).toDouble(),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: CustomPaint(
@@ -109,7 +109,7 @@ class _ParticleMatrixBlockWidgetState extends State<ParticleMatrixBlockWidget>
             baseY: _baseY,
             phase: _phase,
             positions: _positions,
-            columns: widget.columns.clamp(1, widget.count.clamp(1, 8000)),
+            columns: widget.columns.clamp(1, widget.count.clamp(1, 8000)).toInt(),
             activeRow: widget.activeRow,
             activeNodes: _activeNodes,
             backgroundColor: widget.backgroundColor,
