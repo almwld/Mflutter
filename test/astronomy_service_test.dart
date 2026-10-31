@@ -50,6 +50,11 @@ void main() {
       expect(moon.illuminatedFraction, inInclusiveRange(0, 1));
       expect(moon.phaseAngleDegrees, inInclusiveRange(0, 180));
       expect(moon.phaseName, isNotEmpty);
+      if (moon.illuminatedFraction! > 0.97) {
+        expect(moon.phaseName, 'بدر');
+      } else if (moon.illuminatedFraction! < 0.03) {
+        expect(moon.phaseName, 'محاق');
+      }
       expect(planets.every((body) => body.distanceAu != null &&
           body.distanceAu!.isFinite && body.distanceAu! > 0), isTrue);
       expect(sirius.distanceLightYears, greaterThan(0));
