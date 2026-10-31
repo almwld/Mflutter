@@ -68,7 +68,7 @@ class BiomechanicsEngine {
     if (!frameDelta.isFinite || frameDelta < 0) {
       throw ArgumentError.value(frameDelta, 'frameDelta');
     }
-    final accepted = frameDelta.clamp(0.0, settings.maxFrameDelta);
+    final accepted = frameDelta.clamp(0.0, settings.maxFrameDelta).toDouble();
     final dropped = frameDelta - accepted;
     _accumulator += accepted;
     var steps = 0;
@@ -97,12 +97,6 @@ class BiomechanicsEngine {
           }
         }
       }
-      for (final body in _bodies) {
-        body.solveConstraints(
-          dt,
-          iterations: settings.constraintIterations,
-        );
-      }
       _accumulator -= dt;
       steps++;
     }
@@ -121,7 +115,7 @@ class BiomechanicsEngine {
   }
 
   double get interpolationAlpha =>
-      (_accumulator / settings.fixedTimeStep).clamp(0.0, 1.0);
+      (_accumulator / settings.fixedTimeStep).clamp(0.0, 1.0).toDouble();
 
   void reset() {
     _ensureActive();
