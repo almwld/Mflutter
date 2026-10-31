@@ -17,6 +17,20 @@ void main() {
       );
     });
 
+    test('does not infer the reader from a Quran domain without a valid verse', () {
+      expect(
+        AdaptiveTemplateSelector.select(
+          requestedTemplateId: 'generic_template',
+          domain: 'quran',
+          query: 'اعرض الآية',
+          blocks: const [
+            {'type': 'quran_verse', 'surah_number': 0, 'ayah_number': 1},
+          ],
+        ),
+        'generic_template',
+      );
+    });
+
     test('keeps Abjad calculations in the Abjad template', () {
       expect(
         AdaptiveTemplateSelector.select(
