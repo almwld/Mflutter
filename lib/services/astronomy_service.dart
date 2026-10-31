@@ -27,6 +27,17 @@ class AstronomyService {
   static const double _deg = 180 / math.pi;
   static final pp.Planet _earth = pp.Planet(pp.planetEarth);
 
+  // Distances are rounded reference values for bright catalog stars. Unknown
+  // or variable-quality entries intentionally remain null rather than guessed.
+  static const Map<String, double> _starDistancesLightYears = {
+    'sirius': 8.6, 'polaris': 447, 'vega': 25.0, 'arcturus': 36.7,
+    'capella': 42.9, 'procyon': 11.46, 'betelgeuse': 548, 'rigel': 860,
+    'bellatrix': 250, 'saiph': 650, 'aldebaran': 65.2, 'spica': 250,
+    'antares': 550, 'deneb': 2615, 'altair': 16.7, 'albireo': 430,
+    'dubhe': 123, 'merak': 79.7, 'phecda': 83.2, 'megrez': 80.5,
+    'alioth': 83.2, 'mizar': ตาม, 
+  };
+
   static final List<_PlanetSpec> _planets = [
     _PlanetSpec('mercury', 'عطارد', 'Mercury',
         pp.Planet(pp.planetMercury), 0xFFB7B9C2, -0.4),
@@ -157,6 +168,7 @@ class AstronomyService {
     final year = _decimalYear(date);
 
     final bodies = <CelestialBody>[];
+    final earthPosition = _earth.position(jde);
 
     final sun = solar.apparentEquatorial(jde);
     bodies.add(_fromEquatorial(
@@ -167,6 +179,7 @@ class AstronomyService {
       ra: sun.ra,
       dec: sun.dec,
       magnitude: -26.7,
+      distanceAu: earthPosition.range,
       color: 0xFFFFD27A,
       latitudeRadians: latitudeRadians,
       localSiderealDegrees: localSiderealDegrees,
@@ -201,6 +214,10 @@ class AstronomyService {
       ra: moonEquatorial.ra,
       dec: moonEquatorial.dec,
       magnitude: -12.0,
+      distanceAu: moonDistanceAu,
+      illuminatedFraction: _moonIllumination(sun.ra, sun.dec, moonGeocentric.ra, moonGeocentric.dec),
+      phaseAngleDegrees: _moonPhaseAngle(sun.ra, sun.dec, moonGeocentric.ra, moonGeocentric.dec),
+      phaseName: _moonPhaseName(sun.ra, moonGeocentric.ra, _moonIllumination(sun.ra, sun.dec, moonGeocentric.ra, moonGeocentric.dec)),
       color: 0xFFE4E9F5,
       latitudeRadians: latitudeRadians,
       localSiderealDegrees: localSiderealDegrees,
@@ -209,10 +226,7 @@ class AstronomyService {
       note: 'موضع قمري محسوب بخوارزميات Meeus مع تصحيح اختلاف المنظر الطبوغرافي؛ الانكسار الجوي غير مطبق.',
     ));
 
-    // Evaluate Earth's VSOP87 position once, then reuse it for all planets.
-    // elliptic.position() recomputes Earth for every planet and each light-time
-    // pass; this shared calculation avoids repeated high-cost series summations.
-    final earthPosition = _earth.position(jde);
+    // Reuse the same Earth VSOP87 vector for all geocentric planet positions.
     for (final spec in _planets) {
       final equatorial = _planetEquatorial(spec.planet, earthPosition, jde);
       bodies.add(_fromEquatorial(
@@ -223,6 +237,7 @@ class AstronomyService {
         ra: equatorial.ra,
         dec: equatorial.dec,
         magnitude: spec.magnitude,
+        distanceAu: equatorial.distanceAu,
         color: spec.color,
         latitudeRadians: latitudeRadians,
         localSiderealDegrees: localSiderealDegrees,
@@ -247,6 +262,7 @@ class AstronomyService {
         ra: precessed.ra,
         dec: precessed.dec,
         magnitude: star.magnitude,
+        distanceLightYears: _starDistancesLightYears[star.id],
         color: star.color,
         latitudeRadians: latitudeRadians,
         localSiderealDegrees: localSiderealDegrees,
@@ -259,7 +275,7 @@ class AstronomyService {
     return List<CelestialBody>.unmodifiable(bodies);
   }
 
-  static ({double ra, double dec}) _planetEquatorial(
+  static ({double ra, double dec, double distanceAu}) _planetEquatorial(
     pp.Planet planet,
     ({double lon, double lat, double range}) earth,
     double jde,
@@ -306,12 +322,38 @@ class AstronomyService {
     final nutation = nut.nutation(jde);
     longitude += nutation.dPsi;
     final obliquity = nut.meanObliquity(jde) + nutation.dEps;
-    return coord.eclToEq(
+    final equatorial = coord.eclToEq(
       longitude,
       latitude,
       math.sin(obliquity),
       math.cos(obliquity),
     );
+    final distanceAu = math.sqrt(
+      corrected.x * corrected.x + corrected.y * corrected.y + corrected.z * corrected.z,
+    );
+    return (ra: equatorial.ra, dec: equatorial.dec, distanceAu: distanceAu);
+  }
+
+  static double _moonPhaseAngle(double sunRa, double sunDec, double moonRa, double moonDec) {
+    final cosine = math.sin(sunDec) * math.sin(moonDec) +
+        math.cos(sunDec) * math.cos(moonDec) * math.cos(sunRa - moonRa);
+    return math.acos(cosine.clamp(-1.0, 1.0).toDouble()) * _deg;
+  }
+
+  static double _moonIllumination(double sunRa, double sunDec, double moonRa, double moonDec) {
+    final elongation = _moonPhaseAngle(sunRa, sunDec, moonRa, moonDec) * _rad;
+    return ((1 - math.cos(math.pi - elongation)) / 2).clamp(0.0, 1.0).toDouble();
+  }
+
+  static String _moonPhaseName(double sunRa, double moonRa, double illumination) {
+    final waxing = _normalize((moonRa - sunRa) * _deg) < 180;
+    if (illumination < 0.03) return 'محاق';
+    if (illumination > 0.97) return 'بدر';
+    if (illumination >= 0.45 && illumination <= 0.55) {
+      return waxing ? 'التربيع الأول' : 'التربيع الأخير';
+    }
+    if (illumination < 0.5) return waxing ? 'هلال متزايد' : 'هلال متناقص';
+    return waxing ? 'أحدب متزايد' : 'أحدب متناقص';
   }
 
   static CelestialBody _fromEquatorial({
