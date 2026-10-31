@@ -14,7 +14,6 @@ class SkyAtlasScreen extends StatefulWidget {
 class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
   double _timeOffsetHours = 0;
   String _filter = 'الكل';
-  _SkyObject? _selected;
 
   static const _objects = <_SkyObject>[
     _SkyObject('الشعرى اليمانية', 'Sirius', 'نجم', 0.78, 0.36, Color(0xFFEAF4FF), 'وَأَنَّهُ هُوَ رَبُّ الشِّعْرَىٰ', 'النجم: 49', 'سورة النجم، الآية 49.'),
@@ -47,11 +46,13 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
           children: [
             _buildStatusBar(),
             Expanded(
-              child: GestureDetector(
-                onTapDown: (details) => _selectAt(details.localPosition, context),
-                child: CustomPaint(
-                  painter: _SkyPainter(objects: visible, timeOffset: _timeOffsetHours),
-                  child: const SizedBox.expand(),
+              child: LayoutBuilder(
+                builder: (context, constraints) => GestureDetector(
+                  onTapDown: (details) => _selectAt(details.localPosition, constraints.biggest),
+                  child: CustomPaint(
+                    painter: _SkyPainter(objects: visible, timeOffset: _timeOffsetHours),
+                    child: const SizedBox.expand(),
+                  ),
                 ),
               ),
             ),
@@ -151,9 +152,7 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
     );
   }
 
-  void _selectAt(Offset point, BuildContext context) {
-    final size = context.size;
-    if (size == null) return;
+  void _selectAt(Offset point, Size size) {
     _SkyObject? nearest;
     var best = 34.0;
     for (final object in _objects.where((o) => _filter == 'الكل' || o.kind == _filter)) {
@@ -165,7 +164,8 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
       }
     }
     if (nearest == null) return;
-    setState(() => _selected = nearest);
+    final selected = nearest;
+    if (selected == null) return;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: const Color(0xFF101D34),
@@ -178,15 +178,15 @@ class _SkyAtlasScreenState extends State<SkyAtlasScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nearest!.nameAr, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri', fontSize: 25)),
-              Text(nearest.nameEn, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+              Text(selected.nameAr, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri', fontSize: 25)),
+              Text(selected.nameEn, style: const TextStyle(color: Colors.white54, fontSize: 12)),
               const SizedBox(height: 18),
-              if (nearest.verse != null) ...[
+              if (selected.verse != null) ...[
                 Text(nearest.verse!, style: const TextStyle(color: Colors.white, fontFamily: 'Amiri', fontSize: 23, height: 1.8)),
-                Text(nearest.reference!, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri')),
+                Text(selected.reference!, style: const TextStyle(color: Color(0xFFF2DC98), fontFamily: 'Amiri')),
                 const SizedBox(height: 8),
               ],
-              Text(nearest.note, style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri', fontSize: 15)),
+              Text(selected.note, style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri', fontSize: 15)),
               const SizedBox(height: 8),
               const Text('الآية معروضة للاستئناس بموضوعها، ولا تعني أن النص يقرر تفاصيل فلكية حديثة.', style: TextStyle(color: Colors.white38, fontSize: 11, height: 1.5)),
             ],
