@@ -171,6 +171,18 @@ class _PhysicsSandboxPainter extends CustomPainter {
     required this.backgroundColor,
     required this.accentColor,
   }) : super(repaint: clock) {
+    _label = TextPainter(
+      text: const TextSpan(
+        text: 'SOFT BODY  •  CCD  •  PBD',
+        style: TextStyle(
+          color: Color(0xFF94A3B8),
+          fontSize: 10,
+          letterSpacing: 1.4,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
     _background = Paint()..color = backgroundColor;
     _fillA = Paint()..color = accentColor.withOpacity(.16);
     _fillB = Paint()..color = const Color(0xFF818CF8).withOpacity(.14);
@@ -185,7 +197,6 @@ class _PhysicsSandboxPainter extends CustomPainter {
     _particle = Paint()..color = const Color(0xFFE2E8F0);
   }
 
-  final Animation<double> clock;
   final List<SoftBody> bodies;
   final Color backgroundColor;
   final Color accentColor;
@@ -195,6 +206,7 @@ class _PhysicsSandboxPainter extends CustomPainter {
   late final Paint _strokeA;
   late final Paint _strokeB;
   late final Paint _particle;
+  late final TextPainter _label;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -230,20 +242,13 @@ class _PhysicsSandboxPainter extends CustomPainter {
         );
       }
     }
-    final label = TextPainter(
-      text: const TextSpan(
-        text: 'SOFT BODY  •  CCD  •  PBD',
-        style: TextStyle(
-          color: Color(0xFF94A3B8),
-          fontSize: 10,
-          letterSpacing: 1.4,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    label.paint(canvas, Offset(14, size.height - label.height - 12));
-    label.dispose();
+    _label.paint(canvas, Offset(14, size.height - _label.height - 12));
+  }
+
+  @override
+  void dispose() {
+    _label.dispose();
+    super.dispose();
   }
 
   @override
