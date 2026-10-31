@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:astronomia/apparent.dart' as apparent;
 import 'package:astronomia/coord.dart' as coord;
-import 'package:astronomia/elliptic.dart' as elliptic;
 import 'package:astronomia/globe.dart' as globe;
 import 'package:astronomia/moonposition.dart' as moon;
 import 'package:astronomia/nutation.dart' as nut;
