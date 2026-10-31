@@ -127,6 +127,15 @@ class AstronomyService {
     _StarSpec('muphrid', 'مفرد', 'Muphrid', 13.911417, 18.3977, 2.68, 0xFFFFE5C4, null, null, 'نجم قريب ظاهرياً من السماك الرامح.'),
     _StarSpec('alnair', 'النير', 'Alnair', 22.137222, -46.9609, 1.74, 0xFFBFDFFF, null, null, 'ألمع نجوم كوكبة الكركي.'),
     _StarSpec('gienah', 'جناح الغراب', 'Gienah', 12.263444, -17.5419, 2.59, 0xFFBFDFFF, null, null, 'نجم في كوكبة الغراب.'),
+
+    _StarSpec('alnilam', 'النظام', 'Alnilam', 5.603556, -1.2019, 1.69, 0xFFBFDFFF, null, null, 'النجم الأوسط في حزام الجبار.'),
+    _StarSpec('mintaka', 'منطقة', 'Mintaka', 5.533444, -0.2991, 2.23, 0xFFBFDFFF, null, null, 'النجم الغربي في حزام الجبار.'),
+    _StarSpec('alnitak', 'النطاق', 'Alnitak', 5.679306, -1.9426, 1.77, 0xFFBFDFFF, null, null, 'النجم الشرقي في حزام الجبار.'),
+    _StarSpec('sadr', 'صدر الدجاجة', 'Sadr', 20.370472, 40.2567, 2.23, 0xFFFFE5C4, null, null, 'نجم في مركز صليب الشمال ضمن كوكبة الدجاجة.'),
+    _StarSpec('sheliak', 'شلياق', 'Sheliak', 18.834667, 33.3627, 3.52, 0xFFEAF2FF, null, null, 'نجم متغير في كوكبة القيثارة.'),
+    _StarSpec('sulafat', 'السلافات', 'Sulafat', 18.982389, 32.6896, 3.25, 0xFFEAF2FF, null, null, 'نجم في كوكبة القيثارة.'),
+    _StarSpec('tarazed', 'الطائر', 'Tarazed', 19.770994, 10.6133, 2.72, 0xFFFFD6A0, null, null, 'نجم في كوكبة العقاب قرب النسر الطائر.'),
+    _StarSpec('alshain', 'الشاهين', 'Alshain', 19.921028, 6.4068, 3.71, 0xFFFFE5C4, null, null, 'نجم في كوكبة العقاب.'),
   ];
 
   static List<CelestialBody> calculate({
