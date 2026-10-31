@@ -193,6 +193,9 @@ jobs:
         timeout-minutes: 8
         run: flutter test test/astronomy_service_test.dart --reporter expanded
 
+      - name: Test sky projection and FOV calibration
+        run: flutter test test/sky_projection_test.dart --reporter expanded
+
 
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
