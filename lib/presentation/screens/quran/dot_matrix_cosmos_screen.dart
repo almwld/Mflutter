@@ -155,12 +155,7 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _clock,
-      builder: (context, _) {
-        final scene = _scene;
-        final progress = (_time / 60).clamp(0.0, 1.0);
-        return Scaffold(
+    return Scaffold(
       backgroundColor: DotMatrixCosmosConfig.navyBottom,
       appBar: AppBar(
         backgroundColor: DotMatrixCosmosConfig.navyBottom,
@@ -168,89 +163,133 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
         title: const Text('الكون القرآني', style: TextStyle(fontFamily: 'Amiri')),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: DotMatrixCosmosConfig.gold))
+          ? const Center(
+              child: CircularProgressIndicator(
+                color: DotMatrixCosmosConfig.gold,
+              ),
+            )
           : _error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text('تعذر تحليل النص القرآني المحلي\n$_error',
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      'تعذر تحليل النص القرآني المحلي\\n$_error',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white70, fontFamily: 'Amiri')),
-                ))
-              : SafeArea(
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: Center(
-                          child: AspectRatio(
-                            aspectRatio: 9 / 16,
-                            child: CustomPaint(
-                                painter: _CosmosPainter(
-                                  time: _time,
-                                  scene: scene,
-                                  litIndices: _allahVerseIndices,
-                                  occurrenceCount: _allahOccurrences.fold<int>(0, (a, b) => a + b),
-                                  firstRef: _allahRefs.isEmpty ? '—' : _allahRefs.first,
-                                  lastRef: _allahRefs.isEmpty ? '—' : _allahRefs.last,
-                                  calledProphets: _prophetsCalled,
-                                  addresses: _directAddresses,
-                                ),
-                                child: const SizedBox.expand(),
-                              ),
-                          ),
-                        ),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontFamily: 'Amiri',
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-                        child: Column(
-                          children: [
-                            Slider(
-                              value: progress,
-                              onChangeStart: (_) {
-                                _resumeAfterScrub = _clock.isAnimating;
-                                _clock.stop();
-                              },
-                              onChanged: (v) => _clock.value = v,
-                              onChangeEnd: (_) {
-                                if (_resumeAfterScrub) _clock.forward();
-                                _resumeAfterScrub = false;
-                              },
-                              activeColor: DotMatrixCosmosConfig.gold,
-                              inactiveColor: Colors.white24,
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () { _clock.stop(); _clock.value = 0; _clock.forward(); },
-                                  icon: const Icon(Icons.replay, color: Colors.white70),
+                    ),
+                  ),
+                )
+              : SafeArea(
+                  child: AnimatedBuilder(
+                    animation: _clock,
+                    builder: (context, _) {
+                      final scene = _scene;
+                      final progress = (_time / 60).clamp(0.0, 1.0);
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: AspectRatio(
+                                aspectRatio: 9 / 16,
+                                child: RepaintBoundary(
+                                  child: CustomPaint(
+                                    painter: _CosmosPainter(
+                                      time: _time,
+                                      scene: scene,
+                                      litIndices: _allahVerseIndices,
+                                      occurrenceCount: _allahOccurrences.fold<int>(
+                                        0,
+                                        (total, count) => total + count,
+                                      ),
+                                      firstRef: _allahRefs.isEmpty
+                                          ? '—'
+                                          : _allahRefs.first,
+                                      lastRef: _allahRefs.isEmpty
+                                          ? '—'
+                                          : _allahRefs.last,
+                                      calledProphets: _prophetsCalled,
+                                      addresses: _directAddresses,
+                                    ),
+                                    child: const SizedBox.expand(),
+                                  ),
                                 ),
-                                IconButton(
-                                  onPressed: () {
-                                    if (_clock.isAnimating) {
-                                      _clock.stop();
-                                    } else {
-                                      if (_clock.isCompleted) _clock.reset();
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                            child: Column(
+                              children: [
+                                Slider(
+                                  value: progress,
+                                  onChangeStart: (_) {
+                                    _resumeAfterScrub = _clock.isAnimating;
+                                    _clock.stop();
+                                  },
+                                  onChanged: (value) => _clock.value = value,
+                                  onChangeEnd: (_) {
+                                    if (_resumeAfterScrub) {
                                       _clock.forward();
                                     }
+                                    _resumeAfterScrub = false;
                                   },
-                                  icon: Icon(_clock.isAnimating ? Icons.pause : Icons.play_arrow,
-                                      color: DotMatrixCosmosConfig.gold),
+                                  activeColor: DotMatrixCosmosConfig.gold,
+                                  inactiveColor: Colors.white24,
                                 ),
-                                const Spacer(),
-                                Text('${_time.toStringAsFixed(1)}s / 60s',
-                                    style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        _clock.stop();
+                                        _clock.value = 0;
+                                        _clock.forward();
+                                      },
+                                      icon: const Icon(
+                                        Icons.replay,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        if (_clock.isAnimating) {
+                                          _clock.stop();
+                                        } else {
+                                          if (_clock.isCompleted) {
+                                            _clock.reset();
+                                          }
+                                          _clock.forward();
+                                        }
+                                      },
+                                      icon: Icon(
+                                        _clock.isAnimating
+                                            ? Icons.pause
+                                            : Icons.play_arrow,
+                                        color: DotMatrixCosmosConfig.gold,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      '${_time.toStringAsFixed(1)}s / 60s',
+                                      style: const TextStyle(
+                                        color: Colors.white60,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                    ],
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-        );
-      },
     );
   }
-}
 
 class _CosmosPainter extends CustomPainter {
   static final List<Offset> _stars = List<Offset>.unmodifiable(
