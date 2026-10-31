@@ -186,8 +186,12 @@ jobs:
       - name: Analyze
         run: flutter analyze --no-fatal-infos
 
-      - name: Test nucleus core contracts
-        run: flutter test test/nucleus_service_test.dart
+      - name: Test astronomy ephemeris contracts
+        timeout-minutes: 8
+        run: flutter test test/astronomy_service_test.dart --reporter expanded
+
+      - name: Test sky projection and FOV calibration
+        run: flutter test test/sky_projection_test.dart --reporter expanded
 
 
       - name: Generate launcher icons
@@ -213,3 +217,10 @@ jobs:
         with:
           name: mudabbir-x86_64
           path: build/app/outputs/flutter-apk/app-x86_64-release.apk
+
+
+      # Keep the broader nucleus regression after the sky-specific checks and
+      # APK publication so its independent runtime setup cannot block delivery.
+      - name: Test nucleus core contracts
+        timeout-minutes: 4
+        run: flutter test test/nucleus_service_test.dart --reporter expanded --concurrency=1

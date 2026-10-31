@@ -1,0 +1,77 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mudabbir_al_asrar/models/celestial_body.dart';
+import 'package:mudabbir_al_asrar/services/astronomy_service.dart';
+
+void main() {
+  late List<CelestialBody> bodies;
+
+  setUpAll(() {
+    // Run the VSOP87 ephemeris once; all assertions share the same snapshot.
+    bodies = AstronomyService.calculate(
+      utc: DateTime.utc(2026, 10, 31, 20),
+      latitude: 15.3694,
+      longitude: 44.1910,
+    );
+  });
+
+  group('AstronomyService', () {
+    test('returns Sun, Moon, five planets and expanded catalog stars', () {
+      expect(bodies.any((body) => body.kind == CelestialKind.sun), isTrue);
+      expect(bodies.any((body) => body.kind == CelestialKind.moon), isTrue);
+      expect(
+        bodies.where((body) => body.kind == CelestialKind.planet).length,
+        5,
+      );
+      expect(
+        bodies.where((body) => body.kind == CelestialKind.star).length,
+        greaterThanOrEqualTo(50),
+      );
+    });
+
+    test('all horizontal coordinates are finite and normalized', () {
+      for (final body in bodies) {
+        expect(body.azimuth.isFinite, isTrue, reason: body.id);
+        expect(body.altitude.isFinite, isTrue, reason: body.id);
+        expect(body.azimuth, inInclusiveRange(0, 360), reason: body.id);
+        expect(body.altitude, inInclusiveRange(-90, 90), reason: body.id);
+      }
+    });
+
+    test('distance and lunar illumination metadata are physically bounded', () {
+      final sun = bodies.singleWhere((body) => body.id == 'sun');
+      final moon = bodies.singleWhere((body) => body.id == 'moon');
+      final sirius = bodies.singleWhere((body) => body.id == 'sirius');
+      final planets = bodies.where((body) => body.kind == CelestialKind.planet);
+
+      expect(sun.distanceAu, inInclusiveRange(0.9, 1.1));
+      expect(moon.distanceAu, inInclusiveRange(0.002, 0.003));
+      expect(moon.distanceKilometers, inInclusiveRange(350000, 410000));
+      expect(moon.magnitude.isFinite, isTrue);
+      expect(moon.illuminatedFraction, inInclusiveRange(0, 1));
+      expect(moon.phaseAngleDegrees, inInclusiveRange(0, 180));
+      expect(moon.phaseName, isNotEmpty);
+      if (moon.illuminatedFraction! > 0.97) {
+        expect(moon.phaseName, 'بدر');
+      } else if (moon.illuminatedFraction! < 0.03) {
+        expect(moon.phaseName, 'محاق');
+      }
+      expect(planets.every((body) => body.distanceAu != null &&
+          body.distanceAu!.isFinite && body.distanceAu! > 0), isTrue);
+      expect(sirius.distanceLightYears, greaterThan(0));
+    });
+
+    test('Sirius keeps its verified Quranic reference', () {
+      final sirius = bodies.singleWhere((body) => body.id == 'sirius');
+      expect(sirius.verse, 'وَأَنَّهُ هُوَ رَبُّ الشِّعْرَىٰ');
+      expect(sirius.reference, 'النجم: 49');
+    });
+
+    test('expanded catalog includes southern and northern anchors', () {
+      final ids = bodies.map((body) => body.id).toSet();
+      expect(ids, containsAll([
+        'polaris', 'deneb', 'altair', 'canopus', 'achernar',
+        'acrux', 'fomalhaut', 'alnilam', 'mizar', 'antares',
+      ]));
+    });
+  });
+}
