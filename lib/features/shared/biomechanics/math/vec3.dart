@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Small immutable vector type used by the biomechanics runtime.
 ///
 /// Keeping the solver independent from rendering and third-party math APIs
@@ -33,7 +35,7 @@ class Vec3 {
         x * other.y - y * other.x,
       );
   double get lengthSquared => dot(this);
-  double get length => lengthSquared <= 0 ? 0 : lengthSquared.sqrt();
+  double get length => math.sqrt(lengthSquared);
   Vec3 normalized([Vec3 fallback = zero]) {
     final magnitude = length;
     return magnitude < 1e-9 ? fallback : this / magnitude;
@@ -42,7 +44,7 @@ class Vec3 {
   Vec3 clampMagnitude(double maximum) {
     final squared = lengthSquared;
     if (squared <= maximum * maximum) return this;
-    return this * (maximum / squared.sqrt());
+    return this * (maximum / math.sqrt(squared));
   }
   static Vec3 lerp(Vec3 a, Vec3 b, double t) {
     final u = t.clamp(0.0, 1.0);
