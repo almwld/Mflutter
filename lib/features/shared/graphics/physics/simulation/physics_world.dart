@@ -58,11 +58,11 @@ class PhysicsWorld {
     if (!frameDelta.isFinite || frameDelta < 0) {
       throw ArgumentError.value(frameDelta, 'frameDelta');
     }
-    _accumulator += math.min(frameDelta, fixedTimeStep * maxSubSteps);
+    _accumulator += math.min(frameDelta, fixedTimeStep * maxSubSteps).toDouble();
     var steps = 0;
     while (_accumulator + 1e-12 >= fixedTimeStep && steps < maxSubSteps) {
       _simulate(fixedTimeStep);
-      _accumulator = math.max(0, _accumulator - fixedTimeStep);
+      _accumulator = math.max(0.0, _accumulator - fixedTimeStep).toDouble();
       steps++;
     }
     return steps;
