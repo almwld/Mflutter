@@ -112,8 +112,8 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
 
   void _applyPointer(Offset point, Size size) {
     if (size.isEmpty) return;
-    final x = (point.dx / size.width).clamp(0.0, 1.0);
-    final y = (1 - point.dy / size.height).clamp(0.0, 1.0);
+    final x = (point.dx / size.width).clamp(0.0, 1.0).toDouble();
+    final y = (1 - point.dy / size.height).clamp(0.0, 1.0).toDouble();
     for (final body in _world.bodies) {
       for (var i = 0; i < body.particleCount; i++) {
         final offset = i * 3;
