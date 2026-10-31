@@ -148,7 +148,7 @@ class _RecitationScreenState extends State<RecitationScreen> {
               .map(int.tryParse)
               .whereType<int>()
               .toSet();
-          if (surahs.isNotEmpty) {
+          if (surahs.isNotEmpty && !loaded.any((entry) => entry.server == server)) {
             loaded.add(_ReciterSource(name: name, server: server, surahs: surahs));
           }
         }
@@ -204,6 +204,12 @@ class _RecitationScreenState extends State<RecitationScreen> {
     final surah = _surahs[index];
     setState(() { _loading = true; _error = null; });
     try {
+      if (_selectedReciter != 'https://everyayah.com/data/Alafasy_128kbps/') {
+        final source = _reciters.where((item) => item.server == _selectedReciter).firstOrNull;
+        if (source == null || !source.surahs.contains(surah.number)) {
+          throw StateError('هذه السورة غير متاحة ضمن النسخة الصوتية المختارة.');
+        }
+      }
       await _player.playUrl(_ayahUrl(surah.number, _currentAyah));
       if (!mounted || generation != _generation) return;
       setState(() { _loading = false; _playing = true; _paused = false; });
@@ -455,7 +461,11 @@ class _RecitationScreenState extends State<RecitationScreen> {
                           Text(current.name, textDirection: TextDirection.rtl,
                             style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
-                          Text('الآية $_currentAyah من ${current.ayahs}', textDirection: TextDirection.rtl,
+                          Text(
+                            _selectedReciter == 'https://everyayah.com/data/Alafasy_128kbps/'
+                                ? 'الآية $_currentAyah من ${current.ayahs}'
+                                : 'تشغيل السورة كاملة',
+                            textDirection: TextDirection.rtl,
                             style: const TextStyle(color: Colors.white70, fontSize: 12)),
                         ],
                       ),
