@@ -55,7 +55,6 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
     vsync: this,
     duration: DotMatrixCosmosConfig.duration,
   )..addListener(() => setState(() {}));
-  List<Ayah> _ayahs = const [];
   List<int> _allahVerseIndices = const [];
   List<int> _allahOccurrences = const [];
   List<String> _allahRefs = const [];
@@ -141,7 +140,6 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
 
       if (!mounted) return;
       setState(() {
-        _ayahs = ayahs;
         _allahVerseIndices = lit;
         _allahOccurrences = occurrences;
         _allahRefs = refs;
