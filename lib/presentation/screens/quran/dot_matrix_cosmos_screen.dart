@@ -35,9 +35,6 @@ class DotMatrixCosmosConfig {
     'يا ايها الرسول',
     'يا ايها المزمل',
     'يا ايها المدثر',
-    'يا ايها الذين امنوا',
-    'يا بني ادم',
-    'يا بني اسرائيل',
   ];
 }
 
@@ -53,8 +50,9 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
   late final AnimationController _clock = AnimationController(
     vsync: this,
     duration: DotMatrixCosmosConfig.duration,
-  )..addListener(() => setState(() {}));
+  );
   List<int> _allahVerseIndices = const [];
+  Set<int> _allahVerseIndexSet = const {};
   List<int> _allahOccurrences = const [];
   List<String> _allahRefs = const [];
   List<String> _directAddresses = const [];
@@ -139,7 +137,8 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
 
       if (!mounted) return;
       setState(() {
-        _allahVerseIndices = lit;
+        _allahVerseIndices = List<int>.unmodifiable(lit);
+        _allahVerseIndexSet = Set<int>.unmodifiable(lit.toSet());
         _allahOccurrences = occurrences;
         _allahRefs = refs;
         _directAddresses = addresses;
@@ -157,9 +156,12 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
 
   @override
   Widget build(BuildContext context) {
-    final scene = _scene;
-    final progress = (_time / 60).clamp(0.0, 1.0);
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: _clock,
+      builder: (context, _) {
+        final scene = _scene;
+        final progress = (_time / 60).clamp(0.0, 1.0);
+        return Scaffold(
       backgroundColor: DotMatrixCosmosConfig.navyBottom,
       appBar: AppBar(
         backgroundColor: DotMatrixCosmosConfig.navyBottom,
@@ -182,13 +184,12 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                         child: Center(
                           child: AspectRatio(
                             aspectRatio: 9 / 16,
-                            child: AnimatedBuilder(
-                              animation: _clock,
-                              builder: (context, _) => CustomPaint(
+                            child: CustomPaint(
                                 painter: _CosmosPainter(
                                   time: _time,
                                   scene: scene,
                                   litIndices: _allahVerseIndices,
+                                  litIndexSet: _allahVerseIndexSet,
                                   occurrenceCount: _allahOccurrences.fold<int>(0, (a, b) => a + b),
                                   firstRef: _allahRefs.isEmpty ? '—' : _allahRefs.first,
                                   lastRef: _allahRefs.isEmpty ? '—' : _allahRefs.last,
@@ -197,7 +198,6 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                                 ),
                                 child: const SizedBox.expand(),
                               ),
-                            ),
                           ),
                         ),
                       ),
@@ -233,14 +233,44 @@ class _DotMatrixCosmosScreenState extends State<DotMatrixCosmosScreen>
                     ],
                   ),
                 ),
+        );
+      },
     );
   }
 }
 
 class _CosmosPainter extends CustomPainter {
+  static final List<Offset> _stars = List<Offset>.unmodifiable(
+    List.generate(110, (i) {
+      final random = math.Random(6236 + i);
+      return Offset(random.nextDouble(), random.nextDouble());
+    }),
+  );
+  static Size? _gridCacheSize;
+  static List<Offset> _gridCache = const [];
+
+  static List<Offset> _gridFor(Size size) {
+    if (_gridCacheSize == size && _gridCache.length == DotMatrixCosmosConfig.verseCount) {
+      return _gridCache;
+    }
+    final left = size.width * .08;
+    final top = size.height * .29;
+    final width = size.width * .84;
+    final height = size.height * .36;
+    final dx = width / DotMatrixCosmosConfig.columns;
+    final dy = height / DotMatrixCosmosConfig.rows;
+    _gridCache = List<Offset>.generate(DotMatrixCosmosConfig.verseCount, (index) {
+      final row = index ~/ DotMatrixCosmosConfig.columns;
+      final col = DotMatrixCosmosConfig.columns - 1 - (index % DotMatrixCosmosConfig.columns);
+      return Offset(left + (col + .5) * dx, top + (row + .5) * dy);
+    }, growable: false);
+    _gridCacheSize = size;
+    return _gridCache;
+  }
   final double time;
   final int scene;
   final List<int> litIndices;
+  final Set<int> litIndexSet;
   final int occurrenceCount;
   final String firstRef;
   final String lastRef;
@@ -251,6 +281,7 @@ class _CosmosPainter extends CustomPainter {
     required this.time,
     required this.scene,
     required this.litIndices,
+    required this.litIndexSet,
     required this.occurrenceCount,
     required this.firstRef,
     required this.lastRef,
@@ -287,13 +318,13 @@ class _CosmosPainter extends CustomPainter {
       stops: [0, .55, 1],
     ).createShader(rect));
 
-    final random = math.Random(6236);
-    for (var i = 0; i < 110; i++) {
-      final x = random.nextDouble() * size.width;
-      final y = random.nextDouble() * size.height;
-      final twinkle = .25 + .5 * (math.sin(time * .9 + i) + 1) / 2;
-      canvas.drawCircle(Offset(x, y), .35 + random.nextDouble() * .55,
-          Paint()..color = Colors.white.withOpacity(twinkle * .45));
+    final starPaint = Paint()..color = Colors.white.withOpacity(.26);
+    for (var i = 0; i < _stars.length; i++) {
+      final star = _stars[i];
+      final twinkle = .55 + .45 * (math.sin(time * .9 + i) + 1) / 2;
+      starPaint.color = Colors.white.withOpacity(twinkle * .30);
+      canvas.drawCircle(Offset(star.dx * size.width, star.dy * size.height),
+          .35 + (i % 4) * .13, starPaint);
     }
 
     if (scene == 0) {
@@ -384,7 +415,7 @@ class _CosmosPainter extends CustomPainter {
       final visible = ((time - 40) * 1.2).floor().clamp(0, addresses.length).toInt();
       if (visible > 0) {
         final item = addresses[(visible - 1).clamp(0, addresses.length - 1).toInt()];
-        _text(canvas, size, item, size.height * .36, fontSize: 15, color: Colors.white);
+        _text(canvas, size, item, size.height * .34, fontSize: 12, color: Colors.white, maxWidthFactor: .9);
         _text(canvas, size, '$visible', size.height * .65,
             fontSize: 30, color: DotMatrixCosmosConfig.gold, font: 'Cormorant Garamond');
       }
@@ -400,33 +431,41 @@ class _CosmosPainter extends CustomPainter {
   }
 
   void _drawGrid(Canvas canvas, Size size, double sweep) {
+    final points = _gridFor(size);
     final left = size.width * .08;
     final top = size.height * .29;
     final width = size.width * .84;
     final height = size.height * .36;
-    final dx = width / 79;
-    final dy = height / 79;
-    final lit = litIndices.toSet();
-    final scanRow = (sweep * 79).floor();
-    for (var index = 0; index < DotMatrixCosmosConfig.verseCount; index++) {
-      final row = index ~/ 79;
-      final col = 78 - (index % 79);
-      final point = Offset(left + (col + .5) * dx, top + (row + .5) * dy);
-      final isLit = lit.contains(index);
-      final swept = row < scanRow;
-      final active = isLit && (sweep >= 1 || swept);
-      if (active) {
-        canvas.drawCircle(point, 2.0, Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.14));
-      }
-      canvas.drawCircle(point, .72, Paint()
-        ..color = active ? DotMatrixCosmosConfig.gold : Colors.white.withOpacity(.15));
+    final dx = width / DotMatrixCosmosConfig.columns;
+    final dy = height / DotMatrixCosmosConfig.rows;
+    final scanRow = (sweep * DotMatrixCosmosConfig.rows).floor();
+    final basePaint = Paint()
+      ..color = Colors.white.withOpacity(.15)
+      ..strokeWidth = 1.45
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPoints(PointMode.points, points, basePaint);
+
+    final activePoints = <Offset>[];
+    for (final index in litIndices) {
+      final row = index ~/ DotMatrixCosmosConfig.columns;
+      if (sweep >= 1 || row < scanRow) activePoints.add(points[index]);
+    }
+    if (activePoints.isNotEmpty) {
+      final haloPaint = Paint()
+        ..color = DotMatrixCosmosConfig.gold.withOpacity(.18)
+        ..strokeWidth = 4.0
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPoints(PointMode.points, activePoints, haloPaint);
+      final litPaint = Paint()
+        ..color = DotMatrixCosmosConfig.gold
+        ..strokeWidth = 1.9
+        ..strokeCap = StrokeCap.round;
+      canvas.drawPoints(PointMode.points, activePoints, litPaint);
     }
     if (litIndices.isNotEmpty) {
       final pulse = 1.0 + .8 * (math.sin(time * 3.2) + 1) / 2;
       for (final markerIndex in <int>[litIndices.first, litIndices.last]) {
-        final markerRow = markerIndex ~/ 79;
-        final markerCol = 78 - (markerIndex % 79);
-        final marker = Offset(left + (markerCol + .5) * dx, top + (markerRow + .5) * dy);
+        final marker = points[markerIndex];
         canvas.drawCircle(marker, 3.2 * pulse,
             Paint()..color = DotMatrixCosmosConfig.gold.withOpacity(.18)
               ..style = PaintingStyle.stroke..strokeWidth = 1.1);
@@ -453,5 +492,6 @@ class _CosmosPainter extends CustomPainter {
   bool shouldRepaint(covariant _CosmosPainter oldDelegate) =>
       oldDelegate.time != time || oldDelegate.scene != scene ||
       oldDelegate.litIndices != litIndices ||
+      oldDelegate.litIndexSet != litIndexSet ||
       oldDelegate.occurrenceCount != occurrenceCount;
 }
