@@ -50,7 +50,7 @@ abstract final class AdaptiveTemplateSelector {
     if (types.contains('star_tracker_block')) {
       return 'cosmic_celestial_template';
     }
-    if (types.contains('quantum_particle_block')) {
+    if (types.contains('particle_matrix_block') || types.contains('quantum_particle_block')) {
       return 'quantum_mesh_template';
     }
     if (types.contains('vector_space_block')) {
@@ -73,6 +73,7 @@ abstract final class AdaptiveTemplateSelector {
       'network', 'nucleus', 'agent',
     ]) ||
         types.contains('relation_graph_block') ||
+        types.contains('connected_nodes_path_block') ||
         types.contains('spatial_map_block') ||
         types.contains('star_map_block')) {
       return 'graph_template';
