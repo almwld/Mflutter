@@ -557,8 +557,6 @@ class _MushafScreenState extends State<MushafScreen> with TickerProviderStateMix
               child: AnimatedBuilder(
                 animation: Listenable.merge([_livingPulse, _livingGlow]),
                 builder: (context, child) {
-                  final selected = _highlights.isNotEmpty;
-                  final great = selected && _isGreatVerse(_highlights.first);
                   return Stack(
                     fit: StackFit.expand,
                     children: [
