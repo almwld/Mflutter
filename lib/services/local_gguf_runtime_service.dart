@@ -152,6 +152,7 @@ spatial_map_block, star_map_block, vector_space_block, quantum_particle_block)
       }
       final temp = File('${target.path}.importing');
       temporaryImport = temp;
+      // Recover space and avoid resuming from a partial copy left by a killed process.
       if (await temp.exists()) await temp.delete();
       await source.openRead().pipe(temp.openWrite());
       if (!await _isValidGguf(temp)) {
@@ -209,6 +210,15 @@ spatial_map_block, star_map_block, vector_space_block, quantum_particle_block)
         } catch (_) {
           // Keep the original import error as the primary failure.
         }
+      }
+      final osError = error is FileSystemException ? error.osError : null;
+      if (osError?.errorCode == 28) {
+        final requiredMb = (await _safeFileLength(File(sourcePath)) / (1024 * 1024)).ceil();
+        final message = 'مساحة التخزين غير كافية لاستيراد النموذج (حجمه نحو $requiredMb MB). '
+            'وفّر مساحة حرة لا تقل عن حجم النموذج، ويفضّل ضعف حجمه عند استبدال نموذج موجود، '
+            'ثم أعد الاستيراد. حُذفت النسخة المؤقتة غير المكتملة، ولم يُحذف النموذج السابق.';
+        _status = message;
+        throw StateError(message);
       }
       _status = 'فشل استيراد النموذج: $error';
       rethrow;
@@ -437,6 +447,14 @@ spatial_map_block, star_map_block, vector_space_block, quantum_particle_block)
         tensorCount <= 1000000 &&
         metadataCount > 0 &&
         metadataCount <= 100000;
+  }
+
+  Future<int> _safeFileLength(File file) async {
+    try {
+      return await file.length();
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<bool> _isValidGguf(File file) async {
