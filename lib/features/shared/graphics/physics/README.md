@@ -8,7 +8,8 @@ simulation intended for deformable educational and interactive scenes.
 Import `physics/physics_engine.dart` and construct a `PhysicsWorld`.
 Each `SoftBody` stores packed world-space XYZ coordinates in `Float64List`
 buffers. A zero inverse mass pins a particle. Add `DistanceConstraint`
-instances for mesh edges, diagonals, or shape-preservation links.
+instances for mesh edges, diagonals, or shape-preservation links. Use
+`TetraVolumeConstraint` for tetrahedral cells when volume retention is required.
 
 ```dart
 final body = SoftBody(
@@ -32,7 +33,7 @@ final deformedVertices = body.positions;
 2. Build swept particle AABBs in a spatial hash.
 3. Generate unique inter-body candidate pairs.
 4. Resolve swept-sphere contacts using closest relative trajectories.
-5. Project distance constraints using inverse-mass weighting.
+5. Project distance and tetrahedral volume constraints using inverse-mass weighting.
 6. Reconstruct velocities and apply restitution impulses.
 
 The broadphase uses a bounded spatial hash. Exceptionally long sweeps use a
