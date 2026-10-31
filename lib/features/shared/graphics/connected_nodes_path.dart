@@ -286,6 +286,12 @@ class _ConnectedNodesPainter extends CustomPainter {
   }
 
   @override
+  void dispose() {
+    for (final painter in _labelPainters) { painter.dispose(); }
+    super.dispose();
+  }
+
+  @override
   bool shouldRepaint(covariant _ConnectedNodesPainter oldDelegate) =>
       oldDelegate.coordinates != coordinates ||
       oldDelegate.labels != labels ||
