@@ -33,12 +33,25 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
   late final SoftBody _left;
   late final SoftBody _right;
   late final AnimationController _clock;
+  late final TextPainter _labelPainter;
   final Stopwatch _stopwatch = Stopwatch();
   int _lastMicros = 0;
 
   @override
   void initState() {
     super.initState();
+    _labelPainter = TextPainter(
+      text: const TextSpan(
+        text: 'SOFT BODY  •  CCD  •  PBD',
+        style: TextStyle(
+          color: Color(0xFF94A3B8),
+          fontSize: 10,
+          letterSpacing: 1.4,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
     _world = PhysicsWorld(
       fixedTimeStep: 1 / 120,
       maxSubSteps: 8,
@@ -134,6 +147,7 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
       ..removeListener(_tick)
       ..dispose();
     _stopwatch.stop();
+    _labelPainter.dispose();
     super.dispose();
   }
 
@@ -153,6 +167,7 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
               child: CustomPaint(
                 painter: _PhysicsSandboxPainter(
                   clock: _clock,
+                  labelPainter: _labelPainter,
                   bodies: <SoftBody>[_left, _right],
                   backgroundColor: widget.backgroundColor,
                   accentColor: widget.accentColor,
@@ -170,22 +185,11 @@ class _PhysicsSandboxBlockWidgetState extends State<PhysicsSandboxBlockWidget>
 class _PhysicsSandboxPainter extends CustomPainter {
   _PhysicsSandboxPainter({
     required Animation<double> clock,
+    required this.labelPainter,
     required this.bodies,
     required this.backgroundColor,
     required this.accentColor,
   }) : super(repaint: clock) {
-    _label = TextPainter(
-      text: const TextSpan(
-        text: 'SOFT BODY  •  CCD  •  PBD',
-        style: TextStyle(
-          color: Color(0xFF94A3B8),
-          fontSize: 10,
-          letterSpacing: 1.4,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
     _background = Paint()..color = backgroundColor;
     _fillA = Paint()..color = accentColor.withOpacity(.16);
     _fillB = Paint()..color = const Color(0xFF818CF8).withOpacity(.14);
@@ -209,7 +213,7 @@ class _PhysicsSandboxPainter extends CustomPainter {
   late final Paint _strokeA;
   late final Paint _strokeB;
   late final Paint _particle;
-  late final TextPainter _label;
+  final TextPainter labelPainter;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -245,13 +249,7 @@ class _PhysicsSandboxPainter extends CustomPainter {
         );
       }
     }
-    _label.paint(canvas, Offset(14, size.height - _label.height - 12));
-  }
-
-  @override
-  void dispose() {
-    _label.dispose();
-    super.dispose();
+    labelPainter.paint(canvas, Offset(14, size.height - labelPainter.height - 12));
   }
 
   @override
