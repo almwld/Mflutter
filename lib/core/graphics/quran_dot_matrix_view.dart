@@ -131,10 +131,10 @@ class _QuranDotMatrixPainter extends CustomPainter {
     const verticalInset = 0.09;
     final availableWidth = size.width * (1 - horizontalInset * 2);
     final availableHeight = size.height * (1 - verticalInset * 2);
-    final cell = math.min(
+    final double cell = math.min(
       availableWidth / columns,
       availableHeight / rows,
-    );
+    ).toDouble();
     final gridWidth = cell * columns;
     final gridHeight = cell * rows;
     final originX = (size.width - gridWidth) / 2;
